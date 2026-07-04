@@ -1,0 +1,169 @@
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
+import { useEtiquetas } from '../lib/useEtiquetas'
+import SelectorEtiqueta, { resolverEtiqueta } from './SelectorEtiqueta'
+
+const hoy = () => new Date().toISOString().slice(0, 10)
+
+export default function RegistroMovimiento({ usuarioId, onGuardado }) {
+  const [tipo, setTipo] = useState('gasto')
+  const [categoriaId, setCategoriaId] = useState('')
+  const [nuevaCategoria, setNuevaCategoria] = useState('')
+  const [fuenteId, setFuenteId] = useState('')
+  const [nuevaFuente, setNuevaFuente] = useState('')
+  const [importe, setImporte] = useState('')
+  const [fecha, setFecha] = useState(hoy())
+  const [esFijo, setEsFijo] = useState(false)
+  const [nota, setNota] = useState('')
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState(null)
+
+  const { items: categorias, crear: crearCategoria } = useEtiquetas('categorias', usuarioId, tipo)
+  const { items: fuentes, crear: crearFuente } = useEtiquetas('fuentes', usuarioId, tipo)
+
+  useEffect(() => {
+    setCategoriaId('')
+    setNuevaCategoria('')
+    setFuenteId('')
+    setNuevaFuente('')
+  }, [tipo])
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    const importeNumero = Number(importe)
+    if (!importeNumero || importeNumero <= 0) {
+      setError('Introduce un importe válido mayor que 0.')
+      return
+    }
+    if (!categoriaId) {
+      setError('Elige o crea una categoría.')
+      return
+    }
+
+    setGuardando(true)
+    setError(null)
+
+    const resultCategoria = await resolverEtiqueta(categoriaId, nuevaCategoria, crearCategoria, 'categoría', setError)
+    if (!resultCategoria.ok) {
+      setGuardando(false)
+      return
+    }
+
+    const resultFuente = await resolverEtiqueta(fuenteId, nuevaFuente, crearFuente, 'concepto', setError)
+    if (!resultFuente.ok) {
+      setGuardando(false)
+      return
+    }
+
+    const { error: errorInsert } = await supabase.from('movimientos').insert({
+      usuario_id: usuarioId,
+      tipo,
+      categoria_id: resultCategoria.id,
+      fuente_id: resultFuente.id,
+      importe: importeNumero,
+      fecha,
+      es_fijo: esFijo,
+      nota: nota.trim() || null,
+    })
+
+    setGuardando(false)
+
+    if (errorInsert) {
+      setError('No se ha podido guardar. Inténtalo de nuevo.')
+      return
+    }
+
+    setImporte('')
+    setNota('')
+    setCategoriaId('')
+    setNuevaCategoria('')
+    setFuenteId('')
+    setNuevaFuente('')
+    setEsFijo(false)
+    onGuardado()
+  }
+
+  return (
+    <form className="registro-movimiento" onSubmit={handleSubmit}>
+      <h2>Nuevo movimiento</h2>
+
+      <div className="tipo-toggle">
+        <button
+          type="button"
+          className={tipo === 'gasto' ? 'activo' : ''}
+          onClick={() => setTipo('gasto')}
+        >
+          Gasto
+        </button>
+        <button
+          type="button"
+          className={tipo === 'ingreso' ? 'activo' : ''}
+          onClick={() => setTipo('ingreso')}
+        >
+          Ingreso
+        </button>
+      </div>
+
+      <SelectorEtiqueta
+        id="categoria"
+        label="Categoría"
+        valor={categoriaId}
+        onChange={setCategoriaId}
+        items={categorias}
+        nuevoNombre={nuevaCategoria}
+        onNuevoNombreChange={setNuevaCategoria}
+        placeholder={tipo === 'ingreso' ? 'ej. Dividendos, Alquiler' : 'ej. Vivienda, Ocio'}
+      />
+
+      <SelectorEtiqueta
+        id="fuente"
+        label={`Concepto ${tipo === 'ingreso' ? '(ej. Restaurante, Oficina)' : '(opcional)'}`}
+        valor={fuenteId}
+        onChange={setFuenteId}
+        items={fuentes}
+        nuevoNombre={nuevaFuente}
+        onNuevoNombreChange={setNuevaFuente}
+        placeholder={tipo === 'ingreso' ? 'ej. Trabajo restaurante' : 'ej. Alquiler piso'}
+      />
+
+      <label htmlFor="importe">Importe (€)</label>
+      <input
+        id="importe"
+        type="number"
+        inputMode="decimal"
+        step="0.01"
+        min="0"
+        value={importe}
+        onChange={(e) => setImporte(e.target.value)}
+        placeholder="0,00"
+      />
+
+      <label htmlFor="fecha">Fecha</label>
+      <input id="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+
+      <div className="tipo-toggle">
+        <button type="button" className={!esFijo ? 'activo' : ''} onClick={() => setEsFijo(false)}>
+          Variable
+        </button>
+        <button type="button" className={esFijo ? 'activo' : ''} onClick={() => setEsFijo(true)}>
+          Fijo
+        </button>
+      </div>
+
+      <label htmlFor="nota">Nota (opcional)</label>
+      <input
+        id="nota"
+        type="text"
+        value={nota}
+        onChange={(e) => setNota(e.target.value)}
+        placeholder="ej. Compra semanal"
+      />
+
+      {error && <p className="error">{error}</p>}
+
+      <button type="submit" disabled={guardando}>
+        {guardando ? 'Guardando…' : 'Guardar movimiento'}
+      </button>
+    </form>
+  )
+}

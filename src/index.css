@@ -1,0 +1,94 @@
+:root {
+  --text: #a8adc0;
+  --text-h: #f5f6fa;
+  --bg: #0a0b10;
+  --card-bg: #14161f;
+  --card-bg-2: #1a1d29;
+  --border: #262939;
+  --accent: #8b5cf6;
+  --accent-2: #22d3ee;
+  --accent-glow: rgba(139, 92, 246, 0.35);
+  --ingreso: #34e89e;
+  --gasto: #ff5d7e;
+
+  font: 16px/145% system-ui, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(139, 92, 246, 0.12), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(34, 211, 238, 0.08), transparent 40%),
+    var(--bg);
+  min-height: 100svh;
+}
+
+h1,
+h2 {
+  color: var(--text-h);
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+h1 {
+  font-size: 28px;
+}
+
+h2 {
+  font-size: 18px;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+input,
+select {
+  font: inherit;
+  color: var(--text-h);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+::selection {
+  background: var(--accent-glow);
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fade-in-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
