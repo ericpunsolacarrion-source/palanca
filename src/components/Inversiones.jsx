@@ -76,10 +76,23 @@ export default function Inversiones({ usuarioId, onGuardado }) {
       if (!mapa.has(clave)) mapa.set(clave, { total: 0, detalle: [] })
       const entrada = mapa.get(clave)
       entrada.total += Number(a.importe)
-      entrada.detalle.push({ nombre: a.fuente?.nombre ?? 'Sin especificar', importe: Number(a.importe) })
+      entrada.detalle.push({ id: a.id, nombre: a.fuente?.nombre ?? 'Sin especificar', importe: Number(a.importe) })
     }
     return [...mapa.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1))
   }, [aportaciones])
+
+  const [eliminandoId, setEliminandoId] = useState(null)
+
+  async function handleEliminar(id) {
+    if (!window.confirm('¿Eliminar esta aportación? No se puede deshacer.')) return
+    setEliminandoId(id)
+    const { error: errorDelete } = await supabase.from('movimientos').delete().eq('id', id)
+    setEliminandoId(null)
+    if (!errorDelete) {
+      cargarAportaciones()
+      onGuardado?.()
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -137,7 +150,7 @@ export default function Inversiones({ usuarioId, onGuardado }) {
     <div className="vista">
       <div className="balance fade-in-up">
         <span className="balance-etiqueta-principal">Total invertido</span>
-        <Cifra valor={totalInvertido} className="balance-hero" />
+        <Cifra valor={totalInvertido} className="balance-hero inversion" />
 
         {porPlataforma.length > 0 && (
           <div className="inversion-plataformas">
@@ -204,11 +217,21 @@ export default function Inversiones({ usuarioId, onGuardado }) {
                 <span className="categoria">{etiquetaMes(clave)}</span>
                 <span className="importe">{formatearEuros(total)}</span>
               </div>
-              <div className="inversion-detalle">
-                {detalle.map((d, i) => (
-                  <span key={i}>
-                    {d.nombre}: {formatearEuros(d.importe)}
-                  </span>
+              <div className="inversion-detalle-lista">
+                {detalle.map((d) => (
+                  <div key={d.id} className="inversion-detalle-fila">
+                    <span>
+                      {d.nombre}: {formatearEuros(d.importe)}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn-eliminar"
+                      onClick={() => handleEliminar(d.id)}
+                      disabled={eliminandoId === d.id}
+                    >
+                      {eliminandoId === d.id ? '…' : 'Eliminar'}
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>

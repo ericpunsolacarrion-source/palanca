@@ -6,15 +6,17 @@ import { useEstadisticasGlobales } from './lib/useEstadisticasGlobales'
 import { esInversion } from './lib/categorias'
 import PantallaId from './components/PantallaId'
 import Onboarding from './components/Onboarding'
-import RegistroMovimiento from './components/RegistroMovimiento'
+import MovimientosTab from './components/MovimientosTab'
 import ListaMovimientos from './components/ListaMovimientos'
 import Balance from './components/Balance'
+import IngresosDelMes from './components/IngresosDelMes'
 import Simulador from './components/Simulador'
 import Presupuesto from './components/Presupuesto'
 import Inversiones from './components/Inversiones'
 import RecordatorioBanner from './components/RecordatorioBanner'
 import GraficoEvolucion from './components/GraficoEvolucion'
 import GraficoCategorias from './components/GraficoCategorias'
+import GraficoTasaAhorro from './components/GraficoTasaAhorro'
 import BottomNav from './components/BottomNav'
 import './App.css'
 
@@ -111,18 +113,29 @@ function App() {
               dias={diasDesdeUltimoMovimiento}
               onIrAMovimientos={() => setPestana('movimientos')}
             />
-            <Balance movimientos={movimientos} />
+            <div className="dashboard-grid">
+              <IngresosDelMes movimientos={movimientos} />
+              <Balance movimientos={movimientos} />
+            </div>
+            <GraficoTasaAhorro usuarioId={usuarioId} />
             <GraficoCategorias movimientos={movimientos} />
             <GraficoEvolucion usuarioId={usuarioId} />
-            <ListaMovimientos movimientos={movimientos.slice(0, 5)} cargando={cargando} />
+            <ListaMovimientos
+              movimientos={movimientos.slice(0, 5)}
+              cargando={cargando}
+              onEliminado={cargarMovimientos}
+            />
           </div>
         )}
 
         {pestana === 'movimientos' && (
-          <div key="movimientos" className="vista">
-            <RegistroMovimiento usuarioId={usuarioId} onGuardado={cargarMovimientos} />
-            <ListaMovimientos movimientos={movimientos} cargando={cargando} />
-          </div>
+          <MovimientosTab
+            key="movimientos"
+            usuarioId={usuarioId}
+            movimientos={movimientos}
+            cargando={cargando}
+            onGuardado={cargarMovimientos}
+          />
         )}
 
         {pestana === 'presupuesto' && (
