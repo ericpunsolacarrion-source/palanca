@@ -11,7 +11,7 @@ const SUBPESTANAS = [
   { id: 'fire', etiqueta: 'Independencia' },
 ]
 
-export default function Simulador({ ahorroMensual, gastoMensual, diasConHistorial }) {
+export default function Simulador({ usuarioId, ahorroMensual, gastoMensual, diasConHistorial }) {
   const [sub, setSub] = useState('ahorro')
 
   return (
@@ -29,9 +29,9 @@ export default function Simulador({ ahorroMensual, gastoMensual, diasConHistoria
         ))}
       </div>
 
-      {sub === 'ahorro' && <AhorroObjetivo ahorroMensual={ahorroMensual} />}
-      {sub === 'interes' && <InteresCompuesto />}
-      {sub === 'hipoteca' && <Hipoteca />}
+      {sub === 'ahorro' && <AhorroObjetivo />}
+      {sub === 'interes' && <InteresCompuesto usuarioId={usuarioId} />}
+      {sub === 'hipoteca' && <Hipoteca usuarioId={usuarioId} />}
       {sub === 'fire' && (
         <IndependenciaFinanciera
           gastoMensualActual={gastoMensual}

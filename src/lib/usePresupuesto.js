@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient'
 
 export function usePresupuesto(usuarioId) {
   const [tasaAhorroObjetivo, setTasaAhorroObjetivo] = useState(null)
+  const [objetivoInversionMensual, setObjetivoInversionMensual] = useState(null)
   const [cargando, setCargando] = useState(true)
 
   const cargar = useCallback(async () => {
@@ -15,7 +16,10 @@ export function usePresupuesto(usuarioId) {
       .eq('usuario_id', usuarioId)
       .maybeSingle()
 
-    if (!error) setTasaAhorroObjetivo(data?.tasa_ahorro_objetivo ?? null)
+    if (!error) {
+      setTasaAhorroObjetivo(data?.tasa_ahorro_objetivo ?? null)
+      setObjetivoInversionMensual(data?.objetivo_inversion_mensual ?? null)
+    }
     setCargando(false)
   }, [usuarioId])
 
@@ -32,5 +36,24 @@ export function usePresupuesto(usuarioId) {
     return !error
   }
 
-  return { tasaAhorroObjetivo, cargando, guardarTasa }
+  async function guardarObjetivoInversion(nuevoObjetivo) {
+    const { error } = await supabase
+      .from('presupuestos')
+      .upsert({
+        usuario_id: usuarioId,
+        objetivo_inversion_mensual: nuevoObjetivo,
+        updated_at: new Date().toISOString(),
+      })
+
+    if (!error) setObjetivoInversionMensual(nuevoObjetivo)
+    return !error
+  }
+
+  return {
+    tasaAhorroObjetivo,
+    objetivoInversionMensual,
+    cargando,
+    guardarTasa,
+    guardarObjetivoInversion,
+  }
 }

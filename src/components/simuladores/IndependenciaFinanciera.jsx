@@ -56,6 +56,14 @@ export default function IndependenciaFinanciera({ gastoMensualActual, ahorroMens
         Basado en la regla del 4%: necesitas un patrimonio de 25 veces tu gasto anual para
         vivir de las rentas. Estimación orientativa, no es una recomendación de inversión.
       </p>
+      <p className="ayuda">
+        ¿Cómo se calcula? A partir de tu <strong>gasto mensual</strong> (cuánto necesitas para
+        vivir) se calcula tu objetivo: gasto anual × 25. Luego, con tu{' '}
+        <strong>patrimonio invertido actual</strong> y lo que{' '}
+        <strong>ahorras/inviertes cada mes</strong>, proyectamos con la rentabilidad esperada
+        cuántos años faltan para alcanzar ese objetivo y poder dejar de depender de un sueldo,
+        es decir, "jubilarte" cuando tú decidas, no cuando toque.
+      </p>
 
       <label htmlFor="fi-gasto">Gasto mensual estimado (€)</label>
       <input

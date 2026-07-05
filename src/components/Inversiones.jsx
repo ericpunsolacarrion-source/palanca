@@ -69,6 +69,28 @@ export default function Inversiones({ usuarioId, onGuardado }) {
     return [...mapa.entries()].sort((a, b) => b[1] - a[1])
   }, [aportaciones])
 
+  const ultimosDoceMeses = useMemo(() => {
+    const hoyFecha = new Date()
+    const claves = []
+    for (let i = 11; i >= 0; i -= 1) {
+      const d = new Date(hoyFecha.getFullYear(), hoyFecha.getMonth() - i, 1)
+      claves.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+    }
+
+    const totales = new Map(claves.map((c) => [c, 0]))
+    for (const a of aportaciones) {
+      const clave = a.fecha.slice(0, 7)
+      if (totales.has(clave)) totales.set(clave, totales.get(clave) + Number(a.importe))
+    }
+
+    return claves.map((clave) => {
+      const [anio, mes] = clave.split('-')
+      const fechaMes = new Date(Number(anio), Number(mes) - 1, 1)
+      const etiqueta = new Intl.DateTimeFormat('es-ES', { month: 'short' }).format(fechaMes).replace('.', '')
+      return { clave, etiqueta, total: totales.get(clave) }
+    })
+  }, [aportaciones])
+
   const porMes = useMemo(() => {
     const mapa = new Map()
     for (const a of aportaciones) {
@@ -194,6 +216,28 @@ export default function Inversiones({ usuarioId, onGuardado }) {
           </div>
         )}
       </div>
+
+      {ultimosDoceMeses.some((m) => m.total > 0) && (
+        <div className="grafico fade-in-up">
+          <h2>Inversión mensual (12 meses)</h2>
+          <div className="inversion-meses-redondas">
+            {ultimosDoceMeses.map((m) => {
+              const maximo = Math.max(1, ...ultimosDoceMeses.map((x) => x.total))
+              const tamano = 16 + (m.total / maximo) * 26
+              return (
+                <div key={m.clave} className="inversion-mes-redonda-col">
+                  <div
+                    className={`inversion-mes-redonda ${m.total > 0 ? 'activa' : ''}`}
+                    style={{ width: tamano, height: tamano }}
+                    title={`${m.etiqueta}: ${formatearEuros(m.total)}`}
+                  />
+                  <span>{m.etiqueta}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <form className="registro-movimiento fade-in-up" onSubmit={handleSubmit}>
         <h2>Nueva aportación</h2>

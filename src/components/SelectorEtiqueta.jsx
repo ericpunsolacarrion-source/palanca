@@ -24,6 +24,7 @@ export default function SelectorEtiqueta({
       </select>
       {valor === NUEVA_ETIQUETA && (
         <input
+          id={`${id}-nuevo`}
           type="text"
           value={nuevoNombre}
           onChange={(e) => onNuevoNombreChange(e.target.value)}

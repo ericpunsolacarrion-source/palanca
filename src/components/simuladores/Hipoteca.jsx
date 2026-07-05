@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatearEuros } from '../../lib/categorias'
+import SimulacionesGuardadas from '../SimulacionesGuardadas'
 
 function calcularCuota(capital, interesAnual, meses) {
   const r = interesAnual / 100 / 12
@@ -14,7 +15,7 @@ function mesesParaAmortizar(capital, interesAnual, cuota) {
   return Math.ceil(-Math.log(1 - (capital * r) / cuota) / Math.log(1 + r))
 }
 
-export default function Hipoteca() {
+export default function Hipoteca({ usuarioId }) {
   const [modo, setModo] = useState('cuota')
 
   // Modo: calcular cuota
@@ -142,6 +143,17 @@ export default function Hipoteca() {
               </div>
             </div>
           )}
+
+          <SimulacionesGuardadas
+            usuarioId={usuarioId}
+            tipo="hipoteca"
+            datosActuales={puedeCalcularCuota ? { importe, interes, anios } : null}
+            onCargar={(datos) => {
+              setImporte(String(datos.importe))
+              setInteres(String(datos.interes))
+              setAnios(String(datos.anios))
+            }}
+          />
         </>
       ) : (
         <>

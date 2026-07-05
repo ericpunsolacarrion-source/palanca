@@ -58,6 +58,9 @@ main {
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--border);
   padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  z-index: 100;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .nav-item {
@@ -755,19 +758,23 @@ button[type='submit']:disabled {
 /* Gráfico de línea (tasa de ahorro) */
 .grafico-linea {
   width: 100%;
-  height: 90px;
+  height: 100px;
   margin-top: 12px;
-  overflow: visible;
+  display: block;
 }
 
 .linea-tasa {
   stroke: var(--accent-2);
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
 }
 
-.punto-tasa {
+.area-tasa {
   fill: var(--accent-2);
+  opacity: 0.12;
+  stroke: none;
 }
 
 .linea-cero {
@@ -781,8 +788,10 @@ button[type='submit']:disabled {
   justify-content: space-between;
   margin-top: 8px;
   font-size: 10px;
-  opacity: 0.6;
+  opacity: 0.7;
   text-transform: capitalize;
+  text-align: center;
+  line-height: 1.5;
 }
 
 /* Responsive: escritorio */
@@ -841,4 +850,367 @@ button[type='submit']:disabled {
   .presupuesto-config {
     grid-column: span 1;
   }
+}
+
+/* Métricas principales del dashboard */
+.metricas-principales {
+  background: linear-gradient(160deg, var(--card-bg-2), var(--card-bg));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.metricas-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.metrica-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metrica-bloque .etiqueta {
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.metrica-cifra {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.metrica-cifra.ingreso {
+  color: var(--ingreso);
+}
+
+.metrica-cifra.gasto {
+  color: var(--gasto);
+}
+
+.metrica-cifra.inversion {
+  color: var(--inversion);
+}
+
+.ratio-ahorro-linea {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 18px;
+  margin-bottom: 6px;
+}
+
+.ratio-barra-relleno.inversion {
+  background: linear-gradient(90deg, var(--inversion), #ffd77a);
+}
+
+.objetivo-inversion {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.objetivo-inversion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.objetivo-inversion-header strong {
+  color: var(--inversion);
+}
+
+.objetivo-inversion-detalle {
+  display: block;
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 6px;
+}
+
+.objetivo-inversion-form label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.objetivo-inversion-fila {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.objetivo-inversion-fila input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.objetivo-inversion-fila button {
+  padding: 0 16px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: white;
+  font-weight: 600;
+}
+
+@media (min-width: 860px) {
+  .metricas-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Formularios de dos campos en línea (simuladores) */
+.fila-doble {
+  display: flex;
+  gap: 8px;
+}
+
+.fila-doble input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+/* Gráfico de progreso simple (barras) usado en simuladores */
+.grafico-barras-simple {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 100px;
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.grafico-barras-simple-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 4px;
+  position: relative;
+}
+
+.grafico-barras-simple-barra {
+  width: 100%;
+  max-width: 14px;
+  background: linear-gradient(180deg, var(--accent-2), var(--accent));
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+  transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.grafico-barras-simple-etiqueta {
+  position: absolute;
+  bottom: -18px;
+  font-size: 9px;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+/* Inversión mensual: círculos por mes */
+.inversion-meses-redondas {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 70px;
+  margin-top: 12px;
+}
+
+.inversion-mes-redonda-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  height: 100%;
+}
+
+.inversion-mes-redonda {
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.inversion-mes-redonda.activa {
+  background: radial-gradient(circle at 35% 35%, #ffe4a8, var(--inversion));
+  box-shadow: 0 0 12px -2px var(--inversion-glow);
+}
+
+.inversion-mes-redonda-col span {
+  font-size: 9px;
+  opacity: 0.6;
+  text-transform: capitalize;
+}
+
+/* Interés compuesto: resultado, pie, barras y tabla */
+.ic-resultado-hero {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.ic-pie-fila {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.ic-pie {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ic-pie-leyenda {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.ic-barras {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 140px;
+  margin-top: 20px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.ic-barra-col {
+  flex: 1;
+  min-width: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  gap: 4px;
+}
+
+.ic-barra-apilada {
+  width: 100%;
+  max-width: 16px;
+  display: flex;
+  flex-direction: column-reverse;
+  border-radius: 3px 3px 0 0;
+  overflow: hidden;
+}
+
+.ic-barra-segmento.inicial {
+  background: var(--gasto);
+}
+
+.ic-barra-segmento.depositos {
+  background: var(--accent);
+}
+
+.ic-barra-segmento.interes {
+  background: var(--ingreso);
+}
+
+.ic-barra-col span {
+  font-size: 9px;
+  opacity: 0.6;
+}
+
+.ic-tabla-scroll {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+
+.ic-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ic-tabla th {
+  text-align: left;
+  padding: 6px 10px;
+  opacity: 0.6;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.ic-tabla td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-h);
+}
+
+/* Simulaciones guardadas */
+.simulaciones-guardadas {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.simulaciones-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.simulacion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.simulacion-nombre {
+  background: none;
+  border: none;
+  color: var(--text-h);
+  font-size: 13px;
+  padding: 0;
+  text-align: left;
+  flex: 1;
+}
+
+.guardar-simulacion-form {
+  display: flex;
+  gap: 8px;
+}
+
+.guardar-simulacion-form input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 13px;
+}
+
+.guardar-simulacion-form button[type='submit'] {
+  padding: 0 14px;
+  width: auto;
+  font-size: 13px;
 }

@@ -8,8 +8,7 @@ import PantallaId from './components/PantallaId'
 import Onboarding from './components/Onboarding'
 import MovimientosTab from './components/MovimientosTab'
 import ListaMovimientos from './components/ListaMovimientos'
-import Balance from './components/Balance'
-import IngresosDelMes from './components/IngresosDelMes'
+import MetricasPrincipales from './components/MetricasPrincipales'
 import Simulador from './components/Simulador'
 import Presupuesto from './components/Presupuesto'
 import Inversiones from './components/Inversiones'
@@ -113,10 +112,7 @@ function App() {
               dias={diasDesdeUltimoMovimiento}
               onIrAMovimientos={() => setPestana('movimientos')}
             />
-            <div className="dashboard-grid">
-              <IngresosDelMes movimientos={movimientos} />
-              <Balance movimientos={movimientos} />
-            </div>
+            <MetricasPrincipales usuarioId={usuarioId} movimientos={movimientos} />
             <GraficoTasaAhorro usuarioId={usuarioId} />
             <GraficoCategorias movimientos={movimientos} />
             <GraficoEvolucion usuarioId={usuarioId} />
@@ -151,6 +147,7 @@ function App() {
         {pestana === 'simulador' && (
           <Simulador
             key="simulador"
+            usuarioId={usuarioId}
             ahorroMensual={ahorroMensual}
             gastoMensual={totalGastosConsumo}
             diasConHistorial={diasConHistorial}
