@@ -1,25 +1,25 @@
-import { useHistorialMensual } from '../lib/useHistorialMensual'
+import { useMemo } from 'react'
+import { agregarPorMes } from '../lib/movimientosUtils'
 
 const ANCHO = 300
 const ALTO = 100
 const PADDING_X = 12
 const PADDING_Y = 16
+const MESES = 6
 
 function clamp(valor, min, max) {
   return Math.min(Math.max(valor, min), max)
 }
 
-export default function GraficoTasaAhorro({ usuarioId }) {
-  const { meses, cargando } = useHistorialMensual(usuarioId)
+export default function GraficoTasaAhorro({ movimientos }) {
+  const meses = useMemo(() => agregarPorMes(movimientos, MESES), [movimientos])
 
-  if (cargando) return null
-
-  const ratiosReales = meses.map((m) => (m.ingresos > 0 ? ((m.ingresos - m.gastos) / m.ingresos) * 100 : null))
+  const ratiosReales = meses.map((m) => (m.ingresos > 0 ? m.ratioAhorro : null))
   const hayDatos = ratiosReales.some((r) => r !== null)
 
   if (!hayDatos) return null
 
-  // Recortamos valores extremos solo para el dibujo (la etiqueta siempre muestra el % real)
+  // Recortamos valores extremos solo para el dibujo (la etiqueta muestra el % real)
   const ratiosVisibles = ratiosReales.map((r) => (r === null ? 0 : clamp(r, -100, 100)))
 
   const minRatio = Math.min(0, ...ratiosVisibles)

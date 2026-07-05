@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { esInversion, formatearEuros } from '../lib/categorias'
+import { formatearFecha } from '../lib/movimientosUtils'
 
 function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
   const [importe, setImporte] = useState(String(movimiento.importe))
@@ -86,12 +87,37 @@ function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
   )
 }
 
-export default function ListaMovimientos({ movimientos, cargando, onEliminado, soloLectura }) {
+function SkeletonLista() {
+  return (
+    <ul className="lista-movimientos" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <li key={i} className="skeleton-fila">
+          <div className="skeleton skeleton-linea" style={{ width: '55%' }} />
+          <div className="skeleton skeleton-linea" style={{ width: '35%' }} />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export default function ListaMovimientos({ movimientos, cargando, onEliminado, soloLectura, onIrARegistro }) {
   const [eliminandoId, setEliminandoId] = useState(null)
   const [editandoId, setEditandoId] = useState(null)
 
-  if (cargando) return <p>Cargando movimientos…</p>
-  if (movimientos.length === 0) return <p>Todavía no hay movimientos este mes.</p>
+  if (cargando) return <SkeletonLista />
+
+  if (movimientos.length === 0) {
+    return (
+      <div className="estado-vacio">
+        <p>Todavía no hay movimientos.</p>
+        {onIrARegistro && (
+          <button type="button" onClick={onIrARegistro}>
+            Registrar el primero
+          </button>
+        )}
+      </div>
+    )
+  }
 
   async function handleEliminar(id) {
     if (!window.confirm('¿Eliminar este movimiento? No se puede deshacer.')) return
@@ -135,7 +161,8 @@ export default function ListaMovimientos({ movimientos, cargando, onEliminado, s
             </div>
             <div className="linea-secundaria">
               <span>
-                {m.fecha} <span className="badge-fijo">{m.es_fijo ? 'Fijo' : 'Variable'}</span>
+                {formatearFecha(m.fecha)}{' '}
+                <span className="badge-fijo">{m.es_fijo ? 'Fijo' : 'Variable'}</span>
               </span>
               <div className="linea-acciones">
                 {m.nota && <span className="nota">{m.nota}</span>}

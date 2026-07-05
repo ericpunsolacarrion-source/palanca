@@ -1,29 +1,25 @@
 import { useState } from 'react'
 import RegistroMovimiento from './RegistroMovimiento'
 import ListaMovimientos from './ListaMovimientos'
-import { esInversion, formatearEuros } from '../lib/categorias'
+import { formatearEuros } from '../lib/categorias'
+import { totalesDe } from '../lib/movimientosUtils'
 
-function ResumenMes({ movimientos }) {
-  const ingresos = movimientos
-    .filter((m) => m.tipo === 'ingreso')
-    .reduce((s, m) => s + Number(m.importe), 0)
-  const gastos = movimientos
-    .filter((m) => m.tipo === 'gasto' && !esInversion(m))
-    .reduce((s, m) => s + Number(m.importe), 0)
+function ResumenMes({ movimientosMes }) {
+  const { ingresos, gastos } = totalesDe(movimientosMes)
 
   return (
     <div className="resumen-mes-mini">
       <span>
-        Ingresado <strong className="ingreso">{formatearEuros(ingresos)}</strong>
+        Este mes: ingresado <strong className="ingreso">{formatearEuros(ingresos)}</strong>
       </span>
       <span>
-        Gastado <strong className="gasto">{formatearEuros(gastos)}</strong>
+        gastado <strong className="gasto">{formatearEuros(gastos)}</strong>
       </span>
     </div>
   )
 }
 
-export default function MovimientosTab({ usuarioId, movimientos, cargando, onGuardado }) {
+export default function MovimientosTab({ usuarioId, movimientos, movimientosMes, cargando, onGuardado }) {
   const [sub, setSub] = useState('nuevo')
 
   return (
@@ -45,8 +41,13 @@ export default function MovimientosTab({ usuarioId, movimientos, cargando, onGua
 
       {sub === 'historial' && (
         <>
-          {!cargando && movimientos.length > 0 && <ResumenMes movimientos={movimientos} />}
-          <ListaMovimientos movimientos={movimientos} cargando={cargando} onEliminado={onGuardado} />
+          {!cargando && movimientos.length > 0 && <ResumenMes movimientosMes={movimientosMes} />}
+          <ListaMovimientos
+            movimientos={movimientos}
+            cargando={cargando}
+            onEliminado={onGuardado}
+            onIrARegistro={() => setSub('nuevo')}
+          />
         </>
       )}
     </div>

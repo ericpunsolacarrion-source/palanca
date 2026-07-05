@@ -1144,52 +1144,169 @@ button[type='submit']:disabled {
   white-space: nowrap;
 }
 
-/* Inversión mensual: círculos por mes */
-.inversion-meses-redondas {
+/* Inversión mensual: barras verticales doradas */
+.inv-barras {
+  position: relative;
   display: flex;
-  justify-content: space-between;
   align-items: flex-end;
-  height: 70px;
-  margin-top: 12px;
-  overflow-x: auto;
   gap: 4px;
+  margin-top: 16px;
 }
 
-.inversion-mes-redonda-col {
-  flex: none;
-  min-width: 28px;
+.inv-col {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
-  height: 100%;
+  gap: 4px;
 }
 
-.inversion-mes-redonda {
-  border-radius: 50%;
-  background: var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.inversion-mes-redonda.activa {
-  background: radial-gradient(circle at 35% 35%, #ffe4a8, var(--inversion));
-  box-shadow: 0 0 12px -2px var(--inversion-glow);
-}
-
-.inversion-mes-redonda-importe {
+.inv-importe {
   font-size: 9px;
   font-weight: 700;
-  color: #2a1c00;
+  color: var(--inversion);
+  font-variant-numeric: tabular-nums;
+  min-height: 13px;
+  white-space: nowrap;
 }
 
-.inversion-mes-redonda-col span {
+.inv-zona-barra {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.inv-barra {
+  width: 100%;
+  max-width: 18px;
+  border-radius: 4px 4px 2px 2px;
+  background: var(--border);
+  transform-origin: bottom;
+  animation: crecer-barra 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.inv-barra.activa {
+  background: linear-gradient(180deg, #ffe4a8, var(--inversion) 60%, #b8860b);
+  box-shadow: 0 0 14px -4px var(--inversion-glow);
+}
+
+@keyframes crecer-barra {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.inv-mes {
   font-size: 9px;
   opacity: 0.6;
   text-transform: capitalize;
+}
+
+.inv-linea-media {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--inversion);
+  opacity: 0.75;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.inv-linea-media span {
+  position: absolute;
+  right: 0;
+  top: -16px;
+  font-size: 9px;
+  color: var(--inversion);
+  background: var(--card-bg);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* Estados vacíos, skeletons y errores */
+.estado-vacio {
+  text-align: center;
+  padding: 28px 16px;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.estado-vacio p {
+  color: var(--text-h);
+}
+
+.estado-vacio .ayuda {
+  color: var(--text);
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.estado-vacio button {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: white;
+  font-weight: 600;
+}
+
+.skeleton-fila {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--border) 25%, var(--card-bg-2) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: brillo-skeleton 1.4s ease infinite;
+  border-radius: 6px;
+}
+
+.skeleton-linea {
+  height: 13px;
+}
+
+@keyframes brillo-skeleton {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.aviso-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(255, 93, 126, 0.08);
+  border: 1px solid var(--gasto);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.aviso-error button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: var(--gasto);
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
 }
 
 /* Interés compuesto: resultado, pie, barras y tabla */

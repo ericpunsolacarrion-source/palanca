@@ -1,12 +1,12 @@
-import { useHistorialMensual } from '../lib/useHistorialMensual'
+import { useMemo } from 'react'
+import { agregarPorMes } from '../lib/movimientosUtils'
 import { formatearEuros } from '../lib/categorias'
 
 const ALTURA = 90
+const MESES = 6
 
-export default function GraficoEvolucion({ usuarioId }) {
-  const { meses, cargando } = useHistorialMensual(usuarioId)
-
-  if (cargando) return null
+export default function GraficoEvolucion({ movimientos }) {
+  const meses = useMemo(() => agregarPorMes(movimientos, MESES), [movimientos])
 
   const maximo = Math.max(1, ...meses.flatMap((m) => [m.ingresos, m.gastos]))
 

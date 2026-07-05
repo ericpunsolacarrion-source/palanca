@@ -1,30 +1,63 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
-import { CATEGORIA_INVERSION, formatearEuros } from '../lib/categorias'
+import { CATEGORIA_INVERSION, esInversion, formatearEuros } from '../lib/categorias'
+import { agregarPorMes, claveMes, formatearCompacto, formatearFecha } from '../lib/movimientosUtils'
 import { useCountUp } from '../lib/useCountUp'
 import SelectorEtiqueta, { resolverEtiqueta } from './SelectorEtiqueta'
 
 const hoy = () => new Date().toISOString().slice(0, 10)
+const ALTO_BARRAS = 110
 
 function Cifra({ valor, className }) {
   const animado = useCountUp(valor)
   return <span className={className}>{formatearEuros(animado)}</span>
 }
 
-function etiquetaMes(clave) {
+function etiquetaMesLarga(clave) {
   const [anio, mes] = clave.split('-')
   const fecha = new Date(Number(anio), Number(mes) - 1, 1)
   const texto = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(fecha)
   return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
 
-export default function Inversiones({ usuarioId, onGuardado }) {
+function GraficoInversionMensual({ meses, media }) {
+  const maximo = Math.max(1, ...meses.map((m) => m.invertido))
+  const pctMedia = (media / maximo) * 100
+
+  return (
+    <div className="grafico fade-in-up">
+      <h2>Inversión mensual (12 meses)</h2>
+      <div className="inv-barras" style={{ height: ALTO_BARRAS + 40 }}>
+        {media > 0 && (
+          <div className="inv-linea-media" style={{ bottom: `${20 + (pctMedia / 100) * ALTO_BARRAS}px` }}>
+            <span>media {formatearEuros(media)}</span>
+          </div>
+        )}
+        {meses.map((m, i) => {
+          const pct = (m.invertido / maximo) * 100
+          return (
+            <div key={m.clave} className="inv-col">
+              <span className="inv-importe">{m.invertido > 0 ? formatearCompacto(m.invertido) : ''}</span>
+              <div className="inv-zona-barra" style={{ height: ALTO_BARRAS }}>
+                <div
+                  className={`inv-barra ${m.invertido > 0 ? 'activa' : ''}`}
+                  style={{ height: `${Math.max(pct, 2)}%`, animationDelay: `${i * 0.04}s` }}
+                  title={`${m.etiqueta}: ${formatearEuros(m.invertido)}`}
+                />
+              </div>
+              <span className="inv-mes">{m.etiqueta}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+export default function Inversiones({ usuarioId, movimientos, onGuardado }) {
   const { items: categorias, crear: crearCategoria } = useEtiquetas('categorias', usuarioId, 'gasto')
   const { items: fuentes, crear: crearFuente } = useEtiquetas('fuentes', usuarioId, 'gasto')
-
-  const [aportaciones, setAportaciones] = useState([])
-  const [cargando, setCargando] = useState(true)
 
   const [fuenteId, setFuenteId] = useState('')
   const [nuevaFuente, setNuevaFuente] = useState('')
@@ -35,25 +68,9 @@ export default function Inversiones({ usuarioId, onGuardado }) {
 
   const categoriaInversion = categorias.find((c) => c.nombre === CATEGORIA_INVERSION)
 
-  const cargarAportaciones = useCallback(async () => {
-    if (!usuarioId || !categoriaInversion) return
-    setCargando(true)
-
-    const { data, error: errorSelect } = await supabase
-      .from('movimientos')
-      .select('id, importe, fecha, fuente:fuentes(id, nombre)')
-      .eq('usuario_id', usuarioId)
-      .eq('categoria_id', categoriaInversion.id)
-      .order('fecha', { ascending: false })
-
-    if (!errorSelect) setAportaciones(data)
-    setCargando(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuarioId, categoriaInversion?.id])
-
-  useEffect(() => {
-    cargarAportaciones()
-  }, [cargarAportaciones])
+  // Las aportaciones SON movimientos con categoría "Inversion": misma fuente
+  // de datos que el resto de la app, siempre sincronizado.
+  const aportaciones = useMemo(() => movimientos.filter(esInversion), [movimientos])
 
   const totalInvertido = useMemo(
     () => aportaciones.reduce((s, a) => s + Number(a.importe), 0),
@@ -69,37 +86,17 @@ export default function Inversiones({ usuarioId, onGuardado }) {
     return [...mapa.entries()].sort((a, b) => b[1] - a[1])
   }, [aportaciones])
 
-  const ultimosDoceMeses = useMemo(() => {
-    const hoyFecha = new Date()
-    const claves = []
-    for (let i = 11; i >= 0; i -= 1) {
-      const d = new Date(hoyFecha.getFullYear(), hoyFecha.getMonth() - i, 1)
-      claves.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
-    }
-
-    const totales = new Map(claves.map((c) => [c, 0]))
-    for (const a of aportaciones) {
-      const clave = a.fecha.slice(0, 7)
-      if (totales.has(clave)) totales.set(clave, totales.get(clave) + Number(a.importe))
-    }
-
-    return claves.map((clave) => {
-      const [anio, mes] = clave.split('-')
-      const fechaMes = new Date(Number(anio), Number(mes) - 1, 1)
-      const etiqueta = new Intl.DateTimeFormat('es-ES', { month: 'short' }).format(fechaMes).replace('.', '')
-      return { clave, etiqueta, total: totales.get(clave) }
-    })
-  }, [aportaciones])
+  const ultimosDoceMeses = useMemo(() => agregarPorMes(aportaciones, 12), [aportaciones])
 
   const mediaMensual = useMemo(
-    () => ultimosDoceMeses.reduce((s, m) => s + m.total, 0) / 12,
+    () => ultimosDoceMeses.reduce((s, m) => s + m.invertido, 0) / 12,
     [ultimosDoceMeses],
   )
 
   const porMes = useMemo(() => {
     const mapa = new Map()
     for (const a of aportaciones) {
-      const clave = a.fecha.slice(0, 7)
+      const clave = claveMes(a.fecha)
       if (!mapa.has(clave)) mapa.set(clave, { total: 0, detalle: [] })
       const entrada = mapa.get(clave)
       entrada.total += Number(a.importe)
@@ -124,10 +121,7 @@ export default function Inversiones({ usuarioId, onGuardado }) {
     setEliminandoId(id)
     const { error: errorDelete } = await supabase.from('movimientos').delete().eq('id', id)
     setEliminandoId(null)
-    if (!errorDelete) {
-      cargarAportaciones()
-      onGuardado?.()
-    }
+    if (!errorDelete) onGuardado?.()
   }
 
   function empezarEdicion(d) {
@@ -147,7 +141,6 @@ export default function Inversiones({ usuarioId, onGuardado }) {
     setGuardandoEdit(false)
     if (!errorUpdate) {
       setEditando(null)
-      cargarAportaciones()
       onGuardado?.()
     }
   }
@@ -200,7 +193,6 @@ export default function Inversiones({ usuarioId, onGuardado }) {
     setImporte('')
     setFuenteId('')
     setNuevaFuente('')
-    cargarAportaciones()
     onGuardado?.()
   }
 
@@ -227,28 +219,8 @@ export default function Inversiones({ usuarioId, onGuardado }) {
         )}
       </div>
 
-      {ultimosDoceMeses.some((m) => m.total > 0) && (
-        <div className="grafico fade-in-up">
-          <h2>Inversión mensual (12 meses)</h2>
-          <div className="inversion-meses-redondas">
-            {ultimosDoceMeses.map((m) => {
-              const maximo = Math.max(1, ...ultimosDoceMeses.map((x) => x.total))
-              const tamano = 28 + (m.total / maximo) * 22
-              return (
-                <div key={m.clave} className="inversion-mes-redonda-col">
-                  <div
-                    className={`inversion-mes-redonda ${m.total > 0 ? 'activa' : ''}`}
-                    style={{ width: tamano, height: tamano }}
-                    title={`${m.etiqueta}: ${formatearEuros(m.total)}`}
-                  >
-                    {m.total > 0 && <span className="inversion-mes-redonda-importe">{Math.round(m.total)}</span>}
-                  </div>
-                  <span>{m.etiqueta}</span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+      {ultimosDoceMeses.some((m) => m.invertido > 0) && (
+        <GraficoInversionMensual meses={ultimosDoceMeses} media={mediaMensual} />
       )}
 
       <form className="registro-movimiento fade-in-up" onSubmit={handleSubmit}>
@@ -292,16 +264,19 @@ export default function Inversiones({ usuarioId, onGuardado }) {
         </button>
       </form>
 
-      {cargando ? (
-        <p>Cargando historial…</p>
-      ) : porMes.length === 0 ? (
-        <p>Todavía no has registrado ninguna aportación.</p>
+      {porMes.length === 0 ? (
+        <div className="estado-vacio">
+          <p>Todavía no has registrado ninguna aportación.</p>
+          <p className="ayuda">
+            Registra arriba tu primera inversión y verás aquí el desglose por mes y plataforma.
+          </p>
+        </div>
       ) : (
         <div className="inversion-historial">
           {porMes.map(([clave, { total, detalle }]) => (
             <div key={clave} className="inversion-mes fade-in-up">
               <div className="linea-principal">
-                <span className="categoria">{etiquetaMes(clave)}</span>
+                <span className="categoria">{etiquetaMesLarga(clave)}</span>
                 <span className="importe">{formatearEuros(total)}</span>
               </div>
               <div className="inversion-detalle-lista">
@@ -333,7 +308,7 @@ export default function Inversiones({ usuarioId, onGuardado }) {
                   ) : (
                     <div key={d.id} className="inversion-detalle-fila">
                       <span>
-                        {d.nombre}: {formatearEuros(d.importe)}
+                        {formatearFecha(d.fecha)} · {d.nombre}: {formatearEuros(d.importe)}
                       </span>
                       <span className="grupo-botones">
                         <button type="button" className="btn-editar" onClick={() => empezarEdicion(d)}>
