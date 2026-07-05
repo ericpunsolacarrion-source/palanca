@@ -91,6 +91,11 @@ export default function Inversiones({ usuarioId, onGuardado }) {
     })
   }, [aportaciones])
 
+  const mediaMensual = useMemo(
+    () => ultimosDoceMeses.reduce((s, m) => s + m.total, 0) / 12,
+    [ultimosDoceMeses],
+  )
+
   const porMes = useMemo(() => {
     const mapa = new Map()
     for (const a of aportaciones) {
@@ -204,6 +209,11 @@ export default function Inversiones({ usuarioId, onGuardado }) {
       <div className="balance fade-in-up">
         <span className="balance-etiqueta-principal">Total invertido</span>
         <Cifra valor={totalInvertido} className="balance-hero inversion" />
+        {mediaMensual > 0 && (
+          <span className="balance-etiqueta-principal">
+            Media de {formatearEuros(mediaMensual)} al mes (últimos 12 meses)
+          </span>
+        )}
 
         {porPlataforma.length > 0 && (
           <div className="inversion-plataformas">
@@ -223,14 +233,16 @@ export default function Inversiones({ usuarioId, onGuardado }) {
           <div className="inversion-meses-redondas">
             {ultimosDoceMeses.map((m) => {
               const maximo = Math.max(1, ...ultimosDoceMeses.map((x) => x.total))
-              const tamano = 16 + (m.total / maximo) * 26
+              const tamano = 28 + (m.total / maximo) * 22
               return (
                 <div key={m.clave} className="inversion-mes-redonda-col">
                   <div
                     className={`inversion-mes-redonda ${m.total > 0 ? 'activa' : ''}`}
                     style={{ width: tamano, height: tamano }}
                     title={`${m.etiqueta}: ${formatearEuros(m.total)}`}
-                  />
+                  >
+                    {m.total > 0 && <span className="inversion-mes-redonda-importe">{Math.round(m.total)}</span>}
+                  </div>
                   <span>{m.etiqueta}</span>
                 </div>
               )

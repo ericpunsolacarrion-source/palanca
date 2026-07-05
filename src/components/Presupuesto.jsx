@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { esInversion, formatearEuros } from '../lib/categorias'
 import { usePresupuesto } from '../lib/usePresupuesto'
 import { useCountUp } from '../lib/useCountUp'
@@ -8,9 +8,24 @@ function Cifra({ valor, className }) {
   return <span className={className}>{formatearEuros(animado)}</span>
 }
 
+function diasRestantesDelMes() {
+  const hoy = new Date()
+  const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate()
+  return ultimoDia - hoy.getDate() + 1
+}
+
 export default function Presupuesto({ usuarioId, movimientos }) {
-  const { tasaAhorroObjetivo, cargando, guardarTasa } = usePresupuesto(usuarioId)
+  const {
+    metodo,
+    tasaAhorroObjetivo,
+    gastoMaximoFijo,
+    configurado,
+    cargando,
+    guardarPresupuesto,
+  } = usePresupuesto(usuarioId)
+
   const [editando, setEditando] = useState(false)
+  const [metodoInput, setMetodoInput] = useState('tasa')
   const [valorInput, setValorInput] = useState('')
   const [guardando, setGuardando] = useState(false)
 
@@ -25,50 +40,117 @@ export default function Presupuesto({ usuarioId, movimientos }) {
 
   const ratioAhorroReal = totalIngresos > 0 ? ((totalIngresos - totalGastos) / totalIngresos) * 100 : 0
 
+  const topCategorias = useMemo(() => {
+    const mapa = new Map()
+    for (const m of movimientos) {
+      if (m.tipo !== 'gasto' || esInversion(m)) continue
+      const nombre = m.categoria?.nombre ?? 'Sin categoría'
+      mapa.set(nombre, (mapa.get(nombre) ?? 0) + Number(m.importe))
+    }
+    return [...mapa.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4)
+  }, [movimientos])
+
+  const [errorGuardado, setErrorGuardado] = useState(null)
+
   async function handleGuardar(e) {
     e.preventDefault()
     const numero = Number(valorInput)
-    if (numero < 0 || numero > 100) return
+    if (numero <= 0) return
+    if (metodoInput === 'tasa' && numero > 100) return
     setGuardando(true)
-    await guardarTasa(numero)
+    setErrorGuardado(null)
+    const ok = await guardarPresupuesto(metodoInput, numero)
     setGuardando(false)
-    setEditando(false)
+    if (ok) {
+      setEditando(false)
+    } else {
+      setErrorGuardado('No se ha podido guardar. Inténtalo de nuevo.')
+    }
   }
 
   if (cargando) return <p>Cargando presupuesto…</p>
 
-  if (tasaAhorroObjetivo === null || editando) {
+  if (!configurado || editando) {
     return (
       <form className="presupuesto-config fade-in-up" onSubmit={handleGuardar}>
-        <h2>{tasaAhorroObjetivo === null ? 'Define tu presupuesto' : 'Ajustar objetivo'}</h2>
-        <p className="ayuda">
-          ¿Qué porcentaje de tus ingresos quieres ahorrar cada mes? Con eso calculamos
-          automáticamente cuánto puedes gastar.
-        </p>
-        <label htmlFor="tasa">Tasa de ahorro objetivo (%)</label>
-        <input
-          id="tasa"
-          type="number"
-          inputMode="decimal"
-          min="0"
-          max="100"
-          step="1"
-          value={valorInput}
-          onChange={(e) => setValorInput(e.target.value)}
-          placeholder="ej. 20"
-          autoFocus
-        />
+        <h2>{configurado ? 'Ajustar presupuesto' : 'Define tu presupuesto'}</h2>
+        <p className="ayuda">Elige cómo prefieres limitar tu gasto mensual.</p>
+
+        <div className="tipo-toggle">
+          <button
+            type="button"
+            className={metodoInput === 'tasa' ? 'activo' : ''}
+            onClick={() => setMetodoInput('tasa')}
+          >
+            Por tasa de ahorro
+          </button>
+          <button
+            type="button"
+            className={metodoInput === 'fijo' ? 'activo' : ''}
+            onClick={() => setMetodoInput('fijo')}
+          >
+            Gasto máximo fijo
+          </button>
+        </div>
+
+        {metodoInput === 'tasa' ? (
+          <>
+            <label htmlFor="tasa">Tasa de ahorro objetivo (%)</label>
+            <input
+              id="tasa"
+              type="number"
+              inputMode="decimal"
+              min="0"
+              max="100"
+              step="1"
+              value={valorInput}
+              onChange={(e) => setValorInput(e.target.value)}
+              placeholder="ej. 20"
+              autoFocus
+            />
+            <p className="ayuda">
+              Calculamos cuánto puedes gastar cada mes según tus ingresos reales.
+            </p>
+          </>
+        ) : (
+          <>
+            <label htmlFor="fijo">¿Cuánto quieres gastar como máximo al mes? (€)</label>
+            <input
+              id="fijo"
+              type="number"
+              inputMode="decimal"
+              min="0"
+              value={valorInput}
+              onChange={(e) => setValorInput(e.target.value)}
+              placeholder="ej. 500"
+              autoFocus
+            />
+            <p className="ayuda">Un límite fijo, sin importar cuánto ingreses ese mes.</p>
+          </>
+        )}
+
+        {errorGuardado && <p className="error">{errorGuardado}</p>}
+
         <button type="submit" disabled={guardando || valorInput === ''}>
-          {guardando ? 'Guardando…' : 'Guardar objetivo'}
+          {guardando ? 'Guardando…' : 'Guardar presupuesto'}
         </button>
+
+        {configurado && (
+          <button type="button" className="btn-eliminar" onClick={() => setEditando(false)}>
+            Cancelar
+          </button>
+        )}
       </form>
     )
   }
 
-  const presupuestoGasto = totalIngresos * (1 - tasaAhorroObjetivo / 100)
+  const presupuestoGasto = metodo === 'fijo' ? gastoMaximoFijo : totalIngresos * (1 - tasaAhorroObjetivo / 100)
   const restante = presupuestoGasto - totalGastos
   const porcentajeGastado = presupuestoGasto > 0 ? (totalGastos / presupuestoGasto) * 100 : 0
   const sobrepasado = totalGastos > presupuestoGasto && presupuestoGasto > 0
+  const dias = diasRestantesDelMes()
+  const presupuestoDiario = restante > 0 ? restante / dias : 0
+  const sinIngresosParaCalcular = metodo === 'tasa' && totalIngresos === 0
 
   return (
     <div className="presupuesto fade-in-up">
@@ -78,28 +160,28 @@ export default function Presupuesto({ usuarioId, movimientos }) {
           type="button"
           className="link"
           onClick={() => {
-            setValorInput(String(tasaAhorroObjetivo))
+            setMetodoInput(metodo)
+            setValorInput(String(metodo === 'fijo' ? gastoMaximoFijo : tasaAhorroObjetivo))
             setEditando(true)
           }}
         >
-          Editar objetivo
+          Editar
         </button>
       </div>
 
       <span className="balance-etiqueta-principal">
-        Objetivo: ahorrar el {tasaAhorroObjetivo}% de tus ingresos
+        {metodo === 'fijo'
+          ? `Objetivo: gastar máximo ${formatearEuros(gastoMaximoFijo)} al mes`
+          : `Objetivo: ahorrar el ${tasaAhorroObjetivo}% de tus ingresos`}
       </span>
 
-      {totalIngresos === 0 ? (
+      {sinIngresosParaCalcular ? (
         <p className="ayuda" style={{ marginTop: 12 }}>
           Registra algún ingreso este mes para calcular tu presupuesto de gasto.
         </p>
       ) : (
         <>
-          <Cifra
-            valor={presupuestoGasto}
-            className="balance-hero"
-          />
+          <Cifra valor={presupuestoGasto} className="balance-hero" />
           <span className="balance-etiqueta-principal">disponible para gastar este mes</span>
 
           <div className="ratio-barra" style={{ marginTop: 16 }}>
@@ -122,16 +204,39 @@ export default function Presupuesto({ usuarioId, movimientos }) {
             </div>
             <div className="balance-item">
               <span className="etiqueta">Ahorro real</span>
-              <span className={`valor ${ratioAhorroReal >= tasaAhorroObjetivo ? 'ingreso' : 'gasto'}`}>
-                {ratioAhorroReal.toFixed(1)}%
-              </span>
+              <span className="valor">{ratioAhorroReal.toFixed(1)}%</span>
             </div>
           </div>
+
+          {restante > 0 && (
+            <p className="presupuesto-diario">
+              Puedes gastar <strong>{formatearEuros(presupuestoDiario)}</strong> al día durante los{' '}
+              {dias} días que quedan de mes.
+            </p>
+          )}
 
           {sobrepasado && (
             <p className="error" style={{ marginTop: 12 }}>
               Has superado tu presupuesto de gasto este mes.
             </p>
+          )}
+
+          {topCategorias.length > 0 && (
+            <div className="presupuesto-categorias">
+              <span className="balance-etiqueta-principal">En qué se te va el presupuesto</span>
+              {topCategorias.map(([nombre, valor]) => (
+                <div key={nombre} className="presupuesto-categoria-fila">
+                  <span>{nombre}</span>
+                  <div className="mini-barra">
+                    <div
+                      className="mini-barra-relleno"
+                      style={{ width: `${presupuestoGasto > 0 ? Math.min((valor / presupuestoGasto) * 100, 100) : 0}%` }}
+                    />
+                  </div>
+                  <span className="presupuesto-categoria-valor">{formatearEuros(valor)}</span>
+                </div>
+              ))}
+            </div>
           )}
         </>
       )}

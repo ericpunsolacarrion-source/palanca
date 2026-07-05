@@ -15,6 +15,7 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
   const [fecha, setFecha] = useState(hoy())
   const [esFijo, setEsFijo] = useState(false)
   const [nota, setNota] = useState('')
+  const [mostrarNota, setMostrarNota] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
 
@@ -75,6 +76,7 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
 
     setImporte('')
     setNota('')
+    setMostrarNota(false)
     setCategoriaId('')
     setNuevaCategoria('')
     setFuenteId('')
@@ -84,9 +86,7 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
   }
 
   return (
-    <form className="registro-movimiento" onSubmit={handleSubmit}>
-      <h2>Nuevo movimiento</h2>
-
+    <form className="registro-movimiento registro-movimiento-v2" onSubmit={handleSubmit}>
       <div className="tipo-toggle">
         <button
           type="button"
@@ -102,6 +102,21 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
         >
           Ingreso
         </button>
+      </div>
+
+      <div className="importe-hero">
+        <span className="importe-hero-simbolo">€</span>
+        <input
+          id="importe"
+          type="number"
+          inputMode="decimal"
+          step="0.01"
+          min="0"
+          value={importe}
+          onChange={(e) => setImporte(e.target.value)}
+          placeholder="0,00"
+          autoFocus
+        />
       </div>
 
       <SelectorEtiqueta
@@ -126,43 +141,42 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
         placeholder={tipo === 'ingreso' ? 'ej. Trabajo restaurante' : 'ej. Alquiler piso'}
       />
 
-      <label htmlFor="importe">Importe (€)</label>
-      <input
-        id="importe"
-        type="number"
-        inputMode="decimal"
-        step="0.01"
-        min="0"
-        value={importe}
-        onChange={(e) => setImporte(e.target.value)}
-        placeholder="0,00"
-      />
-
-      <label htmlFor="fecha">Fecha</label>
-      <input id="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
-
-      <div className="tipo-toggle">
-        <button type="button" className={!esFijo ? 'activo' : ''} onClick={() => setEsFijo(false)}>
-          Variable
-        </button>
-        <button type="button" className={esFijo ? 'activo' : ''} onClick={() => setEsFijo(true)}>
-          Fijo
-        </button>
+      <div className="fila-fecha-fijo">
+        <input
+          id="fecha"
+          type="date"
+          value={fecha}
+          onChange={(e) => setFecha(e.target.value)}
+        />
+        <div className="tipo-toggle">
+          <button type="button" className={!esFijo ? 'activo' : ''} onClick={() => setEsFijo(false)}>
+            Variable
+          </button>
+          <button type="button" className={esFijo ? 'activo' : ''} onClick={() => setEsFijo(true)}>
+            Fijo
+          </button>
+        </div>
       </div>
 
-      <label htmlFor="nota">Nota (opcional)</label>
-      <input
-        id="nota"
-        type="text"
-        value={nota}
-        onChange={(e) => setNota(e.target.value)}
-        placeholder="ej. Compra semanal"
-      />
+      {mostrarNota ? (
+        <input
+          id="nota"
+          type="text"
+          value={nota}
+          onChange={(e) => setNota(e.target.value)}
+          placeholder="ej. Compra semanal"
+          autoFocus
+        />
+      ) : (
+        <button type="button" className="link" onClick={() => setMostrarNota(true)}>
+          + Añadir nota
+        </button>
+      )}
 
       {error && <p className="error">{error}</p>}
 
-      <button type="submit" disabled={guardando}>
-        {guardando ? 'Guardando…' : 'Guardar movimiento'}
+      <button type="submit" disabled={guardando} className="btn-guardar-movimiento">
+        {guardando ? 'Guardando…' : `Guardar ${tipo}`}
       </button>
     </form>
   )

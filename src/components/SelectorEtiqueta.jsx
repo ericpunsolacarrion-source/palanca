@@ -13,15 +13,25 @@ export default function SelectorEtiqueta({
   return (
     <>
       <label htmlFor={id}>{label}</label>
-      <select id={id} value={valor} onChange={(e) => onChange(e.target.value)}>
-        <option value="">Sin especificar</option>
+      <div className="chips-fila" role="group" aria-label={label}>
         {items.map((item) => (
-          <option key={item.id} value={item.id}>
+          <button
+            key={item.id}
+            type="button"
+            className={valor === item.id ? 'chip activo' : 'chip'}
+            onClick={() => onChange(item.id)}
+          >
             {item.nombre}
-          </option>
+          </button>
         ))}
-        <option value={NUEVA_ETIQUETA}>+ Añadir nuevo…</option>
-      </select>
+        <button
+          type="button"
+          className={valor === NUEVA_ETIQUETA ? 'chip chip-nuevo activo' : 'chip chip-nuevo'}
+          onClick={() => onChange(NUEVA_ETIQUETA)}
+        >
+          + Nuevo
+        </button>
+      </div>
       {valor === NUEVA_ETIQUETA && (
         <input
           id={`${id}-nuevo`}

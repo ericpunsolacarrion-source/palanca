@@ -116,11 +116,8 @@ function App() {
             <GraficoTasaAhorro usuarioId={usuarioId} />
             <GraficoCategorias movimientos={movimientos} />
             <GraficoEvolucion usuarioId={usuarioId} />
-            <ListaMovimientos
-              movimientos={movimientos.slice(0, 5)}
-              cargando={cargando}
-              onEliminado={cargarMovimientos}
-            />
+            {movimientos.length > 0 && <h2 className="subtitulo-seccion">Últimos movimientos</h2>}
+            <ListaMovimientos movimientos={movimientos.slice(0, 5)} cargando={cargando} soloLectura />
           </div>
         )}
 

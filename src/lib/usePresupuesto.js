@@ -2,8 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 
 export function usePresupuesto(usuarioId) {
+  const [metodo, setMetodo] = useState('tasa')
   const [tasaAhorroObjetivo, setTasaAhorroObjetivo] = useState(null)
+  const [gastoMaximoFijo, setGastoMaximoFijo] = useState(null)
   const [objetivoInversionMensual, setObjetivoInversionMensual] = useState(null)
+  const [configurado, setConfigurado] = useState(false)
   const [cargando, setCargando] = useState(true)
 
   const cargar = useCallback(async () => {
@@ -17,8 +20,11 @@ export function usePresupuesto(usuarioId) {
       .maybeSingle()
 
     if (!error) {
+      setMetodo(data?.metodo ?? 'tasa')
       setTasaAhorroObjetivo(data?.tasa_ahorro_objetivo ?? null)
+      setGastoMaximoFijo(data?.gasto_maximo_fijo ?? null)
       setObjetivoInversionMensual(data?.objetivo_inversion_mensual ?? null)
+      setConfigurado(data?.tasa_ahorro_objetivo != null || data?.gasto_maximo_fijo != null)
     }
     setCargando(false)
   }, [usuarioId])
@@ -27,12 +33,23 @@ export function usePresupuesto(usuarioId) {
     cargar()
   }, [cargar])
 
-  async function guardarTasa(nuevaTasa) {
-    const { error } = await supabase
-      .from('presupuestos')
-      .upsert({ usuario_id: usuarioId, tasa_ahorro_objetivo: nuevaTasa, updated_at: new Date().toISOString() })
+  async function guardarPresupuesto(nuevoMetodo, valor) {
+    const payload = {
+      usuario_id: usuarioId,
+      metodo: nuevoMetodo,
+      updated_at: new Date().toISOString(),
+      tasa_ahorro_objetivo: nuevoMetodo === 'tasa' ? valor : null,
+      gasto_maximo_fijo: nuevoMetodo === 'fijo' ? valor : null,
+    }
 
-    if (!error) setTasaAhorroObjetivo(nuevaTasa)
+    const { error } = await supabase.from('presupuestos').upsert(payload)
+
+    if (!error) {
+      setMetodo(nuevoMetodo)
+      setTasaAhorroObjetivo(payload.tasa_ahorro_objetivo)
+      setGastoMaximoFijo(payload.gasto_maximo_fijo)
+      setConfigurado(true)
+    }
     return !error
   }
 
@@ -50,10 +67,13 @@ export function usePresupuesto(usuarioId) {
   }
 
   return {
+    metodo,
     tasaAhorroObjetivo,
+    gastoMaximoFijo,
     objetivoInversionMensual,
+    configurado,
     cargando,
-    guardarTasa,
+    guardarPresupuesto,
     guardarObjetivoInversion,
   }
 }

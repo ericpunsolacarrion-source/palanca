@@ -86,7 +86,7 @@ function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
   )
 }
 
-export default function ListaMovimientos({ movimientos, cargando, onEliminado }) {
+export default function ListaMovimientos({ movimientos, cargando, onEliminado, soloLectura }) {
   const [eliminandoId, setEliminandoId] = useState(null)
   const [editandoId, setEditandoId] = useState(null)
 
@@ -106,7 +106,7 @@ export default function ListaMovimientos({ movimientos, cargando, onEliminado })
       {movimientos.map((m) => {
         const inversion = esInversion(m)
 
-        if (editandoId === m.id) {
+        if (!soloLectura && editandoId === m.id) {
           return (
             <li key={m.id} className={inversion ? 'inversion' : m.tipo}>
               <FilaEdicion
@@ -139,19 +139,21 @@ export default function ListaMovimientos({ movimientos, cargando, onEliminado })
               </span>
               <div className="linea-acciones">
                 {m.nota && <span className="nota">{m.nota}</span>}
-                <span className="grupo-botones">
-                  <button type="button" className="btn-editar" onClick={() => setEditandoId(m.id)}>
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-eliminar"
-                    onClick={() => handleEliminar(m.id)}
-                    disabled={eliminandoId === m.id}
-                  >
-                    {eliminandoId === m.id ? '…' : 'Eliminar'}
-                  </button>
-                </span>
+                {!soloLectura && (
+                  <span className="grupo-botones">
+                    <button type="button" className="btn-editar" onClick={() => setEditandoId(m.id)}>
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-eliminar"
+                      onClick={() => handleEliminar(m.id)}
+                      disabled={eliminandoId === m.id}
+                    >
+                      {eliminandoId === m.id ? '…' : 'Eliminar'}
+                    </button>
+                  </span>
+                )}
               </div>
             </div>
           </li>
