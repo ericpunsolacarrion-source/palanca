@@ -76,12 +76,21 @@ export default function Inversiones({ usuarioId, onGuardado }) {
       if (!mapa.has(clave)) mapa.set(clave, { total: 0, detalle: [] })
       const entrada = mapa.get(clave)
       entrada.total += Number(a.importe)
-      entrada.detalle.push({ id: a.id, nombre: a.fuente?.nombre ?? 'Sin especificar', importe: Number(a.importe) })
+      entrada.detalle.push({
+        id: a.id,
+        nombre: a.fuente?.nombre ?? 'Sin especificar',
+        importe: Number(a.importe),
+        fecha: a.fecha,
+      })
     }
     return [...mapa.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1))
   }, [aportaciones])
 
   const [eliminandoId, setEliminandoId] = useState(null)
+  const [editando, setEditando] = useState(null)
+  const [importeEdit, setImporteEdit] = useState('')
+  const [fechaEdit, setFechaEdit] = useState('')
+  const [guardandoEdit, setGuardandoEdit] = useState(false)
 
   async function handleEliminar(id) {
     if (!window.confirm('¿Eliminar esta aportación? No se puede deshacer.')) return
@@ -89,6 +98,28 @@ export default function Inversiones({ usuarioId, onGuardado }) {
     const { error: errorDelete } = await supabase.from('movimientos').delete().eq('id', id)
     setEliminandoId(null)
     if (!errorDelete) {
+      cargarAportaciones()
+      onGuardado?.()
+    }
+  }
+
+  function empezarEdicion(d) {
+    setEditando(d.id)
+    setImporteEdit(String(d.importe))
+    setFechaEdit(d.fecha)
+  }
+
+  async function handleGuardarEdicion(id) {
+    const importeNumero = Number(importeEdit)
+    if (!importeNumero || importeNumero <= 0) return
+    setGuardandoEdit(true)
+    const { error: errorUpdate } = await supabase
+      .from('movimientos')
+      .update({ importe: importeNumero, fecha: fechaEdit })
+      .eq('id', id)
+    setGuardandoEdit(false)
+    if (!errorUpdate) {
+      setEditando(null)
       cargarAportaciones()
       onGuardado?.()
     }
@@ -218,21 +249,52 @@ export default function Inversiones({ usuarioId, onGuardado }) {
                 <span className="importe">{formatearEuros(total)}</span>
               </div>
               <div className="inversion-detalle-lista">
-                {detalle.map((d) => (
-                  <div key={d.id} className="inversion-detalle-fila">
-                    <span>
-                      {d.nombre}: {formatearEuros(d.importe)}
-                    </span>
-                    <button
-                      type="button"
-                      className="btn-eliminar"
-                      onClick={() => handleEliminar(d.id)}
-                      disabled={eliminandoId === d.id}
-                    >
-                      {eliminandoId === d.id ? '…' : 'Eliminar'}
-                    </button>
-                  </div>
-                ))}
+                {detalle.map((d) =>
+                  editando === d.id ? (
+                    <div key={d.id} className="edicion-movimiento">
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        min="0"
+                        value={importeEdit}
+                        onChange={(e) => setImporteEdit(e.target.value)}
+                      />
+                      <input type="date" value={fechaEdit} onChange={(e) => setFechaEdit(e.target.value)} />
+                      <div className="edicion-acciones">
+                        <button type="button" className="btn-eliminar" onClick={() => setEditando(null)}>
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleGuardarEdicion(d.id)}
+                          disabled={guardandoEdit}
+                        >
+                          {guardandoEdit ? 'Guardando…' : 'Guardar'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={d.id} className="inversion-detalle-fila">
+                      <span>
+                        {d.nombre}: {formatearEuros(d.importe)}
+                      </span>
+                      <span className="grupo-botones">
+                        <button type="button" className="btn-editar" onClick={() => empezarEdicion(d)}>
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-eliminar"
+                          onClick={() => handleEliminar(d.id)}
+                          disabled={eliminandoId === d.id}
+                        >
+                          {eliminandoId === d.id ? '…' : 'Eliminar'}
+                        </button>
+                      </span>
+                    </div>
+                  ),
+                )}
               </div>
             </div>
           ))}

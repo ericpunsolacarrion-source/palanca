@@ -688,6 +688,54 @@ button[type='submit']:disabled {
   opacity: 1;
 }
 
+.grupo-botones {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-editar {
+  background: none;
+  border: none;
+  color: var(--accent-2);
+  font-size: 12px;
+  padding: 0;
+  opacity: 0.85;
+}
+
+.btn-editar:hover {
+  opacity: 1;
+}
+
+/* Edición inline de un movimiento */
+.edicion-movimiento {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edicion-movimiento label {
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.edicion-movimiento input {
+  padding: 8px;
+  font-size: 13px;
+}
+
+.edicion-acciones {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.edicion-acciones button[type='submit'] {
+  padding: 8px 14px;
+  font-size: 13px;
+  width: auto;
+}
+
 /* Inversiones: historial detallado con borrado */
 .inversion-detalle-lista {
   display: flex;
