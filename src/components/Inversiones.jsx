@@ -6,6 +6,7 @@ import { agregarPorMes, claveMes, formatearCompacto, formatearFecha } from '../l
 import { useCountUp } from '../lib/useCountUp'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
+import { toast } from '../lib/toast'
 
 const hoy = () => new Date().toISOString().slice(0, 10)
 const ALTO_BARRAS = 110
@@ -146,6 +147,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
     setGuardandoEdit(false)
     if (!errorUpdate) {
       setEditando(null)
+      toast('Cambios guardados')
       onGuardado?.()
     }
   }
@@ -198,6 +200,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
     setImporte('')
     setFuenteId('')
     setNuevaFuente('')
+    toast('Aportación registrada')
     onGuardado?.()
   }
 

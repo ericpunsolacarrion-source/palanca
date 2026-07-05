@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useSimulacionesGuardadas } from '../lib/useSimulacionesGuardadas'
+import { toast } from '../lib/toast'
 
 export default function SimulacionesGuardadas({ usuarioId, tipo, datosActuales, onCargar }) {
   const { simulaciones, cargando, guardar, eliminar } = useSimulacionesGuardadas(usuarioId, tipo)
@@ -15,6 +16,7 @@ export default function SimulacionesGuardadas({ usuarioId, tipo, datosActuales, 
     setGuardando(false)
     setNombre('')
     setMostrarForm(false)
+    toast('Simulación guardada')
   }
 
   return (

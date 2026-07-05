@@ -3,6 +3,7 @@ import { formatearEuros } from '../lib/categorias'
 import { formatearPorcentaje, totalesDe } from '../lib/movimientosUtils'
 import { useCountUp } from '../lib/useCountUp'
 import { usePresupuesto } from '../lib/usePresupuesto'
+import { toast } from '../lib/toast'
 
 function Cifra({ valor, className }) {
   const animado = useCountUp(valor)
@@ -31,6 +32,7 @@ export default function MetricasPrincipales({ usuarioId, movimientos }) {
     await guardarObjetivoInversion(numero)
     setGuardando(false)
     setEditando(false)
+    toast('Objetivo guardado')
   }
 
   const progresoInversion = objetivoInversionMensual
@@ -39,6 +41,16 @@ export default function MetricasPrincipales({ usuarioId, movimientos }) {
 
   return (
     <div className="metricas-principales fade-in-up">
+      <div className="metrica-hero">
+        <span className="etiqueta">Ahorro de este mes</span>
+        <Cifra valor={ahorro} className={`metrica-hero-cifra ${ahorro >= 0 ? 'ingreso' : 'gasto'}`} />
+        <span className="metrica-hero-sub">
+          {totalIngresos > 0
+            ? `Estás ahorrando el ${formatearPorcentaje(ratioAhorro, 0)} de tus ingresos`
+            : 'Registra tus ingresos para ver tu ratio de ahorro'}
+        </span>
+      </div>
+
       <div className="metricas-grid">
         <div className="metrica-bloque">
           <span className="etiqueta">Ingresos</span>
@@ -47,10 +59,6 @@ export default function MetricasPrincipales({ usuarioId, movimientos }) {
         <div className="metrica-bloque">
           <span className="etiqueta">Gastos</span>
           <Cifra valor={totalGastos} className="metrica-cifra gasto" />
-        </div>
-        <div className="metrica-bloque">
-          <span className="etiqueta">Ahorro</span>
-          <Cifra valor={ahorro} className={`metrica-cifra ${ahorro >= 0 ? 'ingreso' : 'gasto'}`} />
         </div>
         <div className="metrica-bloque">
           <span className="etiqueta">Inversión</span>

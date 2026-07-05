@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { esInversion, formatearEuros } from '../lib/categorias'
 import { formatearFecha } from '../lib/movimientosUtils'
+import { toast } from '../lib/toast'
 
 function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
   const [importe, setImporte] = useState(String(movimiento.importe))
@@ -32,6 +33,7 @@ function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
       return
     }
 
+    toast('Cambios guardados')
     onGuardado()
   }
 
@@ -128,6 +130,7 @@ export default function ListaMovimientos({ movimientos, cargando, onEliminado, s
       window.alert('No se ha podido eliminar. Revisa tu conexión e inténtalo de nuevo.')
       return
     }
+    toast('Movimiento eliminado')
     onEliminado?.()
   }
 

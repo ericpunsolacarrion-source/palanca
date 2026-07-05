@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
+import { toast } from '../lib/toast'
 
 const hoy = () => new Date().toISOString().slice(0, 10)
 
@@ -83,6 +84,7 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
     setFuenteId('')
     setNuevaFuente('')
     setEsFijo(false)
+    toast(tipo === 'ingreso' ? 'Ingreso guardado' : 'Gasto guardado')
     onGuardado()
   }
 

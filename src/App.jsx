@@ -16,6 +16,7 @@ import GraficoEvolucion from './components/GraficoEvolucion'
 import GraficoCategorias from './components/GraficoCategorias'
 import GraficoTasaAhorro from './components/GraficoTasaAhorro'
 import BottomNav from './components/BottomNav'
+import Toaster from './components/Toaster'
 import './App.css'
 
 const MS_POR_DIA = 1000 * 60 * 60 * 24
@@ -181,6 +182,7 @@ function App() {
       </main>
 
       <BottomNav activa={pestana} onCambiar={setPestana} />
+      <Toaster />
     </div>
   )
 }

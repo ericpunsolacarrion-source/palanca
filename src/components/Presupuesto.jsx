@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { esInversion, formatearEuros } from '../lib/categorias'
 import { formatearPorcentaje, totalesDe } from '../lib/movimientosUtils'
 import { usePresupuesto } from '../lib/usePresupuesto'
+import { toast } from '../lib/toast'
 import { useCountUp } from '../lib/useCountUp'
 
 function Cifra({ valor, className }) {
@@ -61,6 +62,7 @@ export default function Presupuesto({ usuarioId, movimientos }) {
     setGuardando(false)
     if (ok) {
       setEditando(false)
+      toast('Presupuesto guardado')
     } else {
       setErrorGuardado('No se ha podido guardar. Inténtalo de nuevo.')
     }
