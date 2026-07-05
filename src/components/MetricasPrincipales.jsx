@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { esInversion, formatearEuros } from '../lib/categorias'
+import { formatearEuros } from '../lib/categorias'
+import { formatearPorcentaje, totalesDe } from '../lib/movimientosUtils'
 import { useCountUp } from '../lib/useCountUp'
 import { usePresupuesto } from '../lib/usePresupuesto'
 
@@ -9,17 +10,13 @@ function Cifra({ valor, className }) {
 }
 
 export default function MetricasPrincipales({ usuarioId, movimientos }) {
-  const totalIngresos = movimientos
-    .filter((m) => m.tipo === 'ingreso')
-    .reduce((s, m) => s + Number(m.importe), 0)
-  const totalGastos = movimientos
-    .filter((m) => m.tipo === 'gasto' && !esInversion(m))
-    .reduce((s, m) => s + Number(m.importe), 0)
-  const totalInvertido = movimientos
-    .filter((m) => m.tipo === 'gasto' && esInversion(m))
-    .reduce((s, m) => s + Number(m.importe), 0)
-  const ahorro = totalIngresos - totalGastos
-  const ratioAhorro = totalIngresos > 0 ? (ahorro / totalIngresos) * 100 : 0
+  const {
+    ingresos: totalIngresos,
+    gastos: totalGastos,
+    invertido: totalInvertido,
+    ahorro,
+    ratioAhorro,
+  } = totalesDe(movimientos)
 
   const { objetivoInversionMensual, cargando, guardarObjetivoInversion } = usePresupuesto(usuarioId)
   const [editando, setEditando] = useState(false)
@@ -63,7 +60,7 @@ export default function MetricasPrincipales({ usuarioId, movimientos }) {
 
       <div className="ratio-ahorro-linea">
         <span>Ratio de ahorro</span>
-        <span>{ratioAhorro.toFixed(1)}%</span>
+        <span>{formatearPorcentaje(ratioAhorro)}</span>
       </div>
       <div className="ratio-barra">
         <div className="ratio-barra-relleno" style={{ width: `${Math.min(Math.max(ratioAhorro, 0), 100)}%` }} />
@@ -114,7 +111,7 @@ export default function MetricasPrincipales({ usuarioId, movimientos }) {
               </div>
               <span className="objetivo-inversion-detalle">
                 {formatearEuros(totalInvertido)} de {formatearEuros(objetivoInversionMensual)} (
-                {progresoInversion.toFixed(0)}%)
+                {formatearPorcentaje(progresoInversion, 0)})
               </span>
             </>
           )}

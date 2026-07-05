@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
-import SelectorEtiqueta, { resolverEtiqueta } from './SelectorEtiqueta'
+import SelectorEtiqueta from './SelectorEtiqueta'
+import { resolverEtiqueta } from '../lib/etiquetas'
 
 const hoy = () => new Date().toISOString().slice(0, 10)
 

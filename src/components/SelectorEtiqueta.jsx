@@ -1,4 +1,4 @@
-export const NUEVA_ETIQUETA = '__nueva__'
+import { NUEVA_ETIQUETA } from '../lib/etiquetas'
 
 export default function SelectorEtiqueta({
   id,
@@ -44,20 +44,4 @@ export default function SelectorEtiqueta({
       )}
     </>
   )
-}
-
-export async function resolverEtiqueta(valorId, nuevoNombre, crearFn, etiqueta, setError) {
-  if (valorId === NUEVA_ETIQUETA) {
-    if (!nuevoNombre.trim()) {
-      setError(`Escribe un nombre para la ${etiqueta} nueva.`)
-      return { ok: false }
-    }
-    const creada = await crearFn(nuevoNombre)
-    if (!creada) {
-      setError(`No se ha podido crear la ${etiqueta}. Inténtalo de nuevo.`)
-      return { ok: false }
-    }
-    return { ok: true, id: creada.id }
-  }
-  return { ok: true, id: valorId || null }
 }

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { esInversion, formatearEuros } from '../lib/categorias'
+import { formatearPorcentaje, totalesDe } from '../lib/movimientosUtils'
 import { usePresupuesto } from '../lib/usePresupuesto'
 import { useCountUp } from '../lib/useCountUp'
 
@@ -29,16 +30,13 @@ export default function Presupuesto({ usuarioId, movimientos }) {
   const [valorInput, setValorInput] = useState('')
   const [guardando, setGuardando] = useState(false)
 
-  const totalIngresos = movimientos
-    .filter((m) => m.tipo === 'ingreso')
-    .reduce((s, m) => s + Number(m.importe), 0)
-
-  // Invertir no cuenta como gasto de consumo, no debe agotar el presupuesto.
-  const totalGastos = movimientos
-    .filter((m) => m.tipo === 'gasto' && !esInversion(m))
-    .reduce((s, m) => s + Number(m.importe), 0)
-
-  const ratioAhorroReal = totalIngresos > 0 ? ((totalIngresos - totalGastos) / totalIngresos) * 100 : 0
+  // Regla única (ver CLAUDE.md): la inversión no es gasto de consumo,
+  // así que no agota el presupuesto.
+  const {
+    ingresos: totalIngresos,
+    gastos: totalGastos,
+    ratioAhorro: ratioAhorroReal,
+  } = totalesDe(movimientos)
 
   const topCategorias = useMemo(() => {
     const mapa = new Map()
@@ -204,7 +202,7 @@ export default function Presupuesto({ usuarioId, movimientos }) {
             </div>
             <div className="balance-item">
               <span className="etiqueta">Ahorro real</span>
-              <span className="valor">{ratioAhorroReal.toFixed(1)}%</span>
+              <span className="valor">{formatearPorcentaje(ratioAhorroReal)}</span>
             </div>
           </div>
 

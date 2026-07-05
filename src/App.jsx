@@ -96,7 +96,8 @@ function App() {
       <Onboarding
         onCompletar={async (objetivo) => {
           const nuevoPerfil = await crearPerfil(usuarioId, objetivo)
-          setPerfil(nuevoPerfil)
+          if (nuevoPerfil) setPerfil(nuevoPerfil)
+          return Boolean(nuevoPerfil)
         }}
       />
     )
@@ -163,6 +164,7 @@ function App() {
             key="inversiones"
             usuarioId={usuarioId}
             movimientos={movimientos}
+            cargando={cargando}
             onGuardado={cargarMovimientos}
           />
         )}

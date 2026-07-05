@@ -376,16 +376,6 @@ button[type='submit']:disabled {
   color: var(--gasto);
 }
 
-.balance-nota {
-  margin-top: 14px;
-  font-size: 13px;
-  opacity: 0.75;
-}
-
-.balance-nota strong {
-  color: var(--inversion);
-}
-
 /* Recordatorio */
 .recordatorio {
   display: flex;
@@ -770,31 +760,6 @@ button[type='submit']:disabled {
   color: var(--inversion);
 }
 
-/* Ingresos del mes */
-.tarjeta-ingresos {
-  background: linear-gradient(160deg, var(--card-bg-2), var(--card-bg));
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.ingresos-cifra {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--ingreso);
-  letter-spacing: -1px;
-  margin-top: 4px;
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-}
-
 /* Botón eliminar y acciones de fila */
 .linea-acciones {
   display: flex;
@@ -924,10 +889,6 @@ button[type='submit']:disabled {
 @media (min-width: 860px) {
   .app {
     max-width: 900px;
-  }
-
-  .dashboard-grid {
-    grid-template-columns: 1fr 1.4fr;
   }
 
   main {

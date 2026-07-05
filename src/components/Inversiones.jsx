@@ -4,7 +4,8 @@ import { useEtiquetas } from '../lib/useEtiquetas'
 import { CATEGORIA_INVERSION, esInversion, formatearEuros } from '../lib/categorias'
 import { agregarPorMes, claveMes, formatearCompacto, formatearFecha } from '../lib/movimientosUtils'
 import { useCountUp } from '../lib/useCountUp'
-import SelectorEtiqueta, { resolverEtiqueta } from './SelectorEtiqueta'
+import SelectorEtiqueta from './SelectorEtiqueta'
+import { resolverEtiqueta } from '../lib/etiquetas'
 
 const hoy = () => new Date().toISOString().slice(0, 10)
 const ALTO_BARRAS = 110
@@ -55,7 +56,7 @@ function GraficoInversionMensual({ meses, media }) {
   )
 }
 
-export default function Inversiones({ usuarioId, movimientos, onGuardado }) {
+export default function Inversiones({ usuarioId, movimientos, cargando, onGuardado }) {
   const { items: categorias, crear: crearCategoria } = useEtiquetas('categorias', usuarioId, 'gasto')
   const { items: fuentes, crear: crearFuente } = useEtiquetas('fuentes', usuarioId, 'gasto')
 
@@ -121,7 +122,11 @@ export default function Inversiones({ usuarioId, movimientos, onGuardado }) {
     setEliminandoId(id)
     const { error: errorDelete } = await supabase.from('movimientos').delete().eq('id', id)
     setEliminandoId(null)
-    if (!errorDelete) onGuardado?.()
+    if (errorDelete) {
+      window.alert('No se ha podido eliminar. Revisa tu conexión e inténtalo de nuevo.')
+      return
+    }
+    onGuardado?.()
   }
 
   function empezarEdicion(d) {
@@ -264,7 +269,14 @@ export default function Inversiones({ usuarioId, movimientos, onGuardado }) {
         </button>
       </form>
 
-      {porMes.length === 0 ? (
+      {cargando ? (
+        <div className="lista-movimientos">
+          <div className="skeleton-fila">
+            <div className="skeleton skeleton-linea" style={{ width: '55%' }} />
+            <div className="skeleton skeleton-linea" style={{ width: '35%' }} />
+          </div>
+        </div>
+      ) : porMes.length === 0 ? (
         <div className="estado-vacio">
           <p>Todavía no has registrado ninguna aportación.</p>
           <p className="ayuda">

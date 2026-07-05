@@ -8,6 +8,8 @@ const MESES = 6
 export default function GraficoEvolucion({ movimientos }) {
   const meses = useMemo(() => agregarPorMes(movimientos, MESES), [movimientos])
 
+  if (movimientos.length === 0) return null
+
   const maximo = Math.max(1, ...meses.flatMap((m) => [m.ingresos, m.gastos]))
 
   return (

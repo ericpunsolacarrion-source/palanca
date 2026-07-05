@@ -124,7 +124,11 @@ export default function ListaMovimientos({ movimientos, cargando, onEliminado, s
     setEliminandoId(id)
     const { error } = await supabase.from('movimientos').delete().eq('id', id)
     setEliminandoId(null)
-    if (!error) onEliminado?.()
+    if (error) {
+      window.alert('No se ha podido eliminar. Revisa tu conexión e inténtalo de nuevo.')
+      return
+    }
+    onEliminado?.()
   }
 
   return (

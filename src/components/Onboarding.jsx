@@ -10,11 +10,18 @@ const OBJETIVOS = [
 export default function Onboarding({ onCompletar }) {
   const [seleccion, setSeleccion] = useState(null)
   const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState(null)
 
   async function handleContinuar() {
     if (!seleccion) return
     setGuardando(true)
-    await onCompletar(seleccion)
+    setError(null)
+    const ok = await onCompletar(seleccion)
+    // Si sale bien, este componente se desmonta; si no, reactivamos el botón.
+    if (!ok) {
+      setGuardando(false)
+      setError('No se ha podido crear tu cuenta. Revisa tu conexión e inténtalo de nuevo.')
+    }
   }
 
   return (
@@ -35,6 +42,8 @@ export default function Onboarding({ onCompletar }) {
           </button>
         ))}
       </div>
+
+      {error && <p className="error">{error}</p>}
 
       <button
         type="button"

@@ -64,6 +64,15 @@ export function formatearFecha(fechaIso) {
   return `${dia}/${mes}/${anio}`
 }
 
+// Porcentaje en formato español: 92,3%
+export function formatearPorcentaje(valor, decimales = 1) {
+  const seguro = Number.isFinite(valor) ? valor : 0
+  return `${seguro.toLocaleString('es-ES', {
+    minimumFractionDigits: decimales,
+    maximumFractionDigits: decimales,
+  })}%`
+}
+
 // Formato compacto para etiquetas de gráfico: 1234 -> "1,2k"
 export function formatearCompacto(valor) {
   if (valor >= 1000) {
