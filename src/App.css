@@ -163,6 +163,73 @@ main {
   box-shadow: 0 0 20px -6px var(--accent-glow);
 }
 
+.onboarding-email {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  margin-top: var(--sp-5);
+}
+
+.onboarding-email input {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-s);
+  background: var(--bg);
+}
+
+.ayuda-mini {
+  font-size: var(--fs-xs);
+  opacity: 0.65;
+}
+
+.captura-email {
+  background:
+    linear-gradient(160deg, var(--card-bg-2), var(--card-bg)) padding-box,
+    var(--borde-brillo) border-box;
+  border: 1px solid transparent;
+  border-radius: var(--radio-l);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  box-shadow: var(--sombra-card);
+}
+
+.captura-email-titulo {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: var(--fs-base);
+}
+
+.captura-email-fila {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+
+.captura-email-fila input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-s);
+  background: var(--bg);
+}
+
+.captura-email-fila button {
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--radio-s);
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: white;
+  font-weight: 600;
+}
+
+.captura-email-fila button:disabled {
+  opacity: 0.5;
+}
+
 .onboarding .continuar {
   margin-top: 20px;
   width: 100%;
@@ -658,6 +725,20 @@ button[type='submit']:disabled {
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  background: none;
+  border: none;
+  padding: 4px 0 0;
+  border-radius: var(--radio-s);
+  color: inherit;
+}
+
+.grafico-columna.activa {
+  background: rgba(34, 211, 238, 0.07);
+}
+
+.grafico-columna.activa .grafico-etiqueta {
+  opacity: 1;
+  color: var(--text-h);
 }
 
 .grafico-par {
@@ -878,10 +959,78 @@ button[type='submit']:disabled {
   justify-content: space-between;
   margin-top: 8px;
   font-size: 10px;
-  opacity: 0.7;
   text-transform: capitalize;
   text-align: center;
   line-height: 1.5;
+}
+
+/* Interactividad de gráficos: cabecera con detalle y puntos activos */
+.grafico-cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.grafico-cabecera h2 {
+  margin: 0;
+}
+
+.grafico-detalle {
+  font-size: var(--fs-xs);
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.grafico-detalle-mes {
+  display: inline-block;
+  text-transform: capitalize;
+  color: var(--accent-2);
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.punto-tasa {
+  fill: var(--accent-2);
+  opacity: 0.6;
+}
+
+.punto-activo {
+  fill: var(--accent-2);
+}
+
+.punto-activo-halo {
+  fill: var(--accent-2);
+  opacity: 0.25;
+}
+
+.leyenda-mes-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 10px;
+  line-height: 1.5;
+  text-transform: capitalize;
+  opacity: 0.65;
+  padding: 6px 2px;
+  border-radius: var(--radio-s);
+}
+
+.leyenda-mes-btn.activo {
+  opacity: 1;
+  color: var(--text-h);
+  background: rgba(34, 211, 238, 0.08);
+}
+
+.detalle-ingreso {
+  color: var(--ingreso);
+}
+
+.detalle-gasto {
+  color: var(--gasto);
 }
 
 /* Responsive: escritorio */
@@ -1532,4 +1681,74 @@ button[type='submit']:disabled {
     opacity: 1;
     transform: translateX(-50%) translateY(0) scale(1);
   }
+}
+
+.toast-error {
+  box-shadow: var(--sombra-card), 0 0 16px -4px rgba(255, 93, 126, 0.4);
+}
+
+.toast-icono.error {
+  background: var(--gasto);
+  color: #33060f;
+}
+
+/* Modal de confirmación */
+.modal-fondo {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 6, 10, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-5);
+  z-index: 300;
+  animation: fade-in-up 0.2s ease both;
+}
+
+.modal-caja {
+  width: 100%;
+  max-width: 340px;
+  background:
+    linear-gradient(160deg, var(--card-bg-2), var(--card-bg)) padding-box,
+    var(--borde-brillo) border-box;
+  border: 1px solid transparent;
+  border-radius: var(--radio-l);
+  padding: 20px;
+  box-shadow: var(--sombra-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.modal-mensaje {
+  color: var(--text-h);
+  font-weight: 600;
+  font-size: var(--fs-base);
+}
+
+.modal-acciones {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+.modal-acciones button {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--radio-s);
+  border: none;
+  font-weight: 600;
+}
+
+.modal-cancelar {
+  background: var(--bg);
+  border: 1px solid var(--border) !important;
+  color: var(--text);
+}
+
+.modal-confirmar {
+  background: var(--gasto);
+  color: white;
 }

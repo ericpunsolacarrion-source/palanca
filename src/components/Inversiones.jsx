@@ -7,6 +7,7 @@ import { useCountUp } from '../lib/useCountUp'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
 import { toast } from '../lib/toast'
+import { confirmar } from '../lib/confirmar'
 
 const hoy = () => new Date().toISOString().slice(0, 10)
 const ALTO_BARRAS = 110
@@ -119,14 +120,15 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
   const [guardandoEdit, setGuardandoEdit] = useState(false)
 
   async function handleEliminar(id) {
-    if (!window.confirm('¿Eliminar esta aportación? No se puede deshacer.')) return
+    if (!(await confirmar('¿Eliminar esta aportación?'))) return
     setEliminandoId(id)
     const { error: errorDelete } = await supabase.from('movimientos').delete().eq('id', id)
     setEliminandoId(null)
     if (errorDelete) {
-      window.alert('No se ha podido eliminar. Revisa tu conexión e inténtalo de nuevo.')
+      toast('No se ha podido eliminar. Revisa tu conexión.', 'error')
       return
     }
+    toast('Aportación eliminada')
     onGuardado?.()
   }
 

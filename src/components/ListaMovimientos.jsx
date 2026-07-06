@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { esInversion, formatearEuros } from '../lib/categorias'
 import { formatearFecha } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
+import { confirmar } from '../lib/confirmar'
 
 function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
   const [importe, setImporte] = useState(String(movimiento.importe))
@@ -122,12 +123,12 @@ export default function ListaMovimientos({ movimientos, cargando, onEliminado, s
   }
 
   async function handleEliminar(id) {
-    if (!window.confirm('¿Eliminar este movimiento? No se puede deshacer.')) return
+    if (!(await confirmar('¿Eliminar este movimiento?'))) return
     setEliminandoId(id)
     const { error } = await supabase.from('movimientos').delete().eq('id', id)
     setEliminandoId(null)
     if (error) {
-      window.alert('No se ha podido eliminar. Revisa tu conexión e inténtalo de nuevo.')
+      toast('No se ha podido eliminar. Revisa tu conexión.', 'error')
       return
     }
     toast('Movimiento eliminado')

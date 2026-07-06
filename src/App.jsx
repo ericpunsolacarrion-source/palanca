@@ -5,6 +5,7 @@ import { obtenerPerfil, crearPerfil } from './lib/perfil'
 import { filtrarMesActual, totalesDe } from './lib/movimientosUtils'
 import PantallaId from './components/PantallaId'
 import Onboarding from './components/Onboarding'
+import CapturaEmail from './components/CapturaEmail'
 import MovimientosTab from './components/MovimientosTab'
 import ListaMovimientos from './components/ListaMovimientos'
 import MetricasPrincipales from './components/MetricasPrincipales'
@@ -17,6 +18,7 @@ import GraficoCategorias from './components/GraficoCategorias'
 import GraficoTasaAhorro from './components/GraficoTasaAhorro'
 import BottomNav from './components/BottomNav'
 import Toaster from './components/Toaster'
+import Confirmador from './components/Confirmador'
 import './App.css'
 
 const MS_POR_DIA = 1000 * 60 * 60 * 24
@@ -95,8 +97,8 @@ function App() {
   if (!perfil) {
     return (
       <Onboarding
-        onCompletar={async (objetivo) => {
-          const nuevoPerfil = await crearPerfil(usuarioId, objetivo)
+        onCompletar={async (objetivo, email) => {
+          const nuevoPerfil = await crearPerfil(usuarioId, objetivo, email)
           if (nuevoPerfil) setPerfil(nuevoPerfil)
           return Boolean(nuevoPerfil)
         }}
@@ -125,6 +127,13 @@ function App() {
 
         {pestana === 'dashboard' && (
           <div key="dashboard" className="vista">
+            {'email' in perfil && !perfil.email && (
+              /* Solo se ofrece cuando la columna email ya existe en la BD */
+              <CapturaEmail
+                usuarioId={usuarioId}
+                onGuardado={(email) => setPerfil({ ...perfil, email })}
+              />
+            )}
             <RecordatorioBanner
               dias={diasDesdeUltimoMovimiento}
               onIrAMovimientos={() => setPestana('movimientos')}
@@ -183,6 +192,7 @@ function App() {
 
       <BottomNav activa={pestana} onCambiar={setPestana} />
       <Toaster />
+      <Confirmador />
     </div>
   )
 }

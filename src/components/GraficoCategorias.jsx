@@ -46,7 +46,9 @@ export default function GraficoCategorias({ movimientos }) {
           <div key={item.nombre} className="leyenda-item">
             <i className="punto" style={{ background: item.color }} />
             <span className="leyenda-nombre">{item.nombre}</span>
-            <span className="leyenda-valor">{item.porcentaje.toFixed(0)}%</span>
+            <span className="leyenda-valor">
+              {formatearEuros(item.valor)} · {item.porcentaje.toFixed(0)}%
+            </span>
           </div>
         ))}
       </div>

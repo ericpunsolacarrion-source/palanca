@@ -1,5 +1,6 @@
-import { useMemo } from 'react'
-import { agregarPorMes } from '../lib/movimientosUtils'
+import { useMemo, useState } from 'react'
+import { agregarPorMes, formatearPorcentaje } from '../lib/movimientosUtils'
+import { formatearEuros } from '../lib/categorias'
 
 const ANCHO = 300
 const ALTO = 100
@@ -14,10 +15,14 @@ function clamp(valor, min, max) {
 export default function GraficoTasaAhorro({ movimientos }) {
   const meses = useMemo(() => agregarPorMes(movimientos, MESES), [movimientos])
 
-  const ratiosReales = meses.map((m) => (m.ingresos > 0 ? m.ratioAhorro : null))
-  const hayDatos = ratiosReales.some((r) => r !== null)
+  const conDatos = meses.map((m) => m.ingresos > 0)
+  const ultimoConDatos = conDatos.lastIndexOf(true)
+  const [seleccionado, setSeleccionado] = useState(null)
+  const activo = seleccionado ?? (ultimoConDatos === -1 ? null : ultimoConDatos)
 
-  if (!hayDatos) return null
+  if (ultimoConDatos === -1) return null
+
+  const ratiosReales = meses.map((m) => (m.ingresos > 0 ? m.ratioAhorro : null))
 
   // Recortamos valores extremos solo para el dibujo (la etiqueta muestra el % real)
   const ratiosVisibles = ratiosReales.map((r) => (r === null ? 0 : clamp(r, -100, 100)))
@@ -34,21 +39,55 @@ export default function GraficoTasaAhorro({ movimientos }) {
   const linea = puntos.map((p) => `${p.x},${p.y}`).join(' ')
   const area = `${PADDING_X},${yLineaCero} ${linea} ${ANCHO - PADDING_X},${yLineaCero}`
 
+  const mesActivo = activo !== null ? meses[activo] : null
+
   return (
     <div className="grafico fade-in-up">
-      <h2>Tasa de ahorro mensual</h2>
+      <div className="grafico-cabecera">
+        <h2>Tasa de ahorro mensual</h2>
+        {mesActivo && (
+          <span className="grafico-detalle">
+            <span className="grafico-detalle-mes">{mesActivo.etiqueta}</span>
+            {ratiosReales[activo] === null
+              ? 'sin ingresos'
+              : `${formatearPorcentaje(ratiosReales[activo], 0)} · ${formatearEuros(mesActivo.ahorro)} ahorrados`}
+          </span>
+        )}
+      </div>
       <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} className="grafico-linea">
         <line x1={PADDING_X} y1={yLineaCero} x2={ANCHO - PADDING_X} y2={yLineaCero} className="linea-cero" />
         <polygon points={area} className="area-tasa" />
         <polyline points={linea} className="linea-tasa" fill="none" />
+        {puntos.map((p, i) => (
+          <g key={meses[i].clave}>
+            {i === activo && <circle cx={p.x} cy={p.y} r={5} className="punto-activo-halo" />}
+            <circle cx={p.x} cy={p.y} r={i === activo ? 3.5 : 2} className={i === activo ? 'punto-activo' : 'punto-tasa'} />
+            {/* Zona táctil invisible de columna completa */}
+            <rect
+              x={p.x - paso / 2}
+              y={0}
+              width={paso}
+              height={ALTO}
+              fill="transparent"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setSeleccionado(i)}
+              onMouseEnter={() => setSeleccionado(i)}
+            />
+          </g>
+        ))}
       </svg>
       <div className="grafico-leyenda-meses">
         {meses.map((m, i) => (
-          <span key={m.clave}>
+          <button
+            key={m.clave}
+            type="button"
+            className={`leyenda-mes-btn ${i === activo ? 'activo' : ''}`}
+            onClick={() => setSeleccionado(i)}
+          >
             {m.etiqueta}
             <br />
             {ratiosReales[i] === null ? '—' : `${ratiosReales[i].toFixed(0)}%`}
-          </span>
+          </button>
         ))}
       </div>
     </div>

@@ -38,6 +38,11 @@ No recalcular a mano en componentes: usar siempre estas utilidades.
 
 ## Decisiones tomadas sin consultar (ambigüedad menor)
 
+- Captura de email: se guarda en `perfiles.email` (minúsculas). Si la
+  columna aún no existe, el alta NO se bloquea (se crea el perfil sin
+  email) y el banner `CapturaEmail` del dashboard lo pide después; el
+  banner solo aparece cuando la columna ya existe en la BD.
+
 - El historial de Movimientos muestra todo el histórico (no solo el mes);
   el resumen superior sí es del mes actual.
 - El recordatorio "días sin registrar" usa `created_at` (cuándo se registró),
