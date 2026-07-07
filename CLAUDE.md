@@ -3,6 +3,9 @@
 React + Vite + vite-plugin-pwa. Backend: Supabase (anon key en `.env`).
 Deploy: push a `main` → Vercel (https://palanca-zeta.vercel.app).
 
+**Guía detallada pantalla a pantalla: `docs/PANTALLAS.md`** (leerla al
+empezar a trabajar en la app; mantenerla al día cuando cambien pantallas).
+
 ## Reglas de cálculo (única definición, aplicar en TODA la app)
 
 Implementadas en `src/lib/movimientosUtils.js` (`totalesDe`, `agregarPorMes`).
