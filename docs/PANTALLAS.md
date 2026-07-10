@@ -31,6 +31,9 @@ Escaparate del mes actual, de arriba abajo:
 - **Banner "Completa tu cuenta"** si el usuario aún no dejó su email (usuarios antiguos).
 - **Banner recordatorio** si lleva 2+ días sin registrar movimientos (botón directo a registrar).
 - **Métricas principales** (`MetricasPrincipales.jsx`): el **ahorro del mes como número hero** (verde/rosa con glow) + frase "Estás ahorrando el X% de tus ingresos"; debajo fila con Ingresos / Gastos / Inversión, barra de ratio de ahorro, y el **objetivo de inversión mensual** configurable con barra de progreso dorada (enlazado a las inversiones reales del mes).
+- **Comparativas** (`Comparativas.jsx`): microcomparativas contra el propio historial ("estás ahorrando un X% más que el mes pasado", "has gastado un Y% menos"). Solo contra uno mismo, nunca con otros usuarios. Máx. 2.
+- **Píldora educativa** (`Pildora.jsx` + `lib/pildoras.js`): 1 nota contextual breve según el estado del mes (ahorro parado sin invertir / excedente alto / gasta más de lo que ingresa), descartable de forma permanente.
+- **Proyección de futuro** (`ProyeccionFuturo.jsx`): el momento "ajá". Toma el ahorro mensual medio REAL y muestra el contraste "dinero parado" vs "invertido al 7%" a 5/10/20/30 años, con el extra que aporta invertir. Estado vacío que invita a registrar si no hay base. Reutiliza `proyectarInteresCompuesto` de `movimientosUtils`.
 - **Tasa de ahorro mensual** (`GraficoTasaAhorro.jsx`): línea de 6 meses, **interactiva** — al tocar un mes muestra "may · 61% · 1.100,00 € ahorrados".
 - **Gasto por categoría (este mes)** (`GraficoCategorias.jsx`): barra apilada de colores + leyenda con euros y porcentaje.
 - **Evolución 6 meses** (`GraficoEvolucion.jsx`): barras verde/rosa por mes, **interactiva** — tocar un mes muestra sus ingresos y gastos.
@@ -88,14 +91,21 @@ Cuatro sub-pestañas:
 
 ## Extras transversales
 
+- **Celebración de hitos** (`Hitos.jsx` + `lib/hitos.js`): overlay con glow al alcanzar por primera vez un logro (primera inversión, 20% de ahorro, 7 días registrando, objetivo de inversión cumplido). Se celebra una vez por hito; baseline para no celebrar retroactivamente.
 - **Toast** de éxito/error al guardar en toda la app; **modal propio** para confirmar borrados.
 - Skeletons de carga, estados vacíos con acción, aviso de error de conexión con reintento.
 - PWA auto-actualizable (sin quedarse con versiones viejas en caché).
 - Diseño: oscuro con morado #8b5cf6 + cian #22d3ee, verde ingresos, rosa gastos, dorado inversión; tarjetas con borde degradado; mobile-first con layout de columnas en escritorio.
 
+## Reporte semanal por email
+
+`lib/reporteSemanal.js` genera el contenido del resumen semanal (listo, sin
+activar el envío). Detalle y plantilla de Edge Function en `docs/REPORTE_SEMANAL.md`.
+
 ## Pendiente conocido (próximos pasos naturales)
 
-1. **Supabase Auth** (login real con email/contraseña): imprescindible antes de abrir al público; hoy cualquiera con el ID de otro accede a sus datos. Requiere migrar datos y tocar el panel de Supabase.
-2. Notificaciones push reales (el recordatorio actual solo se ve al abrir la app).
-3. Agrupar el historial por meses con cabeceras.
-4. Splash screens específicos de iOS.
+1. **Supabase Auth** (login real con email/contraseña): imprescindible antes de abrir al público; hoy cualquiera con el ID de otro accede a sus datos. Plan completo y no destructivo en `docs/AUTH_MIGRACION.md` (requiere sesión conjunta: toca el panel de Supabase y migra datos).
+2. Activar el envío del reporte semanal (infraestructura: proveedor de email + Edge Function + cron; ver `docs/REPORTE_SEMANAL.md`).
+3. Notificaciones push reales (el recordatorio actual solo se ve al abrir la app).
+4. Agrupar el historial por meses con cabeceras.
+5. Splash screens específicos de iOS.
