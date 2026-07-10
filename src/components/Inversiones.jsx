@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { CATEGORIA_INVERSION, esInversion, formatearEuros } from '../lib/categorias'
@@ -26,36 +26,53 @@ function etiquetaMesLarga(clave) {
   return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
 
+const ANCHO_COL = 34 // ancho por mes al deslizar
+
 function GraficoInversionMensual({ meses, media }) {
   const maximo = Math.max(1, ...meses.map((m) => m.invertido))
   const pctMedia = (media / maximo) * 100
 
+  const scrollRef = useRef(null)
+  // Arranca en el mes más reciente; el límite izquierdo es el primer mes con
+  // inversión (no hay meses anteriores en el array, así no se puede ir más atrás).
+  useLayoutEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollLeft = scrollRef.current.scrollWidth
+  }, [meses.length])
+
+  const anchoContenido = Math.max(0, meses.length * ANCHO_COL)
+
   return (
     <div className="grafico fade-in-up">
-      <h2>Inversión mensual (12 meses)</h2>
-      <div className="inv-barras" style={{ height: ALTO_BARRAS + 40 }}>
-        {media > 0 && (
-          <div className="inv-linea-media" style={{ bottom: `${20 + (pctMedia / 100) * ALTO_BARRAS}px` }}>
-            <span>media {formatearEuros(media)}</span>
-          </div>
-        )}
-        {meses.map((m, i) => {
-          const pct = (m.invertido / maximo) * 100
-          return (
-            <div key={m.clave} className="inv-col">
-              <span className="inv-importe">{m.invertido > 0 ? formatearCompacto(m.invertido) : ''}</span>
-              <div className="inv-zona-barra" style={{ height: ALTO_BARRAS }}>
-                <div
-                  className={`inv-barra ${m.invertido > 0 ? 'activa' : ''}`}
-                  style={{ height: `${Math.max(pct, 2)}%`, animationDelay: `${i * 0.04}s` }}
-                  title={`${m.etiqueta}: ${formatearEuros(m.invertido)}`}
-                />
-              </div>
-              <span className="inv-mes">{m.etiqueta}</span>
+      <h2>Inversión mensual</h2>
+      <div className="inv-scroll" ref={scrollRef}>
+        <div
+          className="inv-barras"
+          style={{ height: ALTO_BARRAS + 40, width: anchoContenido, minWidth: '100%' }}
+        >
+          {media > 0 && (
+            <div className="inv-linea-media" style={{ bottom: `${20 + (pctMedia / 100) * ALTO_BARRAS}px` }}>
+              <span>media {formatearEuros(media)}</span>
             </div>
-          )
-        })}
+          )}
+          {meses.map((m, i) => {
+            const pct = (m.invertido / maximo) * 100
+            return (
+              <div key={m.clave} className="inv-col">
+                <span className="inv-importe">{m.invertido > 0 ? formatearCompacto(m.invertido) : ''}</span>
+                <div className="inv-zona-barra" style={{ height: ALTO_BARRAS }}>
+                  <div
+                    className={`inv-barra ${m.invertido > 0 ? 'activa' : ''}`}
+                    style={{ height: `${Math.max(pct, 2)}%`, animationDelay: `${i * 0.04}s` }}
+                    title={`${m.etiqueta}: ${formatearEuros(m.invertido)}`}
+                  />
+                </div>
+                <span className="inv-mes">{m.etiqueta}</span>
+              </div>
+            )
+          })}
+        </div>
       </div>
+      {meses.length > 12 && <span className="grafico-hint">← desliza para ver tu historial</span>}
     </div>
   )
 }
@@ -91,11 +108,30 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
     return [...mapa.entries()].sort((a, b) => b[1] - a[1])
   }, [aportaciones])
 
-  const ultimosDoceMeses = useMemo(() => agregarPorMes(aportaciones, 12), [aportaciones])
-
+  // Media móvil de los últimos 12 meses (para la línea de referencia y etiqueta).
   const mediaMensual = useMemo(
-    () => ultimosDoceMeses.reduce((s, m) => s + m.invertido, 0) / 12,
-    [ultimosDoceMeses],
+    () => agregarPorMes(aportaciones, 12).reduce((s, m) => s + m.invertido, 0) / 12,
+    [aportaciones],
+  )
+
+  // Meses a mostrar en el gráfico: desde el primer mes con inversión hasta hoy,
+  // para poder deslizar hacia atrás sin llegar antes de la primera aportación.
+  const nMesesInversion = useMemo(() => {
+    if (aportaciones.length === 0) return 12
+    let min = Infinity
+    for (const a of aportaciones) {
+      const t = new Date(a.fecha).getTime()
+      if (t < min) min = t
+    }
+    const d0 = new Date(min)
+    const hoy = new Date()
+    const n = (hoy.getFullYear() - d0.getFullYear()) * 12 + (hoy.getMonth() - d0.getMonth()) + 1
+    return Math.min(Math.max(n, 1), 120)
+  }, [aportaciones])
+
+  const mesesInversion = useMemo(
+    () => agregarPorMes(aportaciones, nMesesInversion),
+    [aportaciones, nMesesInversion],
   )
 
   const porMes = useMemo(() => {
@@ -233,8 +269,8 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
 
       <Pildora usuarioId={usuarioId} pildora={PILDORA_INVERSION} />
 
-      {ultimosDoceMeses.some((m) => m.invertido > 0) && (
-        <GraficoInversionMensual meses={ultimosDoceMeses} media={mediaMensual} />
+      {mesesInversion.some((m) => m.invertido > 0) && (
+        <GraficoInversionMensual meses={mesesInversion} media={mediaMensual} />
       )}
 
       <form className="registro-movimiento fade-in-up" onSubmit={handleSubmit}>
