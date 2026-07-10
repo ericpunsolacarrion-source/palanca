@@ -113,6 +113,88 @@ export function resumenMensualMedio(movimientos) {
   }
 }
 
+// Compara el mes actual con el anterior y devuelve microcomparativas
+// ("estás ahorrando un X% más que el mes pasado"). Solo comparaciones con uno
+// mismo, nunca con otros usuarios. Devuelve [] si no hay base para comparar.
+export function comparativasConMesAnterior(movimientos) {
+  const meses = agregarPorMes(movimientos, 2)
+  const anterior = meses[0]
+  const actual = meses[1]
+
+  // Sin datos en el mes anterior no hay con qué comparar.
+  if (anterior.ingresos === 0 && anterior.gastos === 0 && anterior.invertido === 0) return []
+
+  const avisos = []
+  const variacion = (hoy, antes) => (antes === 0 ? null : ((hoy - antes) / antes) * 100)
+
+  // Ahorro
+  const vAhorro = variacion(actual.ahorro, anterior.ahorro)
+  if (vAhorro !== null && Math.abs(vAhorro) >= 5 && anterior.ahorro > 0) {
+    avisos.push({
+      tono: vAhorro >= 0 ? 'bien' : 'mal',
+      texto:
+        vAhorro >= 0
+          ? `Estás ahorrando un ${Math.round(Math.abs(vAhorro))}% más que el mes pasado`
+          : `Estás ahorrando un ${Math.round(Math.abs(vAhorro))}% menos que el mes pasado`,
+    })
+  }
+
+  // Gasto de consumo
+  const vGasto = variacion(actual.gastos, anterior.gastos)
+  if (vGasto !== null && Math.abs(vGasto) >= 5) {
+    avisos.push({
+      tono: vGasto <= 0 ? 'bien' : 'mal',
+      texto:
+        vGasto <= 0
+          ? `Has gastado un ${Math.round(Math.abs(vGasto))}% menos que el mes pasado`
+          : `Has gastado un ${Math.round(Math.abs(vGasto))}% más que el mes pasado`,
+    })
+  }
+
+  // Inversión
+  if (actual.invertido > anterior.invertido && anterior.invertido >= 0) {
+    const vInv = variacion(actual.invertido, anterior.invertido)
+    if (anterior.invertido === 0 && actual.invertido > 0) {
+      avisos.push({ tono: 'bien', texto: 'Este mes has empezado a invertir. ¡Buen paso!' })
+    } else if (vInv !== null && vInv >= 5) {
+      avisos.push({ tono: 'bien', texto: `Has invertido un ${Math.round(vInv)}% más que el mes pasado` })
+    }
+  }
+
+  return avisos.slice(0, 2) // como mucho 2, para no saturar el dashboard
+}
+
+// Categoría de gasto donde más ha cambiado el consumo respecto al mes anterior.
+export function cambioPorCategoria(movimientos) {
+  const clavePrev = ultimosNMeses(2)[0].clave
+  const claveAct = claveMesActual()
+
+  const sumaPorCat = (clave) => {
+    const mapa = new Map()
+    for (const m of movimientos) {
+      if (m.tipo !== 'gasto' || esInversion(m) || claveMes(m.fecha) !== clave) continue
+      const nombre = m.categoria?.nombre ?? 'Sin categoría'
+      mapa.set(nombre, (mapa.get(nombre) ?? 0) + Number(m.importe))
+    }
+    return mapa
+  }
+
+  const prev = sumaPorCat(clavePrev)
+  const act = sumaPorCat(claveAct)
+  if (prev.size === 0) return null
+
+  let mejor = null
+  for (const [nombre, antes] of prev) {
+    const ahora = act.get(nombre) ?? 0
+    if (antes <= 0) continue
+    const pct = ((ahora - antes) / antes) * 100
+    if (pct <= -15 && (mejor === null || pct < mejor.pct)) {
+      mejor = { nombre, pct, tono: 'bien' }
+    }
+  }
+  return mejor
+}
+
 // Valor futuro de un capital inicial + aportaciones mensuales con interés
 // compuesto. rentabilidadAnual en % (0 = dinero parado). Fuente única para
 // el simulador y para la proyección del dashboard.

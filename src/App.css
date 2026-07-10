@@ -1121,6 +1121,45 @@ button[type='submit']:disabled {
   opacity: 0.65;
 }
 
+/* Comparativas con uno mismo (mes actual vs anterior) */
+.comparativas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.comparativa {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-s);
+  color: var(--text-h);
+  padding: 12px 14px;
+  border-radius: var(--radio-m);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+}
+
+.comparativa-flecha {
+  font-size: 11px;
+}
+
+.comparativa-bien {
+  border-color: rgba(52, 232, 158, 0.35);
+}
+
+.comparativa-bien .comparativa-flecha {
+  color: var(--ingreso);
+}
+
+.comparativa-mal {
+  border-color: rgba(255, 93, 126, 0.3);
+}
+
+.comparativa-mal .comparativa-flecha {
+  color: var(--gasto);
+}
+
 /* Proyección de futuro (el momento "ajá") */
 .proyeccion {
   background:
