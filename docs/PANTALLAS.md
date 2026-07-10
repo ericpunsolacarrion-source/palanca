@@ -41,17 +41,17 @@ Escaparate del mes actual, de arriba abajo:
 
 ### 4. Movimientos (`MovimientosTab.jsx`)
 Dos sub-pestañas:
-- **Nuevo** (`RegistroMovimiento.jsx`): toggle Gasto/Ingreso, **importe grande centrado** como protagonista, categoría y concepto como **chips** tocables (con "+ Nuevo" para crear al vuelo), fecha, toggle Variable/Fijo, nota opcional plegada. Toast "Guardado" al terminar.
+- **Nuevo** (`RegistroMovimiento.jsx`): toggle de 3 opciones **Gasto/Ingreso/Inversión** (la inversión en dorado). Inversión crea el mismo modelo que desde la pantalla de Inversión (movimiento `tipo=gasto` + categoría `Inversion`), no un tipo nuevo: fija categoría, muestra "Plataforma" y siempre variable. **Importe grande centrado** como protagonista, categoría y concepto como **chips** tocables (con "+ Nuevo" para crear al vuelo), fecha, toggle Variable/Fijo, nota opcional plegada. Toast "Guardado" al terminar.
   - **Categoría** = tipo general (Nomina, Comida, Dividendos…), ampliable por el usuario.
   - **Concepto** = origen específico (ej. "Nómina restaurante" vs "Nómina bar"), también ampliable. Sirve para gente con varios trabajos.
   - **Fijo/Variable** = base para futuras previsiones.
-- **Historial** (`ListaMovimientos.jsx`): resumen del mes arriba (ingresado/gastado), lista completa de todo el histórico con fecha dd/mm/aaaa, badge Fijo/Variable, y **Editar** (formulario inline) / **Eliminar** (modal de confirmación propio) por fila. Las inversiones aparecen en dorado con ↗.
+- **Historial** (`ListaMovimientos.jsx`): resumen del mes arriba (ingresado/gastado) y todo el histórico **agrupado por meses en acordeón** — el mes actual desplegado, los anteriores plegados con cabecera (mes + resumen `+ingresos −gastos`) que se despliega al tocar, para no tener scroll infinito. Cada fila: fecha dd/mm/aaaa, badge Fijo/Variable, **Editar** (formulario inline) / **Eliminar** (modal propio). Las inversiones aparecen en dorado con ↗.
 
 ### 5. Presupuesto (`Presupuesto.jsx`)
 Dos modos a elegir:
 - **Por tasa de ahorro**: "quiero ahorrar el 20%" → calcula cuánto puede gastar según sus ingresos reales del mes.
 - **Gasto máximo fijo**: "quiero gastar máximo 500 €/mes".
-Muestra: disponible del mes en grande, barra de progreso (roja si se pasa), gastado / te queda / ahorro real, **presupuesto diario** ("puedes gastar 16,85 €/día durante los 27 días que quedan") y desglose "en qué se te va el presupuesto" por categoría con mini-barras.
+Muestra: disponible del mes en grande, barra de progreso (roja si se pasa), gastado / te queda / ahorro real, **presupuesto diario** ("puedes gastar 16,85 €/día durante los 27 días que quedan") y desglose "en qué se te va el presupuesto" por categoría con mini-barras. Incluye una **estimación de gasto mensual** basada en la media de los meses con datos ("estimación basada en tus últimos N meses"; marcada como provisional si hay <2 meses), calculada en `movimientosUtils.js`.
 
 ### 6. Inversión (`Inversiones.jsx`)
 - Una inversión ES un movimiento con categoría `Inversion` (misma tabla) — registrada aquí o en Movimientos, todo queda sincronizado.
@@ -63,7 +63,7 @@ Muestra: disponible del mes en grande, barra de progreso (roja si se pasa), gast
 
 ### 7. Simulador (`Simulador.jsx`)
 Cuatro sub-pestañas:
-- **Ahorro** (`AhorroObjetivo.jsx`): dos modos — "¿en cuánto tiempo?" (das aportación mensual) o "¿cuánto aportar?" (das plazo) — con gráfica de progreso hacia el objetivo.
+- **Ahorro** (`AhorroObjetivo.jsx`): **múltiples objetivos de ahorro** (fondo de emergencia, entrada de un piso, un viaje…). Cada uno con nombre, importe objetivo, cuánto llevas y fecha opcional; barra de progreso, % y proyección con tu ritmo real ("a tu ritmo lo alcanzarías en N meses" / "para la fecha necesitas X/mes"). Crear, editar y borrar. Tabla nueva `objetivos_ahorro` (aditiva; degrada si aún no existe). SQL en `supabase-schema-objetivos.sql`.
 - **Interés compuesto** (`InteresCompuesto.jsx`): balance inicial, depósito mensual (inicio/fin de mes), años y rentabilidad → "Puedes ahorrar X", gráfico circular (inicial/depósitos/interés), barras apiladas por año y tabla año a año. Permite **guardar simulaciones** con nombre.
 - **Hipoteca** (`Hipoteca.jsx`): calcular cuota (importe, TIN, plazo → cuota, intereses totales, total pagado) y **amortización anticipada** (cuánto ahorras en tiempo e intereses aportando extra al mes). También guarda simulaciones.
 - **Independencia** (`IndependenciaFinanciera.jsx`): regla del 4% (patrimonio = 25× gasto anual). **Bloqueado hasta llevar 30 días** de historial. Texto explicativo de cómo se calcula.
@@ -97,6 +97,16 @@ Cuatro sub-pestañas:
 - PWA auto-actualizable (sin quedarse con versiones viejas en caché).
 - Diseño: oscuro con morado #8b5cf6 + cian #22d3ee, verde ingresos, rosa gastos, dorado inversión; tarjetas con borde degradado; mobile-first con layout de columnas en escritorio.
 
+## Consultor IA (`Consultor.jsx`)
+
+Botón flotante "Consultor" (encima de la barra inferior) que abre un panel de
+chat. Orienta con los datos reales del usuario: envía un **resumen estructurado**
+(`lib/resumenParaIA.js`, agregados —no movimientos en bruto) al endpoint
+serverless `api/consultor.js`, que es la única pieza que conoce la API key. El
+encuadre es educativo (no asesoramiento regulado): sin recomendaciones de compra
+concretas ni promesas de rentabilidad. Degrada con elegancia si no está
+configurado. Puesta en marcha y variables de entorno en `docs/CONSULTOR-IA.md`.
+
 ## Reporte semanal por email
 
 `lib/reporteSemanal.js` genera el contenido del resumen semanal (listo, sin
@@ -107,5 +117,4 @@ activar el envío). Detalle y plantilla de Edge Function en `docs/REPORTE_SEMANA
 1. **Supabase Auth** (login real con email/contraseña): imprescindible antes de abrir al público; hoy cualquiera con el ID de otro accede a sus datos. Plan completo y no destructivo en `docs/AUTH_MIGRACION.md` (requiere sesión conjunta: toca el panel de Supabase y migra datos).
 2. Activar el envío del reporte semanal (infraestructura: proveedor de email + Edge Function + cron; ver `docs/REPORTE_SEMANAL.md`).
 3. Notificaciones push reales (el recordatorio actual solo se ve al abrir la app).
-4. Agrupar el historial por meses con cabeceras.
-5. Splash screens específicos de iOS.
+4. Splash screens específicos de iOS.

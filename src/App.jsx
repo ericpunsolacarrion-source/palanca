@@ -24,6 +24,7 @@ import BottomNav from './components/BottomNav'
 import Toaster from './components/Toaster'
 import Confirmador from './components/Confirmador'
 import Hitos from './components/Hitos'
+import Consultor from './components/Consultor'
 import './App.css'
 
 const MS_POR_DIA = 1000 * 60 * 60 * 24
@@ -213,6 +214,7 @@ function App() {
       <Toaster />
       <Confirmador />
       <Hitos usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
+      <Consultor movimientos={movimientos} objetivo={{ texto: perfil.objetivo, usuarioId }} />
     </div>
   )
 }
