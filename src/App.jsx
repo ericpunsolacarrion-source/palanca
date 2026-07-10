@@ -21,6 +21,7 @@ import GraficoTasaAhorro from './components/GraficoTasaAhorro'
 import BottomNav from './components/BottomNav'
 import Toaster from './components/Toaster'
 import Confirmador from './components/Confirmador'
+import Hitos from './components/Hitos'
 import './App.css'
 
 const MS_POR_DIA = 1000 * 60 * 60 * 24
@@ -200,6 +201,7 @@ function App() {
       <BottomNav activa={pestana} onCambiar={setPestana} />
       <Toaster />
       <Confirmador />
+      <Hitos usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
     </div>
   )
 }

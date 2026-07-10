@@ -1121,6 +1121,117 @@ button[type='submit']:disabled {
   opacity: 0.65;
 }
 
+/* Celebración de hitos */
+.celebracion-fondo {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 6, 10, 0.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-5);
+  z-index: 400;
+  animation: fade-in-up 0.25s ease both;
+}
+
+.celebracion-caja {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  padding: 32px 24px 24px;
+  border-radius: var(--radio-l);
+  background:
+    linear-gradient(160deg, var(--card-bg-2), var(--card-bg)) padding-box,
+    var(--borde-brillo) border-box;
+  border: 1px solid transparent;
+  box-shadow: var(--sombra-card), 0 0 40px -8px var(--accent-glow);
+  overflow: hidden;
+  animation: celebracion-entrada 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.celebracion-halo {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+  pointer-events: none;
+}
+
+.celebracion-icono {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  font-size: 26px;
+  color: white;
+  background: linear-gradient(160deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 28px -4px var(--accent-glow);
+  margin: 0 auto var(--sp-4);
+  animation: celebracion-pulso 2s ease-in-out infinite;
+}
+
+.celebracion-badge {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  font-weight: 700;
+  margin-bottom: var(--sp-2);
+}
+
+.celebracion-titulo {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-l);
+  color: var(--text-h);
+}
+
+.celebracion-mensaje {
+  font-size: var(--fs-s);
+  opacity: 0.8;
+  margin-bottom: var(--sp-5);
+  line-height: 1.5;
+}
+
+.celebracion-cerrar {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radio-s);
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: white;
+  font-weight: 600;
+}
+
+@keyframes celebracion-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes celebracion-pulso {
+  0%, 100% {
+    box-shadow: 0 0 28px -4px var(--accent-glow);
+  }
+  50% {
+    box-shadow: 0 0 40px 0 var(--accent-glow);
+  }
+}
+
 /* Comparativas con uno mismo (mes actual vs anterior) */
 .comparativas {
   display: flex;
