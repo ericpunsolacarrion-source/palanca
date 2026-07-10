@@ -4,6 +4,7 @@ import { hoyIso } from '../../lib/movimientosUtils'
 import { useObjetivosAhorro } from '../../lib/useObjetivosAhorro'
 import { toast } from '../../lib/toast'
 import { confirmar } from '../../lib/confirmar'
+import InputImporte from '../InputImporte'
 
 function mesesHasta(fechaIso) {
   if (!fechaIso) return null
@@ -77,9 +78,11 @@ function TarjetaObjetivo({ objetivo, ahorroMensual, onEditar, onEliminar }) {
 function FormularioObjetivo({ inicial, onGuardar, onCancelar, guardando }) {
   const [nombre, setNombre] = useState(inicial?.nombre ?? '')
   const [importeObjetivo, setImporteObjetivo] = useState(
-    inicial ? String(inicial.importe_objetivo) : '',
+    inicial ? Number(inicial.importe_objetivo) : null,
   )
-  const [importeActual, setImporteActual] = useState(inicial ? String(inicial.importe_actual) : '')
+  const [importeActual, setImporteActual] = useState(
+    inicial ? Number(inicial.importe_actual) : null,
+  )
   const [fechaObjetivo, setFechaObjetivo] = useState(inicial?.fecha_objetivo ?? '')
   const [error, setError] = useState(null)
 
@@ -110,24 +113,18 @@ function FormularioObjetivo({ inicial, onGuardar, onCancelar, guardando }) {
       />
 
       <label htmlFor="obj-meta">Importe objetivo (€)</label>
-      <input
+      <InputImporte
         id="obj-meta"
-        type="number"
-        inputMode="decimal"
-        min="0"
         value={importeObjetivo}
-        onChange={(e) => setImporteObjetivo(e.target.value)}
-        placeholder="ej. 6000"
+        onValueChange={setImporteObjetivo}
+        placeholder="ej. 6.000"
       />
 
       <label htmlFor="obj-actual">¿Cuánto llevas ya? (€, opcional)</label>
-      <input
+      <InputImporte
         id="obj-actual"
-        type="number"
-        inputMode="decimal"
-        min="0"
         value={importeActual}
-        onChange={(e) => setImporteActual(e.target.value)}
+        onValueChange={setImporteActual}
         placeholder="0"
       />
 

@@ -6,6 +6,7 @@ import { resolverEtiqueta } from '../lib/etiquetas'
 import { CATEGORIA_INVERSION } from '../lib/categorias'
 import { hoyIso } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
+import InputImporte from './InputImporte'
 
 export default function RegistroMovimiento({ usuarioId, onGuardado }) {
   // modo: 'gasto' | 'ingreso' | 'inversion'. La inversión se guarda como
@@ -15,7 +16,7 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
   const [nuevaCategoria, setNuevaCategoria] = useState('')
   const [fuenteId, setFuenteId] = useState('')
   const [nuevaFuente, setNuevaFuente] = useState('')
-  const [importe, setImporte] = useState('')
+  const [importe, setImporte] = useState(null)
   const [fecha, setFecha] = useState(hoyIso())
   const [esFijo, setEsFijo] = useState(false)
   const [nota, setNota] = useState('')
@@ -46,7 +47,7 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
   async function handleSubmit(e) {
     e.preventDefault()
     const importeNumero = Number(importe)
-    if (!importeNumero || importeNumero <= 0) {
+    if (!importe || !importeNumero || importeNumero <= 0) {
       setError('Introduce un importe válido mayor que 0.')
       return
     }
@@ -101,7 +102,7 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
       return
     }
 
-    setImporte('')
+    setImporte(null)
     setNota('')
     setMostrarNota(false)
     setCategoriaId('')
@@ -138,17 +139,7 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
 
       <div className="importe-hero">
         <span className="importe-hero-simbolo">€</span>
-        <input
-          id="importe"
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          min="0"
-          value={importe}
-          onChange={(e) => setImporte(e.target.value)}
-          placeholder="0,00"
-          autoFocus
-        />
+        <InputImporte id="importe" value={importe} onValueChange={setImporte} autoFocus />
       </div>
 
       {!esInversion && (

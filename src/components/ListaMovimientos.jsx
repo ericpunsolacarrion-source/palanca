@@ -4,9 +4,10 @@ import { esInversion, formatearEuros } from '../lib/categorias'
 import { claveMes, claveMesActual, formatearFecha, totalesDe } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
+import InputImporte from './InputImporte'
 
 function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
-  const [importe, setImporte] = useState(String(movimiento.importe))
+  const [importe, setImporte] = useState(Number(movimiento.importe))
   const [fecha, setFecha] = useState(movimiento.fecha)
   const [esFijo, setEsFijo] = useState(movimiento.es_fijo)
   const [nota, setNota] = useState(movimiento.nota ?? '')
@@ -16,7 +17,7 @@ function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
   async function handleGuardar(e) {
     e.preventDefault()
     const importeNumero = Number(importe)
-    if (!importeNumero || importeNumero <= 0) {
+    if (!importe || !importeNumero || importeNumero <= 0) {
       setError('Introduce un importe válido mayor que 0.')
       return
     }
@@ -41,14 +42,10 @@ function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
   return (
     <form className="edicion-movimiento" onSubmit={handleGuardar}>
       <label htmlFor={`importe-${movimiento.id}`}>Importe (€)</label>
-      <input
+      <InputImporte
         id={`importe-${movimiento.id}`}
-        type="number"
-        inputMode="decimal"
-        step="0.01"
-        min="0"
         value={importe}
-        onChange={(e) => setImporte(e.target.value)}
+        onValueChange={setImporte}
       />
 
       <label htmlFor={`fecha-${movimiento.id}`}>Fecha</label>

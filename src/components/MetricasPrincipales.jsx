@@ -9,6 +9,7 @@ import {
 import { useCountUp } from '../lib/useCountUp'
 import { usePresupuesto } from '../lib/usePresupuesto'
 import { toast } from '../lib/toast'
+import InputImporte from './InputImporte'
 
 function Cifra({ valor, className }) {
   const animado = useCountUp(valor)
@@ -38,13 +39,13 @@ export default function MetricasPrincipales({ usuarioId, movimientos, historico 
 
   const { objetivoInversionMensual, cargando, guardarObjetivoInversion } = usePresupuesto(usuarioId)
   const [editando, setEditando] = useState(false)
-  const [valorInput, setValorInput] = useState('')
+  const [valorInput, setValorInput] = useState(null)
   const [guardando, setGuardando] = useState(false)
 
   async function handleGuardarObjetivo(e) {
     e.preventDefault()
     const numero = Number(valorInput)
-    if (!numero || numero <= 0) return
+    if (!valorInput || !numero || numero <= 0) return
     setGuardando(true)
     await guardarObjetivoInversion(numero)
     setGuardando(false)
@@ -117,13 +118,10 @@ export default function MetricasPrincipales({ usuarioId, movimientos, historico 
             <form onSubmit={handleGuardarObjetivo} className="objetivo-inversion-form">
               <label htmlFor="objetivo-inversion">¿Cuánto quieres invertir cada mes?</label>
               <div className="objetivo-inversion-fila">
-                <input
+                <InputImporte
                   id="objetivo-inversion"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
                   value={valorInput}
-                  onChange={(e) => setValorInput(e.target.value)}
+                  onValueChange={setValorInput}
                   placeholder="ej. 300"
                 />
                 <button type="submit" disabled={guardando || !valorInput}>
@@ -141,7 +139,7 @@ export default function MetricasPrincipales({ usuarioId, movimientos, historico 
                   type="button"
                   className="link"
                   onClick={() => {
-                    setValorInput(String(objetivoInversionMensual))
+                    setValorInput(objetivoInversionMensual)
                     setEditando(true)
                   }}
                 >

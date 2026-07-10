@@ -4,6 +4,7 @@ import { formatearPorcentaje, totalesDe } from '../lib/movimientosUtils'
 import { usePresupuesto } from '../lib/usePresupuesto'
 import { toast } from '../lib/toast'
 import { useCountUp } from '../lib/useCountUp'
+import InputImporte from './InputImporte'
 
 function Cifra({ valor, className }) {
   const animado = useCountUp(valor)
@@ -28,8 +29,16 @@ export default function Presupuesto({ usuarioId, movimientos, gastoEstimado }) {
 
   const [editando, setEditando] = useState(false)
   const [metodoInput, setMetodoInput] = useState('tasa')
-  const [valorInput, setValorInput] = useState('')
+  const [valorInput, setValorInput] = useState(null)
   const [guardando, setGuardando] = useState(false)
+
+  // Al cambiar de método, se limpia el valor para que no arrastre el marcador
+  // del método anterior (ej. un 25 de la tasa apareciendo como 25 € de gasto).
+  function cambiarMetodo(nuevo) {
+    if (nuevo === metodoInput) return
+    setMetodoInput(nuevo)
+    setValorInput(null)
+  }
 
   // Regla única (ver CLAUDE.md): la inversión no es gasto de consumo,
   // así que no agota el presupuesto.
@@ -54,7 +63,7 @@ export default function Presupuesto({ usuarioId, movimientos, gastoEstimado }) {
   async function handleGuardar(e) {
     e.preventDefault()
     const numero = Number(valorInput)
-    if (numero <= 0) return
+    if (valorInput == null || numero <= 0) return
     if (metodoInput === 'tasa' && numero > 100) return
     setGuardando(true)
     setErrorGuardado(null)
@@ -80,14 +89,14 @@ export default function Presupuesto({ usuarioId, movimientos, gastoEstimado }) {
           <button
             type="button"
             className={metodoInput === 'tasa' ? 'activo' : ''}
-            onClick={() => setMetodoInput('tasa')}
+            onClick={() => cambiarMetodo('tasa')}
           >
             Por tasa de ahorro
           </button>
           <button
             type="button"
             className={metodoInput === 'fijo' ? 'activo' : ''}
-            onClick={() => setMetodoInput('fijo')}
+            onClick={() => cambiarMetodo('fijo')}
           >
             Gasto máximo fijo
           </button>
@@ -103,8 +112,8 @@ export default function Presupuesto({ usuarioId, movimientos, gastoEstimado }) {
               min="0"
               max="100"
               step="1"
-              value={valorInput}
-              onChange={(e) => setValorInput(e.target.value)}
+              value={valorInput ?? ''}
+              onChange={(e) => setValorInput(e.target.value === '' ? null : Number(e.target.value))}
               placeholder="ej. 20"
               autoFocus
             />
@@ -115,13 +124,10 @@ export default function Presupuesto({ usuarioId, movimientos, gastoEstimado }) {
         ) : (
           <>
             <label htmlFor="fijo">¿Cuánto quieres gastar como máximo al mes? (€)</label>
-            <input
+            <InputImporte
               id="fijo"
-              type="number"
-              inputMode="decimal"
-              min="0"
               value={valorInput}
-              onChange={(e) => setValorInput(e.target.value)}
+              onValueChange={setValorInput}
               placeholder="ej. 500"
               autoFocus
             />
@@ -140,7 +146,7 @@ export default function Presupuesto({ usuarioId, movimientos, gastoEstimado }) {
 
         {errorGuardado && <p className="error">{errorGuardado}</p>}
 
-        <button type="submit" disabled={guardando || valorInput === ''}>
+        <button type="submit" disabled={guardando || valorInput == null}>
           {guardando ? 'Guardando…' : 'Guardar presupuesto'}
         </button>
 
@@ -170,7 +176,7 @@ export default function Presupuesto({ usuarioId, movimientos, gastoEstimado }) {
           className="link"
           onClick={() => {
             setMetodoInput(metodo)
-            setValorInput(String(metodo === 'fijo' ? gastoMaximoFijo : tasaAhorroObjetivo))
+            setValorInput(metodo === 'fijo' ? gastoMaximoFijo : tasaAhorroObjetivo)
             setEditando(true)
           }}
         >

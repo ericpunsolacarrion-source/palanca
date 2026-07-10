@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { formatearEuros } from '../../lib/categorias'
 import { proyectarInteresCompuesto } from '../../lib/movimientosUtils'
 import SimulacionesGuardadas from '../SimulacionesGuardadas'
+import InputImporte from '../InputImporte'
 
 // Usa la fórmula única de movimientosUtils; el toggle "al principio del mes"
 // aplica un mes extra de interés sobre esa base.
@@ -13,8 +14,8 @@ function valorFinal(inicial, mensual, tasaMensual, meses, alPrincipio) {
 }
 
 export default function InteresCompuesto({ usuarioId }) {
-  const [inicial, setInicial] = useState('')
-  const [mensual, setMensual] = useState('')
+  const [inicial, setInicial] = useState(null)
+  const [mensual, setMensual] = useState(null)
   const [anios, setAnios] = useState('')
   const [rentabilidad, setRentabilidad] = useState('')
   const [momentoDeposito, setMomentoDeposito] = useState('final')
@@ -84,26 +85,10 @@ export default function InteresCompuesto({ usuarioId }) {
       </p>
 
       <label htmlFor="ic-inicial">Balance inicial (€)</label>
-      <input
-        id="ic-inicial"
-        type="number"
-        inputMode="decimal"
-        min="0"
-        value={inicial}
-        onChange={(e) => setInicial(e.target.value)}
-        placeholder="ej. 1000"
-      />
+      <InputImporte id="ic-inicial" value={inicial} onValueChange={setInicial} placeholder="ej. 1.000" />
 
       <label htmlFor="ic-mensual">Depósito periódico mensual (€)</label>
-      <input
-        id="ic-mensual"
-        type="number"
-        inputMode="decimal"
-        min="0"
-        value={mensual}
-        onChange={(e) => setMensual(e.target.value)}
-        placeholder="ej. 100"
-      />
+      <InputImporte id="ic-mensual" value={mensual} onValueChange={setMensual} placeholder="ej. 100" />
 
       <label>¿Cuándo haces el depósito de cada mes?</label>
       <div className="tipo-toggle">
@@ -222,8 +207,8 @@ export default function InteresCompuesto({ usuarioId }) {
         tipo="interes_compuesto"
         datosActuales={puedeCalcular ? { inicial, mensual, anios, rentabilidad, momentoDeposito } : null}
         onCargar={(datos) => {
-          setInicial(String(datos.inicial))
-          setMensual(String(datos.mensual))
+          setInicial(Number(datos.inicial) || null)
+          setMensual(Number(datos.mensual) || null)
           setAnios(String(datos.anios))
           setRentabilidad(String(datos.rentabilidad))
           setMomentoDeposito(datos.momentoDeposito ?? 'final')

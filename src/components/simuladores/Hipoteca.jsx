@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { formatearEuros } from '../../lib/categorias'
 import SimulacionesGuardadas from '../SimulacionesGuardadas'
+import InputImporte from '../InputImporte'
 
 function calcularCuota(capital, interesAnual, meses) {
   const r = interesAnual / 100 / 12
@@ -19,15 +20,15 @@ export default function Hipoteca({ usuarioId }) {
   const [modo, setModo] = useState('cuota')
 
   // Modo: calcular cuota
-  const [importe, setImporte] = useState('')
+  const [importe, setImporte] = useState(null)
   const [interes, setInteres] = useState('')
   const [anios, setAnios] = useState('')
 
   // Modo: amortización anticipada
-  const [capitalPendiente, setCapitalPendiente] = useState('')
+  const [capitalPendiente, setCapitalPendiente] = useState(null)
   const [interesAmort, setInteresAmort] = useState('')
   const [aniosRestantes, setAniosRestantes] = useState('')
-  const [aportacionExtra, setAportacionExtra] = useState('')
+  const [aportacionExtra, setAportacionExtra] = useState(null)
 
   const numImporte = Number(importe) || 0
   const numInteres = Number(interes) || 0
@@ -94,15 +95,7 @@ export default function Hipoteca({ usuarioId }) {
           <p className="ayuda">Calcula la cuota mensual de un préstamo o hipoteca a tipo fijo.</p>
 
           <label htmlFor="h-importe">Importe del préstamo (€)</label>
-          <input
-            id="h-importe"
-            type="number"
-            inputMode="decimal"
-            min="0"
-            value={importe}
-            onChange={(e) => setImporte(e.target.value)}
-            placeholder="ej. 150000"
-          />
+          <InputImporte id="h-importe" value={importe} onValueChange={setImporte} placeholder="ej. 150.000" />
 
           <label htmlFor="h-interes">Interés anual (TIN %)</label>
           <input
@@ -149,7 +142,7 @@ export default function Hipoteca({ usuarioId }) {
             tipo="hipoteca"
             datosActuales={puedeCalcularCuota ? { importe, interes, anios } : null}
             onCargar={(datos) => {
-              setImporte(String(datos.importe))
+              setImporte(Number(datos.importe) || null)
               setInteres(String(datos.interes))
               setAnios(String(datos.anios))
             }}
@@ -162,14 +155,11 @@ export default function Hipoteca({ usuarioId }) {
           </p>
 
           <label htmlFor="a-capital">Capital pendiente (€)</label>
-          <input
+          <InputImporte
             id="a-capital"
-            type="number"
-            inputMode="decimal"
-            min="0"
             value={capitalPendiente}
-            onChange={(e) => setCapitalPendiente(e.target.value)}
-            placeholder="ej. 120000"
+            onValueChange={setCapitalPendiente}
+            placeholder="ej. 120.000"
           />
 
           <label htmlFor="a-interes">Interés anual (TIN %)</label>
@@ -196,13 +186,10 @@ export default function Hipoteca({ usuarioId }) {
           />
 
           <label htmlFor="a-extra">Aportación extra mensual (€)</label>
-          <input
+          <InputImporte
             id="a-extra"
-            type="number"
-            inputMode="decimal"
-            min="0"
             value={aportacionExtra}
-            onChange={(e) => setAportacionExtra(e.target.value)}
+            onValueChange={setAportacionExtra}
             placeholder="ej. 100"
           />
 

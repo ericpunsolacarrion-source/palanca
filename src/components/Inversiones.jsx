@@ -10,6 +10,7 @@ import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import Pildora from './Pildora'
 import { PILDORA_INVERSION } from '../lib/pildoras'
+import InputImporte from './InputImporte'
 
 const ALTO_BARRAS = 110
 
@@ -65,7 +66,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
 
   const [fuenteId, setFuenteId] = useState('')
   const [nuevaFuente, setNuevaFuente] = useState('')
-  const [importe, setImporte] = useState('')
+  const [importe, setImporte] = useState(null)
   const [fecha, setFecha] = useState(hoyIso())
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
@@ -116,7 +117,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
 
   const [eliminandoId, setEliminandoId] = useState(null)
   const [editando, setEditando] = useState(null)
-  const [importeEdit, setImporteEdit] = useState('')
+  const [importeEdit, setImporteEdit] = useState(null)
   const [fechaEdit, setFechaEdit] = useState('')
   const [guardandoEdit, setGuardandoEdit] = useState(false)
 
@@ -135,13 +136,13 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
 
   function empezarEdicion(d) {
     setEditando(d.id)
-    setImporteEdit(String(d.importe))
+    setImporteEdit(Number(d.importe))
     setFechaEdit(d.fecha)
   }
 
   async function handleGuardarEdicion(id) {
     const importeNumero = Number(importeEdit)
-    if (!importeNumero || importeNumero <= 0) return
+    if (!importeEdit || !importeNumero || importeNumero <= 0) return
     setGuardandoEdit(true)
     const { error: errorUpdate } = await supabase
       .from('movimientos')
@@ -158,7 +159,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
   async function handleSubmit(e) {
     e.preventDefault()
     const importeNumero = Number(importe)
-    if (!importeNumero || importeNumero <= 0) {
+    if (!importe || !importeNumero || importeNumero <= 0) {
       setError('Introduce un importe válido mayor que 0.')
       return
     }
@@ -200,7 +201,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
       return
     }
 
-    setImporte('')
+    setImporte(null)
     setFuenteId('')
     setNuevaFuente('')
     toast('Aportación registrada')
@@ -251,16 +252,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
         />
 
         <label htmlFor="importe-inversion">Importe (€)</label>
-        <input
-          id="importe-inversion"
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          min="0"
-          value={importe}
-          onChange={(e) => setImporte(e.target.value)}
-          placeholder="0,00"
-        />
+        <InputImporte id="importe-inversion" value={importe} onValueChange={setImporte} />
 
         <label htmlFor="fecha-inversion">Fecha</label>
         <input
@@ -303,14 +295,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
                 {detalle.map((d) =>
                   editando === d.id ? (
                     <div key={d.id} className="edicion-movimiento">
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        step="0.01"
-                        min="0"
-                        value={importeEdit}
-                        onChange={(e) => setImporteEdit(e.target.value)}
-                      />
+                      <InputImporte value={importeEdit} onValueChange={setImporteEdit} />
                       <input type="date" value={fechaEdit} onChange={(e) => setFechaEdit(e.target.value)} />
                       <div className="edicion-acciones">
                         <button type="button" className="btn-eliminar" onClick={() => setEditando(null)}>
