@@ -1073,6 +1073,13 @@ button[type='submit']:disabled {
   background: var(--border);
 }
 
+.barra-apilada button {
+  border: none;
+  padding: 0;
+  height: 100%;
+  cursor: pointer;
+}
+
 .leyenda-categorias {
   display: flex;
   flex-direction: column;
@@ -1093,6 +1100,100 @@ button[type='submit']:disabled {
 
 .leyenda-valor {
   opacity: 0.7;
+}
+
+/* Categoría clicable -> detalle */
+.leyenda-item-btn {
+  width: 100%;
+  gap: 8px;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 8px 6px;
+  border-radius: var(--radio-s);
+  color: var(--text);
+}
+
+.leyenda-item-btn:active {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.leyenda-flecha {
+  opacity: 0.4;
+  font-size: var(--fs-m);
+}
+
+/* Detalle de una categoría (movimientos del periodo) */
+.detalle-cat-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.btn-volver {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-h);
+  padding: 6px 12px;
+  border-radius: var(--radio-pastilla);
+  font-size: var(--fs-s);
+}
+
+.detalle-cat-total {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-s);
+}
+
+.detalle-cat-lista {
+  list-style: none;
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.detalle-cat-lista li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+.detalle-cat-lista li:last-child {
+  border-bottom: none;
+}
+
+.dc-izq {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.dc-fecha {
+  font-size: var(--fs-s);
+  color: var(--text-h);
+}
+
+.dc-concepto {
+  font-size: var(--fs-xs);
+  opacity: 0.7;
+}
+
+.dc-nota {
+  font-size: var(--fs-micro);
+  opacity: 0.5;
+}
+
+.dc-importe {
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* Inversión: color propio, no rojo, para transmitir que es algo positivo */
