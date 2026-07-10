@@ -1766,70 +1766,53 @@ button[type='submit']:disabled {
   grid-template-columns: repeat(2, 1fr);
 }
 
-/* Panel de ingresos: cobrado este mes + media del último año, estructurado */
-.ingresos-panel {
+/* Ingresos: una sola línea fina (cobrado este mes + media al lado) */
+.ingresos-linea {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--sp-4);
-  padding-bottom: var(--sp-4);
-  margin-bottom: var(--sp-4);
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  padding-bottom: var(--sp-3);
+  margin-bottom: var(--sp-3);
   border-bottom: 1px solid var(--border);
+  font-size: var(--fs-s);
 }
 
-.ingresos-panel .etiqueta {
+.il-bloque {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.il-label {
   font-size: var(--fs-xs);
-  opacity: 0.65;
+  opacity: 0.55;
 }
 
-.ingresos-mes {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.ingresos-mes-cifra {
-  font-size: var(--fs-l);
-  font-weight: 700;
-  letter-spacing: -1px;
-  line-height: 1.1;
-}
-
-.ingresos-mes-cifra.ingreso {
-  color: var(--ingreso);
-  text-shadow: 0 0 20px rgba(52, 232, 158, 0.22);
-}
-
-.ingresos-media {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  text-align: right;
-}
-
-.ingresos-media-cifra {
+.ingresos-linea strong {
   font-size: var(--fs-m);
-  font-weight: 600;
-  color: var(--text-h);
   letter-spacing: -0.5px;
 }
 
-.ingresos-comp {
-  font-size: var(--fs-micro);
-  opacity: 0.85;
-}
-
-.ingresos-comp.ingreso {
+.ingresos-linea .ingreso {
   color: var(--ingreso);
 }
 
-.ingresos-comp.gasto {
-  color: var(--gasto);
+.il-media {
+  color: var(--text);
+  opacity: 0.9;
 }
 
-.ingresos-media-nota {
-  font-size: var(--fs-micro);
-  opacity: 0.55;
+.il-comp {
+  font-weight: 700;
+}
+
+.il-comp.ingreso {
+  color: var(--ingreso);
+}
+
+.il-comp.gasto {
+  color: var(--gasto);
 }
 
 .metrica-bloque {

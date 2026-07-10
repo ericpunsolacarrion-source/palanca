@@ -57,27 +57,25 @@ export default function MetricasPrincipales({ usuarioId, movimientos, historico 
 
   return (
     <div className="metricas-principales fade-in-up">
-      {/* Lo que entra: cobrado este mes + media del último año (contexto). */}
-      <div className="ingresos-panel">
-        <div className="ingresos-mes">
-          <span className="etiqueta">Has cobrado este mes</span>
-          <Cifra valor={totalIngresos} className="ingresos-mes-cifra ingreso" />
-        </div>
+      {/* Lo que entra: una línea fina con cobrado este mes + media (contexto). */}
+      <div className="ingresos-linea">
+        <span className="il-bloque">
+          <span className="il-label">Este mes</span>
+          <strong className="ingreso">{formatearEuros(totalIngresos)}</strong>
+        </span>
         {media > 0 && mediaIngresos.meses >= 2 && (
-          <div className="ingresos-media">
-            <span className="etiqueta">De media al mes</span>
-            <span className="ingresos-media-cifra">
-              {formatearEuros(Math.round(media))}
-            </span>
+          <span className="il-bloque il-media">
+            <span className="il-label">media</span>
+            <span>{formatearEuros(Math.round(media))}/mes</span>
             {comparativaIngreso && (
-              <span className={`ingresos-comp ${comparativaIngreso.clase}`}>
-                {comparativaIngreso.simbolo} {comparativaIngreso.texto}
+              <span
+                className={`il-comp ${comparativaIngreso.clase}`}
+                title={`${comparativaIngreso.texto} (últimos ${mediaIngresos.meses} meses)`}
+              >
+                {comparativaIngreso.simbolo}
               </span>
             )}
-            <span className="ingresos-media-nota">
-              últimos {mediaIngresos.meses} meses
-            </span>
-          </div>
+          </span>
         )}
       </div>
 
