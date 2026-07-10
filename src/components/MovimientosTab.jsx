@@ -37,7 +37,9 @@ export default function MovimientosTab({ usuarioId, movimientos, movimientosMes,
         </button>
       </div>
 
-      {sub === 'nuevo' && <RegistroMovimiento usuarioId={usuarioId} onGuardado={onGuardado} />}
+      {sub === 'nuevo' && (
+        <RegistroMovimiento usuarioId={usuarioId} movimientos={movimientos} onGuardado={onGuardado} />
+      )}
 
       {sub === 'historial' && (
         <>

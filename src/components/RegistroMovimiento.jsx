@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
-import { CATEGORIA_INVERSION } from '../lib/categorias'
+import { CATEGORIA_INVERSION, formatearEuros } from '../lib/categorias'
 import { hoyIso } from '../lib/movimientosUtils'
+import { frecuenciaCategorias, frecuentesParaRepetir, importesFrecuentes } from '../lib/sugerencias'
 import { toast } from '../lib/toast'
 import InputImporte from './InputImporte'
 
-export default function RegistroMovimiento({ usuarioId, onGuardado }) {
+const TOAST_MODO = { gasto: 'Gasto guardado', ingreso: 'Ingreso guardado', inversion: 'Inversión guardada' }
+
+export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuardado }) {
   // modo: 'gasto' | 'ingreso' | 'inversion'. La inversión se guarda como
   // gasto + categoría "Inversion" (mismo registro que en la pantalla Inversión).
   const [modo, setModo] = useState('gasto')
@@ -37,11 +40,49 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
     setNuevaFuente('')
   }, [modo])
 
+  // Sugerencias derivadas del histórico para registrar con menos toques.
+  const categoriasOrdenadas = useMemo(() => {
+    const freq = frecuenciaCategorias(movimientos, modo)
+    return [...categorias].sort((a, b) => (freq.get(b.nombre) ?? 0) - (freq.get(a.nombre) ?? 0))
+  }, [categorias, movimientos, modo])
+
+  const repetibles = useMemo(() => frecuentesParaRepetir(movimientos, modo), [movimientos, modo])
+
+  const importesSugeridos = useMemo(
+    () => importesFrecuentes(movimientos, modo, categoriaId || null),
+    [movimientos, modo, categoriaId],
+  )
+
   async function categoriaInversionId() {
     const existente = categorias.find((c) => c.nombre === CATEGORIA_INVERSION)
     if (existente) return existente.id
     const creada = await crearCategoria(CATEGORIA_INVERSION)
     return creada?.id ?? null
+  }
+
+  const [duplicandoClave, setDuplicandoClave] = useState(null)
+
+  // Repetir en un toque: inserta el mismo movimiento con fecha de hoy.
+  async function duplicar(rep) {
+    if (!rep.categoriaId) return
+    const clave = `${rep.categoriaId}|${rep.fuenteId}|${rep.importe}`
+    setDuplicandoClave(clave)
+    const { error: errorInsert } = await supabase.from('movimientos').insert({
+      usuario_id: usuarioId,
+      tipo: tipoDb,
+      categoria_id: rep.categoriaId,
+      fuente_id: rep.fuenteId,
+      importe: rep.importe,
+      fecha: hoyIso(),
+      es_fijo: esInversion ? false : rep.esFijo,
+    })
+    setDuplicandoClave(null)
+    if (errorInsert) {
+      toast('No se ha podido añadir. Inténtalo de nuevo.', 'error')
+      return
+    }
+    toast(`Añadido: ${formatearEuros(rep.importe)}`)
+    onGuardado()
   }
 
   async function handleSubmit(e) {
@@ -110,7 +151,7 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
     setFuenteId('')
     setNuevaFuente('')
     setEsFijo(false)
-    toast(modo === 'ingreso' ? 'Ingreso guardado' : modo === 'inversion' ? 'Inversión guardada' : 'Gasto guardado')
+    toast(TOAST_MODO[modo])
     onGuardado()
   }
 
@@ -137,10 +178,51 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
         </button>
       </div>
 
+      {repetibles.length > 0 && (
+        <div className="repetir-strip">
+          <span className="repetir-titulo">Repetir</span>
+          <div className="repetir-chips">
+            {repetibles.map((rep) => {
+              const clave = `${rep.categoriaId}|${rep.fuenteId}|${rep.importe}`
+              const etiqueta = rep.fuenteNombre || rep.categoriaNombre || 'Movimiento'
+              return (
+                <button
+                  key={clave}
+                  type="button"
+                  className="repetir-chip"
+                  onClick={() => duplicar(rep)}
+                  disabled={duplicandoClave === clave}
+                >
+                  <span className="repetir-chip-icono">↻</span>
+                  <span className="repetir-chip-texto">
+                    {etiqueta} · {formatearEuros(rep.importe)}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="importe-hero">
         <span className="importe-hero-simbolo">€</span>
         <InputImporte id="importe" value={importe} onValueChange={setImporte} autoFocus />
       </div>
+
+      {importesSugeridos.length > 0 && (
+        <div className="importes-sugeridos">
+          {importesSugeridos.map((imp) => (
+            <button
+              key={imp}
+              type="button"
+              className={`chip-importe ${Number(importe) === imp ? 'activo' : ''}`}
+              onClick={() => setImporte(imp)}
+            >
+              {formatearEuros(imp)}
+            </button>
+          ))}
+        </div>
+      )}
 
       {!esInversion && (
         <SelectorEtiqueta
@@ -148,7 +230,7 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
           label="Categoría"
           valor={categoriaId}
           onChange={setCategoriaId}
-          items={categorias}
+          items={categoriasOrdenadas}
           nuevoNombre={nuevaCategoria}
           onNuevoNombreChange={setNuevaCategoria}
           placeholder={modo === 'ingreso' ? 'ej. Dividendos, Alquiler' : 'ej. Vivienda, Ocio'}

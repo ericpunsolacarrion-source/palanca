@@ -411,6 +411,82 @@ button[type='submit']:disabled {
   opacity: 0.8;
 }
 
+/* Alta rápida: repetir movimientos recurrentes en un toque */
+.repetir-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.repetir-titulo {
+  font-size: var(--fs-xs);
+  opacity: 0.6;
+}
+
+.repetir-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+
+.repetir-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.repetir-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 8px 14px;
+  min-height: 40px;
+  border-radius: var(--radio-pastilla);
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--card-solida), var(--card-solida)) padding-box,
+    linear-gradient(135deg, var(--accent), var(--accent-2)) border-box;
+  color: var(--text-h);
+  font-size: var(--fs-s);
+  white-space: nowrap;
+}
+
+.repetir-chip:disabled {
+  opacity: 0.5;
+}
+
+.repetir-chip-icono {
+  color: var(--accent-2);
+  font-size: var(--fs-m);
+  line-height: 1;
+}
+
+/* Importes frecuentes sugeridos bajo el importe */
+.importes-sugeridos {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-importe {
+  padding: 6px 14px;
+  min-height: 36px;
+  border-radius: var(--radio-pastilla);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--fs-s);
+}
+
+.chip-importe.activo {
+  border-color: var(--accent);
+  color: var(--text-h);
+  box-shadow: 0 0 12px -4px var(--accent-glow);
+}
+
 .fila-fecha-fijo {
   display: flex;
   gap: 8px;
