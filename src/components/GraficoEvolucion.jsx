@@ -26,8 +26,13 @@ export default function GraficoEvolucion({ movimientos }) {
           <span className="grafico-detalle">
             <span className="grafico-detalle-mes">{mesActivo.etiqueta}</span>
             <span className="detalle-ingreso">+{formatearEuros(mesActivo.ingresos)}</span>
-            {' · '}
-            <span className="detalle-gasto">-{formatearEuros(mesActivo.gastos)}</span>
+            {' − '}
+            <span className="detalle-gasto">{formatearEuros(mesActivo.gastos)}</span>
+            {' = '}
+            <span className={`detalle-neto ${mesActivo.ahorro >= 0 ? 'ingreso' : 'gasto'}`}>
+              {mesActivo.ahorro >= 0 ? '+' : '−'}
+              {formatearEuros(Math.abs(mesActivo.ahorro))}
+            </span>
           </span>
         )}
       </div>

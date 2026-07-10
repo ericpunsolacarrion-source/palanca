@@ -1301,6 +1301,18 @@ button[type='submit']:disabled {
   color: var(--gasto);
 }
 
+.detalle-neto {
+  font-weight: 700;
+}
+
+.detalle-neto.ingreso {
+  color: var(--ingreso);
+}
+
+.detalle-neto.gasto {
+  color: var(--gasto);
+}
+
 /* Responsive: escritorio */
 @media (min-width: 860px) {
   .app {
