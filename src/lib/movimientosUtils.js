@@ -11,6 +11,17 @@ export function claveMesActual() {
   return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`
 }
 
+// Fecha de hoy en formato 'YYYY-MM-DD' con componentes LOCALES. Usar esto para
+// el valor por defecto de los formularios: toISOString() da la fecha UTC, que
+// a última hora del día cae en otro día/mes que el filtro local del dashboard.
+export function hoyIso() {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
+}
+
 export function filtrarMesActual(movimientos) {
   const clave = claveMesActual()
   return movimientos.filter((m) => claveMes(m.fecha) === clave)

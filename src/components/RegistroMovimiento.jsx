@@ -3,33 +3,45 @@ import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
+import { CATEGORIA_INVERSION } from '../lib/categorias'
+import { hoyIso } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
 
-const hoy = () => new Date().toISOString().slice(0, 10)
-
 export default function RegistroMovimiento({ usuarioId, onGuardado }) {
-  const [tipo, setTipo] = useState('gasto')
+  // modo: 'gasto' | 'ingreso' | 'inversion'. La inversión se guarda como
+  // gasto + categoría "Inversion" (mismo registro que en la pantalla Inversión).
+  const [modo, setModo] = useState('gasto')
   const [categoriaId, setCategoriaId] = useState('')
   const [nuevaCategoria, setNuevaCategoria] = useState('')
   const [fuenteId, setFuenteId] = useState('')
   const [nuevaFuente, setNuevaFuente] = useState('')
   const [importe, setImporte] = useState('')
-  const [fecha, setFecha] = useState(hoy())
+  const [fecha, setFecha] = useState(hoyIso())
   const [esFijo, setEsFijo] = useState(false)
   const [nota, setNota] = useState('')
   const [mostrarNota, setMostrarNota] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
 
-  const { items: categorias, crear: crearCategoria } = useEtiquetas('categorias', usuarioId, tipo)
-  const { items: fuentes, crear: crearFuente } = useEtiquetas('fuentes', usuarioId, tipo)
+  const esInversion = modo === 'inversion'
+  const tipoDb = esInversion ? 'gasto' : modo
+
+  const { items: categorias, crear: crearCategoria } = useEtiquetas('categorias', usuarioId, tipoDb)
+  const { items: fuentes, crear: crearFuente } = useEtiquetas('fuentes', usuarioId, tipoDb)
 
   useEffect(() => {
     setCategoriaId('')
     setNuevaCategoria('')
     setFuenteId('')
     setNuevaFuente('')
-  }, [tipo])
+  }, [modo])
+
+  async function categoriaInversionId() {
+    const existente = categorias.find((c) => c.nombre === CATEGORIA_INVERSION)
+    if (existente) return existente.id
+    const creada = await crearCategoria(CATEGORIA_INVERSION)
+    return creada?.id ?? null
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -38,7 +50,7 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
       setError('Introduce un importe válido mayor que 0.')
       return
     }
-    if (!categoriaId) {
+    if (!esInversion && !categoriaId) {
       setError('Elige o crea una categoría.')
       return
     }
@@ -46,13 +58,26 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
     setGuardando(true)
     setError(null)
 
-    const resultCategoria = await resolverEtiqueta(categoriaId, nuevaCategoria, crearCategoria, 'categoría', setError)
-    if (!resultCategoria.ok) {
-      setGuardando(false)
-      return
+    // Categoría: fija a "Inversion" en modo inversión; elegida en gasto/ingreso.
+    let idCategoria
+    if (esInversion) {
+      idCategoria = await categoriaInversionId()
+      if (!idCategoria) {
+        setError('No se ha podido preparar la categoría de inversión. Inténtalo de nuevo.')
+        setGuardando(false)
+        return
+      }
+    } else {
+      const resultCategoria = await resolverEtiqueta(categoriaId, nuevaCategoria, crearCategoria, 'categoría', setError)
+      if (!resultCategoria.ok) {
+        setGuardando(false)
+        return
+      }
+      idCategoria = resultCategoria.id
     }
 
-    const resultFuente = await resolverEtiqueta(fuenteId, nuevaFuente, crearFuente, 'concepto', setError)
+    const etiquetaFuente = esInversion ? 'plataforma' : 'concepto'
+    const resultFuente = await resolverEtiqueta(fuenteId, nuevaFuente, crearFuente, etiquetaFuente, setError)
     if (!resultFuente.ok) {
       setGuardando(false)
       return
@@ -60,12 +85,12 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
 
     const { error: errorInsert } = await supabase.from('movimientos').insert({
       usuario_id: usuarioId,
-      tipo,
-      categoria_id: resultCategoria.id,
+      tipo: tipoDb,
+      categoria_id: idCategoria,
       fuente_id: resultFuente.id,
       importe: importeNumero,
       fecha,
-      es_fijo: esFijo,
+      es_fijo: esInversion ? false : esFijo,
       nota: nota.trim() || null,
     })
 
@@ -84,26 +109,30 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
     setFuenteId('')
     setNuevaFuente('')
     setEsFijo(false)
-    toast(tipo === 'ingreso' ? 'Ingreso guardado' : 'Gasto guardado')
+    toast(modo === 'ingreso' ? 'Ingreso guardado' : modo === 'inversion' ? 'Inversión guardada' : 'Gasto guardado')
     onGuardado()
   }
 
+  const textoBoton = { gasto: 'Guardar gasto', ingreso: 'Guardar ingreso', inversion: 'Guardar inversión' }[modo]
+
   return (
-    <form className="registro-movimiento registro-movimiento-v2" onSubmit={handleSubmit}>
-      <div className="tipo-toggle">
-        <button
-          type="button"
-          className={tipo === 'gasto' ? 'activo' : ''}
-          onClick={() => setTipo('gasto')}
-        >
+    <form
+      className={`registro-movimiento registro-movimiento-v2 ${esInversion ? 'modo-inversion' : ''}`}
+      onSubmit={handleSubmit}
+    >
+      <div className="tipo-toggle tipo-toggle-3">
+        <button type="button" className={modo === 'gasto' ? 'activo' : ''} onClick={() => setModo('gasto')}>
           Gasto
+        </button>
+        <button type="button" className={modo === 'ingreso' ? 'activo' : ''} onClick={() => setModo('ingreso')}>
+          Ingreso
         </button>
         <button
           type="button"
-          className={tipo === 'ingreso' ? 'activo' : ''}
-          onClick={() => setTipo('ingreso')}
+          className={`inversion ${modo === 'inversion' ? 'activo' : ''}`}
+          onClick={() => setModo('inversion')}
         >
-          Ingreso
+          Inversión
         </button>
       </div>
 
@@ -122,43 +151,52 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
         />
       </div>
 
-      <SelectorEtiqueta
-        id="categoria"
-        label="Categoría"
-        valor={categoriaId}
-        onChange={setCategoriaId}
-        items={categorias}
-        nuevoNombre={nuevaCategoria}
-        onNuevoNombreChange={setNuevaCategoria}
-        placeholder={tipo === 'ingreso' ? 'ej. Dividendos, Alquiler' : 'ej. Vivienda, Ocio'}
-      />
+      {!esInversion && (
+        <SelectorEtiqueta
+          id="categoria"
+          label="Categoría"
+          valor={categoriaId}
+          onChange={setCategoriaId}
+          items={categorias}
+          nuevoNombre={nuevaCategoria}
+          onNuevoNombreChange={setNuevaCategoria}
+          placeholder={modo === 'ingreso' ? 'ej. Dividendos, Alquiler' : 'ej. Vivienda, Ocio'}
+        />
+      )}
 
       <SelectorEtiqueta
         id="fuente"
-        label={`Concepto ${tipo === 'ingreso' ? '(ej. Restaurante, Oficina)' : '(opcional)'}`}
+        label={
+          esInversion
+            ? 'Plataforma'
+            : `Concepto ${modo === 'ingreso' ? '(ej. Restaurante, Oficina)' : '(opcional)'}`
+        }
         valor={fuenteId}
         onChange={setFuenteId}
         items={fuentes}
         nuevoNombre={nuevaFuente}
         onNuevoNombreChange={setNuevaFuente}
-        placeholder={tipo === 'ingreso' ? 'ej. Trabajo restaurante' : 'ej. Alquiler piso'}
+        placeholder={
+          esInversion
+            ? 'ej. Trade Republic, MyInvestor'
+            : modo === 'ingreso'
+              ? 'ej. Trabajo restaurante'
+              : 'ej. Alquiler piso'
+        }
       />
 
       <div className="fila-fecha-fijo">
-        <input
-          id="fecha"
-          type="date"
-          value={fecha}
-          onChange={(e) => setFecha(e.target.value)}
-        />
-        <div className="tipo-toggle">
-          <button type="button" className={!esFijo ? 'activo' : ''} onClick={() => setEsFijo(false)}>
-            Variable
-          </button>
-          <button type="button" className={esFijo ? 'activo' : ''} onClick={() => setEsFijo(true)}>
-            Fijo
-          </button>
-        </div>
+        <input id="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+        {!esInversion && (
+          <div className="tipo-toggle">
+            <button type="button" className={!esFijo ? 'activo' : ''} onClick={() => setEsFijo(false)}>
+              Variable
+            </button>
+            <button type="button" className={esFijo ? 'activo' : ''} onClick={() => setEsFijo(true)}>
+              Fijo
+            </button>
+          </div>
+        )}
       </div>
 
       {mostrarNota ? (
@@ -179,7 +217,7 @@ export default function RegistroMovimiento({ usuarioId, onGuardado }) {
       {error && <p className="error">{error}</p>}
 
       <button type="submit" disabled={guardando} className="btn-guardar-movimiento">
-        {guardando ? 'Guardando…' : `Guardar ${tipo}`}
+        {guardando ? 'Guardando…' : textoBoton}
       </button>
     </form>
   )

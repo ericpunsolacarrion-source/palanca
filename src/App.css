@@ -321,6 +321,30 @@ button[type='submit']:disabled {
   box-shadow: 0 0 16px -4px var(--accent-glow);
 }
 
+/* Selector de 3 opciones (Gasto / Ingreso / Inversión) */
+.tipo-toggle-3 button {
+  padding: 10px 6px;
+  font-size: var(--fs-s);
+}
+
+.tipo-toggle-3 button.inversion.activo {
+  background: var(--inversion);
+  border-color: var(--inversion);
+  color: #2a1c00;
+  box-shadow: var(--glow-inversion);
+}
+
+/* En modo inversión, el símbolo € y el importe se tiñen de dorado */
+.registro-movimiento.modo-inversion .importe-hero input,
+.registro-movimiento.modo-inversion .importe-hero-simbolo {
+  color: var(--inversion);
+}
+
+.registro-movimiento.modo-inversion .btn-guardar-movimiento {
+  background: linear-gradient(90deg, var(--inversion), #ffd77a);
+  color: #2a1c00;
+}
+
 .error {
   color: var(--gasto);
   font-size: 13px;

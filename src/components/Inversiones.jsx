@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { CATEGORIA_INVERSION, esInversion, formatearEuros } from '../lib/categorias'
-import { agregarPorMes, claveMes, formatearCompacto, formatearFecha } from '../lib/movimientosUtils'
+import { agregarPorMes, claveMes, formatearCompacto, formatearFecha, hoyIso } from '../lib/movimientosUtils'
 import { useCountUp } from '../lib/useCountUp'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
@@ -11,7 +11,6 @@ import { confirmar } from '../lib/confirmar'
 import Pildora from './Pildora'
 import { PILDORA_INVERSION } from '../lib/pildoras'
 
-const hoy = () => new Date().toISOString().slice(0, 10)
 const ALTO_BARRAS = 110
 
 function Cifra({ valor, className }) {
@@ -67,7 +66,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
   const [fuenteId, setFuenteId] = useState('')
   const [nuevaFuente, setNuevaFuente] = useState('')
   const [importe, setImporte] = useState('')
-  const [fecha, setFecha] = useState(hoy())
+  const [fecha, setFecha] = useState(hoyIso())
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
 
