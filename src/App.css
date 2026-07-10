@@ -1232,6 +1232,32 @@ button[type='submit']:disabled {
   line-height: 1.5;
 }
 
+/* Gráfico deslizable: contenedor con scroll horizontal fluido */
+.grafico-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.grafico-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.grafico-scroll-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+.grafico-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--fs-micro);
+  opacity: 0.45;
+  text-align: right;
+}
+
 /* Interactividad de gráficos: cabecera con detalle y puntos activos */
 .grafico-cabecera {
   display: flex;
