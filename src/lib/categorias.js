@@ -10,8 +10,19 @@ export const CATEGORIAS_INICIALES = {
 // totales de "gasto" en balance y presupuesto.
 export const CATEGORIA_INVERSION = 'Inversion'
 
+// Formato español único para importes: punto de miles, coma decimal, € al
+// final. Sin decimales cuando el importe es redondo (100.000 €) y con 2
+// decimales cuando hay céntimos (1.234,56 €).
 export function formatearEuros(valor) {
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(valor)
+  const seguro = Number.isFinite(valor) ? valor : 0
+  const esEntero = Number.isInteger(seguro)
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: esEntero ? 0 : 2,
+    maximumFractionDigits: 2,
+    useGrouping: true,
+  }).format(seguro)
 }
 
 export function esInversion(movimiento) {
