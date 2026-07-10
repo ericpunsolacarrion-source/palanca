@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { descartarPildora, pildoraDescartada } from '../lib/pildoras'
 
 // Píldora educativa breve, contextual y descartable.
-export default function Pildora({ usuarioId, pildora, onCta }) {
+export default function Pildora({ usuarioId, pildora, onCta, onDescartar }) {
   const [oculta, setOculta] = useState(() => pildoraDescartada(usuarioId, pildora.id))
 
   if (!pildora || oculta) return null
@@ -10,6 +10,7 @@ export default function Pildora({ usuarioId, pildora, onCta }) {
   function cerrar() {
     descartarPildora(usuarioId, pildora.id)
     setOculta(true)
+    onDescartar?.()
   }
 
   return (

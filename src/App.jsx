@@ -12,7 +12,8 @@ import MetricasPrincipales from './components/MetricasPrincipales'
 import Comparativas from './components/Comparativas'
 import Pildora from './components/Pildora'
 import ProyeccionFuturo from './components/ProyeccionFuturo'
-import { pildoraDashboard } from './lib/pildoras'
+import { pildorasDashboard, elegirPildora } from './lib/pildoras'
+import { usePresupuesto } from './lib/usePresupuesto'
 import Simulador from './components/Simulador'
 import Presupuesto from './components/Presupuesto'
 import Inversiones from './components/Inversiones'
@@ -93,10 +94,19 @@ function App() {
     }
   }, [movimientos])
 
-  const pildoraDash = useMemo(
-    () => pildoraDashboard({ movimientos, movimientosMes }),
-    [movimientos, movimientosMes],
-  )
+  const { objetivoInversionMensual } = usePresupuesto(usuarioId)
+  const [descartesPildora, setDescartesPildora] = useState(0)
+
+  const pildoraDash = useMemo(() => {
+    const candidatas = pildorasDashboard({
+      movimientos,
+      movimientosMes,
+      objetivoInversion: objetivoInversionMensual,
+    })
+    return elegirPildora(usuarioId, candidatas)
+    // descartesPildora fuerza recálculo al cerrar una píldora, para revelar la siguiente.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [movimientos, movimientosMes, objetivoInversionMensual, usuarioId, descartesPildora])
 
   if (!usuarioId) {
     return <PantallaId onEntrar={setUsuarioId} />
@@ -150,10 +160,20 @@ function App() {
               dias={diasDesdeUltimoMovimiento}
               onIrAMovimientos={() => setPestana('movimientos')}
             />
-            <MetricasPrincipales usuarioId={usuarioId} movimientos={movimientosMes} />
+            <MetricasPrincipales
+              usuarioId={usuarioId}
+              movimientos={movimientosMes}
+              historico={movimientos}
+            />
             <Comparativas movimientos={movimientos} />
             {pildoraDash && (
-              <Pildora usuarioId={usuarioId} pildora={pildoraDash} onCta={setPestana} />
+              <Pildora
+                key={pildoraDash.id}
+                usuarioId={usuarioId}
+                pildora={pildoraDash}
+                onCta={setPestana}
+                onDescartar={() => setDescartesPildora((n) => n + 1)}
+              />
             )}
             <ProyeccionFuturo
               movimientos={movimientos}

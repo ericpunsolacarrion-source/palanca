@@ -1686,6 +1686,76 @@ button[type='submit']:disabled {
   gap: var(--sp-4);
 }
 
+.metricas-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* Panel de ingresos: cobrado este mes + media del último año, estructurado */
+.ingresos-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  padding-bottom: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.ingresos-panel .etiqueta {
+  font-size: var(--fs-xs);
+  opacity: 0.65;
+}
+
+.ingresos-mes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ingresos-mes-cifra {
+  font-size: var(--fs-l);
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+
+.ingresos-mes-cifra.ingreso {
+  color: var(--ingreso);
+  text-shadow: 0 0 20px rgba(52, 232, 158, 0.22);
+}
+
+.ingresos-media {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: right;
+}
+
+.ingresos-media-cifra {
+  font-size: var(--fs-m);
+  font-weight: 600;
+  color: var(--text-h);
+  letter-spacing: -0.5px;
+}
+
+.ingresos-comp {
+  font-size: var(--fs-micro);
+  opacity: 0.85;
+}
+
+.ingresos-comp.ingreso {
+  color: var(--ingreso);
+}
+
+.ingresos-comp.gasto {
+  color: var(--gasto);
+}
+
+.ingresos-media-nota {
+  font-size: var(--fs-micro);
+  opacity: 0.55;
+}
+
 .metrica-bloque {
   display: flex;
   flex-direction: column;
@@ -1727,6 +1797,33 @@ button[type='submit']:disabled {
 
 .ratio-barra-relleno.inversion {
   background: linear-gradient(90deg, var(--inversion), #ffd77a);
+}
+
+/* Objetivo superado (>100 %): la barra se llena y se resalta como logro,
+   no se desborda. El número muestra el porcentaje real (150 %, 200 %…). */
+.ratio-barra.objetivo-superado {
+  box-shadow: 0 0 12px -1px var(--inversion-glow);
+  outline: 1px solid rgba(245, 185, 61, 0.55);
+}
+
+.ratio-barra.objetivo-superado .ratio-barra-relleno {
+  background: linear-gradient(90deg, #ffd77a, var(--inversion), #ffd77a);
+  background-size: 200% 100%;
+  animation: brillo-superado 2.2s linear infinite;
+}
+
+@keyframes brillo-superado {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+.texto-superado {
+  color: var(--inversion);
+  font-weight: 700;
 }
 
 .objetivo-inversion {

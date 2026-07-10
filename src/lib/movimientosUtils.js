@@ -124,6 +124,15 @@ export function resumenMensualMedio(movimientos) {
   }
 }
 
+// Ingreso mensual medio de los últimos N meses (solo meses con ingresos), para
+// contextualizar "lo que cobras" frente a un mes suelto. Fuente única.
+export function ingresoMensualMedio(movimientos, n = 12) {
+  const meses = agregarPorMes(movimientos, n).filter((m) => m.ingresos > 0)
+  if (meses.length === 0) return { media: 0, meses: 0 }
+  const suma = meses.reduce((a, m) => a + m.ingresos, 0)
+  return { media: suma / meses.length, meses: meses.length }
+}
+
 // Compara el mes actual con el anterior y devuelve microcomparativas
 // ("estás ahorrando un X% más que el mes pasado"). Solo comparaciones con uno
 // mismo, nunca con otros usuarios. Devuelve [] si no hay base para comparar.
@@ -232,6 +241,17 @@ export function estimacionGastoMensual(movimientos) {
     // Con menos de 2 meses la media es poco representativa: se marca provisional.
     provisional: mesesConActividad < 2,
   }
+}
+
+// Progreso hacia un objetivo de logro (ej. inversión mensual). El porcentaje
+// es REAL y PUEDE superar el 100 %: si el objetivo es 300 € e inviertes 600 €,
+// pct = 200. `barra` sí se limita a 100 para no desbordar el ancho; usa
+// `superado` para resaltarlo como logro. Fuente única de esta lógica.
+// (No aplicar a presupuestos de gasto, donde pasarse es un aviso, no un logro.)
+export function progresoObjetivo(conseguido, objetivo) {
+  if (!objetivo || objetivo <= 0) return { pct: 0, barra: 0, superado: false }
+  const pct = (Number(conseguido) / Number(objetivo)) * 100
+  return { pct, barra: Math.min(pct, 100), superado: pct > 100 }
 }
 
 // Valor futuro de un capital inicial + aportaciones mensuales con interés

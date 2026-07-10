@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { formatearEuros } from '../lib/categorias'
-import { formatearPorcentaje, totalesDe } from '../lib/movimientosUtils'
+import {
+  formatearPorcentaje,
+  ingresoMensualMedio,
+  progresoObjetivo,
+  totalesDe,
+} from '../lib/movimientosUtils'
 import { useCountUp } from '../lib/useCountUp'
 import { usePresupuesto } from '../lib/usePresupuesto'
 import { toast } from '../lib/toast'
@@ -10,7 +15,7 @@ function Cifra({ valor, className }) {
   return <span className={className}>{formatearEuros(animado)}</span>
 }
 
-export default function MetricasPrincipales({ usuarioId, movimientos }) {
+export default function MetricasPrincipales({ usuarioId, movimientos, historico }) {
   const {
     ingresos: totalIngresos,
     gastos: totalGastos,
@@ -18,6 +23,18 @@ export default function MetricasPrincipales({ usuarioId, movimientos }) {
     ahorro,
     ratioAhorro,
   } = totalesDe(movimientos)
+
+  // Media de ingresos del último año (contexto para "lo que cobras este mes").
+  const mediaIngresos = ingresoMensualMedio(historico ?? movimientos)
+  const media = mediaIngresos.media
+  const comparativaIngreso =
+    media > 0 && mediaIngresos.meses >= 2
+      ? totalIngresos >= media * 1.05
+        ? { simbolo: '▲', texto: 'por encima de tu media', clase: 'ingreso' }
+        : totalIngresos <= media * 0.95
+          ? { simbolo: '▼', texto: 'por debajo de tu media', clase: 'gasto' }
+          : { simbolo: '≈', texto: 'en tu media habitual', clase: '' }
+      : null
 
   const { objetivoInversionMensual, cargando, guardarObjetivoInversion } = usePresupuesto(usuarioId)
   const [editando, setEditando] = useState(false)
@@ -35,12 +52,35 @@ export default function MetricasPrincipales({ usuarioId, movimientos }) {
     toast('Objetivo guardado')
   }
 
-  const progresoInversion = objetivoInversionMensual
-    ? Math.min((totalInvertido / objetivoInversionMensual) * 100, 100)
-    : 0
+  const progreso = progresoObjetivo(totalInvertido, objetivoInversionMensual)
 
   return (
     <div className="metricas-principales fade-in-up">
+      {/* Lo que entra: cobrado este mes + media del último año (contexto). */}
+      <div className="ingresos-panel">
+        <div className="ingresos-mes">
+          <span className="etiqueta">Has cobrado este mes</span>
+          <Cifra valor={totalIngresos} className="ingresos-mes-cifra ingreso" />
+        </div>
+        {media > 0 && mediaIngresos.meses >= 2 && (
+          <div className="ingresos-media">
+            <span className="etiqueta">De media al mes</span>
+            <span className="ingresos-media-cifra">
+              {formatearEuros(Math.round(media))}
+            </span>
+            {comparativaIngreso && (
+              <span className={`ingresos-comp ${comparativaIngreso.clase}`}>
+                {comparativaIngreso.simbolo} {comparativaIngreso.texto}
+              </span>
+            )}
+            <span className="ingresos-media-nota">
+              últimos {mediaIngresos.meses} meses
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Lo que te queda: ahorro del mes (titular). */}
       <div className="metrica-hero">
         <span className="etiqueta">Ahorro de este mes</span>
         <Cifra valor={ahorro} className={`metrica-hero-cifra ${ahorro >= 0 ? 'ingreso' : 'gasto'}`} />
@@ -51,11 +91,8 @@ export default function MetricasPrincipales({ usuarioId, movimientos }) {
         </span>
       </div>
 
-      <div className="metricas-grid">
-        <div className="metrica-bloque">
-          <span className="etiqueta">Ingresos</span>
-          <Cifra valor={totalIngresos} className="metrica-cifra ingreso" />
-        </div>
+      {/* A dónde va: desglose del mes. */}
+      <div className="metricas-grid metricas-grid-2">
         <div className="metrica-bloque">
           <span className="etiqueta">Gastos</span>
           <Cifra valor={totalGastos} className="metrica-cifra gasto" />
@@ -111,15 +148,18 @@ export default function MetricasPrincipales({ usuarioId, movimientos }) {
                   Editar
                 </button>
               </div>
-              <div className="ratio-barra">
+              <div className={`ratio-barra ${progreso.superado ? 'objetivo-superado' : ''}`}>
                 <div
                   className="ratio-barra-relleno inversion"
-                  style={{ width: `${progresoInversion}%` }}
+                  style={{ width: `${progreso.barra}%` }}
                 />
               </div>
               <span className="objetivo-inversion-detalle">
                 {formatearEuros(totalInvertido)} de {formatearEuros(objetivoInversionMensual)} (
-                {formatearPorcentaje(progresoInversion, 0)})
+                <span className={progreso.superado ? 'texto-superado' : ''}>
+                  {formatearPorcentaje(progreso.pct, 0)}
+                </span>
+                {progreso.superado && ' · ¡objetivo superado! 🎉'})
               </span>
             </>
           )}
