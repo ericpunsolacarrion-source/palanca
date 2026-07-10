@@ -81,3 +81,49 @@ export function formatearCompacto(valor) {
   }
   return String(Math.round(valor))
 }
+
+// Ahorro mensual medio de los meses con ingresos (suaviza el ruido de un solo
+// mes). Base de la proyección de futuro del dashboard. Devuelve también cuántos
+// meses con actividad hay, para decidir si desbloquear la proyección.
+export function resumenMensualMedio(movimientos) {
+  const porMes = new Map()
+  for (const m of movimientos) {
+    const clave = claveMes(m.fecha)
+    if (!porMes.has(clave)) porMes.set(clave, [])
+    porMes.get(clave).push(m)
+  }
+
+  let sumaAhorro = 0
+  let sumaInvertido = 0
+  let mesesConIngresos = 0
+  for (const movs of porMes.values()) {
+    const t = totalesDe(movs)
+    if (t.ingresos > 0) {
+      sumaAhorro += t.ahorro
+      sumaInvertido += t.invertido
+      mesesConIngresos += 1
+    }
+  }
+
+  return {
+    mesesConDatos: porMes.size,
+    mesesConIngresos,
+    ahorroMedio: mesesConIngresos > 0 ? sumaAhorro / mesesConIngresos : 0,
+    invertidoMedio: mesesConIngresos > 0 ? sumaInvertido / mesesConIngresos : 0,
+  }
+}
+
+// Valor futuro de un capital inicial + aportaciones mensuales con interés
+// compuesto. rentabilidadAnual en % (0 = dinero parado). Fuente única para
+// el simulador y para la proyección del dashboard.
+export function proyectarInteresCompuesto({ inicial = 0, mensual = 0, anios, rentabilidadAnual = 0 }) {
+  const meses = Math.round(anios * 12)
+  const r = rentabilidadAnual / 100 / 12
+  const aportado = inicial + mensual * meses
+  if (r === 0) {
+    return { valorFinal: aportado, aportado, intereses: 0 }
+  }
+  const factor = (Math.pow(1 + r, meses) - 1) / r
+  const valorFinal = inicial * Math.pow(1 + r, meses) + mensual * factor
+  return { valorFinal, aportado, intereses: valorFinal - aportado }
+}

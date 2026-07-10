@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react'
 import { formatearEuros } from '../../lib/categorias'
+import { proyectarInteresCompuesto } from '../../lib/movimientosUtils'
 import SimulacionesGuardadas from '../SimulacionesGuardadas'
 
+// Usa la fórmula única de movimientosUtils; el toggle "al principio del mes"
+// aplica un mes extra de interés sobre esa base.
 function valorFinal(inicial, mensual, tasaMensual, meses, alPrincipio) {
-  if (tasaMensual === 0) return inicial + mensual * meses
-  const factor = (Math.pow(1 + tasaMensual, meses) - 1) / tasaMensual
-  const base = inicial * Math.pow(1 + tasaMensual, meses) + mensual * factor
-  return alPrincipio ? base * (1 + tasaMensual) - mensual : base
+  const anios = meses / 12
+  const rentabilidadAnual = tasaMensual * 12 * 100
+  const base = proyectarInteresCompuesto({ inicial, mensual, anios, rentabilidadAnual }).valorFinal
+  return alPrincipio && tasaMensual !== 0 ? base * (1 + tasaMensual) - mensual : base
 }
 
 export default function InteresCompuesto({ usuarioId }) {

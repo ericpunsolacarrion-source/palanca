@@ -1121,6 +1121,158 @@ button[type='submit']:disabled {
   opacity: 0.65;
 }
 
+/* Proyección de futuro (el momento "ajá") */
+.proyeccion {
+  background:
+    linear-gradient(160deg, var(--card-bg-2), var(--card-bg)) padding-box,
+    var(--borde-brillo) border-box;
+  border: 1px solid transparent;
+  border-radius: var(--radio-l);
+  padding: 18px;
+  box-shadow: var(--sombra-card);
+}
+
+.proyeccion-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.proyeccion-titulo {
+  font-size: var(--fs-m);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.proyeccion-horizontes {
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-pastilla);
+  padding: 3px;
+}
+
+.proyeccion-horizontes button {
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: var(--radio-pastilla);
+  min-width: 36px;
+}
+
+.proyeccion-horizontes button.activo {
+  background: var(--accent);
+  color: white;
+  box-shadow: var(--glow-accent);
+}
+
+.proyeccion-frase {
+  font-size: var(--fs-s);
+  opacity: 0.85;
+  margin-bottom: var(--sp-3);
+}
+
+.proyeccion-escenarios {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.proyeccion-escenario {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px;
+  border-radius: var(--radio-m);
+  border: 1px solid var(--border);
+}
+
+.proyeccion-escenario.invertido {
+  border-color: var(--inversion);
+  background: rgba(245, 185, 61, 0.06);
+  box-shadow: var(--glow-inversion);
+}
+
+.escenario-etiqueta {
+  font-size: var(--fs-xs);
+  opacity: 0.7;
+}
+
+.escenario-cifra {
+  font-size: var(--fs-m);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.proyeccion-escenario.parado .escenario-cifra {
+  color: var(--text-h);
+  opacity: 0.75;
+}
+
+.proyeccion-escenario.invertido .escenario-cifra {
+  color: var(--inversion);
+}
+
+.escenario-nota {
+  font-size: 10px;
+  opacity: 0.55;
+}
+
+.proyeccion-barra {
+  display: flex;
+  height: 8px;
+  border-radius: var(--radio-pastilla);
+  overflow: hidden;
+  margin: var(--sp-4) 0 var(--sp-3);
+}
+
+.proyeccion-barra-parado {
+  background: var(--border);
+}
+
+.proyeccion-barra-extra {
+  background: linear-gradient(90deg, var(--inversion), #ffd77a);
+}
+
+.proyeccion-remate {
+  font-size: var(--fs-s);
+  color: var(--text-h);
+}
+
+.destacado-inversion {
+  color: var(--inversion);
+}
+
+.proyeccion-disclaimer {
+  font-size: 10px;
+  opacity: 0.5;
+  margin-top: var(--sp-2);
+}
+
+.proyeccion-vacia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  align-items: flex-start;
+}
+
+.proyeccion-cta {
+  border: none;
+  border-radius: var(--radio-s);
+  padding: 10px 18px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: white;
+  font-weight: 600;
+}
+
 .metricas-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

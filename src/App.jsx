@@ -9,6 +9,7 @@ import CapturaEmail from './components/CapturaEmail'
 import MovimientosTab from './components/MovimientosTab'
 import ListaMovimientos from './components/ListaMovimientos'
 import MetricasPrincipales from './components/MetricasPrincipales'
+import ProyeccionFuturo from './components/ProyeccionFuturo'
 import Simulador from './components/Simulador'
 import Presupuesto from './components/Presupuesto'
 import Inversiones from './components/Inversiones'
@@ -139,6 +140,10 @@ function App() {
               onIrAMovimientos={() => setPestana('movimientos')}
             />
             <MetricasPrincipales usuarioId={usuarioId} movimientos={movimientosMes} />
+            <ProyeccionFuturo
+              movimientos={movimientos}
+              onIrARegistro={() => setPestana('movimientos')}
+            />
             <GraficoTasaAhorro movimientos={movimientos} />
             <GraficoCategorias movimientos={movimientosMes} />
             <GraficoEvolucion movimientos={movimientos} />
