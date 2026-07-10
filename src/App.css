@@ -605,6 +605,16 @@ button[type='submit']:disabled {
   margin: 0;
 }
 
+.estimacion-gasto {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-s);
+  opacity: 0.85;
+}
+
+.estimacion-gasto strong {
+  color: var(--text-h);
+}
+
 .presupuesto-diario {
   margin-top: 12px;
   font-size: 13px;

@@ -206,6 +206,34 @@ export function cambioPorCategoria(movimientos) {
   return mejor
 }
 
+// Gasto mensual estimado = media del gasto de consumo de los meses con
+// actividad. Cuantos más meses, más fiable. Fuente única.
+export function estimacionGastoMensual(movimientos) {
+  const porMes = new Map()
+  for (const m of movimientos) {
+    const clave = claveMes(m.fecha)
+    if (!porMes.has(clave)) porMes.set(clave, [])
+    porMes.get(clave).push(m)
+  }
+
+  let sumaGasto = 0
+  let mesesConActividad = 0
+  for (const movs of porMes.values()) {
+    const t = totalesDe(movs)
+    if (t.ingresos > 0 || t.gastos > 0) {
+      sumaGasto += t.gastos
+      mesesConActividad += 1
+    }
+  }
+
+  return {
+    estimacion: mesesConActividad > 0 ? sumaGasto / mesesConActividad : 0,
+    mesesUsados: mesesConActividad,
+    // Con menos de 2 meses la media es poco representativa: se marca provisional.
+    provisional: mesesConActividad < 2,
+  }
+}
+
 // Valor futuro de un capital inicial + aportaciones mensuales con interés
 // compuesto. rentabilidadAnual en % (0 = dinero parado). Fuente única para
 // el simulador y para la proyección del dashboard.

@@ -16,7 +16,7 @@ function diasRestantesDelMes() {
   return ultimoDia - hoy.getDate() + 1
 }
 
-export default function Presupuesto({ usuarioId, movimientos }) {
+export default function Presupuesto({ usuarioId, movimientos, gastoEstimado }) {
   const {
     metodo,
     tasaAhorroObjetivo,
@@ -126,6 +126,15 @@ export default function Presupuesto({ usuarioId, movimientos }) {
               autoFocus
             />
             <p className="ayuda">Un límite fijo, sin importar cuánto ingreses ese mes.</p>
+            {gastoEstimado?.estimacion > 0 && (
+              <p className="estimacion-gasto">
+                Tu gasto mensual estimado es <strong>{formatearEuros(gastoEstimado.estimacion)}</strong>
+                {gastoEstimado.provisional
+                  ? ' (provisional, con solo 1 mes de datos)'
+                  : ` (media de tus últimos ${gastoEstimado.mesesUsados} meses)`}
+                .
+              </p>
+            )}
           </>
         )}
 
@@ -218,6 +227,13 @@ export default function Presupuesto({ usuarioId, movimientos }) {
           {sobrepasado && (
             <p className="error" style={{ marginTop: 12 }}>
               Has superado tu presupuesto de gasto este mes.
+            </p>
+          )}
+
+          {gastoEstimado?.estimacion > 0 && !gastoEstimado.provisional && (
+            <p className="estimacion-gasto">
+              Sueles gastar unos <strong>{formatearEuros(gastoEstimado.estimacion)}</strong> al mes
+              (media de tus últimos {gastoEstimado.mesesUsados} meses).
             </p>
           )}
 

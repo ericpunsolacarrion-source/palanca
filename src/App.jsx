@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
 import { useUsuarioId } from './lib/useUsuarioId'
 import { obtenerPerfil, crearPerfil } from './lib/perfil'
-import { filtrarMesActual, totalesDe } from './lib/movimientosUtils'
+import { estimacionGastoMensual, filtrarMesActual, totalesDe } from './lib/movimientosUtils'
 import PantallaId from './components/PantallaId'
 import Onboarding from './components/Onboarding'
 import CapturaEmail from './components/CapturaEmail'
@@ -77,6 +77,7 @@ function App() {
 
   const movimientosMes = useMemo(() => filtrarMesActual(movimientos), [movimientos])
   const totalesMes = useMemo(() => totalesDe(movimientosMes), [movimientosMes])
+  const gastoEstimado = useMemo(() => estimacionGastoMensual(movimientos), [movimientos])
 
   const { diasDesdeUltimoMovimiento, diasConHistorial } = useMemo(() => {
     if (movimientos.length === 0) {
@@ -183,7 +184,7 @@ function App() {
 
         {pestana === 'presupuesto' && (
           <div key="presupuesto" className="vista">
-            <Presupuesto usuarioId={usuarioId} movimientos={movimientosMes} />
+            <Presupuesto usuarioId={usuarioId} movimientos={movimientosMes} gastoEstimado={gastoEstimado} />
           </div>
         )}
 
@@ -202,7 +203,7 @@ function App() {
             key="simulador"
             usuarioId={usuarioId}
             ahorroMensual={totalesMes.ahorro}
-            gastoMensual={totalesMes.gastos}
+            gastoMensual={gastoEstimado.estimacion || totalesMes.gastos}
             diasConHistorial={diasConHistorial}
           />
         )}
