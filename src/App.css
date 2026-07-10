@@ -605,6 +605,69 @@ button[type='submit']:disabled {
   margin: 0;
 }
 
+/* Historial agrupado por mes (acordeón) */
+.historial-agrupado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.mes-grupo .lista-movimientos {
+  margin-top: var(--sp-2);
+}
+
+.mes-cabecera-actual {
+  font-size: var(--fs-s);
+  font-weight: 700;
+  color: var(--text-h);
+  padding: 0 2px;
+}
+
+.mes-cabecera {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+  color: var(--text-h);
+}
+
+.mes-cabecera.abierto {
+  border-color: var(--accent);
+}
+
+.mes-cabecera-nombre {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: 600;
+  font-size: var(--fs-s);
+}
+
+.mes-flecha {
+  font-size: 11px;
+  opacity: 0.7;
+  width: 12px;
+}
+
+.mes-cabecera-resumen {
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mes-cabecera-resumen .ingreso {
+  color: var(--ingreso);
+}
+
+.mes-cabecera-resumen .gasto {
+  color: var(--gasto);
+}
+
 /* Objetivos de ahorro múltiples */
 .objetivo-card {
   border: 1px solid var(--border);

@@ -47,6 +47,7 @@ export default function MovimientosTab({ usuarioId, movimientos, movimientosMes,
             cargando={cargando}
             onEliminado={onGuardado}
             onIrARegistro={() => setSub('nuevo')}
+            agruparPorMes
           />
         </>
       )}

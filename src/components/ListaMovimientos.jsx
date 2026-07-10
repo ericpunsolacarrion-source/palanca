@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { esInversion, formatearEuros } from '../lib/categorias'
-import { formatearFecha } from '../lib/movimientosUtils'
+import { claveMes, claveMesActual, formatearFecha, totalesDe } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 
@@ -103,9 +103,25 @@ function SkeletonLista() {
   )
 }
 
-export default function ListaMovimientos({ movimientos, cargando, onEliminado, soloLectura, onIrARegistro }) {
+function etiquetaMes(clave) {
+  const [anio, mes] = clave.split('-')
+  const texto = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(
+    new Date(Number(anio), Number(mes) - 1, 1),
+  )
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
+}
+
+export default function ListaMovimientos({
+  movimientos,
+  cargando,
+  onEliminado,
+  soloLectura,
+  onIrARegistro,
+  agruparPorMes = false,
+}) {
   const [eliminandoId, setEliminandoId] = useState(null)
   const [editandoId, setEditandoId] = useState(null)
+  const [mesesAbiertos, setMesesAbiertos] = useState(() => new Set())
 
   if (cargando) return <SkeletonLista />
 
@@ -135,65 +151,126 @@ export default function ListaMovimientos({ movimientos, cargando, onEliminado, s
     onEliminado?.()
   }
 
-  return (
-    <ul className="lista-movimientos">
-      {movimientos.map((m) => {
-        const inversion = esInversion(m)
+  function renderItem(m) {
+    const inversion = esInversion(m)
 
-        if (!soloLectura && editandoId === m.id) {
+    if (!soloLectura && editandoId === m.id) {
+      return (
+        <li key={m.id} className={inversion ? 'inversion' : m.tipo}>
+          <FilaEdicion
+            movimiento={m}
+            onCancelar={() => setEditandoId(null)}
+            onGuardado={() => {
+              setEditandoId(null)
+              onEliminado?.()
+            }}
+          />
+        </li>
+      )
+    }
+
+    return (
+      <li key={m.id} className={inversion ? 'inversion' : m.tipo}>
+        <div className="linea-principal">
+          <span className="categoria">
+            {m.categoria?.nombre ?? 'Sin categoría'}
+            {m.fuente && <span className="fuente"> · {m.fuente.nombre}</span>}
+          </span>
+          <span className="importe">
+            {inversion ? '↗ ' : m.tipo === 'gasto' ? '-' : '+'}
+            {formatearEuros(m.importe)}
+          </span>
+        </div>
+        <div className="linea-secundaria">
+          <span>
+            {formatearFecha(m.fecha)}{' '}
+            <span className="badge-fijo">{m.es_fijo ? 'Fijo' : 'Variable'}</span>
+          </span>
+          <div className="linea-acciones">
+            {m.nota && <span className="nota">{m.nota}</span>}
+            {!soloLectura && (
+              <span className="grupo-botones">
+                <button type="button" className="btn-editar" onClick={() => setEditandoId(m.id)}>
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="btn-eliminar"
+                  onClick={() => handleEliminar(m.id)}
+                  disabled={eliminandoId === m.id}
+                >
+                  {eliminandoId === m.id ? '…' : 'Eliminar'}
+                </button>
+              </span>
+            )}
+          </div>
+        </div>
+      </li>
+    )
+  }
+
+  // Modo plano (dashboard, últimos movimientos).
+  if (!agruparPorMes) {
+    return <ul className="lista-movimientos">{movimientos.map(renderItem)}</ul>
+  }
+
+  // Modo agrupado (historial): mes actual desplegado, anteriores en acordeón.
+  const claveActual = claveMesActual()
+  const grupos = new Map()
+  for (const m of movimientos) {
+    const clave = claveMes(m.fecha)
+    if (!grupos.has(clave)) grupos.set(clave, [])
+    grupos.get(clave).push(m)
+  }
+  const claves = [...grupos.keys()].sort((a, b) => (a < b ? 1 : -1))
+
+  function alternarMes(clave) {
+    setMesesAbiertos((prev) => {
+      const s = new Set(prev)
+      if (s.has(clave)) s.delete(clave)
+      else s.add(clave)
+      return s
+    })
+  }
+
+  return (
+    <div className="historial-agrupado">
+      {claves.map((clave) => {
+        const items = grupos.get(clave)
+        const esActual = clave === claveActual
+        const abierto = esActual || mesesAbiertos.has(clave)
+        const t = totalesDe(items)
+
+        if (esActual) {
           return (
-            <li key={m.id} className={inversion ? 'inversion' : m.tipo}>
-              <FilaEdicion
-                movimiento={m}
-                onCancelar={() => setEditandoId(null)}
-                onGuardado={() => {
-                  setEditandoId(null)
-                  onEliminado?.()
-                }}
-              />
-            </li>
+            <div key={clave} className="mes-grupo mes-actual">
+              <div className="mes-cabecera-actual">{etiquetaMes(clave)}</div>
+              <ul className="lista-movimientos">{items.map(renderItem)}</ul>
+            </div>
           )
         }
 
         return (
-          <li key={m.id} className={inversion ? 'inversion' : m.tipo}>
-            <div className="linea-principal">
-              <span className="categoria">
-                {m.categoria?.nombre ?? 'Sin categoría'}
-                {m.fuente && <span className="fuente"> · {m.fuente.nombre}</span>}
+          <div key={clave} className="mes-grupo">
+            <button
+              type="button"
+              className={`mes-cabecera ${abierto ? 'abierto' : ''}`}
+              onClick={() => alternarMes(clave)}
+              aria-expanded={abierto}
+            >
+              <span className="mes-cabecera-nombre">
+                <span className="mes-flecha">{abierto ? '▾' : '▸'}</span>
+                {etiquetaMes(clave)}
               </span>
-              <span className="importe">
-                {inversion ? '↗ ' : m.tipo === 'gasto' ? '-' : '+'}
-                {formatearEuros(m.importe)}
+              <span className="mes-cabecera-resumen">
+                <span className="ingreso">+{formatearEuros(t.ingresos)}</span>{' '}
+                <span className="gasto">-{formatearEuros(t.gastos)}</span>
               </span>
-            </div>
-            <div className="linea-secundaria">
-              <span>
-                {formatearFecha(m.fecha)}{' '}
-                <span className="badge-fijo">{m.es_fijo ? 'Fijo' : 'Variable'}</span>
-              </span>
-              <div className="linea-acciones">
-                {m.nota && <span className="nota">{m.nota}</span>}
-                {!soloLectura && (
-                  <span className="grupo-botones">
-                    <button type="button" className="btn-editar" onClick={() => setEditandoId(m.id)}>
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-eliminar"
-                      onClick={() => handleEliminar(m.id)}
-                      disabled={eliminandoId === m.id}
-                    >
-                      {eliminandoId === m.id ? '…' : 'Eliminar'}
-                    </button>
-                  </span>
-                )}
-              </div>
-            </div>
-          </li>
+            </button>
+            {abierto && <ul className="lista-movimientos">{items.map(renderItem)}</ul>}
+          </div>
         )
       })}
-    </ul>
+    </div>
   )
 }
