@@ -10,7 +10,9 @@ import MovimientosTab from './components/MovimientosTab'
 import ListaMovimientos from './components/ListaMovimientos'
 import MetricasPrincipales from './components/MetricasPrincipales'
 import Comparativas from './components/Comparativas'
+import Pildora from './components/Pildora'
 import ProyeccionFuturo from './components/ProyeccionFuturo'
+import { pildoraDashboard } from './lib/pildoras'
 import Simulador from './components/Simulador'
 import Presupuesto from './components/Presupuesto'
 import Inversiones from './components/Inversiones'
@@ -89,6 +91,11 @@ function App() {
     }
   }, [movimientos])
 
+  const pildoraDash = useMemo(
+    () => pildoraDashboard({ movimientos, movimientosMes }),
+    [movimientos, movimientosMes],
+  )
+
   if (!usuarioId) {
     return <PantallaId onEntrar={setUsuarioId} />
   }
@@ -143,6 +150,9 @@ function App() {
             />
             <MetricasPrincipales usuarioId={usuarioId} movimientos={movimientosMes} />
             <Comparativas movimientos={movimientos} />
+            {pildoraDash && (
+              <Pildora usuarioId={usuarioId} pildora={pildoraDash} onCta={setPestana} />
+            )}
             <ProyeccionFuturo
               movimientos={movimientos}
               onIrARegistro={() => setPestana('movimientos')}

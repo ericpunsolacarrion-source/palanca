@@ -8,6 +8,8 @@ import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
+import Pildora from './Pildora'
+import { PILDORA_INVERSION } from '../lib/pildoras'
 
 const hoy = () => new Date().toISOString().slice(0, 10)
 const ALTO_BARRAS = 110
@@ -228,6 +230,8 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
           </div>
         )}
       </div>
+
+      <Pildora usuarioId={usuarioId} pildora={PILDORA_INVERSION} />
 
       {ultimosDoceMeses.some((m) => m.invertido > 0) && (
         <GraficoInversionMensual meses={ultimosDoceMeses} media={mediaMensual} />

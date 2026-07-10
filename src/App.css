@@ -1121,6 +1121,71 @@ button[type='submit']:disabled {
   opacity: 0.65;
 }
 
+/* Píldoras educativas contextuales */
+.pildora {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--radio-m);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  background: rgba(34, 211, 238, 0.05);
+}
+
+.pildora-icono {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  color: #04222a;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 13px;
+  margin-top: 1px;
+}
+
+.pildora-cuerpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.pildora-texto {
+  font-size: var(--fs-s);
+  line-height: 1.5;
+  color: var(--text-h);
+  opacity: 0.9;
+}
+
+.pildora-cta {
+  margin-top: var(--sp-2);
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.pildora-cerrar {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--text);
+  opacity: 0.5;
+  font-size: 20px;
+  line-height: 1;
+  padding: 0 2px;
+  margin: -2px -4px 0 0;
+}
+
+.pildora-cerrar:hover {
+  opacity: 1;
+}
+
 /* Celebración de hitos */
 .celebracion-fondo {
   position: fixed;
