@@ -16,6 +16,7 @@ import { pildorasDashboard, elegirPildora } from './lib/pildoras'
 import { usePresupuesto } from './lib/usePresupuesto'
 import Simulador from './components/Simulador'
 import Presupuesto from './components/Presupuesto'
+import PlanificacionFutura from './components/PlanificacionFutura'
 import Inversiones from './components/Inversiones'
 import RecordatorioBanner from './components/RecordatorioBanner'
 import GraficoEvolucion from './components/GraficoEvolucion'
@@ -206,6 +207,7 @@ function App() {
         {pestana === 'presupuesto' && (
           <div key="presupuesto" className="vista">
             <Presupuesto usuarioId={usuarioId} movimientos={movimientosMes} gastoEstimado={gastoEstimado} />
+            <PlanificacionFutura usuarioId={usuarioId} movimientos={movimientos} />
           </div>
         )}
 
