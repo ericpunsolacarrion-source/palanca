@@ -40,6 +40,19 @@ function App() {
   const [cargando, setCargando] = useState(true)
   const [errorCarga, setErrorCarga] = useState(false)
   const [pestana, setPestana] = useState('dashboard')
+  const [filtroMov, setFiltroMov] = useState(null) // tipo a filtrar en Movimientos
+
+  // Navegación central: al cambiar de pestaña se limpia el filtro de movimientos,
+  // salvo cuando se llega expresamente con uno (verMovimientos).
+  const irAPestana = useCallback((destino) => {
+    setFiltroMov(null)
+    setPestana(destino)
+  }, [])
+
+  const verMovimientos = useCallback((tipo) => {
+    setFiltroMov(tipo)
+    setPestana('movimientos')
+  }, [])
 
   useEffect(() => {
     if (!usuarioId) return
@@ -160,12 +173,13 @@ function App() {
             )}
             <RecordatorioBanner
               dias={diasDesdeUltimoMovimiento}
-              onIrAMovimientos={() => setPestana('movimientos')}
+              onIrAMovimientos={() => irAPestana('movimientos')}
             />
             <MetricasPrincipales
               usuarioId={usuarioId}
               movimientos={movimientosMes}
               historico={movimientos}
+              onVerMovimientos={verMovimientos}
             />
             <Comparativas movimientos={movimientos} />
             <Logros usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
@@ -174,13 +188,13 @@ function App() {
                 key={pildoraDash.id}
                 usuarioId={usuarioId}
                 pildora={pildoraDash}
-                onCta={setPestana}
+                onCta={irAPestana}
                 onDescartar={() => setDescartesPildora((n) => n + 1)}
               />
             )}
             <ProyeccionFuturo
               movimientos={movimientos}
-              onIrARegistro={() => setPestana('movimientos')}
+              onIrARegistro={() => irAPestana('movimientos')}
             />
             <GraficoTasaAhorro movimientos={movimientos} />
             <GraficoCategorias movimientos={movimientosMes} />
@@ -190,7 +204,7 @@ function App() {
               movimientos={movimientos.slice(0, 5)}
               cargando={cargando}
               soloLectura
-              onIrARegistro={() => setPestana('movimientos')}
+              onIrARegistro={() => irAPestana('movimientos')}
             />
           </div>
         )}
@@ -203,6 +217,8 @@ function App() {
             movimientosMes={movimientosMes}
             cargando={cargando}
             onGuardado={cargarMovimientos}
+            filtro={filtroMov}
+            onLimpiarFiltro={() => setFiltroMov(null)}
           />
         )}
 
@@ -234,7 +250,7 @@ function App() {
         )}
       </main>
 
-      <BottomNav activa={pestana} onCambiar={setPestana} />
+      <BottomNav activa={pestana} onCambiar={irAPestana} />
       <Toaster />
       <Confirmador />
       <Hitos usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />

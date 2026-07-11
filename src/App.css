@@ -2720,6 +2720,95 @@ button[type='submit']:disabled {
   grid-template-columns: repeat(2, 1fr);
 }
 
+/* Tarjetas de métrica clicables → movimientos del mes filtrados */
+.metricas-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+}
+
+.metrica-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 12px 12px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: linear-gradient(150deg, var(--card-bg-2), var(--card-bg));
+  text-align: left;
+  overflow: hidden;
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.metrica-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+}
+
+.metrica-card.ingreso::before {
+  background: linear-gradient(180deg, var(--ingreso), var(--accent-2));
+}
+.metrica-card.gasto::before {
+  background: linear-gradient(180deg, var(--gasto), #ff9d5c);
+}
+.metrica-card.inversion::before {
+  background: linear-gradient(180deg, #ffe4a8, var(--inversion));
+}
+
+.metrica-card:active {
+  transform: scale(0.97);
+}
+
+.metrica-card:hover {
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow: var(--glow-accent);
+}
+
+.metrica-card .etiqueta {
+  font-size: var(--fs-xs);
+  opacity: 0.65;
+}
+
+.metrica-card .metrica-cifra {
+  font-size: var(--fs-m);
+}
+
+.mc-dot {
+  display: none;
+}
+
+.mc-ver {
+  font-size: var(--fs-micro);
+  opacity: 0;
+  color: var(--accent-2);
+  transition: opacity 0.2s ease;
+}
+
+.metrica-card:hover .mc-ver {
+  opacity: 0.8;
+}
+
+/* Vista de movimientos filtrados desde una métrica */
+.filtro-cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.filtro-titulo {
+  font-size: var(--fs-s);
+}
+
 /* Ingresos: una sola línea fina (cobrado este mes + media al lado) */
 .ingresos-linea {
   display: flex;

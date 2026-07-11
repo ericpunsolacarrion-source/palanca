@@ -16,7 +16,7 @@ function Cifra({ valor, className }) {
   return <span className={className}>{formatearEuros(animado)}</span>
 }
 
-export default function MetricasPrincipales({ usuarioId, movimientos, historico }) {
+export default function MetricasPrincipales({ usuarioId, movimientos, historico, onVerMovimientos }) {
   const {
     ingresos: totalIngresos,
     gastos: totalGastos,
@@ -90,16 +90,26 @@ export default function MetricasPrincipales({ usuarioId, movimientos, historico 
         </span>
       </div>
 
-      {/* A dónde va: desglose del mes. */}
-      <div className="metricas-grid metricas-grid-2">
-        <div className="metrica-bloque">
+      {/* A dónde va: desglose del mes en tarjetas clicables → movimientos filtrados. */}
+      <div className="metricas-cards">
+        <button type="button" className="metrica-card ingreso" onClick={() => onVerMovimientos?.('ingreso')}>
+          <span className="mc-dot" />
+          <span className="etiqueta">Ingresos</span>
+          <Cifra valor={totalIngresos} className="metrica-cifra ingreso" />
+          <span className="mc-ver">Ver ›</span>
+        </button>
+        <button type="button" className="metrica-card gasto" onClick={() => onVerMovimientos?.('gasto')}>
+          <span className="mc-dot" />
           <span className="etiqueta">Gastos</span>
           <Cifra valor={totalGastos} className="metrica-cifra gasto" />
-        </div>
-        <div className="metrica-bloque">
+          <span className="mc-ver">Ver ›</span>
+        </button>
+        <button type="button" className="metrica-card inversion" onClick={() => onVerMovimientos?.('inversion')}>
+          <span className="mc-dot" />
           <span className="etiqueta">Inversión</span>
           <Cifra valor={totalInvertido} className="metrica-cifra inversion" />
-        </div>
+          <span className="mc-ver">Ver ›</span>
+        </button>
       </div>
 
       <div className="ratio-ahorro-linea">
