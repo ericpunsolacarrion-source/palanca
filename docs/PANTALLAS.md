@@ -30,18 +30,18 @@ Barra inferior **siempre visible** (solo el contenido central hace scroll), con 
 Escaparate del mes actual, de arriba abajo:
 - **Banner "Completa tu cuenta"** si el usuario aún no dejó su email (usuarios antiguos).
 - **Banner recordatorio** si lleva 2+ días sin registrar movimientos (botón directo a registrar).
-- **Métricas principales** (`MetricasPrincipales.jsx`): el **ahorro del mes como número hero** (verde/rosa con glow) + frase "Estás ahorrando el X% de tus ingresos"; debajo fila con Ingresos / Gastos / Inversión, barra de ratio de ahorro, y el **objetivo de inversión mensual** configurable con barra de progreso dorada (enlazado a las inversiones reales del mes).
+- **Métricas principales** (`MetricasPrincipales.jsx`): arriba una **línea fina de ingresos** ("Este mes X € · media Y €/mes" con indicador ≈/▲/▼ frente a la media del último año, `ingresoMensualMedio`); el **ahorro del mes como número hero** (verde/rosa con glow) + frase "Estás ahorrando el X%"; debajo Gastos / Inversión, barra de ratio, y el **objetivo de inversión mensual** configurable con barra de progreso dorada que **puede superar el 100 %** (`progresoObjetivo`: muestra 150 %, 200 %… y resalta la barra como logro).
 - **Comparativas** (`Comparativas.jsx`): microcomparativas contra el propio historial ("estás ahorrando un X% más que el mes pasado", "has gastado un Y% menos"). Solo contra uno mismo, nunca con otros usuarios. Máx. 2.
 - **Píldora educativa** (`Pildora.jsx` + `lib/pildoras.js`): 1 nota contextual breve según el estado del mes (ahorro parado sin invertir / excedente alto / gasta más de lo que ingresa), descartable de forma permanente.
 - **Proyección de futuro** (`ProyeccionFuturo.jsx`): el momento "ajá". Toma el ahorro mensual medio REAL y muestra el contraste "dinero parado" vs "invertido al 7%" a 5/10/20/30 años, con el extra que aporta invertir. Estado vacío que invita a registrar si no hay base. Reutiliza `proyectarInteresCompuesto` de `movimientosUtils`.
-- **Tasa de ahorro mensual** (`GraficoTasaAhorro.jsx`): línea de 6 meses, **interactiva** — al tocar un mes muestra "may · 61% · 1.100,00 € ahorrados".
-- **Gasto por categoría (este mes)** (`GraficoCategorias.jsx`): barra apilada de colores + leyenda con euros y porcentaje.
-- **Evolución 6 meses** (`GraficoEvolucion.jsx`): barras verde/rosa por mes, **interactiva** — tocar un mes muestra sus ingresos y gastos.
+- **Tasa de ahorro mensual** (`GraficoTasaAhorro.jsx`): línea **deslizable** por todo el historial (desde el primer mes con datos), arranca en el mes más reciente; al tocar un mes muestra "may · 61% · 1.100,00 € ahorrados".
+- **Gasto por categoría (este mes)** (`GraficoCategorias.jsx`): barra apilada + leyenda. **Navegable**: al tocar una categoría se abre el detalle con todos sus movimientos del periodo (fecha, concepto, importe) y botón "← Categorías".
+- **Evolución 6 meses** (`GraficoEvolucion.jsx`): barras verde/rosa por mes, **interactiva** — tocar un mes muestra ingresos, gastos y el **resultado neto** (= +ingresos − gastos, en verde/rosa).
 - **Últimos movimientos**: los 5 más recientes, solo lectura (editar/borrar se hace en Movimientos).
 
 ### 4. Movimientos (`MovimientosTab.jsx`)
 Dos sub-pestañas:
-- **Nuevo** (`RegistroMovimiento.jsx`): toggle de 3 opciones **Gasto/Ingreso/Inversión** (la inversión en dorado). Inversión crea el mismo modelo que desde la pantalla de Inversión (movimiento `tipo=gasto` + categoría `Inversion`), no un tipo nuevo: fija categoría, muestra "Plataforma" y siempre variable. **Importe grande centrado** como protagonista, categoría y concepto como **chips** tocables (con "+ Nuevo" para crear al vuelo), fecha, toggle Variable/Fijo, nota opcional plegada. Toast "Guardado" al terminar.
+- **Nuevo** (`RegistroMovimiento.jsx`): alta **rápida y sin fricción**. Toggle de 3 opciones **Gasto/Ingreso/Inversión** (la inversión en dorado; mismo modelo `tipo=gasto` + categoría `Inversion`). **Importe grande centrado** con separador de miles **en vivo** (`InputImporte`) y **autofocus**. Sugerencias del histórico (`lib/sugerencias.js`): tira **"Repetir"** de movimientos recurrentes que se insertan **en un toque**, **importes frecuentes** como chips bajo el importe, y **categorías ordenadas por frecuencia**. Concepto como chips (con "+ Nuevo"), fecha, Variable/Fijo, nota plegada. Toast al terminar.
   - **Categoría** = tipo general (Nomina, Comida, Dividendos…), ampliable por el usuario.
   - **Concepto** = origen específico (ej. "Nómina restaurante" vs "Nómina bar"), también ampliable. Sirve para gente con varios trabajos.
   - **Fijo/Variable** = base para futuras previsiones.
@@ -51,13 +51,15 @@ Dos sub-pestañas:
 Dos modos a elegir:
 - **Por tasa de ahorro**: "quiero ahorrar el 20%" → calcula cuánto puede gastar según sus ingresos reales del mes.
 - **Gasto máximo fijo**: "quiero gastar máximo 500 €/mes".
-Muestra: disponible del mes en grande, barra de progreso (roja si se pasa), gastado / te queda / ahorro real, **presupuesto diario** ("puedes gastar 16,85 €/día durante los 27 días que quedan") y desglose "en qué se te va el presupuesto" por categoría con mini-barras. Incluye una **estimación de gasto mensual** basada en la media de los meses con datos ("estimación basada en tus últimos N meses"; marcada como provisional si hay <2 meses), calculada en `movimientosUtils.js`.
+Muestra: disponible del mes en grande, barra de progreso (roja si se pasa), gastado / te queda / ahorro real, **presupuesto diario** y desglose por categoría con mini-barras. Incluye una **estimación de gasto mensual** (media de meses con datos, provisional si <2 meses). Al cambiar entre método por tasa (%) y por euros (€) el valor se limpia para no arrastrar el marcador del método anterior.
+
+**Planificación de meses futuros** (`PlanificacionFutura.jsx`, debajo del presupuesto): prepara hasta **6 meses vista** (ingreso esperado, gasto máximo, inversión), con el ahorro derivado en vivo y las **medias reales como referencia** para no partir de cero. Los planes quedan **guardados** (tabla `planificaciones`, aditiva; SQL en `supabase-schema-planificaciones.sql`); cuando el mes planificado es el actual, se muestra la comparación **plan vs real**. Degrada con aviso si la tabla no existe.
 
 ### 6. Inversión (`Inversiones.jsx`)
 - Una inversión ES un movimiento con categoría `Inversion` (misma tabla) — registrada aquí o en Movimientos, todo queda sincronizado.
 - **Total invertido** en dorado + media mensual de los últimos 12 meses.
 - Desglose por **plataforma** (Trade Republic, MyInvestor… = campo "fuente").
-- **Gráfico de barras doradas** de 12 meses con importe encima, mes debajo y línea de media punteada.
+- **Gráfico de barras doradas deslizable**: abarca desde el primer mes en que se invirtió hasta hoy (scroll horizontal, arranca en el mes actual y no deja ir antes de la primera aportación), con importe encima, mes debajo y línea de media (últimos 12 meses) punteada.
 - Formulario de nueva aportación (plataforma como chips, importe, fecha).
 - Historial agrupado por mes con editar/eliminar por aportación.
 
@@ -65,7 +67,7 @@ Muestra: disponible del mes en grande, barra de progreso (roja si se pasa), gast
 Cuatro sub-pestañas:
 - **Ahorro** (`AhorroObjetivo.jsx`): **múltiples objetivos de ahorro** (fondo de emergencia, entrada de un piso, un viaje…). Cada uno con nombre, importe objetivo, cuánto llevas y fecha opcional; barra de progreso, % y proyección con tu ritmo real ("a tu ritmo lo alcanzarías en N meses" / "para la fecha necesitas X/mes"). Crear, editar y borrar. Tabla nueva `objetivos_ahorro` (aditiva; degrada si aún no existe). SQL en `supabase-schema-objetivos.sql`.
 - **Interés compuesto** (`InteresCompuesto.jsx`): balance inicial, depósito mensual (inicio/fin de mes), años y rentabilidad → "Puedes ahorrar X", gráfico circular (inicial/depósitos/interés), barras apiladas por año y tabla año a año. Permite **guardar simulaciones** con nombre.
-- **Hipoteca** (`Hipoteca.jsx`): calcular cuota (importe, TIN, plazo → cuota, intereses totales, total pagado) y **amortización anticipada** (cuánto ahorras en tiempo e intereses aportando extra al mes). También guarda simulaciones.
+- **Hipoteca** (`Hipoteca.jsx`): calcular cuota (sistema francés: importe, TIN, plazo → cuota, intereses totales, total pagado) y **amortización anticipada** por reducción de plazo (cuánto ahorras en tiempo e intereses con una aportación extra). Guarda simulaciones. Incluye **píldoras de alto valor** en acordeón (reducir plazo vs cuota, por qué amortizar pronto, TIN vs TAE, mirar el total pagado, impacto de la aportación extra) y una línea contextual con el total de intereses de la propia simulación.
 - **Independencia** (`IndependenciaFinanciera.jsx`): regla del 4% (patrimonio = 25× gasto anual). **Bloqueado hasta llevar 30 días** de historial. Texto explicativo de cómo se calcula.
 
 ---
@@ -86,6 +88,8 @@ Cuatro sub-pestañas:
 | `perfiles` | objetivo del onboarding, **email**, fecha de alta |
 | `presupuestos` | metodo (tasa/fijo), tasa objetivo, gasto máximo, objetivo inversión mensual |
 | `simulaciones_guardadas` | simulaciones de hipoteca e interés compuesto (jsonb) |
+| `objetivos_ahorro` | objetivos de ahorro múltiples (nombre, importe objetivo/actual, fecha) |
+| `planificaciones` | planificación de meses futuros (mes, ingreso/gasto/inversión previstos) |
 
 `App.jsx` carga TODOS los movimientos una vez (fuente única); las pantallas derivan por props. Tras cualquier escritura → `onGuardado()` refresca todo.
 
@@ -97,10 +101,11 @@ Cuatro sub-pestañas:
 - PWA auto-actualizable (sin quedarse con versiones viejas en caché).
 - Diseño: oscuro con morado #8b5cf6 + cian #22d3ee, verde ingresos, rosa gastos, dorado inversión; tarjetas con borde degradado; mobile-first con layout de columnas en escritorio.
 
-## Consultor IA (`Consultor.jsx`)
+## Consultor IA — "Fulcro" (`Consultor.jsx`)
 
-Botón flotante "Consultor" (encima de la barra inferior) que abre un panel de
-chat. Orienta con los datos reales del usuario: envía un **resumen estructurado**
+Botón flotante **"Fulcro"** (el punto de apoyo sobre el que pivota una palanca;
+encima de la barra inferior) que abre un panel de chat. Orienta con los datos
+reales del usuario: envía un **resumen estructurado**
 (`lib/resumenParaIA.js`, agregados —no movimientos en bruto) al endpoint
 serverless `api/consultor.js`, que es la única pieza que conoce la API key. El
 encuadre es educativo (no asesoramiento regulado): sin recomendaciones de compra

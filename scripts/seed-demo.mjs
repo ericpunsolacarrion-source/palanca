@@ -80,6 +80,7 @@ async function limpiar() {
   const tablas = [
     'movimientos',
     'objetivos_ahorro',
+    'planificaciones',
     'presupuestos',
     'simulaciones_guardadas',
     'fuentes',
@@ -88,7 +89,10 @@ async function limpiar() {
   ]
   for (const t of tablas) {
     const { error } = await supabase.from(t).delete().eq('usuario_id', USUARIO)
-    if (error && error.code !== '42P01') {
+    // Ignora "tabla no existe" (42P01 / PGRST205): función aún no activada.
+    const tablaInexistente =
+      error && (error.code === '42P01' || error.code === 'PGRST205' || new RegExp(t).test(error.message))
+    if (error && !tablaInexistente) {
       console.error(`Error limpiando ${t}:`, error.message)
     }
   }
