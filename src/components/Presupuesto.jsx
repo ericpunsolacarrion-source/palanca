@@ -102,6 +102,20 @@ export default function Presupuesto({ usuarioId, movimientos, gastoEstimado }) {
           </button>
         </div>
 
+        <details className="info-pildora info-metodos">
+          <summary>¿Qué método me conviene?</summary>
+          <p>
+            <strong>Por porcentaje:</strong> el % es fijo, pero en euros se adapta cada mes a tus
+            ingresos. Los meses buenos te deja gastar más; los flojos, aprieta solo. Es el método
+            más flexible.
+          </p>
+          <p>
+            <strong>Por euros fijos:</strong> el límite es constante pases lo que pases. En los
+            meses que ingresas más, ese excedente no se gasta: se ahorra automáticamente. Por eso
+            suele construir patrimonio más rápido, aunque es menos adaptativo.
+          </p>
+        </details>
+
         {metodoInput === 'tasa' ? (
           <>
             <label htmlFor="tasa">Tasa de ahorro objetivo (%)</label>
