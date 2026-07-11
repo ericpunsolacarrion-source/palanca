@@ -67,10 +67,10 @@ export default function Consultor({ movimientos, objetivo }) {
         type="button"
         className="consultor-fab"
         onClick={() => setAbierto(true)}
-        aria-label="Abrir el consultor de finanzas"
+        aria-label="Abrir Fulcro, tu consultor de finanzas"
       >
         <span className="consultor-fab-icono">✦</span>
-        Consultor
+        Fulcro
       </button>
 
       {abierto && (
@@ -79,12 +79,12 @@ export default function Consultor({ movimientos, objetivo }) {
             className="consultor-panel"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
-            aria-label="Consultor de finanzas"
+            aria-label="Fulcro, consultor de finanzas"
           >
             <header className="consultor-cabecera">
               <div>
-                <h2>Consultor</h2>
-                <p className="consultor-sub">Orientación sobre tus datos</p>
+                <h2>Fulcro</h2>
+                <p className="consultor-sub">Tu consultor en Palanca</p>
               </div>
               <button
                 type="button"
@@ -100,8 +100,9 @@ export default function Consultor({ movimientos, objetivo }) {
               {mensajes.length === 0 && (
                 <div className="consultor-bienvenida">
                   <p>
-                    Pregúntame sobre tus finanzas y te oriento con tus propios números: cómo vas,
-                    en qué se te va el dinero o cómo dar tu primer paso hacia la inversión.
+                    Soy <strong>Fulcro</strong>. Pregúntame sobre tus finanzas y te oriento con tus
+                    propios números: cómo vas, en qué se te va el dinero o cómo dar tu primer paso
+                    hacia la inversión.
                   </p>
                   <div className="consultor-sugerencias">
                     {SUGERENCIAS.map((s) => (
