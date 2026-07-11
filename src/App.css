@@ -2248,7 +2248,18 @@ button[type='submit']:disabled {
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radio-m);
-  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+/* El próximo por desbloquear: visible y con acento (es la meta inmediata) */
+.logro-fila.proximo {
+  opacity: 1;
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+/* Los lejanos: difuminados/bloqueados, para que se intuya el camino */
+.logro-fila.lejano {
+  opacity: 0.4;
 }
 
 .logro-fila.conseguido {

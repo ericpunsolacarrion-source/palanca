@@ -20,6 +20,12 @@ export const HITOS = [
     titulo: '2.500 € ahorrados', mensaje: 'Vas en serio: 2.500 € acumulados.' },
   { id: 'ahorro_5000', categoria: 'Ahorro', icono: '◆', meta: 5000, metric: 'ahorroAcumulado',
     titulo: '5.000 € ahorrados', mensaje: 'Cinco mil euros ahorrados. Esto ya es una palanca.' },
+  { id: 'ahorro_10000', categoria: 'Ahorro', icono: '◆', meta: 10000, metric: 'ahorroAcumulado',
+    titulo: '10.000 € ahorrados', mensaje: 'Diez mil euros. Un colchón sólido y una base para invertir.' },
+  { id: 'ahorro_25000', categoria: 'Ahorro', icono: '◆', meta: 25000, metric: 'ahorroAcumulado',
+    titulo: '25.000 € ahorrados', mensaje: '25.000 € ahorrados. Muy poca gente llega aquí a tu edad.' },
+  { id: 'ahorro_50000', categoria: 'Ahorro', icono: '◆', meta: 50000, metric: 'ahorroAcumulado',
+    titulo: '50.000 € ahorrados', mensaje: 'Medio objetivo de mucha gente, ya conseguido. Imparable.' },
 
   // Inversión acumulada
   { id: 'primera_inversion', categoria: 'Inversión', icono: '▲', meta: 0.01, metric: 'invertidoTotal',
@@ -28,6 +34,12 @@ export const HITOS = [
     titulo: '1.000 € invertidos', mensaje: 'Ya has invertido 1.000 €. El tiempo empieza a trabajar a tu favor.' },
   { id: 'inversion_5000', categoria: 'Inversión', icono: '▲', meta: 5000, metric: 'invertidoTotal',
     titulo: '5.000 € invertidos', mensaje: '5.000 € invertidos. El interés compuesto ya se nota.' },
+  { id: 'inversion_10000', categoria: 'Inversión', icono: '▲', meta: 10000, metric: 'invertidoTotal',
+    titulo: '10.000 € invertidos', mensaje: 'Diez mil euros invertidos. Tu dinero ya trabaja de verdad.' },
+  { id: 'inversion_25000', categoria: 'Inversión', icono: '▲', meta: 25000, metric: 'invertidoTotal',
+    titulo: '25.000 € invertidos', mensaje: '25.000 € invertidos. La bola de nieve coge velocidad.' },
+  { id: 'inversion_50000', categoria: 'Inversión', icono: '▲', meta: 50000, metric: 'invertidoTotal',
+    titulo: '50.000 € invertidos', mensaje: '50.000 € invertidos. Estás construyendo libertad futura.' },
 
   // Constancia
   { id: 'dias_7', categoria: 'Constancia', icono: '✦', meta: 7, metric: 'diasActivos',

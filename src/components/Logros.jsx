@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { formatearEuros } from '../lib/categorias'
 import { CATEGORIAS_HITOS, estadoLogros } from '../lib/hitos'
 import { usePresupuesto } from '../lib/usePresupuesto'
@@ -57,14 +58,15 @@ export default function Logros({ usuarioId, movimientos, movimientosMes }) {
         )}
       </button>
 
-      {abierto && (
-        <div className="logros-overlay" onClick={() => setAbierto(false)}>
-          <section
-            className="logros-panel"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-label="Camino de logros"
-          >
+      {abierto &&
+        createPortal(
+          <div className="logros-overlay" onClick={() => setAbierto(false)}>
+            <section
+              className="logros-panel"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-label="Camino de logros"
+            >
             <header className="logros-panel-cab">
               <div>
                 <h2>Camino de logros</h2>
@@ -86,11 +88,24 @@ export default function Logros({ usuarioId, movimientos, movimientosMes }) {
               {CATEGORIAS_HITOS.map((cat) => {
                 const items = logros.filter((l) => l.categoria === cat)
                 if (items.length === 0) return null
+                // El primer no conseguido de cada categoría es el "próximo"; los
+                // siguientes bloqueados se muestran difuminados (lejanos).
+                let proximoMarcado = false
                 return (
                   <div key={cat} className="logros-grupo">
                     <span className="logros-grupo-titulo">{cat}</span>
-                    {items.map((l) => (
-                      <div key={l.id} className={`logro-fila ${l.alcanzado ? 'conseguido' : ''}`}>
+                    {items.map((l) => {
+                      let estado = 'conseguido'
+                      if (!l.alcanzado) {
+                        if (!proximoMarcado) {
+                          estado = 'proximo'
+                          proximoMarcado = true
+                        } else {
+                          estado = 'lejano'
+                        }
+                      }
+                      return (
+                      <div key={l.id} className={`logro-fila ${estado}`}>
                         <span className="logro-icono">{l.alcanzado ? l.icono : '🔒'}</span>
                         <span className="logro-cuerpo">
                           <span className="logro-titulo">{l.titulo}</span>
@@ -112,14 +127,16 @@ export default function Logros({ usuarioId, movimientos, movimientosMes }) {
                           )}
                         </span>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )
               })}
             </div>
           </section>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   )
 }
