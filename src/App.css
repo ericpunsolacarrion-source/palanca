@@ -642,6 +642,93 @@ button[type='submit']:disabled {
   margin-top: 4px;
 }
 
+/* Independencia financiera: guardar y comparar escenarios */
+.if-guardar {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.if-guardar input {
+  flex: 1;
+  min-width: 0;
+}
+
+.if-guardar button {
+  flex: none;
+  white-space: nowrap;
+}
+
+.if-comparacion {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.if-tabla-scroll {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.if-tabla-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.if-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-s);
+  font-variant-numeric: tabular-nums;
+}
+
+.if-tabla th,
+.if-tabla td {
+  text-align: right;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.if-tabla th:first-child,
+.if-tabla td:first-child {
+  text-align: left;
+}
+
+.if-tabla th {
+  font-size: var(--fs-xs);
+  opacity: 0.6;
+  font-weight: 600;
+}
+
+.if-tabla tr.mejor td {
+  background: rgba(52, 232, 158, 0.08);
+}
+
+.if-tabla tr.mejor .if-tiempo {
+  color: var(--ingreso);
+  font-weight: 700;
+}
+
+.if-cargar {
+  background: none;
+  border: none;
+  color: var(--accent-2);
+  font-weight: 600;
+  padding: 0;
+  text-align: left;
+}
+
+.if-borrar {
+  padding: 2px 8px !important;
+  border-radius: var(--radio-s);
+  font-size: var(--fs-m);
+  line-height: 1;
+}
+
 /* Planificación de meses futuros */
 .plan-lista {
   display: flex;

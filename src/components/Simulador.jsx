@@ -34,6 +34,7 @@ export default function Simulador({ usuarioId, ahorroMensual, gastoMensual, dias
       {sub === 'hipoteca' && <Hipoteca usuarioId={usuarioId} />}
       {sub === 'fire' && (
         <IndependenciaFinanciera
+          usuarioId={usuarioId}
           gastoMensualActual={gastoMensual}
           ahorroMensualActual={ahorroMensual}
           diasConHistorial={diasConHistorial}
