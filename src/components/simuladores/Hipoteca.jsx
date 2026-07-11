@@ -3,6 +3,48 @@ import { formatearEuros } from '../../lib/categorias'
 import SimulacionesGuardadas from '../SimulacionesGuardadas'
 import InputImporte from '../InputImporte'
 
+const PILDORAS_HIPOTECA = [
+  {
+    titulo: 'Reducir plazo vs reducir cuota',
+    texto:
+      'Al amortizar anticipadamente puedes elegir bajar la cuota o acortar el plazo. Acortar el plazo suele ahorrarte MÁS intereses, porque eliminas los intereses de los últimos años. Bajar la cuota te da aire cada mes, pero sigues pagando el préstamo el mismo tiempo. Esta herramienta simula acortar el plazo: mantienes tu cuota y le sumas el extra.',
+  },
+  {
+    titulo: 'Por qué amortizar pronto ahorra tanto',
+    texto:
+      'En una hipoteca (sistema francés) las primeras cuotas son casi todo intereses y muy poco capital. Por eso amortizar en los primeros años recorta muchos más intereses que hacerlo al final, cuando ya casi solo pagas capital. Cuanto antes reduzcas capital, menos intereses se generan sobre él.',
+  },
+  {
+    titulo: 'TIN y TAE no son lo mismo',
+    texto:
+      'El TIN es solo el tipo de interés nominal. La TAE incluye además comisiones y otros gastos del préstamo, así que refleja mejor el coste real. Comparar dos hipotecas solo por el TIN engaña: una con TIN más bajo pero muchas comisiones puede salir más cara. Mira siempre la TAE.',
+  },
+  {
+    titulo: 'Mira el total pagado, no solo la cuota',
+    texto:
+      'A lo largo de toda la vida del préstamo, la suma de intereses puede suponer una parte enorme de lo que devuelves. La cuota mensual parece asumible, pero el "total pagado" es lo que de verdad te cuesta la casa. Es una cifra que casi nadie visualiza al firmar.',
+  },
+  {
+    titulo: 'El poder de una aportación extra pequeña',
+    texto:
+      'Una aportación extra mensual modesta, mantenida en el tiempo, puede recortar años de hipoteca y un buen pellizco de intereses, porque reduces capital pronto. Prueba a subir la "aportación extra" en la pestaña de amortización y compruébalo con tus propios números.',
+  },
+]
+
+function InfoHipoteca() {
+  return (
+    <div className="info-hipoteca">
+      <span className="balance-etiqueta-principal">¿Sabías que…?</span>
+      {PILDORAS_HIPOTECA.map((p) => (
+        <details key={p.titulo} className="info-pildora">
+          <summary>{p.titulo}</summary>
+          <p>{p.texto}</p>
+        </details>
+      ))}
+    </div>
+  )
+}
+
 function calcularCuota(capital, interesAnual, meses) {
   const r = interesAnual / 100 / 12
   if (r === 0) return capital / meses
@@ -137,6 +179,14 @@ export default function Hipoteca({ usuarioId }) {
             </div>
           )}
 
+          {puedeCalcularCuota && (
+            <p className="ayuda info-contextual">
+              A lo largo de toda la vida del préstamo pagarás{' '}
+              <strong className="gasto">{formatearEuros(totalIntereses)}</strong> solo en intereses:
+              casi nadie visualiza esta cifra al firmar. Mira el total pagado, no solo la cuota.
+            </p>
+          )}
+
           <SimulacionesGuardadas
             usuarioId={usuarioId}
             tipo="hipoteca"
@@ -218,6 +268,8 @@ export default function Hipoteca({ usuarioId }) {
           )}
         </>
       )}
+
+      <InfoHipoteca />
     </div>
   )
 }
