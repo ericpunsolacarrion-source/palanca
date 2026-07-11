@@ -206,7 +206,13 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
 
       <div className="importe-hero">
         <span className="importe-hero-simbolo">€</span>
-        <InputImporte id="importe" value={importe} onValueChange={setImporte} autoFocus />
+        <InputImporte
+          id="importe"
+          value={importe}
+          onValueChange={setImporte}
+          autoFocus
+          mostrarEuro={false}
+        />
       </div>
 
       {importesSugeridos.length > 0 && (

@@ -487,6 +487,29 @@ button[type='submit']:disabled {
   box-shadow: 0 0 12px -4px var(--accent-glow);
 }
 
+/* Campo de importe con el símbolo € al final (InputImporte) */
+.campo-euro {
+  position: relative;
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
+
+.campo-euro input {
+  width: 100%;
+  padding-right: 30px;
+}
+
+.campo-euro-simbolo {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.5;
+  pointer-events: none;
+  font-size: var(--fs-s);
+}
+
 /* Píldoras educativas de hipoteca (acordeón) */
 .info-hipoteca {
   display: flex;

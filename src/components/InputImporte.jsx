@@ -12,6 +12,7 @@ export default function InputImporte({
   placeholder = '0,00',
   autoFocus = false,
   disabled = false,
+  mostrarEuro = true,
   id,
   'aria-label': ariaLabel,
 }) {
@@ -54,7 +55,7 @@ export default function InputImporte({
     })
   }
 
-  return (
+  const input = (
     <input
       ref={ref}
       id={id}
@@ -69,5 +70,17 @@ export default function InputImporte({
       value={texto}
       onChange={handleChange}
     />
+  )
+
+  if (!mostrarEuro) return input
+
+  // Envoltorio con el símbolo € al final, sin afectar al valor tecleado.
+  return (
+    <span className="campo-euro">
+      {input}
+      <span className="campo-euro-simbolo" aria-hidden="true">
+        €
+      </span>
+    </span>
   )
 }

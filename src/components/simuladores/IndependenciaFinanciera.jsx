@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { formatearEuros } from '../../lib/categorias'
+import InputImporte from '../InputImporte'
 
 const UMBRAL_DIAS = 30
 const TOPE_MESES = 1200 // 100 años, límite de seguridad para el bucle
 
 export default function IndependenciaFinanciera({ gastoMensualActual, ahorroMensualActual, diasConHistorial }) {
-  const [gastoMensual, setGastoMensual] = useState(String(Math.round(gastoMensualActual) || ''))
-  const [patrimonioActual, setPatrimonioActual] = useState('')
-  const [ahorroMensual, setAhorroMensual] = useState(String(Math.round(ahorroMensualActual) || ''))
+  const [gastoMensual, setGastoMensual] = useState(Math.round(gastoMensualActual) || null)
+  const [patrimonioActual, setPatrimonioActual] = useState(null)
+  const [ahorroMensual, setAhorroMensual] = useState(Math.round(ahorroMensualActual) || null)
   const [rentabilidad, setRentabilidad] = useState('5')
 
   if (diasConHistorial < UMBRAL_DIAS) {
@@ -66,35 +67,18 @@ export default function IndependenciaFinanciera({ gastoMensualActual, ahorroMens
       </p>
 
       <label htmlFor="fi-gasto">Gasto mensual estimado (€)</label>
-      <input
-        id="fi-gasto"
-        type="number"
-        inputMode="decimal"
-        min="0"
-        value={gastoMensual}
-        onChange={(e) => setGastoMensual(e.target.value)}
-      />
+      <InputImporte id="fi-gasto" value={gastoMensual} onValueChange={setGastoMensual} />
 
       <label htmlFor="fi-patrimonio">Patrimonio invertido actual (€)</label>
-      <input
+      <InputImporte
         id="fi-patrimonio"
-        type="number"
-        inputMode="decimal"
-        min="0"
         value={patrimonioActual}
-        onChange={(e) => setPatrimonioActual(e.target.value)}
+        onValueChange={setPatrimonioActual}
         placeholder="0"
       />
 
       <label htmlFor="fi-ahorro">Ahorro/inversión mensual (€)</label>
-      <input
-        id="fi-ahorro"
-        type="number"
-        inputMode="decimal"
-        min="0"
-        value={ahorroMensual}
-        onChange={(e) => setAhorroMensual(e.target.value)}
-      />
+      <InputImporte id="fi-ahorro" value={ahorroMensual} onValueChange={setAhorroMensual} />
 
       <label htmlFor="fi-rentabilidad">Rentabilidad anual esperada (%)</label>
       <input
