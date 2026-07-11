@@ -1869,6 +1869,246 @@ button[type='submit']:disabled {
   }
 }
 
+/* Rayos giratorios detrás del icono, para que se sienta un logro real */
+.celebracion-icono::before {
+  content: '';
+  position: absolute;
+  inset: -22px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 8deg,
+    var(--accent-glow) 8deg 10deg,
+    transparent 10deg 44deg,
+    var(--accent-2) 44deg 45deg,
+    transparent 45deg 90deg
+  );
+  opacity: 0.45;
+  animation: celebracion-rayos 8s linear infinite;
+  z-index: -1;
+}
+
+@keyframes celebracion-rayos {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.celebracion-caja::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, var(--accent-glow), transparent 60%);
+  opacity: 0.5;
+  pointer-events: none;
+  animation: celebracion-fulgor 2.4s ease-in-out infinite;
+}
+
+@keyframes celebracion-fulgor {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* ── Camino de logros ──────────────────────────────────────────────────────── */
+.logros-card {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: var(--radio-m);
+  padding: var(--sp-3) var(--sp-4);
+  background:
+    linear-gradient(var(--card-solida), var(--card-solida)) padding-box,
+    linear-gradient(135deg, var(--accent), var(--accent-2)) border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.logros-card-cab {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.logros-card-titulo {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.logros-card-cuenta {
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
+.logros-card-barra {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.logros-card-relleno {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.logros-card-proximo {
+  font-size: var(--fs-xs);
+  opacity: 0.7;
+}
+
+.logros-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(5, 6, 10, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: consultor-fade 0.2s ease both;
+}
+
+.logros-panel {
+  width: 100%;
+  max-width: 520px;
+  height: min(84vh, 760px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card-solida);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radio-l) var(--radio-l) 0 0;
+  box-shadow: 0 -12px 40px -12px rgba(0, 0, 0, 0.7);
+  animation: consultor-subir 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  overflow: hidden;
+}
+
+.logros-panel-cab {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.logros-panel-cab h2 {
+  margin: 0;
+  font-size: var(--fs-m);
+}
+
+.logros-lista {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.logros-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.logros-grupo-titulo {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.5;
+}
+
+.logro-fila {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  opacity: 0.7;
+}
+
+.logro-fila.conseguido {
+  opacity: 1;
+  border-color: transparent;
+  background:
+    linear-gradient(var(--card-bg-2), var(--card-bg-2)) padding-box,
+    linear-gradient(135deg, var(--accent), var(--accent-2)) border-box;
+}
+
+.logro-icono {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bg);
+  font-size: var(--fs-m);
+}
+
+.logro-fila.conseguido .logro-icono {
+  color: #fff;
+  background: linear-gradient(160deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 16px -4px var(--accent-glow);
+}
+
+.logro-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.logro-titulo {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.logro-estado.conseguido {
+  font-size: var(--fs-xs);
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
+.logro-mensaje {
+  font-size: var(--fs-xs);
+  opacity: 0.7;
+  line-height: 1.4;
+}
+
+.logro-barra {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  margin-top: 3px;
+}
+
+.logro-barra-relleno {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+.logro-meta {
+  font-size: var(--fs-micro);
+  opacity: 0.55;
+}
+
 /* Comparativas con uno mismo (mes actual vs anterior) */
 .comparativas {
   display: flex;

@@ -1,22 +1,25 @@
 import { useEffect, useState } from 'react'
 import { usePresupuesto } from '../lib/usePresupuesto'
+import { useObjetivosAhorro } from '../lib/useObjetivosAhorro'
 import { detectarNuevoHito, marcarHitoVisto } from '../lib/hitos'
 
 // Detecta hitos recién alcanzados y muestra una celebración elegante.
 // El hito se marca como visto al cerrar (no al detectar), para que sea estable.
 export default function Hitos({ usuarioId, movimientos, movimientosMes }) {
   const { objetivoInversionMensual, cargando } = usePresupuesto(usuarioId)
+  const { objetivos, cargando: cargandoObj } = useObjetivosAhorro(usuarioId)
   const [hito, setHito] = useState(null)
 
   useEffect(() => {
-    if (cargando || hito) return
+    if (cargando || cargandoObj || hito) return
     const nuevo = detectarNuevoHito(usuarioId, {
       movimientos,
       movimientosMes,
       objetivoInversion: objetivoInversionMensual ?? 0,
+      objetivos,
     })
     if (nuevo) setHito(nuevo)
-  }, [usuarioId, movimientos, movimientosMes, objetivoInversionMensual, cargando, hito])
+  }, [usuarioId, movimientos, movimientosMes, objetivoInversionMensual, objetivos, cargando, cargandoObj, hito])
 
   if (!hito) return null
 

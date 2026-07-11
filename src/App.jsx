@@ -26,6 +26,7 @@ import BottomNav from './components/BottomNav'
 import Toaster from './components/Toaster'
 import Confirmador from './components/Confirmador'
 import Hitos from './components/Hitos'
+import Logros from './components/Logros'
 import Consultor from './components/Consultor'
 import './App.css'
 
@@ -167,6 +168,7 @@ function App() {
               historico={movimientos}
             />
             <Comparativas movimientos={movimientos} />
+            <Logros usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
             {pildoraDash && (
               <Pildora
                 key={pildoraDash.id}
