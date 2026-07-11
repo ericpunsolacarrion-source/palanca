@@ -1579,8 +1579,21 @@ button[type='submit']:disabled {
 .linea-principal {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-3);
   font-weight: 600;
   color: var(--text-h);
+}
+
+.lista-movimientos .linea-principal .categoria {
+  font-size: var(--fs-base);
+}
+
+.lista-movimientos .linea-principal .importe {
+  font-size: var(--fs-m);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .categoria .fuente {
