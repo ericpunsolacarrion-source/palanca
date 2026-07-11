@@ -487,6 +487,54 @@ button[type='submit']:disabled {
   box-shadow: 0 0 12px -4px var(--accent-glow);
 }
 
+/* Gastos rápidos personalizables (quick-add) */
+.gastos-rapidos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gr-cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.gr-vacio {
+  margin: 0;
+}
+
+.gr-gestion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.gr-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  font-size: var(--fs-s);
+}
+
+.gr-item-cat {
+  opacity: 0.55;
+}
+
+.gr-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+}
+
 /* Campo de importe con el símbolo € al final (InputImporte) */
 .campo-euro {
   position: relative;

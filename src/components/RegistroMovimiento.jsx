@@ -8,6 +8,7 @@ import { hoyIso } from '../lib/movimientosUtils'
 import { frecuenciaCategorias, frecuentesParaRepetir, importesFrecuentes } from '../lib/sugerencias'
 import { toast } from '../lib/toast'
 import InputImporte from './InputImporte'
+import GastosRapidos from './GastosRapidos'
 
 const TOAST_MODO = { gasto: 'Gasto guardado', ingreso: 'Ingreso guardado', inversion: 'Inversión guardada' }
 
@@ -82,6 +83,33 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
       return
     }
     toast(`Añadido: ${formatearEuros(rep.importe)}`)
+    onGuardado()
+  }
+
+  const [registrandoRapidoId, setRegistrandoRapidoId] = useState(null)
+
+  // Registra al instante un acceso rápido de gasto definido por el usuario.
+  async function registrarRapido(item) {
+    if (!item.categoriaId) {
+      toast('Ese acceso no tiene categoría. Edítalo.', 'error')
+      return
+    }
+    setRegistrandoRapidoId(item.id)
+    const { error: errorInsert } = await supabase.from('movimientos').insert({
+      usuario_id: usuarioId,
+      tipo: 'gasto',
+      categoria_id: item.categoriaId,
+      fuente_id: null,
+      importe: Number(item.importe),
+      fecha: hoyIso(),
+      es_fijo: false,
+    })
+    setRegistrandoRapidoId(null)
+    if (errorInsert) {
+      toast('No se ha podido añadir. Inténtalo de nuevo.', 'error')
+      return
+    }
+    toast(`${item.nombre}: ${formatearEuros(Number(item.importe))}`)
     onGuardado()
   }
 
@@ -177,6 +205,15 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
           Inversión
         </button>
       </div>
+
+      {modo === 'gasto' && (
+        <GastosRapidos
+          usuarioId={usuarioId}
+          categorias={categoriasOrdenadas}
+          onRegistrar={registrarRapido}
+          registrandoId={registrandoRapidoId}
+        />
+      )}
 
       {repetibles.length > 0 && (
         <div className="repetir-strip">
