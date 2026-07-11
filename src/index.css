@@ -61,6 +61,18 @@
   box-sizing: border-box;
 }
 
+/* Scroll limpio, sin barra lateral visible en toda la app (minimalismo) */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Edge/IE antiguos */
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; /* WebKit (Safari/Chrome) */
+}
+
 html,
 body,
 #root {
