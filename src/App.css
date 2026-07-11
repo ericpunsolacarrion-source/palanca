@@ -989,6 +989,61 @@ button[type='submit']:disabled {
   font-variant-numeric: tabular-nums;
 }
 
+/* Proyección acumulada del plan (motivadora) */
+.plan-proyeccion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  text-align: center;
+  padding: var(--sp-4);
+  margin: var(--sp-3) 0;
+  border: 1px solid transparent;
+  border-radius: var(--radio-l);
+  background:
+    linear-gradient(var(--card-bg-2), var(--card-bg-2)) padding-box,
+    linear-gradient(135deg, var(--accent), var(--accent-2)) border-box;
+}
+
+.plan-proyeccion-titulo {
+  font-size: var(--fs-s);
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.plan-proyeccion-cifras {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.pp-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pp-valor {
+  font-size: var(--fs-l);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.pp-label {
+  font-size: var(--fs-xs);
+  opacity: 0.65;
+}
+
+.pp-mas {
+  font-size: var(--fs-l);
+  opacity: 0.4;
+}
+
+.plan-proyeccion-nota {
+  font-size: var(--fs-micro);
+  opacity: 0.6;
+}
+
 .fila-fecha-fijo {
   display: flex;
   gap: 8px;
@@ -1128,10 +1183,53 @@ button[type='submit']:disabled {
 }
 
 .inversion-mes {
-  background: var(--card-bg);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(150deg, rgba(245, 185, 61, 0.06), var(--card-bg));
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 12px 14px 12px 18px;
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.inversion-mes::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #ffe4a8, var(--inversion));
+  box-shadow: 0 0 12px -2px var(--inversion-glow);
+}
+
+.inversion-mes:hover {
+  transform: translateY(-2px);
+  border-color: rgba(245, 185, 61, 0.35);
+  box-shadow: 0 10px 26px -16px rgba(0, 0, 0, 0.7), var(--glow-inversion);
+}
+
+.inversion-mes .linea-principal .categoria {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.inversion-mes .linea-principal .importe {
+  color: var(--inversion);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inversion-mes {
+    transition: none;
+  }
+  .inversion-mes:hover {
+    transform: none;
+  }
 }
 
 .inversion-detalle {
@@ -1740,8 +1838,10 @@ button[type='submit']:disabled {
 }
 
 .dc-nota {
-  font-size: var(--fs-micro);
-  opacity: 0.5;
+  font-size: var(--fs-xs);
+  opacity: 0.8;
+  font-style: italic;
+  color: var(--text-h);
 }
 
 .dc-importe {
@@ -1844,8 +1944,19 @@ button[type='submit']:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--sp-2);
   font-size: 12px;
-  opacity: 0.85;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.inversion-detalle-fila:first-child {
+  border-top: none;
+}
+
+.inversion-detalle-lista {
+  margin-top: 10px;
 }
 
 /* Gráfico de línea (tasa de ahorro) */

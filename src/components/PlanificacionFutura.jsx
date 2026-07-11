@@ -135,6 +135,21 @@ export default function PlanificacionFutura({ usuarioId, movimientos }) {
   const planMesActual = planes[claveMesActual()]
   const realMesActual = useMemo(() => totalesDe(filtrarMesActual(movimientos)), [movimientos])
 
+  // Acumulado proyectado si el usuario cumple los planes de los próximos meses.
+  const proyeccion = useMemo(() => {
+    let ahorro = 0
+    let inversion = 0
+    let mesesConPlan = 0
+    for (const { clave } of meses) {
+      const p = planes[clave]
+      if (!p) continue
+      mesesConPlan += 1
+      ahorro += Number(p.ingreso_previsto) - Number(p.gasto_previsto)
+      inversion += Number(p.inversion_prevista)
+    }
+    return { ahorro, inversion, mesesConPlan }
+  }, [planes, meses])
+
   if (tablaFalta) {
     return (
       <div className="simulador fade-in-up">
@@ -175,6 +190,27 @@ export default function PlanificacionFutura({ usuarioId, movimientos }) {
       </p>
 
       {planMesActual && <ComparacionMesActual plan={planMesActual} real={realMesActual} />}
+
+      {proyeccion.mesesConPlan > 0 && (
+        <div className="plan-proyeccion">
+          <span className="plan-proyeccion-titulo">Si cumples tus planes…</span>
+          <div className="plan-proyeccion-cifras">
+            <div className="pp-bloque">
+              <span className="pp-valor ingreso">{formatearEuros(proyeccion.ahorro)}</span>
+              <span className="pp-label">ahorrados</span>
+            </div>
+            <span className="pp-mas">+</span>
+            <div className="pp-bloque">
+              <span className="pp-valor inversion">{formatearEuros(proyeccion.inversion)}</span>
+              <span className="pp-label">invertidos</span>
+            </div>
+          </div>
+          <span className="plan-proyeccion-nota">
+            en {proyeccion.mesesConPlan} {proyeccion.mesesConPlan === 1 ? 'mes' : 'meses'} planificados
+            (la inversión forma parte del ahorro).
+          </span>
+        </div>
+      )}
 
       {cargando ? (
         <div className="skeleton skeleton-linea" style={{ width: '60%', height: 40 }} />
