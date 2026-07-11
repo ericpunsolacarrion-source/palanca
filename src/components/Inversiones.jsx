@@ -55,18 +55,28 @@ function GraficoInversionMensual({ meses, media }) {
             </div>
           )}
           {meses.map((m, i) => {
-            const pct = (m.invertido / maximo) * 100
+            const pct = Math.max((m.invertido / maximo) * 100, m.invertido > 0 ? 4 : 2)
+            const esEnero = m.clave.endsWith('-01')
+            const anio = m.clave.slice(0, 4)
             return (
               <div key={m.clave} className="inv-col">
-                <span className="inv-importe">{m.invertido > 0 ? formatearCompacto(m.invertido) : ''}</span>
                 <div className="inv-zona-barra" style={{ height: ALTO_BARRAS }}>
+                  {/* El importe se ancla justo encima de la barra (no en una línea fija). */}
+                  {m.invertido > 0 && (
+                    <span className="inv-importe" style={{ bottom: `${pct}%` }}>
+                      {formatearCompacto(m.invertido)}
+                    </span>
+                  )}
                   <div
                     className={`inv-barra ${m.invertido > 0 ? 'activa' : ''}`}
-                    style={{ height: `${Math.max(pct, 2)}%`, animationDelay: `${i * 0.04}s` }}
+                    style={{ height: `${pct}%`, animationDelay: `${i * 0.04}s` }}
                     title={`${m.etiqueta}: ${formatearEuros(m.invertido)}`}
                   />
                 </div>
-                <span className="inv-mes">{m.etiqueta}</span>
+                <span className={`inv-mes ${esEnero ? 'inv-mes-anio' : ''}`}>
+                  {m.etiqueta}
+                  {esEnero && <span className="inv-anio">{anio}</span>}
+                </span>
               </div>
             )
           })}

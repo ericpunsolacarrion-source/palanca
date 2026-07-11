@@ -2339,19 +2339,26 @@ button[type='submit']:disabled {
 }
 
 .inv-importe {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
   font-size: 9px;
   font-weight: 700;
   color: var(--inversion);
   font-variant-numeric: tabular-nums;
-  min-height: 13px;
   white-space: nowrap;
+  padding-bottom: 2px;
+  pointer-events: none;
 }
 
 .inv-zona-barra {
+  position: relative;
   width: 100%;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  overflow: visible;
 }
 
 .inv-barra {
@@ -2381,6 +2388,21 @@ button[type='submit']:disabled {
   font-size: 9px;
   opacity: 0.6;
   text-transform: capitalize;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+}
+
+/* En enero se muestra el año para no perderse al deslizar atrás */
+.inv-mes-anio {
+  opacity: 0.85;
+}
+
+.inv-anio {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--accent-2);
 }
 
 .inv-linea-media {
