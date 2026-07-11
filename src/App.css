@@ -1929,7 +1929,7 @@ button[type='submit']:disabled {
   font-size: var(--fs-xs);
   color: var(--text-h);
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  text-align: right;
 }
 
 .grafico-detalle-mes {
@@ -1938,6 +1938,17 @@ button[type='submit']:disabled {
   color: var(--accent-2);
   font-weight: 700;
   margin-right: 6px;
+}
+
+.gd-pct {
+  color: var(--text-h);
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.gd-euros {
+  font-size: var(--fs-xs);
+  opacity: 0.9;
 }
 
 .punto-tasa {

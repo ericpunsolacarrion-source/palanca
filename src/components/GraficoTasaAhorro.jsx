@@ -72,9 +72,22 @@ export default function GraficoTasaAhorro({ movimientos }) {
         {mesActivo && (
           <span className="grafico-detalle">
             <span className="grafico-detalle-mes">{mesActivo.etiqueta}</span>
-            {ratiosReales[activo] === null
-              ? 'sin ingresos'
-              : `${formatearPorcentaje(ratiosReales[activo], 0)} · ${formatearEuros(mesActivo.ahorro)} ahorrados`}
+            {ratiosReales[activo] === null ? (
+              'sin ingresos'
+            ) : (
+              <>
+                <span className="gd-pct">{formatearPorcentaje(ratiosReales[activo], 0)}</span>
+                <span className="gd-euros">
+                  <span className="ingreso">{formatearEuros(mesActivo.ahorro)}</span> ahorrado
+                  {mesActivo.invertido > 0 && (
+                    <>
+                      {' · '}
+                      <span className="inversion">{formatearEuros(mesActivo.invertido)}</span> invertido
+                    </>
+                  )}
+                </span>
+              </>
+            )}
           </span>
         )}
       </div>
