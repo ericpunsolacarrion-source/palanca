@@ -276,6 +276,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
           items={categoriasOrdenadas}
           nuevoNombre={nuevaCategoria}
           onNuevoNombreChange={setNuevaCategoria}
+          compacto
           placeholder={modo === 'ingreso' ? 'ej. Dividendos, Alquiler' : 'ej. Vivienda, Ocio'}
         />
       )}
@@ -292,6 +293,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
         items={fuentes}
         nuevoNombre={nuevaFuente}
         onNuevoNombreChange={setNuevaFuente}
+        compacto
         placeholder={
           esInversion
             ? 'ej. Trade Republic, MyInvestor'

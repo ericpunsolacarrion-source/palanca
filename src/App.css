@@ -411,6 +411,28 @@ button[type='submit']:disabled {
   opacity: 0.8;
 }
 
+/* Selector compacto: una sola fila deslizable con chips finos */
+.chips-fila-compacta {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+  gap: 6px;
+}
+
+.chips-fila-compacta::-webkit-scrollbar {
+  display: none;
+}
+
+.chip-sm {
+  flex: none;
+  padding: 7px 13px;
+  min-height: 36px;
+  font-size: var(--fs-s);
+  white-space: nowrap;
+}
+
 /* Alta rápida: repetir movimientos recurrentes en un toque */
 .repetir-strip {
   display: flex;

@@ -9,16 +9,21 @@ export default function SelectorEtiqueta({
   nuevoNombre,
   onNuevoNombreChange,
   placeholder,
+  compacto = false,
 }) {
   return (
     <>
       <label htmlFor={id}>{label}</label>
-      <div className="chips-fila" role="group" aria-label={label}>
+      <div
+        className={`chips-fila ${compacto ? 'chips-fila-compacta' : ''}`}
+        role="group"
+        aria-label={label}
+      >
         {items.map((item) => (
           <button
             key={item.id}
             type="button"
-            className={valor === item.id ? 'chip activo' : 'chip'}
+            className={`chip ${compacto ? 'chip-sm' : ''} ${valor === item.id ? 'activo' : ''}`}
             onClick={() => onChange(item.id)}
           >
             {item.nombre}
@@ -26,7 +31,7 @@ export default function SelectorEtiqueta({
         ))}
         <button
           type="button"
-          className={valor === NUEVA_ETIQUETA ? 'chip chip-nuevo activo' : 'chip chip-nuevo'}
+          className={`chip chip-nuevo ${compacto ? 'chip-sm' : ''} ${valor === NUEVA_ETIQUETA ? 'activo' : ''}`}
           onClick={() => onChange(NUEVA_ETIQUETA)}
         >
           + Nuevo
