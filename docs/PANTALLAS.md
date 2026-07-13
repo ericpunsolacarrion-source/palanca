@@ -41,7 +41,7 @@ Escaparate del mes actual, de arriba abajo:
 - **Últimos movimientos**: los 5 más recientes, solo lectura (editar/borrar se hace en Movimientos).
 
 ### 4. Movimientos (`MovimientosTab.jsx`)
-Tres sub-pestañas (Nuevo · Recurrentes · Historial). Se puede llegar también
+Cuatro sub-pestañas (Nuevo · Recurrentes · Importar · Historial). Se puede llegar también
 desde las **tarjetas de métrica del dashboard** (Ingresos/Gastos/Inversión),
 que abren una **vista filtrada** de los movimientos de ese tipo en el mes en
 curso, con su total y botón "← Movimientos".
@@ -50,6 +50,7 @@ curso, con su total y botón "← Movimientos".
   - **Concepto** = origen específico (ej. "Nómina restaurante" vs "Nómina bar"), también ampliable. Sirve para gente con varios trabajos.
   - **Fijo/Variable** = base para futuras previsiones.
 - **Recurrentes** (`Recurrentes.jsx` + `lib/useRecurrentes.js`, localStorage con pub/sub; badge de pendientes en la pestaña): movimientos que se repiten cada mes (alquiler, nómina, suscripciones). Se configuran una vez y se registran cada mes sin rellenar nada. Los **gastos** se registran automáticos de un toque; los **ingresos** (nómina) piden **confirmar/ajustar el importe** cada mes (la nómina varía). Pausar/activar, editar y borrar. El movimiento registrado va a Supabase (`es_fijo=true`).
+- **Importar** (`ImportadorCsv.jsx` + `lib/importarCsv.js`): cargar el histórico desde un **CSV** (ej. exportado de Excel). Formato documentado visible → subir archivo → **previsualización** con resumen (se importarán / duplicados omitidos / con errores y sus motivos, sin abortar por filas malas) → **mapeo de columnas** si no se reconocen → confirmar. **Detección de duplicados** (fecha+tipo+importe+concepto) y **deshacer** por importación (`lib/useImportaciones.js`). Crea categorías/plataformas que falten. Para cargar datos reales por script, ver `docs/IMPORT-REAL.md`.
 - **Historial** (`ListaMovimientos.jsx`): resumen del mes arriba y todo el histórico **agrupado por meses en acordeón** (mes actual desplegado, anteriores plegados). Cada movimiento es una **tarjeta futurista y animada**: barra de acento por tipo (dorado inversión, rosa gasto, verde ingreso), entrada escalonada y microinteracción al tocar (respeta `prefers-reduced-motion`). Fecha dd/mm/aaaa, badge Fijo/Variable, **Editar** inline / **Eliminar** (modal). Las inversiones en dorado con ↗.
 
 ### 5. Presupuesto (`Presupuesto.jsx`)
