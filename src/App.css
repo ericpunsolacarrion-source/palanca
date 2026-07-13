@@ -509,6 +509,184 @@ button[type='submit']:disabled {
   box-shadow: 0 0 12px -4px var(--accent-glow);
 }
 
+/* Importador CSV */
+.importador {
+  gap: var(--sp-4);
+}
+
+.importador-ejemplo {
+  margin: 0;
+  padding: 10px;
+  border-radius: var(--radio-s);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: var(--fs-xs);
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.importador-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.importador-boton {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.importador-subir {
+  display: flex;
+  justify-content: center;
+  padding: var(--sp-4) 0;
+}
+
+.importador-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.importador-archivo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+  font-size: var(--fs-s);
+}
+
+.importador-mapeo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.importador-map-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-size: var(--fs-s);
+}
+
+.importador-map-fila select {
+  flex: 1;
+  max-width: 60%;
+}
+
+.importador-resumen {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+}
+
+.ir-bloque {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+  text-align: center;
+}
+
+.ir-num {
+  font-size: var(--fs-l);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ir-bloque.ok .ir-num {
+  color: var(--ingreso);
+}
+.ir-bloque.dup .ir-num {
+  color: var(--inversion);
+}
+.ir-bloque.err .ir-num {
+  color: var(--gasto);
+}
+
+.ir-label {
+  font-size: var(--fs-micro);
+  opacity: 0.65;
+}
+
+.importador-errores {
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--fs-xs);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.importador-tabla-scroll {
+  overflow-x: auto;
+}
+
+.importador-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.importador-tabla th,
+.importador-tabla td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.importador-tabla th {
+  opacity: 0.6;
+  font-weight: 600;
+}
+
+.importador-tabla td:last-child,
+.importador-tabla th:last-child {
+  text-align: right;
+}
+
+.it-concepto {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.importador-historial {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border);
+}
+
+.importador-lote {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+}
+
+.importador-lote-info {
+  opacity: 0.8;
+}
+
 /* Movimientos recurrentes */
 .sub-tab-badge {
   display: inline-flex;

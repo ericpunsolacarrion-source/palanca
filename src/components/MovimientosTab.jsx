@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import RegistroMovimiento from './RegistroMovimiento'
 import ListaMovimientos from './ListaMovimientos'
 import Recurrentes from './Recurrentes'
+import ImportadorCsv from './ImportadorCsv'
 import { esInversion, formatearEuros } from '../lib/categorias'
 import { totalesDe } from '../lib/movimientosUtils'
 import { useRecurrentes } from '../lib/useRecurrentes'
@@ -97,6 +98,13 @@ export default function MovimientosTab({
         </button>
         <button
           type="button"
+          className={sub === 'importar' ? 'activo' : ''}
+          onClick={() => cambiarSub('importar')}
+        >
+          Importar
+        </button>
+        <button
+          type="button"
           className={sub === 'historial' ? 'activo' : ''}
           onClick={() => cambiarSub('historial')}
         >
@@ -109,6 +117,10 @@ export default function MovimientosTab({
       )}
 
       {sub === 'recurrentes' && <Recurrentes usuarioId={usuarioId} onRegistrado={onGuardado} />}
+
+      {sub === 'importar' && (
+        <ImportadorCsv usuarioId={usuarioId} movimientos={movimientos} onImportado={onGuardado} />
+      )}
 
       {sub === 'historial' && (
         <>
