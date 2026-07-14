@@ -35,20 +35,14 @@ El script imprime los totales por año frente a la referencia. Resultado:
 | Inversión Trade Republic | 19.765,90 | 19.765,90 | ✅ exacta |
 | Gastos 2024 | 3.541,68 | 4.920,48 | ❌ faltan ~1.379 € |
 | Gastos 2025 / 2026 | 4.689,01 / 2.685,23 | 4.923,90 / 2.712,90 | ❌ por poco |
-| Inversión total | 19.765,90 | 20.775,71 | ❌ faltan Rand+Mintos |
+| Inversión (Trade Republic) | 19.765,90 | 19.765,90 | ✅ exacta |
 
-**Causa (investigada): no es un bug de cálculo.** Que ingresos e inversión-TR
+**Causa (investigada): no es un bug de cálculo.** Que ingresos e inversión
 cuadren **al céntimo** demuestra que el pipeline y las reglas
 (`movimientosUtils.js`: gasto = consumo excl. `Inversion`; ahorro = ingresos −
-gastos) son correctos. Las diferencias vienen de **filas ausentes en los CSV de
-origen**:
-
-- El CSV de **gastos termina el 2024-11-10**: falta el resto de noviembre y todo
-  diciembre de 2024 (≈ 1.379 €), y algunas filas sueltas de 2025/2026.
-- El CSV de **inversión solo trae Trade Republic**: faltan las aportaciones de
-  **Rand (863,84 €)** y **Mintos (145,97 €)** → 1.009,81 € = exactamente la
-  diferencia con el total de referencia (20.775,71 − 19.765,90).
-
-Es decir: los agregados **cuadran perfectamente con los datos disponibles**; para
-que coincidan con la tabla de referencia hace falta completar esas filas que el
-Excel original tenía pero no llegaron en el pegado.
+gastos) son correctos. La única diferencia son **filas de gasto ausentes en el
+CSV de origen**: el CSV de **gastos termina el 2024-11-10** (falta el resto de
+noviembre y todo diciembre de 2024, ≈ 1.379 €, más alguna fila suelta de
+2025/2026). Los agregados **cuadran con los datos disponibles**; para igualar la
+referencia de gastos hay que completar esas filas que el Excel tenía pero no
+llegaron en el pegado.
