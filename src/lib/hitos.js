@@ -1,4 +1,4 @@
-import { agregarPorMes, totalesDe } from './movimientosUtils'
+import { agregarPorMes, bolsas, totalesDe } from './movimientosUtils'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sistema de logros por niveles, fácilmente ampliable: cada logro es una
@@ -10,21 +10,21 @@ import { agregarPorMes, totalesDe } from './movimientosUtils'
 
 export const HITOS = [
   // Ahorro acumulado
-  { id: 'ahorro_200', categoria: 'Ahorro', icono: '◆', meta: 200, metric: 'ahorroAcumulado',
+  { id: 'ahorro_200', categoria: 'Ahorro líquido', icono: '◆', meta: 200, metric: 'bolsaLiquidez',
     titulo: 'Primeros 200 €', mensaje: 'Has acumulado 200 € de ahorro. El primer peldaño está puesto.' },
-  { id: 'ahorro_500', categoria: 'Ahorro', icono: '◆', meta: 500, metric: 'ahorroAcumulado',
+  { id: 'ahorro_500', categoria: 'Ahorro líquido', icono: '◆', meta: 500, metric: 'bolsaLiquidez',
     titulo: '500 € ahorrados', mensaje: 'Ya llevas 500 € ahorrados. Esto empieza a coger forma.' },
-  { id: 'ahorro_1000', categoria: 'Ahorro', icono: '◆', meta: 1000, metric: 'ahorroAcumulado',
+  { id: 'ahorro_1000', categoria: 'Ahorro líquido', icono: '◆', meta: 1000, metric: 'bolsaLiquidez',
     titulo: '1.000 € ahorrados', mensaje: 'Tu primer millar ahorrado. Un colchón de verdad.' },
-  { id: 'ahorro_2500', categoria: 'Ahorro', icono: '◆', meta: 2500, metric: 'ahorroAcumulado',
+  { id: 'ahorro_2500', categoria: 'Ahorro líquido', icono: '◆', meta: 2500, metric: 'bolsaLiquidez',
     titulo: '2.500 € ahorrados', mensaje: 'Vas en serio: 2.500 € acumulados.' },
-  { id: 'ahorro_5000', categoria: 'Ahorro', icono: '◆', meta: 5000, metric: 'ahorroAcumulado',
+  { id: 'ahorro_5000', categoria: 'Ahorro líquido', icono: '◆', meta: 5000, metric: 'bolsaLiquidez',
     titulo: '5.000 € ahorrados', mensaje: 'Cinco mil euros ahorrados. Esto ya es una palanca.' },
-  { id: 'ahorro_10000', categoria: 'Ahorro', icono: '◆', meta: 10000, metric: 'ahorroAcumulado',
+  { id: 'ahorro_10000', categoria: 'Ahorro líquido', icono: '◆', meta: 10000, metric: 'bolsaLiquidez',
     titulo: '10.000 € ahorrados', mensaje: 'Diez mil euros. Un colchón sólido y una base para invertir.' },
-  { id: 'ahorro_25000', categoria: 'Ahorro', icono: '◆', meta: 25000, metric: 'ahorroAcumulado',
+  { id: 'ahorro_25000', categoria: 'Ahorro líquido', icono: '◆', meta: 25000, metric: 'bolsaLiquidez',
     titulo: '25.000 € ahorrados', mensaje: '25.000 € ahorrados. Muy poca gente llega aquí a tu edad.' },
-  { id: 'ahorro_50000', categoria: 'Ahorro', icono: '◆', meta: 50000, metric: 'ahorroAcumulado',
+  { id: 'ahorro_50000', categoria: 'Ahorro líquido', icono: '◆', meta: 50000, metric: 'bolsaLiquidez',
     titulo: '50.000 € ahorrados', mensaje: 'Medio objetivo de mucha gente, ya conseguido. Imparable.' },
 
   // Inversión acumulada
@@ -40,6 +40,20 @@ export const HITOS = [
     titulo: '25.000 € invertidos', mensaje: '25.000 € invertidos. La bola de nieve coge velocidad.' },
   { id: 'inversion_50000', categoria: 'Inversión', icono: '▲', meta: 50000, metric: 'invertidoTotal',
     titulo: '50.000 € invertidos', mensaje: '50.000 € invertidos. Estás construyendo libertad futura.' },
+
+  // Patrimonio total (liquidez + inversión)
+  { id: 'patrimonio_1000', categoria: 'Patrimonio', icono: '❖', meta: 1000, metric: 'patrimonio',
+    titulo: '1.000 € de patrimonio', mensaje: 'Tu patrimonio total (ahorro + inversión) supera los 1.000 €.' },
+  { id: 'patrimonio_5000', categoria: 'Patrimonio', icono: '❖', meta: 5000, metric: 'patrimonio',
+    titulo: '5.000 € de patrimonio', mensaje: '5.000 € entre ahorro e inversión. Base sólida.' },
+  { id: 'patrimonio_10000', categoria: 'Patrimonio', icono: '❖', meta: 10000, metric: 'patrimonio',
+    titulo: '10.000 € de patrimonio', mensaje: 'Cinco cifras de patrimonio. Muy poca gente llega a tu edad.' },
+  { id: 'patrimonio_25000', categoria: 'Patrimonio', icono: '❖', meta: 25000, metric: 'patrimonio',
+    titulo: '25.000 € de patrimonio', mensaje: '25.000 € de patrimonio total. Vas por delante.' },
+  { id: 'patrimonio_50000', categoria: 'Patrimonio', icono: '❖', meta: 50000, metric: 'patrimonio',
+    titulo: '50.000 € de patrimonio', mensaje: '50.000 € de patrimonio. Camino directo a la libertad financiera.' },
+  { id: 'patrimonio_100000', categoria: 'Patrimonio', icono: '❖', meta: 100000, metric: 'patrimonio',
+    titulo: '100.000 € de patrimonio', mensaje: 'Seis cifras de patrimonio. Un hito enorme.' },
 
   // Constancia
   { id: 'dias_7', categoria: 'Constancia', icono: '✦', meta: 7, metric: 'diasActivos',
@@ -60,7 +74,7 @@ export const HITOS = [
     titulo: '3 objetivos cumplidos', mensaje: 'Tres objetivos de ahorro completados. Eres constante de verdad.' },
 ]
 
-export const CATEGORIAS_HITOS = ['Ahorro', 'Inversión', 'Constancia', 'Objetivos']
+export const CATEGORIAS_HITOS = ['Ahorro líquido', 'Inversión', 'Patrimonio', 'Constancia', 'Objetivos']
 
 // Días distintos (por fecha de registro) en los que el usuario registró algo.
 function diasActivos(movimientos) {
@@ -85,15 +99,18 @@ function mesesSeguidosAhorrando(movimientos) {
 }
 
 export function calcularMetricas({ movimientos, movimientosMes, objetivoInversion = 0, objetivos = [] }) {
-  const totalHist = totalesDe(movimientos)
   const totalMes = totalesDe(movimientosMes)
+  const { bolsaInversion, bolsaLiquidez, patrimonio } = bolsas(movimientos)
   const objetivosCompletados = objetivos.filter(
     (o) => Number(o.importe_actual) >= Number(o.importe_objetivo),
   ).length
 
   return {
-    ahorroAcumulado: Math.max(0, totalHist.ahorro),
-    invertidoTotal: totalHist.invertido,
+    // Familias de stock (dos bolsas): liquidez, inversión y patrimonio total.
+    bolsaLiquidez: Math.max(0, bolsaLiquidez),
+    invertidoTotal: bolsaInversion,
+    patrimonio: Math.max(0, patrimonio),
+    // Constancia (flujo).
     diasActivos: diasActivos(movimientos),
     ratioAhorroMes: totalMes.ingresos > 0 ? totalMes.ratioAhorro : 0,
     mesesSeguidosAhorrando: mesesSeguidosAhorrando(movimientos),

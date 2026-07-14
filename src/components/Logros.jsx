@@ -7,7 +7,7 @@ import { useObjetivosAhorro } from '../lib/useObjetivosAhorro'
 
 // Formatea el valor/meta de un hito según su métrica (euros, %, días, cuenta).
 function formatoMeta(hito) {
-  if (hito.metric === 'ahorroAcumulado' || hito.metric === 'invertidoTotal') {
+  if (['bolsaLiquidez', 'invertidoTotal', 'patrimonio'].includes(hito.metric)) {
     return formatearEuros(hito.meta)
   }
   if (hito.metric === 'ratioAhorroMes') return `${hito.meta}%`
