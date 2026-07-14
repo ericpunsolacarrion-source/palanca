@@ -256,6 +256,7 @@ function App() {
           <Simulador
             key="simulador"
             usuarioId={usuarioId}
+            movimientos={movimientos}
             ahorroMensual={totalesMes.ahorro}
             gastoMensual={gastoEstimado.estimacion || totalesMes.gastos}
             diasConHistorial={diasConHistorial}

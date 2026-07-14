@@ -34,15 +34,19 @@ export function useObjetivosAhorro(usuarioId) {
   }, [cargar])
 
   async function crear({ nombre, importeObjetivo, importeActual, fechaObjetivo }) {
-    const { error } = await supabase.from('objetivos_ahorro').insert({
-      usuario_id: usuarioId,
-      nombre: nombre.trim(),
-      importe_objetivo: importeObjetivo,
-      importe_actual: importeActual || 0,
-      fecha_objetivo: fechaObjetivo || null,
-    })
+    const { data, error } = await supabase
+      .from('objetivos_ahorro')
+      .insert({
+        usuario_id: usuarioId,
+        nombre: nombre.trim(),
+        importe_objetivo: importeObjetivo,
+        importe_actual: importeActual || 0,
+        fecha_objetivo: fechaObjetivo || null,
+      })
+      .select()
+      .single()
     if (!error) await cargar()
-    return !error
+    return error ? null : data
   }
 
   async function actualizar(id, campos) {

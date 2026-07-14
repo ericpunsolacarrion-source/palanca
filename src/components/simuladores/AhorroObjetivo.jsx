@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { formatearEuros } from '../../lib/categorias'
-import { hoyIso } from '../../lib/movimientosUtils'
+import { bolsas, hoyIso } from '../../lib/movimientosUtils'
 import { useObjetivosAhorro } from '../../lib/useObjetivosAhorro'
+import { TIPOS_OBJETIVO, useObjetivoTipo } from '../../lib/useObjetivoTipo'
 import { toast } from '../../lib/toast'
 import { confirmar } from '../../lib/confirmar'
 import InputImporte from '../InputImporte'
+
+const ETIQUETA_TIPO = Object.fromEntries(TIPOS_OBJETIVO.map((t) => [t.id, t.etiqueta]))
 
 function mesesHasta(fechaIso) {
   if (!fechaIso) return null
@@ -14,9 +17,8 @@ function mesesHasta(fechaIso) {
   return meses
 }
 
-function TarjetaObjetivo({ objetivo, ahorroMensual, onEditar, onEliminar }) {
+function TarjetaObjetivo({ objetivo, actual, tipo, ahorroMensual, onEditar, onEliminar }) {
   const meta = Number(objetivo.importe_objetivo)
-  const actual = Number(objetivo.importe_actual)
   const restante = Math.max(meta - actual, 0)
   const pct = meta > 0 ? Math.min((actual / meta) * 100, 100) : 0
   const completado = actual >= meta
@@ -28,7 +30,10 @@ function TarjetaObjetivo({ objetivo, ahorroMensual, onEditar, onEliminar }) {
   return (
     <div className="objetivo-card fade-in-up">
       <div className="objetivo-card-cabecera">
-        <span className="objetivo-nombre">{objetivo.nombre}</span>
+        <span className="objetivo-nombre">
+          {objetivo.nombre}
+          <span className={`objetivo-tipo-badge ${tipo}`}>{ETIQUETA_TIPO[tipo]}</span>
+        </span>
         <span className="grupo-botones">
           <button type="button" className="btn-editar" onClick={onEditar}>
             Editar
@@ -75,14 +80,12 @@ function TarjetaObjetivo({ objetivo, ahorroMensual, onEditar, onEliminar }) {
   )
 }
 
-function FormularioObjetivo({ inicial, onGuardar, onCancelar, guardando }) {
+function FormularioObjetivo({ inicial, tipoInicial, onGuardar, onCancelar, guardando }) {
   const [nombre, setNombre] = useState(inicial?.nombre ?? '')
   const [importeObjetivo, setImporteObjetivo] = useState(
     inicial ? Number(inicial.importe_objetivo) : null,
   )
-  const [importeActual, setImporteActual] = useState(
-    inicial ? Number(inicial.importe_actual) : null,
-  )
+  const [tipo, setTipo] = useState(tipoInicial ?? 'liquidez')
   const [fechaObjetivo, setFechaObjetivo] = useState(inicial?.fecha_objetivo ?? '')
   const [error, setError] = useState(null)
 
@@ -92,12 +95,7 @@ function FormularioObjetivo({ inicial, onGuardar, onCancelar, guardando }) {
     if (!nombre.trim()) return setError('Ponle un nombre al objetivo.')
     if (!meta || meta <= 0) return setError('Introduce un importe objetivo válido.')
     setError(null)
-    onGuardar({
-      nombre,
-      importeObjetivo: meta,
-      importeActual: Number(importeActual) || 0,
-      fechaObjetivo: fechaObjetivo || null,
-    })
+    onGuardar({ nombre, importeObjetivo: meta, tipo, fechaObjetivo: fechaObjetivo || null })
   }
 
   return (
@@ -120,13 +118,22 @@ function FormularioObjetivo({ inicial, onGuardar, onCancelar, guardando }) {
         placeholder="ej. 6.000"
       />
 
-      <label htmlFor="obj-actual">¿Cuánto llevas ya? (€, opcional)</label>
-      <InputImporte
-        id="obj-actual"
-        value={importeActual}
-        onValueChange={setImporteActual}
-        placeholder="0"
-      />
+      <label>¿Qué quieres hacer crecer?</label>
+      <div className="chips-fila chips-fila-compacta" role="group" aria-label="Tipo de objetivo">
+        {TIPOS_OBJETIVO.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={`chip chip-sm ${tipo === t.id ? 'activo' : ''}`}
+            onClick={() => setTipo(t.id)}
+          >
+            {t.etiqueta}
+          </button>
+        ))}
+      </div>
+      <p className="ayuda-mini">
+        El progreso se sigue solo con tu bolsa: ahorro líquido, inversión o patrimonio total.
+      </p>
 
       <label htmlFor="obj-fecha">Fecha objetivo (opcional)</label>
       <input
@@ -150,17 +157,23 @@ function FormularioObjetivo({ inicial, onGuardar, onCancelar, guardando }) {
   )
 }
 
-export default function AhorroObjetivo({ usuarioId, ahorroMensual }) {
+export default function AhorroObjetivo({ usuarioId, ahorroMensual, movimientos = [] }) {
   const { objetivos, cargando, tablaFalta, crear, actualizar, eliminar } = useObjetivosAhorro(usuarioId)
+  const { tipoDe, fijarTipo } = useObjetivoTipo(usuarioId)
   const [creando, setCreando] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
   const [guardando, setGuardando] = useState(false)
 
+  const { bolsaLiquidez, bolsaInversion, patrimonio } = useMemo(() => bolsas(movimientos), [movimientos])
+  const valorBolsa = (tipo) =>
+    tipo === 'inversion' ? bolsaInversion : tipo === 'patrimonio' ? patrimonio : bolsaLiquidez
+
   async function handleCrear(datos) {
     setGuardando(true)
-    const ok = await crear(datos)
+    const creado = await crear(datos)
     setGuardando(false)
-    if (ok) {
+    if (creado) {
+      fijarTipo(creado.id, datos.tipo)
       setCreando(false)
       toast('Objetivo guardado')
     } else {
@@ -173,11 +186,11 @@ export default function AhorroObjetivo({ usuarioId, ahorroMensual }) {
     const ok = await actualizar(id, {
       nombre: datos.nombre.trim(),
       importe_objetivo: datos.importeObjetivo,
-      importe_actual: datos.importeActual,
       fecha_objetivo: datos.fechaObjetivo,
     })
     setGuardando(false)
     if (ok) {
+      fijarTipo(id, datos.tipo)
       setEditandoId(null)
       toast('Objetivo actualizado')
     } else {
@@ -215,6 +228,7 @@ export default function AhorroObjetivo({ usuarioId, ahorroMensual }) {
               <FormularioObjetivo
                 key={o.id}
                 inicial={o}
+                tipoInicial={tipoDe(o.id)}
                 guardando={guardando}
                 onGuardar={(datos) => handleActualizar(o.id, datos)}
                 onCancelar={() => setEditandoId(null)}
@@ -223,6 +237,8 @@ export default function AhorroObjetivo({ usuarioId, ahorroMensual }) {
               <TarjetaObjetivo
                 key={o.id}
                 objetivo={o}
+                tipo={tipoDe(o.id)}
+                actual={valorBolsa(tipoDe(o.id))}
                 ahorroMensual={ahorroMensual}
                 onEditar={() => setEditandoId(o.id)}
                 onEliminar={() => handleEliminar(o.id)}
