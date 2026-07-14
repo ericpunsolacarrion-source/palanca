@@ -3,16 +3,27 @@ import RegistroMovimiento from './RegistroMovimiento'
 import ListaMovimientos from './ListaMovimientos'
 import Recurrentes from './Recurrentes'
 import ImportadorCsv from './ImportadorCsv'
-import { esInversion, formatearEuros } from '../lib/categorias'
+import { esAjuste, esInversion, formatearEuros } from '../lib/categorias'
 import { totalesDe } from '../lib/movimientosUtils'
 import { useRecurrentes } from '../lib/useRecurrentes'
 
-const ETIQUETA_FILTRO = { ingreso: 'Ingresos', gasto: 'Gastos', inversion: 'Inversión' }
+const ETIQUETA_FILTRO = { ingreso: 'Ingresos', gasto: 'Gastos', inversion: 'Inversión', ajuste: 'Ajustes' }
+
+// Filtros del historial, coherentes con el modelo de dos bolsas.
+const FILTROS_HIST = [
+  { id: 'todos', etiqueta: 'Todos' },
+  { id: 'ingreso', etiqueta: 'Ingresos' },
+  { id: 'gasto', etiqueta: 'Gastos' },
+  { id: 'inversion', etiqueta: 'Inversión' },
+  { id: 'ajuste', etiqueta: 'Ahorro/Ajuste' },
+]
 
 function coincideFiltro(m, filtro) {
+  if (filtro === 'ajuste') return esAjuste(m)
   if (filtro === 'inversion') return esInversion(m)
-  if (filtro === 'ingreso') return m.tipo === 'ingreso'
-  return m.tipo === 'gasto' && !esInversion(m)
+  if (filtro === 'ingreso') return m.tipo === 'ingreso' && !esAjuste(m)
+  if (filtro === 'gasto') return m.tipo === 'gasto' && !esInversion(m) && !esAjuste(m)
+  return true // 'todos'
 }
 
 function ResumenMes({ movimientosMes }) {
@@ -40,7 +51,13 @@ export default function MovimientosTab({
   onLimpiarFiltro,
 }) {
   const [sub, setSub] = useState('nuevo')
+  const [filtroHist, setFiltroHist] = useState('todos')
   const { pendientes } = useRecurrentes(usuarioId)
+
+  const movsHistorial = useMemo(
+    () => (filtroHist === 'todos' ? movimientos : movimientos.filter((m) => coincideFiltro(m, filtroHist))),
+    [movimientos, filtroHist],
+  )
 
   // Al llegar con un filtro (desde una métrica del dashboard), mostrar la vista
   // filtrada del mes en curso.
@@ -125,12 +142,24 @@ export default function MovimientosTab({
       {sub === 'historial' && (
         <>
           {!cargando && movimientos.length > 0 && <ResumenMes movimientosMes={movimientosMes} />}
+          <div className="chips-fila chips-fila-compacta" role="group" aria-label="Filtrar historial">
+            {FILTROS_HIST.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                className={`chip chip-sm ${filtroHist === f.id ? 'activo' : ''}`}
+                onClick={() => setFiltroHist(f.id)}
+              >
+                {f.etiqueta}
+              </button>
+            ))}
+          </div>
           <ListaMovimientos
-            movimientos={movimientos}
+            movimientos={movsHistorial}
             cargando={cargando}
             onEliminado={onGuardado}
             onIrARegistro={() => setSub('nuevo')}
-            agruparPorMes
+            agruparPorMes={filtroHist === 'todos'}
           />
         </>
       )}
