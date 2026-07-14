@@ -171,7 +171,7 @@ function verificar(gastos, ingresos, inversion) {
     invTotal += Number(inv.importe)
     porPlataforma[inv.plataforma] = (porPlataforma[inv.plataforma] ?? 0) + Number(inv.importe)
   }
-  console.log(`\nInversión total: ${fmt(invTotal)} (ref 20.775,71)`)
+  console.log(`\nInversión total: ${fmt(invTotal)} (ref 19.765,90 — solo Trade Republic)`)
   for (const [p, v] of Object.entries(porPlataforma)) console.log(`  ${p}: ${fmt(v)}`)
 }
 

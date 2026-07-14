@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
 import { useUsuarioId } from './lib/useUsuarioId'
 import { obtenerPerfil, crearPerfil } from './lib/perfil'
+import { crearAjuste } from './lib/ajustes'
 import { estimacionGastoMensual, filtrarMesActual, totalesDe } from './lib/movimientosUtils'
 import PantallaId from './components/PantallaId'
 import Onboarding from './components/Onboarding'
@@ -27,6 +28,7 @@ import Toaster from './components/Toaster'
 import Confirmador from './components/Confirmador'
 import Hitos from './components/Hitos'
 import Logros from './components/Logros'
+import Patrimonio from './components/Patrimonio'
 import Consultor from './components/Consultor'
 import './App.css'
 
@@ -134,9 +136,19 @@ function App() {
   if (!perfil) {
     return (
       <Onboarding
-        onCompletar={async (objetivo, email) => {
+        onCompletar={async (objetivo, email, saldoInicial) => {
           const nuevoPerfil = await crearPerfil(usuarioId, objetivo, email)
-          if (nuevoPerfil) setPerfil(nuevoPerfil)
+          if (nuevoPerfil) {
+            // Saldo líquido de partida como movimiento de ajuste (bolsa de liquidez).
+            if (saldoInicial > 0) {
+              await crearAjuste(usuarioId, {
+                importe: saldoInicial,
+                tipo: 'ingreso',
+                nota: 'Saldo inicial',
+              })
+            }
+            setPerfil(nuevoPerfil)
+          }
           return Boolean(nuevoPerfil)
         }}
       />
@@ -181,6 +193,7 @@ function App() {
               historico={movimientos}
               onVerMovimientos={verMovimientos}
             />
+            <Patrimonio usuarioId={usuarioId} movimientos={movimientos} onGuardado={cargarMovimientos} />
             <Comparativas movimientos={movimientos} />
             <Logros usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
             {pildoraDash && (

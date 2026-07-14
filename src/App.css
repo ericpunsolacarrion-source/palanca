@@ -509,6 +509,116 @@ button[type='submit']:disabled {
   box-shadow: 0 0 12px -4px var(--accent-glow);
 }
 
+/* Patrimonio: dos bolsas + reconciliación */
+.patrimonio-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radio-l);
+  padding: var(--sp-4);
+  background: linear-gradient(150deg, var(--card-bg-2), var(--card-bg));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.patrimonio-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.patrimonio-cifra {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--text-h);
+}
+
+.patrimonio-bolsas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.bolsa {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+}
+
+.bolsa-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.bolsa-dot.inversion {
+  background: var(--inversion);
+  box-shadow: 0 0 8px -1px var(--inversion-glow);
+}
+
+.bolsa-dot.liquidez {
+  background: var(--accent-2);
+  box-shadow: 0 0 8px -1px var(--accent-glow);
+}
+
+.bolsa-valor {
+  font-size: var(--fs-m);
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.bolsa-valor.inversion {
+  color: var(--inversion);
+}
+
+.patrimonio-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.patrimonio-fiabilidad {
+  font-size: var(--fs-micro);
+  opacity: 0.6;
+}
+
+.patrimonio-fiabilidad.aviso {
+  color: var(--inversion);
+  opacity: 0.9;
+}
+
+.patrimonio-modal {
+  max-width: 380px;
+  text-align: left;
+}
+
+.patrimonio-modal-titulo {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-m);
+  color: var(--text-h);
+}
+
+.patrimonio-teorica {
+  font-size: var(--fs-s);
+  margin: var(--sp-2) 0;
+  padding: 8px 10px;
+  border-radius: var(--radio-s);
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.patrimonio-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
 /* Importador CSV */
 .importador {
   gap: var(--sp-4);

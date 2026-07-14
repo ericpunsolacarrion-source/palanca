@@ -11,6 +11,7 @@ const OBJETIVOS = [
 export default function Onboarding({ onCompletar }) {
   const [seleccion, setSeleccion] = useState(null)
   const [email, setEmail] = useState('')
+  const [saldoInicial, setSaldoInicial] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
 
@@ -22,7 +23,8 @@ export default function Onboarding({ onCompletar }) {
     }
     setGuardando(true)
     setError(null)
-    const ok = await onCompletar(seleccion, email)
+    const saldo = saldoInicial === '' ? 0 : Number(saldoInicial)
+    const ok = await onCompletar(seleccion, email, Number.isFinite(saldo) && saldo > 0 ? saldo : 0)
     // Si sale bien, este componente se desmonta; si no, reactivamos el botón.
     if (!ok) {
       setGuardando(false)
@@ -62,6 +64,29 @@ export default function Onboarding({ onCompletar }) {
         />
         <p className="ayuda-mini">
           Lo usaremos para avisarte de novedades y para ayudarte a recuperar tu cuenta.
+        </p>
+      </div>
+
+      <div className="onboarding-email">
+        <label htmlFor="saldo-inicial">¿Cuánto dinero líquido tienes ahora? (opcional)</label>
+        <div className="campo-euro">
+          <input
+            id="saldo-inicial"
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
+            value={saldoInicial}
+            onChange={(e) => setSaldoInicial(e.target.value)}
+            placeholder="ej. 1.500"
+          />
+          <span className="campo-euro-simbolo" aria-hidden="true">
+            €
+          </span>
+        </div>
+        <p className="ayuda-mini">
+          Tu saldo líquido de partida (banco + efectivo). Podrás ajustarlo cuando quieras. Lo
+          dejamos en blanco si aún no lo sabes.
         </p>
       </div>
 
