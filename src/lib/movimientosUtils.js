@@ -1,4 +1,4 @@
-import { esInversion } from './categorias'
+import { esAjuste, esInversion } from './categorias'
 
 // Clave de mes ('2026-07') a partir de la fecha del movimiento.
 // SIEMPRE se agrupa por `fecha` (cuando ocurrió), nunca por created_at.
@@ -49,6 +49,8 @@ export function totalesDe(movimientos) {
   let gastos = 0
   let invertido = 0
   for (const m of movimientos) {
+    // Los ajustes de saldo no son flujo mensual: no cuentan como ingreso ni gasto.
+    if (esAjuste(m)) continue
     const importe = Number(m.importe)
     if (m.tipo === 'ingreso') ingresos += importe
     else if (esInversion(m)) invertido += importe
@@ -57,6 +59,51 @@ export function totalesDe(movimientos) {
   const ahorro = ingresos - gastos
   const ratioAhorro = ingresos > 0 ? (ahorro / ingresos) * 100 : 0
   return { ingresos, gastos, invertido, ahorro, ratioAhorro }
+}
+
+// ── Modelo de DOS BOLSAS (stock acumulado) ──────────────────────────────────
+// - Bolsa de INVERSIÓN = Σ aportaciones (categoría Inversion). Explícita.
+// - Bolsa de LIQUIDEZ (ahorro disponible) = Σ(ingresos − gastos − invertido)
+//   + Σ ajustes. Derivada: el dinero del superávit que no se invirtió, más el
+//   saldo inicial y las reconciliaciones (movimientos de categoría Ajuste).
+// - PATRIMONIO TOTAL = Inversión + Liquidez.
+// Fuente única. La liquidez solo es fiable si el usuario reconcilia (ver saldo).
+export function bolsas(movimientos) {
+  let liquidez = 0 // ingresos − gastos − invertido (+ ajustes)
+  let invertido = 0
+  let ajusteTotal = 0
+  for (const m of movimientos) {
+    const importe = Number(m.importe)
+    if (esAjuste(m)) {
+      const signo = m.tipo === 'ingreso' ? 1 : -1
+      ajusteTotal += signo * importe
+      liquidez += signo * importe
+      continue
+    }
+    if (m.tipo === 'ingreso') liquidez += importe
+    else if (esInversion(m)) {
+      invertido += importe
+      liquidez -= importe // el dinero pasa de líquido a invertido
+    } else liquidez -= importe
+  }
+  return {
+    bolsaInversion: invertido,
+    bolsaLiquidez: liquidez,
+    patrimonio: invertido + liquidez,
+    ajusteTotal,
+  }
+}
+
+// Fecha (ISO) del último ajuste de saldo registrado, o null si nunca se ha
+// reconciliado. Sirve para el indicador de fiabilidad de la liquidez.
+export function ultimaReconciliacion(movimientos) {
+  let ultima = null
+  for (const m of movimientos) {
+    if (!esAjuste(m)) continue
+    const cuando = m.created_at || m.fecha
+    if (cuando && (!ultima || cuando > ultima)) ultima = cuando
+  }
+  return ultima
 }
 
 // Agrega por mes los últimos N meses (meses sin datos quedan a cero).
