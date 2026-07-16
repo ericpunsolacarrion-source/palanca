@@ -2165,17 +2165,7 @@ button[type='submit']:disabled {
   text-align: center;
   font-size: 46px;
   margin: 2px 0 0;
-  background: linear-gradient(135deg, var(--text-h), var(--accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* Cuando se sobrepasa o es un valor con color, respetar el color semántico */
-.presupuesto .balance-hero.gasto,
-.presupuesto .balance-hero.ingreso {
-  background: none;
-  -webkit-text-fill-color: currentColor;
+  color: var(--text-h);
 }
 
 .presupuesto .ratio-barra {
