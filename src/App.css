@@ -2156,6 +2156,83 @@ button[type='submit']:disabled {
   border-radius: 999px;
 }
 
+/* ── Presupuesto: estética premium (hero centrado + tarjetas de stat) ─────── */
+.presupuesto > .balance-etiqueta-principal {
+  text-align: center;
+}
+
+.presupuesto .balance-hero {
+  text-align: center;
+  font-size: 46px;
+  margin: 2px 0 0;
+  background: linear-gradient(135deg, var(--text-h), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Cuando se sobrepasa o es un valor con color, respetar el color semántico */
+.presupuesto .balance-hero.gasto,
+.presupuesto .balance-hero.ingreso {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.presupuesto .ratio-barra {
+  height: 9px;
+  margin-top: 16px;
+  margin-bottom: 18px;
+}
+
+.presupuesto .balance-grid {
+  gap: 8px;
+}
+
+.presupuesto .balance-item {
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+  transition: border-color 0.18s ease;
+}
+
+.presupuesto .balance-item:hover {
+  border-color: rgba(139, 92, 246, 0.35);
+}
+
+.presupuesto .balance-item .etiqueta {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  opacity: 0.55;
+}
+
+.presupuesto .balance-item .valor {
+  font-size: var(--fs-m);
+}
+
+.presupuesto .presupuesto-diario {
+  margin-top: 16px;
+  text-align: center;
+  padding: 10px;
+  border-radius: var(--radio-m);
+  background: rgba(34, 211, 238, 0.06);
+  border: 1px solid rgba(34, 211, 238, 0.16);
+  opacity: 1;
+}
+
+/* Categorías: filas más limpias */
+.presupuesto-categoria-fila {
+  grid-template-columns: 92px 1fr auto;
+}
+
+.mini-barra {
+  height: 6px;
+}
+
 /* Lista movimientos */
 .lista-movimientos {
   list-style: none;
