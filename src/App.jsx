@@ -208,6 +208,10 @@ function App() {
               dias={diasDesdeUltimoMovimiento}
               onIrAMovimientos={() => irAPestana('movimientos')}
             />
+            {/* Orden por importancia: primero el periodo y lo del mes elegido
+                (métricas + tasa de ahorro), luego lo conseguido (bolsas y
+                patrimonio) y el resto de gráficos del periodo. La proyección de
+                futuro baja: es valiosa pero no prioritaria. */}
             <PeriodoSelector meses={mesesRango} valor={mesActivoDash} onCambiar={setMesDashboard} />
             <MetricasPrincipales
               usuarioId={usuarioId}
@@ -218,6 +222,12 @@ function App() {
               onVerMovimientos={verMovimientos}
             />
             <Patrimonio usuarioId={usuarioId} movimientos={movimientos} onGuardado={cargarMovimientos} />
+            <GraficoTasaAhorro movimientos={movimientos} mesFin={mesActivoDash} />
+            <GraficoCategorias
+              movimientos={movimientosPeriodo}
+              etiqueta={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
+            />
+            <GraficoEvolucion movimientos={movimientos} mesFin={mesActivoDash} />
             <Comparativas movimientos={movimientos} />
             <Logros usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
             {pildoraDash && (
@@ -233,12 +243,6 @@ function App() {
               movimientos={movimientos}
               onIrARegistro={() => irAPestana('movimientos')}
             />
-            <GraficoTasaAhorro movimientos={movimientos} mesFin={mesActivoDash} />
-            <GraficoCategorias
-              movimientos={movimientosPeriodo}
-              etiqueta={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
-            />
-            <GraficoEvolucion movimientos={movimientos} mesFin={mesActivoDash} />
             {movimientos.length > 0 && <h2 className="subtitulo-seccion">Últimos movimientos</h2>}
             <ListaMovimientos
               movimientos={movimientos.slice(0, 5)}
