@@ -18,6 +18,7 @@ A futuro (Fase 2): familias, login real con Supabase Auth.
 ### 2. Onboarding (`Onboarding.jsx`) — solo la primera vez
 - Pregunta el **objetivo**: Ahorrar / Jubilación / Planificación / Otro → se guarda en `perfiles.objetivo`.
 - Pide el **correo electrónico** (validado) → `perfiles.email`. Los correos recogidos se ven en Supabase → Table Editor → `perfiles`.
+- Pide (opcional) el **saldo inicial de liquidez** (cuánto tiene ahora en cuenta) para que la bolsa de ahorro líquido parta de una base real; se registra como un movimiento de **ajuste** ("Saldo inicial"), editable después.
 - Al completar, siembra las categorías iniciales: Nomina (ingreso) y Vivienda, Comida, Ocio, Transporte, Ahorro, Inversion (gasto).
 
 ---
@@ -31,6 +32,7 @@ Escaparate del mes actual, de arriba abajo:
 - **Banner "Completa tu cuenta"** si el usuario aún no dejó su email (usuarios antiguos).
 - **Banner recordatorio** si lleva 2+ días sin registrar movimientos (botón directo a registrar).
 - **Métricas principales** (`MetricasPrincipales.jsx`): bloque superior tipo hero. **Línea fina de ingresos** ("Este mes X € · media Y €/mes" con ≈/▲/▼ frente a la media del último año); el **ahorro del mes como número hero** (verde/rosa con glow); debajo **3 tarjetas de métrica** (Ingresos verde, Gastos rosa, Inversión dorado) con acento de color y **clicables** → llevan a los movimientos del mes filtrados por ese tipo. Barra de ratio, y el **objetivo de inversión mensual** con barra dorada que **puede superar el 100 %** (`progresoObjetivo`).
+- **Patrimonio y bolsas** (`Patrimonio.jsx`): **patrimonio total** en grande = **bolsa de inversión** (dorado, Σ aportaciones) + **bolsa de ahorro líquido** (saldo inicial + Σ superávit − inversión). Incluye un **indicador de fiabilidad** honesto: mientras no se reconcilie, avisa de que la liquidez es una estimación; muestra "reconciliado hace N días" y un aviso discreto si pasan >45 días. Botón **"Ajustar saldo"** (modal vía `createPortal`): el usuario introduce su saldo real de banco y la app calcula la diferencia frente a la liquidez teórica y crea un **movimiento de ajuste visible y explicado** (nunca oculto). Cálculo en `bolsas()`/`ultimaReconciliacion()` de `movimientosUtils`; fecha de reconciliación en localStorage (`lib/useSaldo.js`); alta del ajuste en `lib/ajustes.js`. Principio: nunca mostrar una cifra de liquidez como un hecho cuando es una estimación sin verificar.
 - **Comparativas** (`Comparativas.jsx`): microcomparativas contra el propio historial ("estás ahorrando un X% más que el mes pasado"). Solo contra uno mismo. Máx. 2.
 - **Camino de logros** (`Logros.jsx`): tarjeta con el progreso (X/Y desbloqueados y el próximo por conseguir) que abre un panel con TODOS los logros por categoría (desbloqueados con glow, pendientes con barra de progreso). Ver Extras.
 - **Píldora educativa** (`Pildora.jsx` + `lib/pildoras.js`): 1 nota contextual breve según el estado del mes (ahorro parado sin invertir / excedente alto / gasta más de lo que ingresa), descartable de forma permanente.
@@ -51,7 +53,7 @@ curso, con su total y botón "← Movimientos".
   - **Fijo/Variable** = base para futuras previsiones.
 - **Recurrentes** (`Recurrentes.jsx` + `lib/useRecurrentes.js`, localStorage con pub/sub; badge de pendientes en la pestaña): movimientos que se repiten cada mes (alquiler, nómina, suscripciones). Se configuran una vez y se registran cada mes sin rellenar nada. Los **gastos** se registran automáticos de un toque; los **ingresos** (nómina) piden **confirmar/ajustar el importe** cada mes (la nómina varía). Pausar/activar, editar y borrar. El movimiento registrado va a Supabase (`es_fijo=true`).
 - **Importar** (`ImportadorCsv.jsx` + `lib/importarCsv.js`): cargar el histórico desde un **CSV** (ej. exportado de Excel). Formato documentado visible → subir archivo → **previsualización** con resumen (se importarán / duplicados omitidos / con errores y sus motivos, sin abortar por filas malas) → **mapeo de columnas** si no se reconocen → confirmar. **Detección de duplicados** (fecha+tipo+importe+concepto) y **deshacer** por importación (`lib/useImportaciones.js`). Crea categorías/plataformas que falten. Para cargar datos reales por script, ver `docs/IMPORT-REAL.md`.
-- **Historial** (`ListaMovimientos.jsx`): resumen del mes arriba y todo el histórico **agrupado por meses en acordeón** (mes actual desplegado, anteriores plegados). Cada movimiento es una **tarjeta futurista y animada**: barra de acento por tipo (dorado inversión, rosa gasto, verde ingreso), entrada escalonada y microinteracción al tocar (respeta `prefers-reduced-motion`). Fecha dd/mm/aaaa, badge Fijo/Variable, **Editar** inline / **Eliminar** (modal). Las inversiones en dorado con ↗.
+- **Historial** (`ListaMovimientos.jsx`): resumen del mes arriba y todo el histórico **agrupado por meses en acordeón** (mes actual desplegado, anteriores plegados). **Chips de filtro** coherentes con las dos bolsas: Todos · Ingresos · Gastos · Inversión · Ahorro/Ajuste; al filtrar se muestra la **lista plana** (sin acordeón) para no ocultar resultados de meses plegados. Cada movimiento es una **tarjeta futurista y animada**: barra de acento por tipo (dorado inversión, rosa gasto, verde ingreso), entrada escalonada y microinteracción al tocar (respeta `prefers-reduced-motion`). Fecha dd/mm/aaaa, badge Fijo/Variable, **Editar** inline / **Eliminar** (modal). Las inversiones en dorado con ↗.
 
 ### 5. Presupuesto (`Presupuesto.jsx`)
 Dos modos a elegir:
@@ -59,7 +61,7 @@ Dos modos a elegir:
 - **Gasto máximo fijo**: "quiero gastar máximo 500 €/mes".
 Muestra: disponible del mes en grande, barra de progreso (roja si se pasa), gastado / te queda / ahorro real, **presupuesto diario** y desglose por categoría con mini-barras. Incluye una **estimación de gasto mensual** (media de meses con datos, provisional si <2 meses). Al cambiar entre método por tasa (%) y por euros (€) el valor se limpia. Acordeón **"¿Qué método me conviene?"** que explica la diferencia: por % el límite en euros se adapta a los ingresos (flexible); por € fijos el excedente de los meses buenos se ahorra solo (construye patrimonio más rápido, menos adaptativo).
 
-**Planificación de meses futuros** (`PlanificacionFutura.jsx`, debajo del presupuesto): prepara hasta **6 meses vista** (ingreso esperado, gasto máximo, inversión), con el ahorro derivado en vivo y las **medias reales como referencia**. Muestra el **acumulado proyectado** ("Si cumples tus planes… X ahorrados + Y invertidos en N meses") como recompensa motivadora. Los planes quedan **guardados** (tabla `planificaciones`); cuando el mes planificado es el actual, se muestra la comparación **plan vs real**.
+**Planificación de meses futuros** (`PlanificacionFutura.jsx`, debajo del presupuesto): prepara hasta **6 meses vista** (ingreso esperado, gasto máximo, inversión). El **superávit** (ingreso − gasto) se reparte explícitamente en **inversión + ahorro líquido** (en vivo en el formulario, en el resumen de cada mes y en la proyección), con las **medias reales como referencia**. El **acumulado proyectado** ("Si cumples tus planes… X a inversión + Y a ahorro líquido → sumarías Z a tu patrimonio en N meses") suma ambas bolsas sin doble conteo. Los planes quedan **guardados** (tabla `planificaciones`); cuando el mes planificado es el actual, se muestra la comparación **plan vs real**.
 
 ### 6. Inversión (`Inversiones.jsx`)
 - Una inversión ES un movimiento con categoría `Inversion` (misma tabla) — registrada aquí o en Movimientos, todo queda sincronizado.
@@ -71,7 +73,7 @@ Muestra: disponible del mes en grande, barra de progreso (roja si se pasa), gast
 
 ### 7. Simulador (`Simulador.jsx`)
 Cuatro sub-pestañas:
-- **Ahorro** (`AhorroObjetivo.jsx`): **múltiples objetivos de ahorro** (fondo de emergencia, entrada de un piso, un viaje…). Cada uno con nombre, importe objetivo, cuánto llevas y fecha opcional; barra de progreso, % y proyección con tu ritmo real ("a tu ritmo lo alcanzarías en N meses" / "para la fecha necesitas X/mes"). Crear, editar y borrar. Tabla nueva `objetivos_ahorro` (aditiva; degrada si aún no existe). SQL en `supabase-schema-objetivos.sql`.
+- **Ahorro** (`AhorroObjetivo.jsx`): **múltiples objetivos** (fondo de emergencia, entrada de un piso, un viaje…). Al crear/editar, el usuario **elige explícitamente el tipo de bolsa** que sigue el objetivo: ahorro líquido, inversión o patrimonio total (badge de color en la tarjeta). El **progreso se deriva solo de la bolsa** correspondiente (`bolsas()`), no de un importe manual; barra de progreso, % y proyección con tu ritmo real ("a tu ritmo lo alcanzarías en N meses" / "para la fecha necesitas X/mes"). Crear, editar y borrar. Tabla `objetivos_ahorro` (aditiva; degrada si aún no existe; SQL en `supabase-schema-objetivos.sql`). El tipo de bolsa por objetivo se guarda en localStorage (`lib/useObjetivoTipo.js`), fácil de migrar luego a columna.
 - **Interés compuesto** (`InteresCompuesto.jsx`): balance inicial, depósito mensual (inicio/fin de mes), años y rentabilidad → "Puedes ahorrar X", gráfico circular (inicial/depósitos/interés), barras apiladas por año y tabla año a año. Permite **guardar simulaciones** con nombre.
 - **Hipoteca** (`Hipoteca.jsx`): calcular cuota (sistema francés: importe, TIN, plazo → cuota, intereses totales, total pagado) y **amortización anticipada** por reducción de plazo (cuánto ahorras en tiempo e intereses con una aportación extra). Guarda simulaciones. Incluye **píldoras de alto valor** en acordeón (reducir plazo vs cuota, por qué amortizar pronto, TIN vs TAE, mirar el total pagado, impacto de la aportación extra) y una línea contextual con el total de intereses de la propia simulación.
 - **Independencia** (`IndependenciaFinanciera.jsx`): regla del 4% (patrimonio = 25× gasto anual). **Bloqueado hasta llevar 30 días** de historial. Permite **guardar varios escenarios** (conservador/realista/optimista…) con nombre y **compararlos en una tabla** enfrentada (ahorro/mes, rentabilidad, tiempo hasta la independencia), con el más rápido resaltado; tocar un escenario carga sus valores. Escenarios en localStorage (`lib/useEscenariosIF.js`).
@@ -80,8 +82,11 @@ Cuatro sub-pestañas:
 
 ## Reglas de cálculo (ver CLAUDE.md, implementadas en `movimientosUtils.js`)
 
-- **Gasto** = consumo (excluye Inversion) · **Inversión** = parte del ahorro, en dorado
-- **Ahorro** = ingresos − gastos de consumo · **Ratio** = ahorro/ingresos
+Dos capas: **flujo mensual** (no cambia) y **stock acumulado** (dos bolsas).
+
+- **Flujo** — **Gasto** = consumo (excluye Inversion) · **Inversión** = parte del ahorro, en dorado · **Superávit/Ahorro** = ingresos − gastos de consumo · **Ratio** = ahorro/ingresos. Invertir NO penaliza el ratio ni agota el presupuesto.
+- **Stock** (`bolsas()`) — **Bolsa de inversión** = Σ aportaciones (categoría Inversion) · **Bolsa de ahorro líquido** = saldo inicial + Σ(superávit − inversión) + ajustes · **Patrimonio** = inversión + liquidez.
+- **Ajustes** (categoría `Ajuste`, `esAjuste()`): la reconciliación de saldo. **Excluidos del flujo** (no cuentan como gasto/ingreso del mes ni tocan el ratio) pero **sí mueven la liquidez**; signo según `tipo` ingreso/gasto.
 - Agregaciones mensuales siempre por `fecha` del movimiento; meses sin datos a cero
 - Formato: 1.234,56 € · dd/mm/aaaa · porcentajes con coma
 
@@ -101,7 +106,7 @@ Cuatro sub-pestañas:
 
 ## Extras transversales
 
-- **Sistema de logros** (`lib/hitos.js` + `Hitos.jsx` celebración + `Logros.jsx` camino): logros por niveles en 4 dimensiones, **escalera larga** (Ahorro e Inversión hasta 10k/25k/50k €, Constancia, Objetivos). Al alcanzar uno nuevo salta una **celebración a pantalla** (rayos giratorios + glow). El "camino de logros" (tarjeta en el dashboard) abre un panel — renderizado con **`createPortal` a `document.body`** para que la hoja inferior no quede fuera de pantalla por el `transform` del contenedor — con los conseguidos (glow), el **próximo** (barra + meta) y los **lejanos** difuminados. **Fácilmente ampliable**: añadir una entrada al array `HITOS`.
+- **Sistema de logros** (`lib/hitos.js` + `Hitos.jsx` celebración + `Logros.jsx` camino): logros por niveles en **familias alineadas con las dos bolsas**: Ahorro líquido (métrica `bolsaLiquidez`), Inversión (`invertidoTotal`), **Patrimonio** (`patrimonio`, ❖), Constancia y Objetivos, **escalera larga** (hasta decenas de miles de €). Al alcanzar uno nuevo salta una **celebración a pantalla** (rayos giratorios + glow). El "camino de logros" (tarjeta en el dashboard) abre un panel — renderizado con **`createPortal` a `document.body`** para que la hoja inferior no quede fuera de pantalla por el `transform` del contenedor — con los conseguidos (glow), el **próximo** (barra + meta) y los **lejanos** difuminados. **Fácilmente ampliable**: añadir una entrada al array `HITOS`.
 - **Toast** de éxito/error al guardar en toda la app; **modal propio** para confirmar borrados.
 - Skeletons de carga, estados vacíos con acción, aviso de error de conexión con reintento.
 - PWA auto-actualizable (sin quedarse con versiones viejas en caché).
