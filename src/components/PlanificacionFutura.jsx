@@ -34,8 +34,8 @@ function FormularioPlan({ inicial, medias, onGuardar, onCancelar, guardando }) {
     inicial ? Number(inicial.inversion_prevista) : medias.inversion,
   )
 
-  const ahorro = (Number(ingreso) || 0) - (Number(gasto) || 0)
-  const libre = ahorro - (Number(inversion) || 0)
+  const superavit = (Number(ingreso) || 0) - (Number(gasto) || 0)
+  const liquido = superavit - (Number(inversion) || 0)
 
   return (
     <form
@@ -65,10 +65,14 @@ function FormularioPlan({ inicial, medias, onGuardar, onCancelar, guardando }) {
 
       <div className="plan-derivado">
         <span>
-          Ahorrarías <strong className={ahorro >= 0 ? 'ingreso' : 'gasto'}>{formatearEuros(ahorro)}</strong>
+          Superávit del mes:{' '}
+          <strong className={superavit >= 0 ? 'ingreso' : 'gasto'}>{formatearEuros(superavit)}</strong>
         </span>
-        {libre >= 0 ? (
-          <span className="ayuda">De ese ahorro, te quedarían {formatearEuros(libre)} libres tras invertir.</span>
+        {liquido >= 0 ? (
+          <span className="ayuda">
+            Se repartiría en <strong className="inversion">{formatearEuros(Number(inversion) || 0)}</strong>{' '}
+            invertidos + <strong>{formatearEuros(liquido)}</strong> de ahorro líquido.
+          </span>
         ) : (
           <span className="ayuda" style={{ color: 'var(--gasto)' }}>
             Quieres invertir más de lo que ahorrarías: ajusta las cifras.
@@ -137,17 +141,19 @@ export default function PlanificacionFutura({ usuarioId, movimientos }) {
 
   // Acumulado proyectado si el usuario cumple los planes de los próximos meses.
   const proyeccion = useMemo(() => {
-    let ahorro = 0
+    let liquido = 0
     let inversion = 0
     let mesesConPlan = 0
     for (const { clave } of meses) {
       const p = planes[clave]
       if (!p) continue
       mesesConPlan += 1
-      ahorro += Number(p.ingreso_previsto) - Number(p.gasto_previsto)
-      inversion += Number(p.inversion_prevista)
+      const superavit = Number(p.ingreso_previsto) - Number(p.gasto_previsto)
+      const inv = Number(p.inversion_prevista)
+      inversion += inv
+      liquido += superavit - inv
     }
-    return { ahorro, inversion, mesesConPlan }
+    return { liquido, inversion, patrimonio: liquido + inversion, mesesConPlan }
   }, [planes, meses])
 
   if (tablaFalta) {
@@ -196,18 +202,18 @@ export default function PlanificacionFutura({ usuarioId, movimientos }) {
           <span className="plan-proyeccion-titulo">Si cumples tus planes…</span>
           <div className="plan-proyeccion-cifras">
             <div className="pp-bloque">
-              <span className="pp-valor ingreso">{formatearEuros(proyeccion.ahorro)}</span>
-              <span className="pp-label">ahorrados</span>
+              <span className="pp-valor inversion">{formatearEuros(proyeccion.inversion)}</span>
+              <span className="pp-label">a inversión</span>
             </div>
             <span className="pp-mas">+</span>
             <div className="pp-bloque">
-              <span className="pp-valor inversion">{formatearEuros(proyeccion.inversion)}</span>
-              <span className="pp-label">invertidos</span>
+              <span className="pp-valor ingreso">{formatearEuros(proyeccion.liquido)}</span>
+              <span className="pp-label">a ahorro líquido</span>
             </div>
           </div>
           <span className="plan-proyeccion-nota">
-            en {proyeccion.mesesConPlan} {proyeccion.mesesConPlan === 1 ? 'mes' : 'meses'} planificados
-            (la inversión forma parte del ahorro).
+            sumarías <strong>{formatearEuros(proyeccion.patrimonio)}</strong> a tu patrimonio en{' '}
+            {proyeccion.mesesConPlan} {proyeccion.mesesConPlan === 1 ? 'mes' : 'meses'} planificados.
           </span>
         </div>
       )}
@@ -232,7 +238,8 @@ export default function PlanificacionFutura({ usuarioId, movimientos }) {
                 </div>
               )
             }
-            const ahorro = plan ? Number(plan.ingreso_previsto) - Number(plan.gasto_previsto) : 0
+            const superavit = plan ? Number(plan.ingreso_previsto) - Number(plan.gasto_previsto) : 0
+            const liquido = plan ? superavit - Number(plan.inversion_prevista) : 0
             return (
               <div key={clave} className="plan-card">
                 <div className="plan-card-cabecera">
@@ -262,11 +269,11 @@ export default function PlanificacionFutura({ usuarioId, movimientos }) {
                     </span>
                     <span>
                       <span className="il-label">Invertir</span>{' '}
-                      {formatearEuros(Number(plan.inversion_prevista))}
+                      <strong className="inversion">{formatearEuros(Number(plan.inversion_prevista))}</strong>
                     </span>
                     <span>
-                      <span className="il-label">Ahorro</span>{' '}
-                      <strong className={ahorro >= 0 ? 'ingreso' : 'gasto'}>{formatearEuros(ahorro)}</strong>
+                      <span className="il-label">Ahorro líquido</span>{' '}
+                      <strong className={liquido >= 0 ? 'ingreso' : 'gasto'}>{formatearEuros(liquido)}</strong>
                     </span>
                   </div>
                 )}
