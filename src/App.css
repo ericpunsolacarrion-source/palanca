@@ -1569,15 +1569,81 @@ button[type='submit']:disabled {
   box-shadow: 0 10px 26px -16px rgba(0, 0, 0, 0.7), var(--glow-inversion);
 }
 
-.inversion-mes .linea-principal .categoria {
+/* Cabecera del mes: botón que despliega/pliega el acordeón */
+.inversion-mes-cab {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+
+.inversion-mes-cab .categoria {
   font-weight: 600;
   color: var(--text-h);
 }
 
-.inversion-mes .linea-principal .importe {
+.inversion-mes-der {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.inversion-mes-cuenta {
+  font-size: var(--fs-micro);
+  opacity: 0.55;
+  white-space: nowrap;
+}
+
+.inversion-mes-cab .importe {
   color: var(--inversion);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+.inv-chevron {
+  font-size: 12px;
+  opacity: 0.6;
+  transition: transform 0.25s ease;
+}
+
+.inversion-mes.abierto .inv-chevron {
+  transform: rotate(180deg);
+}
+
+/* Detalle plegable con animación suave (grid-rows 0fr → 1fr) */
+.inversion-detalle-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+
+.inversion-mes.abierto .inversion-detalle-wrap {
+  grid-template-rows: 1fr;
+}
+
+.inversion-detalle-wrap > .inversion-detalle-lista {
+  overflow: hidden;
+  min-height: 0;
+  margin-top: 0;
+  padding-top: 0; /* sin altura mínima cuando está colapsado */
+}
+
+/* El espacio superior solo existe cuando el mes está abierto */
+.inversion-mes.abierto .inversion-detalle-wrap > .inversion-detalle-lista {
+  padding-top: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inversion-detalle-wrap {
+    transition: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3663,7 +3729,9 @@ button[type='submit']:disabled {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
   line-height: 1.2;
+  height: 26px; /* fija: alinea la línea base de todas las barras */
 }
 
 /* En enero se muestra el año para no perderse al deslizar atrás */
@@ -3677,25 +3745,30 @@ button[type='submit']:disabled {
   color: var(--accent-2);
 }
 
+/* Línea de media: por encima de las barras (z alto) y en un tono claro que
+   contrasta con el dorado de las barras, para que se lea sin estorbar. */
 .inv-linea-media {
   position: absolute;
   left: 0;
   right: 0;
-  border-top: 1px dashed var(--inversion);
-  opacity: 0.75;
-  z-index: 1;
+  border-top: 1.5px dashed #ffe4a8;
+  opacity: 0.95;
+  z-index: 5;
   pointer-events: none;
 }
 
-.inv-linea-media span {
+.inv-linea-media-etq {
   position: absolute;
   right: 0;
-  top: -16px;
+  top: -9px;
   font-size: 9px;
-  color: var(--inversion);
-  background: var(--card-bg);
+  font-weight: 600;
+  white-space: nowrap;
+  color: #1a1206;
+  background: #ffe4a8;
   padding: 1px 6px;
   border-radius: 4px;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.6);
 }
 
 /* Estados vacíos, skeletons y errores */

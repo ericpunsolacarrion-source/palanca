@@ -27,10 +27,15 @@ function etiquetaMesLarga(clave) {
 }
 
 const ANCHO_COL = 34 // ancho por mes al deslizar
+// Zona reservada bajo las barras para las etiquetas de mes/año (gap + texto).
+// Fija para que TODAS las columnas tengan la misma línea base y la media
+// quede perfectamente alineada con las barras.
+const ZONA_ETIQUETA = 30
 
 function GraficoInversionMensual({ meses, media }) {
   const maximo = Math.max(1, ...meses.map((m) => m.invertido))
-  const pctMedia = (media / maximo) * 100
+  // La media no debe superar el alto de las barras (si media ≈ máximo).
+  const pctMedia = Math.min((media / maximo) * 100, 100)
 
   const scrollRef = useRef(null)
   // Arranca en el mes más reciente; el límite izquierdo es el primer mes con
@@ -47,13 +52,8 @@ function GraficoInversionMensual({ meses, media }) {
       <div className="inv-scroll" ref={scrollRef}>
         <div
           className="inv-barras"
-          style={{ height: ALTO_BARRAS + 40, width: anchoContenido, minWidth: '100%' }}
+          style={{ height: ALTO_BARRAS + ZONA_ETIQUETA, width: anchoContenido, minWidth: '100%' }}
         >
-          {media > 0 && (
-            <div className="inv-linea-media" style={{ bottom: `${20 + (pctMedia / 100) * ALTO_BARRAS}px` }}>
-              <span>media {formatearEuros(media)}</span>
-            </div>
-          )}
           {meses.map((m, i) => {
             const pct = Math.max((m.invertido / maximo) * 100, m.invertido > 0 ? 4 : 2)
             const esEnero = m.clave.endsWith('-01')
@@ -80,6 +80,17 @@ function GraficoInversionMensual({ meses, media }) {
               </div>
             )
           })}
+
+          {/* La línea de media se dibuja AL FINAL para quedar por encima de las
+              barras (antes quedaba tapada). Alineada a la línea base de las barras. */}
+          {media > 0 && (
+            <div
+              className="inv-linea-media"
+              style={{ bottom: `${ZONA_ETIQUETA + (pctMedia / 100) * ALTO_BARRAS}px` }}
+            >
+              <span className="inv-linea-media-etq">media {formatearEuros(media)}</span>
+            </div>
+          )}
         </div>
       </div>
       {meses.length > 12 && <span className="grafico-hint">← desliza para ver tu historial</span>}
@@ -160,6 +171,18 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
     }
     return [...mapa.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1))
   }, [aportaciones])
+
+  // Historial colapsado por mes: por defecto una línea por mes; al tocar se
+  // despliega el detalle. El mes más reciente arranca abierto como guía.
+  const [abiertos, setAbiertos] = useState(() => new Set())
+  const mesMasReciente = porMes[0]?.[0]
+  const alternarMes = (clave) =>
+    setAbiertos((prev) => {
+      const n = new Set(prev)
+      if (n.has(clave)) n.delete(clave)
+      else n.add(clave)
+      return n
+    })
 
   const [eliminandoId, setEliminandoId] = useState(null)
   const [editando, setEditando] = useState(null)
@@ -331,12 +354,26 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
         </div>
       ) : (
         <div className="inversion-historial">
-          {porMes.map(([clave, { total, detalle }]) => (
-            <div key={clave} className="inversion-mes fade-in-up">
-              <div className="linea-principal">
+          {porMes.map(([clave, { total, detalle }]) => {
+            const abierto = abiertos.has(clave) || clave === mesMasReciente
+            return (
+            <div key={clave} className={`inversion-mes fade-in-up ${abierto ? 'abierto' : ''}`}>
+              <button
+                type="button"
+                className="inversion-mes-cab"
+                onClick={() => alternarMes(clave)}
+                aria-expanded={abierto}
+              >
                 <span className="categoria">{etiquetaMesLarga(clave)}</span>
-                <span className="importe">{formatearEuros(total)}</span>
-              </div>
+                <span className="inversion-mes-der">
+                  <span className="inversion-mes-cuenta">
+                    {detalle.length} {detalle.length === 1 ? 'aportación' : 'aportaciones'}
+                  </span>
+                  <span className="importe">{formatearEuros(total)}</span>
+                  <span className="inv-chevron" aria-hidden="true">▾</span>
+                </span>
+              </button>
+              <div className="inversion-detalle-wrap">
               <div className="inversion-detalle-lista">
                 {detalle.map((d) =>
                   editando === d.id ? (
@@ -378,8 +415,10 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
                   ),
                 )}
               </div>
+              </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
