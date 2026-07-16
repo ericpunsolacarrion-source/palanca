@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { useRecurrentes } from '../lib/useRecurrentes'
 import { formatearEuros } from '../lib/categorias'
-import { hoyIso } from '../lib/movimientosUtils'
+import { claveMesActual, hoyIso } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
@@ -13,6 +13,7 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
   const [nombre, setNombre] = useState(inicial?.nombre ?? '')
   const [importe, setImporte] = useState(inicial ? Number(inicial.importe) : null)
   const [categoriaId, setCategoriaId] = useState(inicial?.categoriaId ?? '')
+  const [diaMes, setDiaMes] = useState(inicial?.diaMes ? String(inicial.diaMes) : '')
   // Por defecto: gastos automáticos (sin confirmar), ingresos a confirmar cada mes.
   const [confirmarImporte, setConfirmarImporte] = useState(
     inicial ? Boolean(inicial.confirmar) : (inicial?.tipo ?? 'gasto') === 'ingreso',
@@ -26,12 +27,14 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
     if (!importe || Number(importe) <= 0) return setError('Pon el importe habitual.')
     if (!categoriaId) return setError('Elige una categoría.')
     const cat = categorias.find((c) => c.id === categoriaId)
+    const diaNum = diaMes ? Math.min(31, Math.max(1, Math.round(Number(diaMes)))) : null
     onGuardar({
       tipo,
       nombre: nombre.trim(),
       importe: Number(importe),
       categoriaId,
       categoriaNombre: cat?.nombre ?? null,
+      diaMes: diaNum,
       confirmar: confirmarImporte,
     })
   }
@@ -85,6 +88,19 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
         ))}
       </div>
 
+      <label className="rec-dia">
+        <span>Día del mes en que ocurre (opcional)</span>
+        <input
+          type="number"
+          min="1"
+          max="31"
+          inputMode="numeric"
+          value={diaMes}
+          onChange={(e) => setDiaMes(e.target.value)}
+          placeholder="ej. 1 (alquiler), 28 (nómina)"
+        />
+      </label>
+
       <label className="rec-check">
         <input
           type="checkbox"
@@ -107,15 +123,24 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
   )
 }
 
-function TarjetaPendiente({ rec, onRegistrar, registrando }) {
+function TarjetaPendiente({ rec, hoyDia, onRegistrar, registrando }) {
   const [importe, setImporte] = useState(Number(rec.importe))
   const esIngreso = rec.tipo === 'ingreso'
+  // Con día fijado, distinguimos lo que ya toca de lo que llegará más adelante.
+  const toca = !rec.diaMes || hoyDia >= rec.diaMes
 
   return (
-    <div className={`rec-pendiente ${esIngreso ? 'ingreso' : 'gasto'}`}>
+    <div className={`rec-pendiente ${esIngreso ? 'ingreso' : 'gasto'} ${toca ? '' : 'proximo'}`}>
       <div className="rec-pendiente-info">
         <span className="rec-pendiente-nombre">{rec.nombre}</span>
-        <span className="rec-pendiente-cat">{rec.categoriaNombre}</span>
+        <span className="rec-pendiente-cat">
+          {rec.categoriaNombre}
+          {rec.diaMes && (
+            <span className={`rec-cuando ${toca ? 'toca' : ''}`}>
+              {toca ? `· toca ya (día ${rec.diaMes})` : `· el día ${rec.diaMes}`}
+            </span>
+          )}
+        </span>
       </div>
       {rec.confirmar ? (
         <div className="rec-pendiente-confirmar">
@@ -173,6 +198,13 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
     if (await confirmar('¿Borrar este recurrente?')) eliminar(id)
   }
 
+  const mesActual = claveMesActual()
+  const hoyDia = new Date().getDate()
+  // Los que ya tocan primero (por día), luego los que llegarán más adelante.
+  const pendientesOrdenados = [...pendientes].sort(
+    (a, b) => (a.diaMes ?? 99) - (b.diaMes ?? 99),
+  )
+
   return (
     <div className="recurrentes vista">
       <p className="ayuda">
@@ -180,13 +212,14 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
         volver a rellenar nada. Los ingresos te piden confirmar el importe, por si varía.
       </p>
 
-      {pendientes.length > 0 && (
+      {pendientesOrdenados.length > 0 && (
         <div className="rec-pendientes">
           <span className="balance-etiqueta-principal">Pendientes de este mes</span>
-          {pendientes.map((rec) => (
+          {pendientesOrdenados.map((rec) => (
             <TarjetaPendiente
               key={rec.id}
               rec={rec}
+              hoyDia={hoyDia}
               onRegistrar={registrar}
               registrando={registrandoId === rec.id}
             />
@@ -218,10 +251,17 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
                 <span className="rec-item-nombre">
                   {rec.nombre}
                   <span className={`rec-badge ${rec.tipo}`}>{rec.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}</span>
-                  {!rec.activo && <span className="rec-badge pausado">Pausado</span>}
+                  {!rec.activo ? (
+                    <span className="rec-badge pausado">Pausado</span>
+                  ) : rec.aplicadoEn === mesActual ? (
+                    <span className="rec-badge registrado">✓ Registrado este mes</span>
+                  ) : (
+                    <span className="rec-badge pendiente">Pendiente este mes</span>
+                  )}
                 </span>
                 <span className="rec-item-detalle">
                   {formatearEuros(Number(rec.importe))} · {rec.categoriaNombre}
+                  {rec.diaMes ? ` · día ${rec.diaMes}` : ''}
                   {rec.confirmar ? ' · confirmar cada mes' : ' · automático'}
                 </span>
               </div>

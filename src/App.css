@@ -949,6 +949,17 @@ button[type='submit']:disabled {
   color: var(--gasto);
 }
 
+/* Estado mensual del recurrente: ya registrado vs pendiente */
+.rec-badge.registrado {
+  color: var(--ingreso);
+  background: rgba(52, 232, 158, 0.12);
+}
+
+.rec-badge.pendiente {
+  color: var(--inversion);
+  background: rgba(245, 185, 61, 0.12);
+}
+
 .rec-form {
   display: flex;
   flex-direction: column;
@@ -957,6 +968,39 @@ button[type='submit']:disabled {
   border: 1px solid var(--border);
   border-radius: var(--radio-m);
   background: var(--card-bg);
+}
+
+/* Día del mes en que ocurre el recurrente */
+.rec-dia {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+  opacity: 0.85;
+}
+
+.rec-dia input {
+  flex: none;
+  width: 190px;
+  max-width: 55%;
+}
+
+/* Cuándo toca un pendiente (según el día del mes) */
+.rec-cuando {
+  margin-left: 4px;
+  opacity: 0.85;
+}
+
+.rec-cuando.toca {
+  color: var(--inversion);
+  opacity: 1;
+  font-weight: 600;
+}
+
+/* Un pendiente que aún no llega su día se atenúa ligeramente */
+.rec-pendiente.proximo {
+  opacity: 0.72;
 }
 
 .rec-check {
