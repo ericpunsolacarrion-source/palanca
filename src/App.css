@@ -2161,23 +2161,23 @@ button[type='submit']:disabled {
   text-align: center;
 }
 
-/* El objetivo, con aire respecto a la cabecera */
+/* El objetivo, con algo de aire respecto a la cabecera */
 .presupuesto .presupuesto-header + .balance-etiqueta-principal {
-  margin-top: 18px;
+  margin-top: 10px;
 }
 
 .presupuesto .balance-hero {
   text-align: center;
   font-size: 46px;
   line-height: 1.1;
-  margin: 10px 0 8px;
+  margin: 5px 0 4px;
   color: var(--text-h);
 }
 
 .presupuesto .ratio-barra {
   height: 9px;
-  margin-top: 22px;
-  margin-bottom: 20px;
+  margin-top: 16px;
+  margin-bottom: 16px;
 }
 
 .presupuesto .balance-grid {
