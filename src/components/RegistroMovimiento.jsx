@@ -8,6 +8,7 @@ import { hoyIso } from '../lib/movimientosUtils'
 import { frecuenciaCategorias, frecuentesParaRepetir, importesFrecuentes } from '../lib/sugerencias'
 import { toast } from '../lib/toast'
 import InputImporte from './InputImporte'
+import InputFecha from './InputFecha'
 import GastosRapidos from './GastosRapidos'
 
 const TOAST_MODO = { gasto: 'Gasto guardado', ingreso: 'Ingreso guardado', inversion: 'Inversión guardada' }
@@ -304,7 +305,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
       />
 
       <div className="fila-fecha-fijo">
-        <input id="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+        <InputFecha id="fecha" value={fecha} onChange={setFecha} />
         {!esInversion && (
           <div className="tipo-toggle">
             <button type="button" className={!esFijo ? 'activo' : ''} onClick={() => setEsFijo(false)}>
