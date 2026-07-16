@@ -679,6 +679,31 @@ button[type='submit']:disabled {
   gap: var(--sp-2);
 }
 
+/* Asistente IA de mapeo de columnas */
+.importador-mapeo-det {
+  margin-top: var(--sp-2);
+}
+
+.importador-ia {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: var(--sp-2);
+}
+
+.importador-ia-btn {
+  align-self: flex-start;
+}
+
+.importador-ia-nota {
+  font-size: var(--fs-micro);
+  opacity: 0.6;
+}
+
+.importador-ia-aviso {
+  margin-top: 0;
+}
+
 .importador-map-fila {
   display: flex;
   align-items: center;

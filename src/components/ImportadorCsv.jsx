@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { CATEGORIA_INVERSION, esInversion, formatearEuros } from '../lib/categorias'
 import { claveDuplicado, COLUMNAS, COLUMNAS_REQUERIDAS, detectarMapeo, parseCsv, procesarCsv } from '../lib/importarCsv'
+import { deducirMapeoIA } from '../lib/mapearColumnasIA'
 import { useImportaciones } from '../lib/useImportaciones'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
@@ -20,8 +21,11 @@ export default function ImportadorCsv({ usuarioId, movimientos, onImportado }) {
   const [texto, setTexto] = useState(null)
   const [nombreArchivo, setNombreArchivo] = useState('')
   const [cabeceras, setCabeceras] = useState([])
+  const [filasMuestra, setFilasMuestra] = useState([])
   const [mapeo, setMapeo] = useState({})
   const [guardando, setGuardando] = useState(false)
+  const [mapeandoIA, setMapeandoIA] = useState(false)
+  const [avisoIA, setAvisoIA] = useState(null)
   const { items: importaciones, registrar, quitar } = useImportaciones(usuarioId)
 
   // Claves de los movimientos ya existentes, para detectar duplicados.
@@ -52,9 +56,11 @@ export default function ImportadorCsv({ usuarioId, movimientos, onImportado }) {
     const reader = new FileReader()
     reader.onload = () => {
       const contenido = String(reader.result)
-      const { cabeceras: cab } = parseCsv(contenido)
+      const { cabeceras: cab, filas } = parseCsv(contenido)
       setCabeceras(cab)
+      setFilasMuestra(filas.slice(0, 3))
       setMapeo(detectarMapeo(cab))
+      setAvisoIA(null)
       setTexto(contenido)
     }
     reader.readAsText(file)
@@ -64,8 +70,27 @@ export default function ImportadorCsv({ usuarioId, movimientos, onImportado }) {
     setTexto(null)
     setNombreArchivo('')
     setCabeceras([])
+    setFilasMuestra([])
     setMapeo({})
+    setAvisoIA(null)
     if (inputRef.current) inputRef.current.value = ''
+  }
+
+  // Deduce el mapeo con IA enviando SOLO cabeceras + 2-3 filas de ejemplo a
+  // nuestro backend. El resto del archivo nunca sale del navegador.
+  async function deducirIA() {
+    setMapeandoIA(true)
+    setAvisoIA(null)
+    const r = await deducirMapeoIA(cabeceras, filasMuestra)
+    setMapeandoIA(false)
+    if (r.ok) {
+      setMapeo(r.mapeo)
+      setAvisoIA({ tono: 'ok', texto: 'Columnas deducidas. Revísalas abajo antes de importar.' })
+    } else if (r.code === 'sin_configurar') {
+      setAvisoIA({ tono: 'info', texto: 'El asistente con IA no está activado. Puedes asignar las columnas a mano.' })
+    } else {
+      setAvisoIA({ tono: 'err', texto: 'No se han podido deducir las columnas. Asígnalas a mano abajo.' })
+    }
   }
 
   const faltanRequeridas = COLUMNAS_REQUERIDAS.filter((c) => (mapeo[c] ?? -1) < 0)
@@ -172,24 +197,47 @@ export default function ImportadorCsv({ usuarioId, movimientos, onImportado }) {
   return (
     <div className="importador vista">
       <p className="ayuda">
-        Importa tu histórico desde un CSV (por ejemplo, exportado de tu Excel) y verás años de tus
-        finanzas desde el primer momento.
+        Importa tu histórico desde un CSV (por ejemplo, exportado de tu Excel o de tu banco) y
+        verás años de tus finanzas desde el primer momento. Se hace en tres pasos: eliges el
+        archivo, revisas que las columnas estén bien y confirmas.
       </p>
 
       {/* Formato esperado */}
       <details className="info-pildora">
-        <summary>Formato esperado del CSV</summary>
+        <summary>Formato esperado y ejemplo</summary>
         <p>
-          Una fila por movimiento, con cabecera. Columnas: <strong>fecha</strong> (AAAA-MM-DD o
-          DD/MM/AAAA), <strong>tipo</strong> (gasto, ingreso o inversion), <strong>categoria</strong>,{' '}
-          <strong>concepto</strong> e <strong>importe</strong>. La plataforma es opcional (para
-          inversiones). Ejemplo:
+          Una fila por movimiento, con una fila de cabecera. Columnas que entendemos:{' '}
+          <strong>fecha</strong> (AAAA-MM-DD o DD/MM/AAAA), <strong>tipo</strong> (gasto, ingreso o
+          inversion), <strong>categoria</strong>, <strong>concepto</strong> e{' '}
+          <strong>importe</strong>. La <strong>plataforma</strong> es opcional (para inversiones).
         </p>
         <pre className="importador-ejemplo">
           fecha,tipo,categoria,concepto,importe{'\n'}
           2025-03-13,gasto,Suscripciones,claude,21.78{'\n'}
           2025-01-28,ingreso,Nomina,Nómina enero,470.00
         </pre>
+        <p>
+          ¿Tu Excel es un caos (columnas con otros nombres o en otro orden)? No pasa nada: tras
+          subirlo podrás <strong>asignar cada columna a mano</strong> o pedir que se{' '}
+          <strong>deduzcan automáticamente</strong>. Las filas que no se entiendan se descartan una
+          a una, sin abortar el resto.
+        </p>
+      </details>
+
+      {/* Privacidad: qué pasa con el archivo */}
+      <details className="info-pildora">
+        <summary>¿Qué pasa con mi archivo? (privacidad)</summary>
+        <p>
+          Tu archivo se procesa <strong>en tu propio navegador</strong>: el grueso de tus datos no
+          se sube a ningún sitio ni se envía a ningún modelo de IA. Al confirmar, los movimientos se
+          guardan directamente en tu base de datos.
+        </p>
+        <p>
+          Solo si pulsas <strong>«Deducir columnas con IA»</strong> se envían, a nuestro propio
+          servidor, <strong>únicamente las cabeceras y 2-3 filas de ejemplo</strong> —lo justo para
+          adivinar qué columna es cada cosa—. El resto del archivo nunca sale de tu dispositivo y no
+          se almacena.
+        </p>
       </details>
 
       {!texto ? (
@@ -215,12 +263,45 @@ export default function ImportadorCsv({ usuarioId, movimientos, onImportado }) {
             </button>
           </div>
 
-          {/* Mapeo de columnas si hace falta */}
-          {faltanRequeridas.length > 0 && (
-            <div className="importador-mapeo">
-              <p className="ayuda" style={{ color: 'var(--gasto)' }}>
-                No hemos reconocido algunas columnas obligatorias. Indícanos cuál es cada una:
+          {/* Mapeo de columnas: asistido (IA) y siempre revisable a mano. Se
+              abre solo si faltan columnas obligatorias; si no, queda plegado. */}
+          <details className="info-pildora importador-mapeo-det" open={faltanRequeridas.length > 0}>
+            <summary>
+              {faltanRequeridas.length > 0
+                ? 'Faltan columnas obligatorias: asígnalas'
+                : 'Revisar o ajustar columnas'}
+            </summary>
+
+            <div className="importador-ia">
+              <button
+                type="button"
+                className="btn-nuevo-objetivo importador-ia-btn"
+                onClick={deducirIA}
+                disabled={mapeandoIA}
+              >
+                {mapeandoIA ? 'Deduciendo…' : '✨ Deducir columnas con IA'}
+              </button>
+              <span className="importador-ia-nota">
+                Solo se envían las cabeceras y 2-3 filas de ejemplo a nuestro servidor.
+              </span>
+            </div>
+            {avisoIA && (
+              <p
+                className="ayuda importador-ia-aviso"
+                style={{ color: avisoIA.tono === 'err' ? 'var(--gasto)' : avisoIA.tono === 'ok' ? 'var(--ingreso)' : 'var(--text)' }}
+              >
+                {avisoIA.texto}
               </p>
+            )}
+
+            {faltanRequeridas.length > 0 && (
+              <p className="ayuda" style={{ color: 'var(--gasto)' }}>
+                No hemos reconocido algunas columnas obligatorias (marcadas con *). Indícanos cuál es
+                cada una:
+              </p>
+            )}
+
+            <div className="importador-mapeo">
               {COLUMNAS.map((col) => (
                 <label key={col} className="importador-map-fila">
                   <span>
@@ -241,7 +322,7 @@ export default function ImportadorCsv({ usuarioId, movimientos, onImportado }) {
                 </label>
               ))}
             </div>
-          )}
+          </details>
 
           {resultado && faltanRequeridas.length === 0 && (
             <>
