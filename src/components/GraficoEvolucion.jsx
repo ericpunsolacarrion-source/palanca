@@ -1,17 +1,21 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { agregarPorMes } from '../lib/movimientosUtils'
 import { formatearEuros } from '../lib/categorias'
 
 const ALTURA = 90
 const MESES = 6
 
-export default function GraficoEvolucion({ movimientos }) {
-  const meses = useMemo(() => agregarPorMes(movimientos, MESES), [movimientos])
+export default function GraficoEvolucion({ movimientos, mesFin }) {
+  const meses = useMemo(() => agregarPorMes(movimientos, MESES, mesFin), [movimientos, mesFin])
 
   const conDatos = meses.map((m) => m.ingresos > 0 || m.gastos > 0)
   const ultimoConDatos = conDatos.lastIndexOf(true)
   const [seleccionado, setSeleccionado] = useState(null)
-  const activo = seleccionado ?? (ultimoConDatos === -1 ? null : ultimoConDatos)
+  // Al cambiar de periodo global, se reinicia la selección local para destacar
+  // por defecto el mes elegido (el último de la ventana).
+  useEffect(() => setSeleccionado(null), [mesFin])
+  const porDefecto = mesFin ? meses.length - 1 : ultimoConDatos
+  const activo = seleccionado ?? (porDefecto < 0 ? null : porDefecto)
 
   if (movimientos.length === 0) return null
 

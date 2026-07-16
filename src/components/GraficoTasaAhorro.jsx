@@ -12,8 +12,12 @@ function clamp(valor, min, max) {
   return Math.min(Math.max(valor, min), max)
 }
 
-// Nº de meses de historial: desde el primer movimiento hasta el mes actual.
-function mesesDeHistorial(movimientos) {
+// Nº de meses de historial: desde el primer movimiento hasta el mes `claveFin`.
+function mesesDeHistorial(movimientos, claveFin) {
+  const [fy, fm] = (claveFin || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`)
+    .split('-')
+    .map(Number)
+  const fin = new Date(fy, fm - 1, 1)
   if (movimientos.length === 0) return MESES_MIN
   let min = Infinity
   for (const m of movimientos) {
@@ -21,27 +25,29 @@ function mesesDeHistorial(movimientos) {
     if (t < min) min = t
   }
   const d0 = new Date(min)
-  const hoy = new Date()
-  const n = (hoy.getFullYear() - d0.getFullYear()) * 12 + (hoy.getMonth() - d0.getMonth()) + 1
+  const n = (fin.getFullYear() - d0.getFullYear()) * 12 + (fin.getMonth() - d0.getMonth()) + 1
   return Math.min(Math.max(n, MESES_MIN), 120) // hasta 10 años
 }
 
-export default function GraficoTasaAhorro({ movimientos }) {
-  const nMeses = useMemo(() => mesesDeHistorial(movimientos), [movimientos])
-  const meses = useMemo(() => agregarPorMes(movimientos, nMeses), [movimientos, nMeses])
+export default function GraficoTasaAhorro({ movimientos, mesFin }) {
+  const nMeses = useMemo(() => mesesDeHistorial(movimientos, mesFin), [movimientos, mesFin])
+  const meses = useMemo(() => agregarPorMes(movimientos, nMeses, mesFin), [movimientos, nMeses, mesFin])
 
   const conDatos = meses.map((m) => m.ingresos > 0)
   const ultimoConDatos = conDatos.lastIndexOf(true)
   const [seleccionado, setSeleccionado] = useState(null)
-  const activo = seleccionado ?? (ultimoConDatos === -1 ? null : ultimoConDatos)
+  // Con periodo global elegido, se destaca por defecto el mes seleccionado (el
+  // último de la ventana); si no, el último mes con datos.
+  const porDefecto = mesFin ? meses.length - 1 : ultimoConDatos
+  const activo = seleccionado ?? (porDefecto < 0 ? null : porDefecto)
 
   const scrollRef = useRef(null)
-  // Arranca mostrando el mes más reciente (extremo derecho).
+  // Arranca mostrando el extremo derecho (el mes elegido / más reciente).
   useLayoutEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollLeft = scrollRef.current.scrollWidth
-  }, [nMeses])
-  // Reset de selección si cambia el histórico.
-  useEffect(() => setSeleccionado(null), [nMeses])
+  }, [nMeses, mesFin])
+  // Reset de selección si cambia el histórico o el periodo global.
+  useEffect(() => setSeleccionado(null), [nMeses, mesFin])
 
   if (ultimoConDatos === -1) return null
 

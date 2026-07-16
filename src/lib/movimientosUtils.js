@@ -27,12 +27,48 @@ export function filtrarMesActual(movimientos) {
   return movimientos.filter((m) => claveMes(m.fecha) === clave)
 }
 
-// Últimos N meses terminando en el actual: [{clave, etiqueta}]
-export function ultimosNMeses(n) {
+// Movimientos de un mes concreto (clave 'YYYY-MM'). Base del selector de
+// periodo global del dashboard.
+export function filtrarPorMes(movimientos, clave) {
+  return movimientos.filter((m) => claveMes(m.fecha) === clave)
+}
+
+// Etiqueta legible de un mes ('2026-07' → 'Julio 2026'). Formato configurable.
+export function etiquetaMes(clave, opciones = { month: 'long', year: 'numeric' }) {
+  const [y, m] = clave.split('-').map(Number)
+  const d = new Date(y, m - 1, 1)
+  const s = new Intl.DateTimeFormat('es-ES', opciones).format(d)
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+// Rango CONTIGUO de meses desde el primer movimiento hasta el mes actual,
+// del más reciente al más antiguo. Siempre incluye el mes actual (aunque no
+// haya datos), para que el selector permita volver a "hoy".
+export function rangoMeses(movimientos) {
   const ahora = new Date()
+  const cursor = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
+  let fin = new Date(cursor)
+  for (const m of movimientos) {
+    const [y, mm] = m.fecha.slice(0, 7).split('-').map(Number)
+    const d = new Date(y, mm - 1, 1)
+    if (d < fin) fin = d
+  }
+  const claves = []
+  while (cursor >= fin) {
+    claves.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`)
+    cursor.setMonth(cursor.getMonth() - 1)
+  }
+  return claves // más reciente primero
+}
+
+// Últimos N meses terminando en `claveFin` (por defecto el mes actual):
+// [{clave, etiqueta}]. Permite anclar las series temporales a un mes elegido.
+export function ultimosNMeses(n, claveFin = claveMesActual()) {
+  const [fy, fm] = claveFin.split('-').map(Number)
+  const base = new Date(fy, fm - 1, 1)
   const meses = []
   for (let i = n - 1; i >= 0; i -= 1) {
-    const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1)
+    const d = new Date(base.getFullYear(), base.getMonth() - i, 1)
     const clave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     const etiqueta = new Intl.DateTimeFormat('es-ES', { month: 'short' }).format(d).replace('.', '')
     meses.push({ clave, etiqueta })
@@ -106,9 +142,10 @@ export function ultimaReconciliacion(movimientos) {
   return ultima
 }
 
-// Agrega por mes los últimos N meses (meses sin datos quedan a cero).
-export function agregarPorMes(movimientos, n) {
-  const meses = ultimosNMeses(n)
+// Agrega por mes los últimos N meses terminando en `claveFin` (por defecto el
+// mes actual). Meses sin datos quedan a cero.
+export function agregarPorMes(movimientos, n, claveFin) {
+  const meses = ultimosNMeses(n, claveFin)
   const mapa = new Map(meses.map((m) => [m.clave, []]))
   for (const mov of movimientos) {
     const clave = claveMes(mov.fecha)

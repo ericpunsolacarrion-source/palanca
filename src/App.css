@@ -4245,3 +4245,88 @@ button[type='submit']:disabled {
   color: var(--text);
   text-align: center;
 }
+
+/* Selector de periodo global del dashboard */
+.periodo-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+.periodo-flecha {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-l);
+  line-height: 1;
+  color: var(--text-h);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+
+.periodo-flecha:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--card-bg-2);
+}
+
+.periodo-flecha:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.periodo-flecha:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.periodo-centro {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.periodo-select {
+  flex: 0 1 auto;
+  min-width: 0;
+  text-align: center;
+  text-align-last: center;
+  font-size: var(--fs-m);
+  font-weight: 600;
+  color: var(--text-h);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  padding: 10px var(--sp-4);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.periodo-select:hover {
+  border-color: var(--accent);
+}
+
+.periodo-hoy {
+  flex: none;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--accent-2);
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: var(--radio-pastilla);
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.periodo-hoy:hover {
+  background: rgba(34, 211, 238, 0.18);
+}

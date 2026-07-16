@@ -4,7 +4,7 @@ import { formatearFecha } from '../lib/movimientosUtils'
 
 const COLORES = ['#8b5cf6', '#22d3ee', '#34e89e', '#ff5d7e', '#f59e0b', '#64748b']
 
-export default function GraficoCategorias({ movimientos }) {
+export default function GraficoCategorias({ movimientos, etiqueta = 'este mes' }) {
   const [abierta, setAbierta] = useState(null)
 
   const datos = useMemo(() => {
@@ -74,7 +74,7 @@ export default function GraficoCategorias({ movimientos }) {
 
   return (
     <div className="grafico fade-in-up">
-      <h2>Gasto por categoría (este mes)</h2>
+      <h2>Gasto por categoría ({etiqueta})</h2>
 
       <div className="barra-apilada">
         {datos.items.map((item) => (

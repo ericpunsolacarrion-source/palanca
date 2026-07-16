@@ -16,7 +16,14 @@ function Cifra({ valor, className }) {
   return <span className={className}>{formatearEuros(animado)}</span>
 }
 
-export default function MetricasPrincipales({ usuarioId, movimientos, historico, onVerMovimientos }) {
+export default function MetricasPrincipales({
+  usuarioId,
+  movimientos,
+  historico,
+  etiquetaPeriodo = 'este mes',
+  esMesActual = true,
+  onVerMovimientos,
+}) {
   const {
     ingresos: totalIngresos,
     gastos: totalGastos,
@@ -60,7 +67,7 @@ export default function MetricasPrincipales({ usuarioId, movimientos, historico,
       {/* Lo que entra: una línea fina con cobrado este mes + media (contexto). */}
       <div className="ingresos-linea">
         <span className="il-bloque">
-          <span className="il-label">Este mes</span>
+          <span className="il-label">{esMesActual ? 'Este mes' : etiquetaPeriodo}</span>
           <strong className="ingreso">{formatearEuros(totalIngresos)}</strong>
         </span>
         {media > 0 && mediaIngresos.meses >= 2 && (
@@ -81,12 +88,14 @@ export default function MetricasPrincipales({ usuarioId, movimientos, historico,
 
       {/* Lo que te queda: ahorro del mes (titular). */}
       <div className="metrica-hero">
-        <span className="etiqueta">Ahorro de este mes</span>
+        <span className="etiqueta">Ahorro de {etiquetaPeriodo}</span>
         <Cifra valor={ahorro} className={`metrica-hero-cifra ${ahorro >= 0 ? 'ingreso' : 'gasto'}`} />
         <span className="metrica-hero-sub">
           {totalIngresos > 0
-            ? `Estás ahorrando el ${formatearPorcentaje(ratioAhorro, 0)} de tus ingresos`
-            : 'Registra tus ingresos para ver tu ratio de ahorro'}
+            ? `${esMesActual ? 'Estás ahorrando' : 'Ahorraste'} el ${formatearPorcentaje(ratioAhorro, 0)} de tus ingresos`
+            : esMesActual
+              ? 'Registra tus ingresos para ver tu ratio de ahorro'
+              : 'No hubo ingresos registrados en este mes'}
         </span>
       </div>
 

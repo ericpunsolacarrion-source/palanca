@@ -3,7 +3,15 @@ import { supabase } from './lib/supabaseClient'
 import { useUsuarioId } from './lib/useUsuarioId'
 import { obtenerPerfil, crearPerfil } from './lib/perfil'
 import { crearAjuste } from './lib/ajustes'
-import { estimacionGastoMensual, filtrarMesActual, totalesDe } from './lib/movimientosUtils'
+import {
+  claveMesActual,
+  estimacionGastoMensual,
+  etiquetaMes,
+  filtrarMesActual,
+  filtrarPorMes,
+  rangoMeses,
+  totalesDe,
+} from './lib/movimientosUtils'
 import PantallaId from './components/PantallaId'
 import Onboarding from './components/Onboarding'
 import CapturaEmail from './components/CapturaEmail'
@@ -23,6 +31,7 @@ import RecordatorioBanner from './components/RecordatorioBanner'
 import GraficoEvolucion from './components/GraficoEvolucion'
 import GraficoCategorias from './components/GraficoCategorias'
 import GraficoTasaAhorro from './components/GraficoTasaAhorro'
+import PeriodoSelector from './components/PeriodoSelector'
 import BottomNav from './components/BottomNav'
 import Toaster from './components/Toaster'
 import Confirmador from './components/Confirmador'
@@ -43,6 +52,9 @@ function App() {
   const [errorCarga, setErrorCarga] = useState(false)
   const [pestana, setPestana] = useState('dashboard')
   const [filtroMov, setFiltroMov] = useState(null) // tipo a filtrar en Movimientos
+  // Selector de periodo GLOBAL del dashboard (clave 'YYYY-MM'). Gobierna a la vez
+  // métricas, tasa de ahorro, categorías y evolución. Por defecto, el mes actual.
+  const [mesDashboard, setMesDashboard] = useState(claveMesActual())
 
   // Navegación central: al cambiar de pestaña se limpia el filtro de movimientos,
   // salvo cuando se llega expresamente con uno (verMovimientos).
@@ -97,6 +109,15 @@ function App() {
   const movimientosMes = useMemo(() => filtrarMesActual(movimientos), [movimientos])
   const totalesMes = useMemo(() => totalesDe(movimientosMes), [movimientosMes])
   const gastoEstimado = useMemo(() => estimacionGastoMensual(movimientos), [movimientos])
+
+  // Rango de meses navegables y movimientos del periodo elegido (solo dashboard).
+  const mesesRango = useMemo(() => rangoMeses(movimientos), [movimientos])
+  const mesActivoDash = mesesRango.includes(mesDashboard) ? mesDashboard : mesesRango[0]
+  const esMesActual = mesActivoDash === claveMesActual()
+  const movimientosPeriodo = useMemo(
+    () => filtrarPorMes(movimientos, mesActivoDash),
+    [movimientos, mesActivoDash],
+  )
 
   const { diasDesdeUltimoMovimiento, diasConHistorial } = useMemo(() => {
     if (movimientos.length === 0) {
@@ -187,10 +208,13 @@ function App() {
               dias={diasDesdeUltimoMovimiento}
               onIrAMovimientos={() => irAPestana('movimientos')}
             />
+            <PeriodoSelector meses={mesesRango} valor={mesActivoDash} onCambiar={setMesDashboard} />
             <MetricasPrincipales
               usuarioId={usuarioId}
-              movimientos={movimientosMes}
+              movimientos={movimientosPeriodo}
               historico={movimientos}
+              etiquetaPeriodo={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
+              esMesActual={esMesActual}
               onVerMovimientos={verMovimientos}
             />
             <Patrimonio usuarioId={usuarioId} movimientos={movimientos} onGuardado={cargarMovimientos} />
@@ -209,9 +233,12 @@ function App() {
               movimientos={movimientos}
               onIrARegistro={() => irAPestana('movimientos')}
             />
-            <GraficoTasaAhorro movimientos={movimientos} />
-            <GraficoCategorias movimientos={movimientosMes} />
-            <GraficoEvolucion movimientos={movimientos} />
+            <GraficoTasaAhorro movimientos={movimientos} mesFin={mesActivoDash} />
+            <GraficoCategorias
+              movimientos={movimientosPeriodo}
+              etiqueta={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
+            />
+            <GraficoEvolucion movimientos={movimientos} mesFin={mesActivoDash} />
             {movimientos.length > 0 && <h2 className="subtitulo-seccion">Últimos movimientos</h2>}
             <ListaMovimientos
               movimientos={movimientos.slice(0, 5)}
