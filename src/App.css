@@ -2877,7 +2877,7 @@ button[type='submit']:disabled {
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radio-m);
-  transition: opacity 0.2s ease;
+  transition: opacity 0.25s ease, filter 0.25s ease;
 }
 
 /* El próximo por desbloquear: visible y con acento (es la meta inmediata) */
@@ -2886,7 +2886,9 @@ button[type='submit']:disabled {
   border-color: rgba(139, 92, 246, 0.4);
 }
 
-/* Los lejanos: difuminados/bloqueados, para que se intuya el camino */
+/* Los lejanos: difuminado PROGRESIVO (opacidad y blur por distancia, vía estilo
+   en línea) para que el camino se intuya sin fin. Este valor es solo un
+   respaldo si no llega el estilo calculado. */
 .logro-fila.lejano {
   opacity: 0.4;
 }

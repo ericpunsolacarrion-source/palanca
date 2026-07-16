@@ -89,23 +89,32 @@ export default function Logros({ usuarioId, movimientos, movimientosMes }) {
                 const items = logros.filter((l) => l.categoria === cat)
                 if (items.length === 0) return null
                 // El primer no conseguido de cada categoría es el "próximo"; los
-                // siguientes bloqueados se muestran difuminados (lejanos).
+                // siguientes bloqueados se difuminan de forma PROGRESIVA (cada uno
+                // un poco más tenue y desenfocado que el anterior), para que el
+                // camino se intuya sin fin y el usuario sienta que siempre puede
+                // seguir evolucionando.
                 let proximoMarcado = false
+                let lejanoIdx = 0
                 return (
                   <div key={cat} className="logros-grupo">
                     <span className="logros-grupo-titulo">{cat}</span>
                     {items.map((l) => {
                       let estado = 'conseguido'
+                      let estiloLejano
                       if (!l.alcanzado) {
                         if (!proximoMarcado) {
                           estado = 'proximo'
                           proximoMarcado = true
                         } else {
                           estado = 'lejano'
+                          const opacidad = Math.max(0.07, 0.45 - lejanoIdx * 0.1)
+                          const desenfoque = Math.min(2.6, 0.4 + lejanoIdx * 0.55)
+                          estiloLejano = { opacity: opacidad, filter: `blur(${desenfoque}px)` }
+                          lejanoIdx += 1
                         }
                       }
                       return (
-                      <div key={l.id} className={`logro-fila ${estado}`}>
+                      <div key={l.id} className={`logro-fila ${estado}`} style={estiloLejano}>
                         <span className="logro-icono">{l.alcanzado ? l.icono : '🔒'}</span>
                         <span className="logro-cuerpo">
                           <span className="logro-titulo">{l.titulo}</span>
