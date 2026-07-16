@@ -2299,16 +2299,15 @@ button[type='submit']:disabled {
 }
 
 .linea-tasa {
-  stroke: var(--accent-2);
-  stroke-width: 2;
+  stroke: url(#tasa-linea);
+  stroke-width: 2.5;
   vector-effect: non-scaling-stroke;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
 
 .area-tasa {
-  fill: var(--accent-2);
-  opacity: 0.12;
+  fill: url(#tasa-area);
   stroke: none;
 }
 
@@ -2386,6 +2385,27 @@ button[type='submit']:disabled {
   color: var(--text-h);
   font-weight: 700;
   margin-right: 6px;
+}
+
+/* Comparación con el mes anterior (puntos de tasa) */
+.gd-delta {
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radio-pastilla);
+  background: rgba(255, 255, 255, 0.06);
+  margin-right: 6px;
+  white-space: nowrap;
+}
+
+.gd-delta.ingreso {
+  color: var(--ingreso);
+  background: rgba(52, 232, 158, 0.12);
+}
+
+.gd-delta.gasto {
+  color: var(--gasto);
+  background: rgba(255, 93, 126, 0.12);
 }
 
 .gd-euros {

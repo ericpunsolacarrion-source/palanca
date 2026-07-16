@@ -71,6 +71,14 @@ export default function GraficoTasaAhorro({ movimientos, mesFin }) {
 
   const mesActivo = activo !== null ? meses[activo] : null
 
+  // Comparación con el mes anterior (en puntos de tasa), cuando ambos tienen
+  // ingresos: enriquece la interacción sin recargar.
+  const ratioPrevio = activo !== null && activo > 0 ? ratiosReales[activo - 1] : null
+  const deltaPuntos =
+    mesActivo && ratiosReales[activo] !== null && ratioPrevio !== null
+      ? Math.round(ratiosReales[activo] - ratioPrevio)
+      : null
+
   return (
     <div className="grafico fade-in-up">
       <div className="grafico-cabecera">
@@ -83,6 +91,15 @@ export default function GraficoTasaAhorro({ movimientos, mesFin }) {
             ) : (
               <>
                 <span className="gd-pct">{formatearPorcentaje(ratiosReales[activo], 0)}</span>
+                {deltaPuntos !== null && (
+                  <span
+                    className={`gd-delta ${deltaPuntos > 0 ? 'ingreso' : deltaPuntos < 0 ? 'gasto' : ''}`}
+                    title="Frente al mes anterior"
+                  >
+                    {deltaPuntos > 0 ? '▲' : deltaPuntos < 0 ? '▼' : '='}
+                    {deltaPuntos !== 0 && ` ${Math.abs(deltaPuntos)} pts`}
+                  </span>
+                )}
                 <span className="gd-euros">
                   <span className="ingreso">{formatearEuros(mesActivo.ahorro)}</span> ahorrado
                   {mesActivo.invertido > 0 && (
@@ -106,17 +123,35 @@ export default function GraficoTasaAhorro({ movimientos, mesFin }) {
             className="grafico-linea"
             style={{ width: ancho }}
           >
+            <defs>
+              <linearGradient id="tasa-area" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--accent-2)" stopOpacity="0.32" />
+                <stop offset="100%" stopColor="var(--accent-2)" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="tasa-linea" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="var(--accent)" />
+                <stop offset="100%" stopColor="var(--accent-2)" />
+              </linearGradient>
+              <filter id="tasa-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="2.4" result="b" />
+                <feMerge>
+                  <feMergeNode in="b" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
             <line x1={PADDING_X} y1={yLineaCero} x2={ancho - PADDING_X} y2={yLineaCero} className="linea-cero" />
             <polygon points={area} className="area-tasa" />
             <polyline points={linea} className="linea-tasa" fill="none" />
             {puntos.map((p, i) => (
               <g key={meses[i].clave}>
-                {i === activo && <circle cx={p.x} cy={p.y} r={5} className="punto-activo-halo" />}
+                {i === activo && <circle cx={p.x} cy={p.y} r={6} className="punto-activo-halo" />}
                 <circle
                   cx={p.x}
                   cy={p.y}
                   r={i === activo ? 3.5 : 2}
                   className={i === activo ? 'punto-activo' : 'punto-tasa'}
+                  filter={i === activo ? 'url(#tasa-glow)' : undefined}
                 />
                 <rect
                   x={p.x - paso / 2}
