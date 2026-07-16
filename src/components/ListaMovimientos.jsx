@@ -5,6 +5,7 @@ import { claveMes, claveMesActual, formatearFecha, totalesDe } from '../lib/movi
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
+import InputFecha from './InputFecha'
 
 function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
   const [importe, setImporte] = useState(Number(movimiento.importe))
@@ -49,12 +50,7 @@ function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
       />
 
       <label htmlFor={`fecha-${movimiento.id}`}>Fecha</label>
-      <input
-        id={`fecha-${movimiento.id}`}
-        type="date"
-        value={fecha}
-        onChange={(e) => setFecha(e.target.value)}
-      />
+      <InputFecha id={`fecha-${movimiento.id}`} value={fecha} onChange={setFecha} />
 
       <div className="tipo-toggle">
         <button type="button" className={!esFijo ? 'activo' : ''} onClick={() => setEsFijo(false)}>
@@ -179,28 +175,26 @@ export default function ListaMovimientos({
           </span>
         </div>
         <div className="linea-secundaria">
-          <span>
-            {formatearFecha(m.fecha)}{' '}
-            <span className="badge-fijo">{m.es_fijo ? 'Fijo' : 'Variable'}</span>
+          <span className="ls-meta">
+            {formatearFecha(m.fecha)}
+            {m.es_fijo && <span className="badge-fijo">Fijo</span>}
+            {m.nota && <span className="nota">· {m.nota}</span>}
           </span>
-          <div className="linea-acciones">
-            {m.nota && <span className="nota">{m.nota}</span>}
-            {!soloLectura && (
-              <span className="grupo-botones">
-                <button type="button" className="btn-editar" onClick={() => setEditandoId(m.id)}>
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  className="btn-eliminar"
-                  onClick={() => handleEliminar(m.id)}
-                  disabled={eliminandoId === m.id}
-                >
-                  {eliminandoId === m.id ? '…' : 'Eliminar'}
-                </button>
-              </span>
-            )}
-          </div>
+          {!soloLectura && (
+            <span className="grupo-botones">
+              <button type="button" className="btn-editar" onClick={() => setEditandoId(m.id)}>
+                Editar
+              </button>
+              <button
+                type="button"
+                className="btn-eliminar"
+                onClick={() => handleEliminar(m.id)}
+                disabled={eliminandoId === m.id}
+              >
+                {eliminandoId === m.id ? '…' : 'Eliminar'}
+              </button>
+            </span>
+          )}
         </div>
       </li>
     )

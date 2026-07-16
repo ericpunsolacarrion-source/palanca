@@ -2163,7 +2163,7 @@ button[type='submit']:disabled {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 
 .lista-movimientos li {
@@ -2171,13 +2171,13 @@ button[type='submit']:disabled {
   overflow: hidden;
   background: linear-gradient(150deg, var(--card-bg-2), var(--card-bg));
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px 14px 12px 18px;
+  border-radius: 10px;
+  padding: 8px 12px 8px 14px;
   animation: fade-in-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
   transition:
-    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.25s ease,
-    border-color 0.25s ease;
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 /* Barra de acento futurista según el tipo de movimiento */
@@ -2242,11 +2242,14 @@ button[type='submit']:disabled {
 }
 
 .lista-movimientos .linea-principal .categoria {
-  font-size: var(--fs-base);
+  font-size: var(--fs-s);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .lista-movimientos .linea-principal .importe {
-  font-size: var(--fs-m);
+  font-size: var(--fs-base);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -2254,8 +2257,8 @@ button[type='submit']:disabled {
 
 .categoria .fuente {
   font-weight: 400;
-  opacity: 0.7;
-  font-size: 13px;
+  opacity: 0.6;
+  font-size: var(--fs-xs);
 }
 
 .lista-movimientos li.gasto .importe {
@@ -2267,22 +2270,47 @@ button[type='submit']:disabled {
 }
 
 .badge-fijo {
-  font-size: 10px;
+  font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  background: var(--border);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text);
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
-  margin-left: 4px;
+  margin-left: 6px;
+  vertical-align: 1px;
 }
 
 .linea-secundaria {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
+  align-items: center;
+  font-size: var(--fs-xs);
   opacity: 0.7;
-  margin-top: 4px;
+  margin-top: 2px;
+}
+
+.linea-secundaria .ls-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.linea-secundaria .nota {
+  opacity: 0.8;
+}
+
+.linea-secundaria .grupo-botones {
+  flex: none;
+  display: flex;
+  gap: 10px;
+}
+
+.linea-secundaria .btn-editar,
+.linea-secundaria .btn-eliminar {
+  font-size: var(--fs-xs);
+  padding: 0;
 }
 
 /* Simulador */
