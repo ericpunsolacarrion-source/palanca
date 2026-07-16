@@ -3678,16 +3678,17 @@ button[type='submit']:disabled {
 
 .inv-importe {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
   text-align: center;
   font-size: 9px;
   font-weight: 700;
   color: var(--inversion);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  padding-bottom: 2px;
   pointer-events: none;
+  /* sombra sutil para que la cifra se lea aunque la cruce la línea de media */
+  text-shadow: 0 0 4px var(--bg), 0 0 4px var(--bg), 0 1px 2px var(--bg);
 }
 
 .inv-zona-barra {

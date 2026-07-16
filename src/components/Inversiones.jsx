@@ -12,7 +12,11 @@ import Pildora from './Pildora'
 import { firmaDatos, PILDORA_INVERSION } from '../lib/pildoras'
 import InputImporte from './InputImporte'
 
-const ALTO_BARRAS = 110
+// Altura del área de dibujo de las barras. HEADROOM reserva un hueco arriba
+// para que la CIFRA de la barra más alta nunca quede fuera (antes se cortaba
+// por el overflow del scroll cuando la barra llegaba al tope).
+const ALTO_BARRAS = 134
+const HEADROOM = 30
 
 function Cifra({ valor, className }) {
   const animado = useCountUp(valor)
@@ -33,9 +37,13 @@ const ANCHO_COL = 34 // ancho por mes al deslizar
 const ZONA_ETIQUETA = 30
 
 function GraficoInversionMensual({ meses, media }) {
+  // El eje Y escala SIEMPRE al máximo real de los datos mostrados (con margen
+  // superior), así cualquier aportación —también las de 1.720€ o más— se ve
+  // completa. Alturas en píxeles para evitar recortes.
   const maximo = Math.max(1, ...meses.map((m) => m.invertido))
-  // La media no debe superar el alto de las barras (si media ≈ máximo).
-  const pctMedia = Math.min((media / maximo) * 100, 100)
+  const alturaUtil = ALTO_BARRAS - HEADROOM // alto de la barra más grande
+  const alturaDe = (v) => (v > 0 ? Math.max((v / maximo) * alturaUtil, 4) : 0)
+  const mediaPx = media > 0 ? Math.min((media / maximo) * alturaUtil, alturaUtil) : 0
 
   const scrollRef = useRef(null)
   // Arranca en el mes más reciente; el límite izquierdo es el primer mes con
@@ -55,21 +63,22 @@ function GraficoInversionMensual({ meses, media }) {
           style={{ height: ALTO_BARRAS + ZONA_ETIQUETA, width: anchoContenido, minWidth: '100%' }}
         >
           {meses.map((m, i) => {
-            const pct = Math.max((m.invertido / maximo) * 100, m.invertido > 0 ? 4 : 2)
+            const barPx = alturaDe(m.invertido)
             const esEnero = m.clave.endsWith('-01')
             const anio = m.clave.slice(0, 4)
             return (
               <div key={m.clave} className="inv-col">
                 <div className="inv-zona-barra" style={{ height: ALTO_BARRAS }}>
-                  {/* El importe se ancla justo encima de la barra (no en una línea fija). */}
+                  {/* La cifra se ancla justo encima de su barra, siempre dentro
+                      del área (el HEADROOM garantiza que no se corte). */}
                   {m.invertido > 0 && (
-                    <span className="inv-importe" style={{ bottom: `${pct}%` }}>
+                    <span className="inv-importe" style={{ bottom: `${barPx + 3}px` }}>
                       {formatearCompacto(m.invertido)}
                     </span>
                   )}
                   <div
                     className={`inv-barra ${m.invertido > 0 ? 'activa' : ''}`}
-                    style={{ height: `${pct}%`, animationDelay: `${i * 0.04}s` }}
+                    style={{ height: `${barPx}px`, animationDelay: `${i * 0.04}s` }}
                     title={`${m.etiqueta}: ${formatearEuros(m.invertido)}`}
                   />
                 </div>
@@ -86,7 +95,7 @@ function GraficoInversionMensual({ meses, media }) {
           {media > 0 && (
             <div
               className="inv-linea-media"
-              style={{ bottom: `${ZONA_ETIQUETA + (pctMedia / 100) * ALTO_BARRAS}px` }}
+              style={{ bottom: `${ZONA_ETIQUETA + mediaPx}px` }}
             >
               <span className="inv-linea-media-etq">media {formatearEuros(media)}</span>
             </div>
