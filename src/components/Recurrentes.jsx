@@ -8,6 +8,20 @@ import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
 
+// Fecha por defecto al marcar un recurrente: el día del mes definido, en el mes
+// en curso (acotado al último día del mes). Sin día definido, el día de hoy.
+function fechaDelMes(rec) {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = now.getMonth()
+  if (rec.diaMes) {
+    const ultimo = new Date(y, m + 1, 0).getDate()
+    const d = Math.min(rec.diaMes, ultimo)
+    return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+  }
+  return hoyIso()
+}
+
 function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onGuardar, onCancelar }) {
   const [tipo, setTipo] = useState(inicial?.tipo ?? 'gasto')
   const [nombre, setNombre] = useState(inicial?.nombre ?? '')
@@ -89,7 +103,7 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
       </div>
 
       <label className="rec-dia">
-        <span>Día del mes en que ocurre (opcional)</span>
+        <span>¿Qué día del mes ocurre? (opcional)</span>
         <input
           type="number"
           min="1"
@@ -97,9 +111,13 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
           inputMode="numeric"
           value={diaMes}
           onChange={(e) => setDiaMes(e.target.value)}
-          placeholder="ej. 1 (alquiler), 28 (nómina)"
+          placeholder="ej. 1, 28"
         />
       </label>
+      <p className="ayuda-mini">
+        Se usará como fecha del movimiento cuando lo marques en la checklist. Si lo dejas vacío, se
+        usará el día en que lo marques.
+      </p>
 
       <label className="rec-check">
         <input
@@ -123,56 +141,128 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
   )
 }
 
-function TarjetaPendiente({ rec, hoyDia, onRegistrar, registrando }) {
-  const [importe, setImporte] = useState(Number(rec.importe))
+// Ítem PENDIENTE de la checklist: al marcar el check se registra. Si el importe
+// es variable (confirmar) o el usuario pulsa "Ajustar", se abre el detalle para
+// afinar importe/fecha antes de registrar.
+function FilaChecklist({ rec, hoyDia, registrando, onRegistrar }) {
   const esIngreso = rec.tipo === 'ingreso'
-  // Con día fijado, distinguimos lo que ya toca de lo que llegará más adelante.
+  const [abierto, setAbierto] = useState(false)
+  const [importe, setImporte] = useState(Number(rec.importe))
+  const [fecha, setFecha] = useState(() => fechaDelMes(rec))
   const toca = !rec.diaMes || hoyDia >= rec.diaMes
 
+  function alMarcar(e) {
+    if (rec.confirmar) {
+      // Importe variable: confirmar la cifra antes de registrar.
+      e.preventDefault()
+      setAbierto(true)
+      return
+    }
+    // Importe fijo: se registra solo, con la fecha del día definido.
+    onRegistrar(rec, Number(rec.importe), fechaDelMes(rec))
+  }
+
   return (
-    <div className={`rec-pendiente ${esIngreso ? 'ingreso' : 'gasto'} ${toca ? '' : 'proximo'}`}>
-      <div className="rec-pendiente-info">
-        <span className="rec-pendiente-nombre">{rec.nombre}</span>
-        <span className="rec-pendiente-cat">
-          {rec.categoriaNombre}
-          {rec.diaMes && (
-            <span className={`rec-cuando ${toca ? 'toca' : ''}`}>
-              {toca ? `· toca ya (día ${rec.diaMes})` : `· el día ${rec.diaMes}`}
-            </span>
-          )}
-        </span>
-      </div>
-      {rec.confirmar ? (
-        <div className="rec-pendiente-confirmar">
-          <InputImporte value={importe} onValueChange={setImporte} />
-          <button type="button" onClick={() => onRegistrar(rec, Number(importe))} disabled={registrando}>
-            Registrar
-          </button>
+    <div className={`rec-cl-fila ${toca ? '' : 'proximo'} ${abierto ? 'abierto' : ''}`}>
+      <div className="rec-cl-linea">
+        <label className="rec-cl-check">
+          <input
+            type="checkbox"
+            checked={false}
+            disabled={registrando}
+            onChange={alMarcar}
+            aria-label={`Marcar ${rec.nombre} como hecho este mes`}
+          />
+          <span className="rec-cl-tick" aria-hidden="true" />
+        </label>
+        <div className="rec-cl-info">
+          <span className="rec-cl-nombre">{rec.nombre}</span>
+          <span className="rec-cl-sub">
+            {rec.categoriaNombre}
+            {rec.diaMes && (
+              <span className={`rec-cuando ${toca ? 'toca' : ''}`}>
+                {toca ? ` · toca ya (día ${rec.diaMes})` : ` · el día ${rec.diaMes}`}
+              </span>
+            )}
+          </span>
         </div>
-      ) : (
+        <span className={`rec-cl-importe ${esIngreso ? 'ingreso' : 'gasto'}`}>
+          {esIngreso ? '+' : '−'}
+          {formatearEuros(Number(rec.importe))}
+        </span>
         <button
           type="button"
-          className="rec-pendiente-boton"
-          onClick={() => onRegistrar(rec, Number(rec.importe))}
-          disabled={registrando}
+          className="rec-cl-ajustar"
+          onClick={() => setAbierto((a) => !a)}
+          aria-expanded={abierto}
         >
-          {esIngreso ? '+ ' : '− '}
-          {formatearEuros(Number(rec.importe))}
+          Ajustar
         </button>
+      </div>
+
+      {abierto && (
+        <div className="rec-cl-form">
+          {rec.confirmar && (
+            <label className="rec-cl-campo">
+              <span>Importe real</span>
+              <InputImporte value={importe} onValueChange={setImporte} />
+            </label>
+          )}
+          <label className="rec-cl-campo">
+            <span>Fecha</span>
+            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+          </label>
+          <div className="rec-cl-form-acc">
+            <button type="button" className="btn-eliminar" onClick={() => setAbierto(false)}>
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => onRegistrar(rec, Number(importe), fecha)}
+              disabled={registrando}
+            >
+              {registrando ? '…' : 'Registrar'}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
 }
 
+// Ítem YA HECHO este mes: marcado, sin acción.
+function FilaHecha({ rec }) {
+  const esIngreso = rec.tipo === 'ingreso'
+  return (
+    <div className="rec-cl-fila hecha">
+      <div className="rec-cl-linea">
+        <span className="rec-cl-check hecha">
+          <span className="rec-cl-tick" aria-hidden="true">
+            ✓
+          </span>
+        </span>
+        <div className="rec-cl-info">
+          <span className="rec-cl-nombre">{rec.nombre}</span>
+          <span className="rec-cl-sub">Hecho este mes</span>
+        </div>
+        <span className={`rec-cl-importe hecha ${esIngreso ? 'ingreso' : 'gasto'}`}>
+          {esIngreso ? '+' : '−'}
+          {formatearEuros(Number(rec.importe))}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export default function Recurrentes({ usuarioId, onRegistrado }) {
-  const { items, pendientes, crear, actualizar, eliminar, marcarAplicado } = useRecurrentes(usuarioId)
+  const { items, crear, actualizar, eliminar, marcarAplicado } = useRecurrentes(usuarioId)
   const { items: categoriasGasto } = useEtiquetas('categorias', usuarioId, 'gasto')
   const { items: categoriasIngreso } = useEtiquetas('categorias', usuarioId, 'ingreso')
   const [creando, setCreando] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
   const [registrandoId, setRegistrandoId] = useState(null)
 
-  async function registrar(rec, importe) {
+  async function registrar(rec, importe, fecha) {
     if (!importe || importe <= 0) return
     setRegistrandoId(rec.id)
     const { error } = await supabase.from('movimientos').insert({
@@ -181,7 +271,7 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
       categoria_id: rec.categoriaId,
       fuente_id: rec.fuenteId ?? null,
       importe,
-      fecha: hoyIso(),
+      fecha: fecha || fechaDelMes(rec),
       es_fijo: true,
     })
     setRegistrandoId(null)
@@ -200,23 +290,30 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
 
   const mesActual = claveMesActual()
   const hoyDia = new Date().getDate()
-  // Los que ya tocan primero (por día), luego los que llegarán más adelante.
-  const pendientesOrdenados = [...pendientes].sort(
-    (a, b) => (a.diaMes ?? 99) - (b.diaMes ?? 99),
-  )
+
+  const activos = items.filter((r) => r.activo)
+  // Pendientes de este mes: los que ya tocan primero (por día).
+  const pendientes = activos
+    .filter((r) => r.aplicadoEn !== mesActual)
+    .sort((a, b) => (a.diaMes ?? 99) - (b.diaMes ?? 99))
+  const hechos = activos.filter((r) => r.aplicadoEn === mesActual)
 
   return (
     <div className="recurrentes vista">
       <p className="ayuda">
-        Configura lo que se repite cada mes (alquiler, nómina, suscripciones) y regístralo sin
-        volver a rellenar nada. Los ingresos te piden confirmar el importe, por si varía.
+        Tu checklist del mes: <strong>marca cada recurrente cuando ocurra</strong> (se ha cobrado la
+        nómina, se ha pagado el recibo) y se registrará solo, con la fecha que le pusiste. Los de
+        importe variable te dejan ajustar la cifra al marcarlos.
       </p>
 
-      {pendientesOrdenados.length > 0 && (
-        <div className="rec-pendientes">
-          <span className="balance-etiqueta-principal">Pendientes de este mes</span>
-          {pendientesOrdenados.map((rec) => (
-            <TarjetaPendiente
+      {activos.length > 0 && (
+        <div className="rec-checklist">
+          <span className="balance-etiqueta-principal">
+            Checklist de este mes
+            {pendientes.length > 0 && <span className="rec-cl-cuenta"> · {pendientes.length} por marcar</span>}
+          </span>
+          {pendientes.map((rec) => (
+            <FilaChecklist
               key={rec.id}
               rec={rec}
               hoyDia={hoyDia}
@@ -224,11 +321,17 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
               registrando={registrandoId === rec.id}
             />
           ))}
+          {hechos.map((rec) => (
+            <FilaHecha key={rec.id} rec={rec} />
+          ))}
+          {pendientes.length === 0 && (
+            <p className="ayuda rec-cl-todo">¡Todo marcado este mes! 🎉</p>
+          )}
         </div>
       )}
 
       <div className="rec-gestion">
-        <span className="balance-etiqueta-principal">Tus recurrentes</span>
+        <span className="balance-etiqueta-principal">Configurar recurrentes</span>
         {items.length === 0 && !creando && (
           <p className="ayuda">Aún no tienes recurrentes. Crea el primero abajo.</p>
         )}
@@ -251,18 +354,12 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
                 <span className="rec-item-nombre">
                   {rec.nombre}
                   <span className={`rec-badge ${rec.tipo}`}>{rec.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}</span>
-                  {!rec.activo ? (
-                    <span className="rec-badge pausado">Pausado</span>
-                  ) : rec.aplicadoEn === mesActual ? (
-                    <span className="rec-badge registrado">✓ Registrado este mes</span>
-                  ) : (
-                    <span className="rec-badge pendiente">Pendiente este mes</span>
-                  )}
+                  {!rec.activo && <span className="rec-badge pausado">Pausado</span>}
                 </span>
                 <span className="rec-item-detalle">
                   {formatearEuros(Number(rec.importe))} · {rec.categoriaNombre}
                   {rec.diaMes ? ` · día ${rec.diaMes}` : ''}
-                  {rec.confirmar ? ' · confirmar cada mes' : ' · automático'}
+                  {rec.confirmar ? ' · confirmar importe' : ' · importe fijo'}
                 </span>
               </div>
               <span className="grupo-botones">

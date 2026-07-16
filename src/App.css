@@ -1028,6 +1028,183 @@ button[type='submit']:disabled {
   opacity: 0.72;
 }
 
+/* ── Checklist mensual de recurrentes ─────────────────────────────────────── */
+.rec-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--sp-5);
+}
+
+.rec-cl-cuenta {
+  font-weight: 400;
+  opacity: 0.6;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.rec-cl-fila {
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+  padding: 10px 12px;
+  transition: border-color 0.18s ease, opacity 0.18s ease;
+}
+
+.rec-cl-fila.proximo {
+  opacity: 0.68;
+}
+
+.rec-cl-fila.abierto {
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.rec-cl-linea {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Casilla personalizada, minimalista y futurista */
+.rec-cl-check {
+  flex: none;
+  position: relative;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+}
+
+.rec-cl-check input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.rec-cl-tick {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid var(--border);
+  color: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+
+.rec-cl-check:hover .rec-cl-tick {
+  border-color: var(--accent);
+}
+
+.rec-cl-check input:active + .rec-cl-tick {
+  transform: scale(0.9);
+}
+
+/* Marcada (hecha): relleno verde con check */
+.rec-cl-check.hecha .rec-cl-tick {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--ingreso), var(--accent-2));
+  color: #06121a;
+}
+
+.rec-cl-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.rec-cl-nombre {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: var(--fs-s);
+}
+
+.rec-cl-sub {
+  font-size: var(--fs-xs);
+  opacity: 0.6;
+}
+
+.rec-cl-importe {
+  flex: none;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-s);
+}
+
+.rec-cl-importe.ingreso {
+  color: var(--ingreso);
+}
+
+.rec-cl-importe.gasto {
+  color: var(--gasto);
+}
+
+.rec-cl-ajustar {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--accent-2);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+/* Fila ya hecha: atenuada, sin acciones */
+.rec-cl-fila.hecha {
+  opacity: 0.72;
+}
+
+.rec-cl-fila.hecha .rec-cl-nombre {
+  text-decoration: line-through;
+  text-decoration-color: rgba(168, 173, 192, 0.5);
+}
+
+.rec-cl-importe.hecha {
+  opacity: 0.7;
+}
+
+.rec-cl-todo {
+  margin: 4px 0 0;
+  text-align: center;
+}
+
+/* Detalle para ajustar importe/fecha al marcar */
+.rec-cl-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-2);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.rec-cl-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: var(--fs-xs);
+  opacity: 0.85;
+}
+
+.rec-cl-campo input,
+.rec-cl-campo .campo-euro {
+  width: 150px;
+  max-width: 44vw;
+}
+
+.rec-cl-form-acc {
+  display: flex;
+  gap: var(--sp-2);
+  margin-left: auto;
+}
+
 .rec-check {
   display: flex;
   align-items: flex-start;
