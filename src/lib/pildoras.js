@@ -1,25 +1,60 @@
 import { esInversion } from './categorias'
 import { agregarPorMes, claveMes, claveMesActual, totalesDe, ultimosNMeses } from './movimientosUtils'
 
-// Píldoras educativas: breves, contextuales y descartables. Cada una se
-// silencia de forma permanente al cerrarla (localStorage por usuario).
+// Píldoras educativas: breves, contextuales y descartables.
+//
+// REGLA AL CERRARLAS (documentada): cerrar una píldora con la × NO la silencia
+// para siempre. Se guarda en sessionStorage (no localStorage) junto a la FIRMA
+// de los datos en ese momento. La píldora permanece oculta solo mientras:
+//   - la firma de datos no cambie (no hay movimientos nuevos/borrados), y
+//   - siga la misma sesión.
+// Así reaparece cuando el usuario registra un movimiento nuevo relevante (la
+// firma cambia) o cuando cierra sesión y vuelve a entrar (limpiarPildoras en el
+// logout). No es repetitiva dentro de una misma sesión, pero sigue aportando
+// valor a lo largo del tiempo.
 
 const claveStorage = (usuarioId) => `palanca_pildoras_${usuarioId}`
 
-export function pildoraDescartada(usuarioId, id) {
+// Firma de los datos: nº de movimientos + fecha de registro más reciente.
+// Cambia al crear o borrar un movimiento, que es cuando una píldora contextual
+// vuelve a tener sentido.
+export function firmaDatos(movimientos) {
+  let ultimo = ''
+  for (const m of movimientos) {
+    const c = m.created_at || m.fecha || ''
+    if (c > ultimo) ultimo = c
+  }
+  return `${movimientos.length}:${ultimo}`
+}
+
+function leerMapa(usuarioId) {
   try {
-    const set = new Set(JSON.parse(localStorage.getItem(claveStorage(usuarioId)) || '[]'))
-    return set.has(id)
+    return JSON.parse(sessionStorage.getItem(claveStorage(usuarioId)) || '{}') || {}
   } catch {
-    return false
+    return {}
   }
 }
 
-export function descartarPildora(usuarioId, id) {
+export function pildoraDescartada(usuarioId, id, firma) {
+  // Oculta solo si se descartó con la MISMA firma de datos vigente.
+  return leerMapa(usuarioId)[id] === firma
+}
+
+export function descartarPildora(usuarioId, id, firma) {
   try {
-    const set = new Set(JSON.parse(localStorage.getItem(claveStorage(usuarioId)) || '[]'))
-    set.add(id)
-    localStorage.setItem(claveStorage(usuarioId), JSON.stringify([...set]))
+    const mapa = leerMapa(usuarioId)
+    mapa[id] = firma
+    sessionStorage.setItem(claveStorage(usuarioId), JSON.stringify(mapa))
+  } catch {
+    // sin persistencia, no pasa nada
+  }
+}
+
+// Olvida los descartes (se llama al cerrar sesión, para que al volver a entrar
+// las píldoras relevantes vuelvan a mostrarse).
+export function limpiarPildoras(usuarioId) {
+  try {
+    sessionStorage.removeItem(claveStorage(usuarioId))
   } catch {
     // sin persistencia, no pasa nada
   }
@@ -167,9 +202,10 @@ export function pildorasDashboard({ movimientos, movimientosMes, objetivoInversi
   return candidatas
 }
 
-// Elige la píldora de mayor prioridad que el usuario no haya descartado.
-export function elegirPildora(usuarioId, candidatas) {
-  return candidatas.find((p) => !pildoraDescartada(usuarioId, p.id)) ?? null
+// Elige la píldora de mayor prioridad que el usuario no haya descartado (para
+// la firma de datos vigente).
+export function elegirPildora(usuarioId, candidatas, firma) {
+  return candidatas.find((p) => !pildoraDescartada(usuarioId, p.id, firma)) ?? null
 }
 
 // Píldora fija de la pantalla de inversión: qué es el interés compuesto.

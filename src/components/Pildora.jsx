@@ -1,14 +1,22 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { descartarPildora, pildoraDescartada } from '../lib/pildoras'
 
-// Píldora educativa breve, contextual y descartable.
-export default function Pildora({ usuarioId, pildora, onCta, onDescartar }) {
-  const [oculta, setOculta] = useState(() => pildoraDescartada(usuarioId, pildora.id))
+// Píldora educativa breve, contextual y descartable. Al cerrarla no desaparece
+// para siempre: reaparece con un movimiento nuevo (cambia `firma`) o en una
+// nueva sesión. Ver la regla documentada en lib/pildoras.js.
+export default function Pildora({ usuarioId, pildora, firma = '', onCta, onDescartar }) {
+  const [oculta, setOculta] = useState(() => pildoraDescartada(usuarioId, pildora.id, firma))
+
+  // Al cambiar la firma de datos (o de usuario/píldora), se reevalúa si sigue
+  // descartada: así vuelve a mostrarse cuando hay algo nuevo que decir.
+  useEffect(() => {
+    setOculta(pildoraDescartada(usuarioId, pildora.id, firma))
+  }, [usuarioId, pildora.id, firma])
 
   if (!pildora || oculta) return null
 
   function cerrar() {
-    descartarPildora(usuarioId, pildora.id)
+    descartarPildora(usuarioId, pildora.id, firma)
     setOculta(true)
     onDescartar?.()
   }

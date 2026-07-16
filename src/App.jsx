@@ -21,7 +21,7 @@ import MetricasPrincipales from './components/MetricasPrincipales'
 import Comparativas from './components/Comparativas'
 import Pildora from './components/Pildora'
 import ProyeccionFuturo from './components/ProyeccionFuturo'
-import { pildorasDashboard, elegirPildora } from './lib/pildoras'
+import { pildorasDashboard, elegirPildora, firmaDatos, limpiarPildoras } from './lib/pildoras'
 import { usePresupuesto } from './lib/usePresupuesto'
 import Simulador from './components/Simulador'
 import Presupuesto from './components/Presupuesto'
@@ -135,16 +135,26 @@ function App() {
   const { objetivoInversionMensual } = usePresupuesto(usuarioId)
   const [descartesPildora, setDescartesPildora] = useState(0)
 
+  // Firma de datos: cambia al crear/borrar un movimiento, lo que re-permite
+  // que reaparezcan las píldoras descartadas (ver lib/pildoras.js).
+  const firmaPildoras = useMemo(() => firmaDatos(movimientos), [movimientos])
+
   const pildoraDash = useMemo(() => {
     const candidatas = pildorasDashboard({
       movimientos,
       movimientosMes,
       objetivoInversion: objetivoInversionMensual,
     })
-    return elegirPildora(usuarioId, candidatas)
+    return elegirPildora(usuarioId, candidatas, firmaPildoras)
     // descartesPildora fuerza recálculo al cerrar una píldora, para revelar la siguiente.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [movimientos, movimientosMes, objetivoInversionMensual, usuarioId, descartesPildora])
+  }, [movimientos, movimientosMes, objetivoInversionMensual, usuarioId, firmaPildoras, descartesPildora])
+
+  // Al cerrar sesión, olvida los descartes de píldoras del usuario saliente.
+  const cerrarSesionConLimpieza = useCallback(() => {
+    if (usuarioId) limpiarPildoras(usuarioId)
+    cerrarSesion()
+  }, [usuarioId, cerrarSesion])
 
   if (!usuarioId) {
     return <PantallaId onEntrar={setUsuarioId} />
@@ -180,7 +190,7 @@ function App() {
     <div className="app">
       <header className="app-header">
         <h1>Palanca</h1>
-        <button className="link" onClick={cerrarSesion}>
+        <button className="link" onClick={cerrarSesionConLimpieza}>
           Cambiar usuario ({usuarioId})
         </button>
       </header>
@@ -235,6 +245,7 @@ function App() {
                 key={pildoraDash.id}
                 usuarioId={usuarioId}
                 pildora={pildoraDash}
+                firma={firmaPildoras}
                 onCta={irAPestana}
                 onDescartar={() => setDescartesPildora((n) => n + 1)}
               />

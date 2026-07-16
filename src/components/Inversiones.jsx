@@ -9,7 +9,7 @@ import { resolverEtiqueta } from '../lib/etiquetas'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import Pildora from './Pildora'
-import { PILDORA_INVERSION } from '../lib/pildoras'
+import { firmaDatos, PILDORA_INVERSION } from '../lib/pildoras'
 import InputImporte from './InputImporte'
 
 const ALTO_BARRAS = 110
@@ -300,7 +300,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
         )}
       </div>
 
-      <Pildora usuarioId={usuarioId} pildora={PILDORA_INVERSION} />
+      <Pildora usuarioId={usuarioId} pildora={PILDORA_INVERSION} firma={firmaDatos(movimientos)} />
 
       {mesesInversion.some((m) => m.invertido > 0) && (
         <GraficoInversionMensual meses={mesesInversion} media={mediaMensual} />
