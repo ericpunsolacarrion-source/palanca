@@ -115,17 +115,17 @@ export default function MovimientosTab({
         </button>
         <button
           type="button"
-          className={sub === 'importar' ? 'activo' : ''}
-          onClick={() => cambiarSub('importar')}
-        >
-          Importar
-        </button>
-        <button
-          type="button"
           className={sub === 'historial' ? 'activo' : ''}
           onClick={() => cambiarSub('historial')}
         >
           Historial
+        </button>
+        <button
+          type="button"
+          className={sub === 'importar' ? 'activo' : ''}
+          onClick={() => cambiarSub('importar')}
+        >
+          Importar
         </button>
       </div>
 
