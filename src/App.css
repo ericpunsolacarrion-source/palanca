@@ -549,6 +549,32 @@ button[type='submit']:disabled {
   background: var(--card-bg);
 }
 
+/* La bolsa de inversión es clicable → lleva al apartado Inversión */
+.bolsa-boton {
+  position: relative;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.18s ease, transform 0.1s ease;
+}
+
+.bolsa-boton:hover {
+  border-color: rgba(245, 185, 61, 0.45);
+}
+
+.bolsa-boton:active {
+  transform: scale(0.99);
+}
+
+.bolsa-ver {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: var(--fs-micro);
+  color: var(--inversion);
+  opacity: 0.85;
+}
+
 .bolsa-dot {
   width: 8px;
   height: 8px;
@@ -4589,49 +4615,50 @@ button[type='submit']:disabled {
 }
 
 /* Selector de periodo global del dashboard */
+/* Selector de periodo: barra fina y minimalista, sin cajas pesadas */
 .periodo-selector {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-4);
+  justify-content: center;
+  gap: 2px;
+  margin-bottom: var(--sp-2);
 }
 
 .periodo-flecha {
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
-  font-size: var(--fs-l);
+  font-size: var(--fs-m);
   line-height: 1;
-  color: var(--text-h);
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radio-m);
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: var(--radio-pastilla);
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.1s ease;
 }
 
 .periodo-flecha:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: var(--card-bg-2);
+  color: var(--text-h);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .periodo-flecha:active:not(:disabled) {
-  transform: scale(0.94);
+  transform: scale(0.9);
 }
 
 .periodo-flecha:disabled {
-  opacity: 0.3;
+  opacity: 0.22;
   cursor: default;
 }
 
 .periodo-centro {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sp-2);
+  gap: 6px;
   min-width: 0;
 }
 
@@ -4640,35 +4667,38 @@ button[type='submit']:disabled {
   min-width: 0;
   text-align: center;
   text-align-last: center;
-  font-size: var(--fs-m);
+  font-size: var(--fs-base);
   font-weight: 600;
   color: var(--text-h);
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radio-m);
-  padding: 10px var(--sp-4);
+  background: none;
+  border: none;
+  border-radius: var(--radio-s);
+  padding: 4px 8px;
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
+  transition: color 0.15s ease;
 }
 
 .periodo-select:hover {
-  border-color: var(--accent);
+  color: var(--accent-2);
 }
 
 .periodo-hoy {
   flex: none;
-  font-size: var(--fs-xs);
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
   color: var(--accent-2);
-  background: rgba(34, 211, 238, 0.1);
-  border: 1px solid rgba(34, 211, 238, 0.35);
+  background: none;
+  border: 1px solid rgba(34, 211, 238, 0.3);
   border-radius: var(--radio-pastilla);
-  padding: 5px 12px;
+  padding: 2px 8px;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .periodo-hoy:hover {
-  background: rgba(34, 211, 238, 0.18);
+  background: rgba(34, 211, 238, 0.14);
 }

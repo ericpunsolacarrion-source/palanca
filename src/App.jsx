@@ -231,7 +231,12 @@ function App() {
               esMesActual={esMesActual}
               onVerMovimientos={verMovimientos}
             />
-            <Patrimonio usuarioId={usuarioId} movimientos={movimientos} onGuardado={cargarMovimientos} />
+            <Patrimonio
+              usuarioId={usuarioId}
+              movimientos={movimientos}
+              onGuardado={cargarMovimientos}
+              onVerInversion={() => irAPestana('inversiones')}
+            />
             <GraficoTasaAhorro movimientos={movimientos} mesFin={mesActivoDash} />
             <GraficoCategorias
               movimientos={movimientosPeriodo}

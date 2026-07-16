@@ -13,7 +13,7 @@ function diasDesde(iso) {
   return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24))
 }
 
-export default function Patrimonio({ usuarioId, movimientos, onGuardado }) {
+export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerInversion }) {
   const [abierto, setAbierto] = useState(false)
   const [saldoReal, setSaldoReal] = useState('')
   const [guardando, setGuardando] = useState(false)
@@ -63,11 +63,12 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado }) {
       </div>
 
       <div className="patrimonio-bolsas">
-        <div className="bolsa">
+        <button type="button" className="bolsa bolsa-boton" onClick={onVerInversion}>
           <span className="bolsa-dot inversion" />
           <span className="etiqueta">Inversión</span>
           <span className="bolsa-valor inversion">{formatearEuros(bolsaInversion)}</span>
-        </div>
+          <span className="bolsa-ver">Ver ›</span>
+        </button>
         <div className="bolsa">
           <span className="bolsa-dot liquidez" />
           <span className="etiqueta">Ahorro líquido</span>
