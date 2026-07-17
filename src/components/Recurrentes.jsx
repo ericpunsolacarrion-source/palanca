@@ -3,10 +3,11 @@ import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { useRecurrentes } from '../lib/useRecurrentes'
 import { formatearEuros } from '../lib/categorias'
-import { claveMesActual, hoyIso } from '../lib/movimientosUtils'
+import { claveMesActual, formatearFecha, hoyIso } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
+import InputFecha from './InputFecha'
 
 // Fecha por defecto al marcar un recurrente: el día del mes definido, en el mes
 // en curso (acotado al último día del mes). Sin día definido, el día de hoy.
@@ -141,25 +142,29 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
   )
 }
 
-// Ítem PENDIENTE de la checklist: al marcar el check se registra. Si el importe
-// es variable (confirmar) o el usuario pulsa "Ajustar", se abre el detalle para
-// afinar importe/fecha antes de registrar.
+// Nº de meses que el recurrente lleva registrado (histórico conservado).
+function mesesRegistrados(rec) {
+  return Array.isArray(rec.mesesAplicados) ? rec.mesesAplicados.length : 0
+}
+
+// Ítem PENDIENTE de la checklist. Al marcar el check se abre una confirmación
+// explícita ("¿Confirmas X € el DD/MM?") con importe y fecha editables antes de
+// registrar, para que cualquiera entienda qué pasa al confirmar.
 function FilaChecklist({ rec, hoyDia, registrando, onRegistrar }) {
   const esIngreso = rec.tipo === 'ingreso'
   const [abierto, setAbierto] = useState(false)
   const [importe, setImporte] = useState(Number(rec.importe))
   const [fecha, setFecha] = useState(() => fechaDelMes(rec))
-  const toca = !rec.diaMes || hoyDia >= rec.diaMes
 
-  function alMarcar(e) {
-    if (rec.confirmar) {
-      // Importe variable: confirmar la cifra antes de registrar.
-      e.preventDefault()
-      setAbierto(true)
-      return
-    }
-    // Importe fijo: se registra solo, con la fecha del día definido.
-    onRegistrar(rec, Number(rec.importe), fechaDelMes(rec))
+  const diasRestantes = rec.diaMes ? rec.diaMes - hoyDia : null
+  const toca = diasRestantes === null || diasRestantes <= 0
+  const meses = mesesRegistrados(rec)
+
+  const cuando = () => {
+    if (!rec.diaMes) return null
+    if (diasRestantes <= 0) return ' · toca ya'
+    if (diasRestantes === 1) return ' · mañana'
+    return ` · en ${diasRestantes} días`
   }
 
   return (
@@ -170,7 +175,7 @@ function FilaChecklist({ rec, hoyDia, registrando, onRegistrar }) {
             type="checkbox"
             checked={false}
             disabled={registrando}
-            onChange={alMarcar}
+            onChange={() => setAbierto(true)}
             aria-label={`Marcar ${rec.nombre} como hecho este mes`}
           />
           <span className="rec-cl-tick" aria-hidden="true" />
@@ -179,9 +184,10 @@ function FilaChecklist({ rec, hoyDia, registrando, onRegistrar }) {
           <span className="rec-cl-nombre">{rec.nombre}</span>
           <span className="rec-cl-sub">
             {rec.categoriaNombre}
-            {rec.diaMes && (
-              <span className={`rec-cuando ${toca ? 'toca' : ''}`}>
-                {toca ? ` · toca ya (día ${rec.diaMes})` : ` · el día ${rec.diaMes}`}
+            {rec.diaMes && <span className={`rec-cuando ${toca ? 'toca' : ''}`}>{cuando()}</span>}
+            {meses > 0 && (
+              <span className="rec-cl-racha">
+                {' · '}llevas {meses} {meses === 1 ? 'mes' : 'meses'}
               </span>
             )}
           </span>
@@ -190,28 +196,28 @@ function FilaChecklist({ rec, hoyDia, registrando, onRegistrar }) {
           {esIngreso ? '+' : '−'}
           {formatearEuros(Number(rec.importe))}
         </span>
-        <button
-          type="button"
-          className="rec-cl-ajustar"
-          onClick={() => setAbierto((a) => !a)}
-          aria-expanded={abierto}
-        >
-          Ajustar
-        </button>
       </div>
 
       {abierto && (
         <div className="rec-cl-form">
-          {rec.confirmar && (
+          <p className="rec-cl-confirma">
+            ¿Confirmas{' '}
+            <strong className={esIngreso ? 'ingreso' : 'gasto'}>
+              {esIngreso ? '+' : '−'}
+              {formatearEuros(Number(importe) || 0)}
+            </strong>{' '}
+            el <strong>{formatearFecha(fecha)}</strong>? Se registrará como movimiento.
+          </p>
+          <div className="rec-cl-campos">
             <label className="rec-cl-campo">
-              <span>Importe real</span>
+              <span>Importe{rec.confirmar ? ' (ajústalo si varía)' : ''}</span>
               <InputImporte value={importe} onValueChange={setImporte} />
             </label>
-          )}
-          <label className="rec-cl-campo">
-            <span>Fecha</span>
-            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
-          </label>
+            <label className="rec-cl-campo">
+              <span>Fecha</span>
+              <InputFecha value={fecha} onChange={setFecha} />
+            </label>
+          </div>
           <div className="rec-cl-form-acc">
             <button type="button" className="btn-eliminar" onClick={() => setAbierto(false)}>
               Cancelar
@@ -221,7 +227,7 @@ function FilaChecklist({ rec, hoyDia, registrando, onRegistrar }) {
               onClick={() => onRegistrar(rec, Number(importe), fecha)}
               disabled={registrando}
             >
-              {registrando ? '…' : 'Registrar'}
+              {registrando ? '…' : 'Confirmar y registrar'}
             </button>
           </div>
         </div>
@@ -230,9 +236,10 @@ function FilaChecklist({ rec, hoyDia, registrando, onRegistrar }) {
   )
 }
 
-// Ítem YA HECHO este mes: marcado, sin acción.
+// Ítem YA HECHO este mes: marcado, sin acción. Muestra la racha de meses.
 function FilaHecha({ rec }) {
   const esIngreso = rec.tipo === 'ingreso'
+  const meses = mesesRegistrados(rec)
   return (
     <div className="rec-cl-fila hecha">
       <div className="rec-cl-linea">
@@ -243,7 +250,10 @@ function FilaHecha({ rec }) {
         </span>
         <div className="rec-cl-info">
           <span className="rec-cl-nombre">{rec.nombre}</span>
-          <span className="rec-cl-sub">Hecho este mes</span>
+          <span className="rec-cl-sub">
+            Hecho este mes
+            {meses > 0 && ` · llevas ${meses} ${meses === 1 ? 'mes' : 'meses'}`}
+          </span>
         </div>
         <span className={`rec-cl-importe hecha ${esIngreso ? 'ingreso' : 'gasto'}`}>
           {esIngreso ? '+' : '−'}

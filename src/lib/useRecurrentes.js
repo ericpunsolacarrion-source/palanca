@@ -59,7 +59,10 @@ export function useRecurrentes(usuarioId) {
 
   const crear = useCallback(
     (datos) => {
-      guardarLista([...items, { id: idNuevo(), activo: true, aplicadoEn: null, ...datos }])
+      guardarLista([
+        ...items,
+        { id: idNuevo(), activo: true, aplicadoEn: null, mesesAplicados: [], ...datos },
+      ])
     },
     [items, guardarLista],
   )
@@ -75,13 +78,25 @@ export function useRecurrentes(usuarioId) {
   )
 
   // Marca un recurrente como aplicado en el mes actual (tras registrarlo).
+  // Conserva el HISTÓRICO de meses en `mesesAplicados` (para "llevas N meses"),
+  // además de `aplicadoEn` por compatibilidad.
   const marcarAplicado = useCallback(
-    (id) => actualizar(id, { aplicadoEn: claveMesActual() }),
-    [actualizar],
+    (id) => {
+      const clave = claveMesActual()
+      const it = items.find((x) => x.id === id)
+      const previos = Array.isArray(it?.mesesAplicados) ? it.mesesAplicados : []
+      const historico = previos.includes(clave) ? previos : [...previos, clave]
+      actualizar(id, { aplicadoEn: clave, mesesAplicados: historico })
+    },
+    [items, actualizar],
   )
 
   // Recurrentes activos que aún no se han registrado este mes.
-  const pendientes = items.filter((it) => it.activo && it.aplicadoEn !== claveMesActual())
+  const claveActual = claveMesActual()
+  const yaAplicado = (it) =>
+    (Array.isArray(it.mesesAplicados) && it.mesesAplicados.includes(claveActual)) ||
+    it.aplicadoEn === claveActual
+  const pendientes = items.filter((it) => it.activo && !yaAplicado(it))
 
   return { items, pendientes, crear, actualizar, eliminar, marcarAplicado }
 }

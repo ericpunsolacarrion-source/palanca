@@ -1205,15 +1205,32 @@ button[type='submit']:disabled {
   text-align: center;
 }
 
-/* Detalle para ajustar importe/fecha al marcar */
+/* Racha de meses ("llevas N meses") */
+.rec-cl-racha {
+  color: var(--accent-2);
+  opacity: 0.9;
+}
+
+/* Confirmación al marcar: frase + campos + acciones, en columna */
 .rec-cl-form {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
+  flex-direction: column;
   gap: var(--sp-2);
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid var(--border);
+}
+
+.rec-cl-confirma {
+  margin: 0;
+  font-size: var(--fs-s);
+  color: var(--text-h);
+}
+
+.rec-cl-campos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
 }
 
 .rec-cl-campo {
