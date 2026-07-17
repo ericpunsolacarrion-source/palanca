@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { formatearEuros } from '../../lib/categorias'
-import { bolsas, hoyIso } from '../../lib/movimientosUtils'
+import { bolsas, hoyIso, ritmoMensualPorTipo } from '../../lib/movimientosUtils'
 import { useObjetivosAhorro } from '../../lib/useObjetivosAhorro'
 import { TIPOS_OBJETIVO, useObjetivoTipo } from '../../lib/useObjetivoTipo'
 import { toast } from '../../lib/toast'
@@ -8,6 +8,12 @@ import { confirmar } from '../../lib/confirmar'
 import InputImporte from '../InputImporte'
 
 const ETIQUETA_TIPO = Object.fromEntries(TIPOS_OBJETIVO.map((t) => [t.id, t.etiqueta]))
+// Cómo se nombra el "ritmo" según el tipo de objetivo.
+const ETIQUETA_RITMO = {
+  liquidez: 'ahorro',
+  inversion: 'inversión',
+  patrimonio: 'crecimiento',
+}
 
 function mesesHasta(fechaIso) {
   if (!fechaIso) return null
@@ -64,8 +70,8 @@ function TarjetaObjetivo({ objetivo, actual, tipo, ahorroMensual, onEditar, onEl
           Te faltan <strong>{formatearEuros(restante)}</strong>.
           {mesesRitmo !== null && (
             <>
-              {' '}A tu ritmo de ahorro ({formatearEuros(ahorroMensual)}/mes), lo alcanzarías en{' '}
-              <strong>{mesesRitmo}</strong> {mesesRitmo === 1 ? 'mes' : 'meses'}.
+              {' '}A tu ritmo de {ETIQUETA_RITMO[tipo] ?? 'ahorro'} ({formatearEuros(ahorroMensual)}/mes),
+              lo alcanzarías en <strong>{mesesRitmo}</strong> {mesesRitmo === 1 ? 'mes' : 'meses'}.
             </>
           )}
           {aportacionNecesaria !== null && (
@@ -157,7 +163,7 @@ function FormularioObjetivo({ inicial, tipoInicial, onGuardar, onCancelar, guard
   )
 }
 
-export default function AhorroObjetivo({ usuarioId, ahorroMensual, movimientos = [] }) {
+export default function AhorroObjetivo({ usuarioId, movimientos = [] }) {
   const { objetivos, cargando, tablaFalta, crear, actualizar, eliminar } = useObjetivosAhorro(usuarioId)
   const { tipoDe, fijarTipo } = useObjetivoTipo(usuarioId)
   const [creando, setCreando] = useState(false)
@@ -167,6 +173,10 @@ export default function AhorroObjetivo({ usuarioId, ahorroMensual, movimientos =
   const { bolsaLiquidez, bolsaInversion, patrimonio } = useMemo(() => bolsas(movimientos), [movimientos])
   const valorBolsa = (tipo) =>
     tipo === 'inversion' ? bolsaInversion : tipo === 'patrimonio' ? patrimonio : bolsaLiquidez
+
+  // Ritmo mensual según el tipo de objetivo (ahorro líquido / inversión /
+  // patrimonio): cada uno crece a un ritmo distinto. Fuente única.
+  const ritmos = useMemo(() => ritmoMensualPorTipo(movimientos), [movimientos])
 
   async function handleCrear(datos) {
     setGuardando(true)
@@ -239,7 +249,7 @@ export default function AhorroObjetivo({ usuarioId, ahorroMensual, movimientos =
                 objetivo={o}
                 tipo={tipoDe(o.id)}
                 actual={valorBolsa(tipoDe(o.id))}
-                ahorroMensual={ahorroMensual}
+                ahorroMensual={ritmos[tipoDe(o.id)]}
                 onEditar={() => setEditandoId(o.id)}
                 onEliminar={() => handleEliminar(o.id)}
               />

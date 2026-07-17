@@ -208,6 +208,21 @@ export function resumenMensualMedio(movimientos) {
   }
 }
 
+// Ritmo mensual (media) con el que crece cada bolsa, según el tipo de objetivo.
+// Base de la proyección "a tu ritmo lo alcanzarías en N meses" de Objetivos:
+//  - liquidez  = superávit mensual que NO se invierte (va a ahorro líquido)
+//  - inversion = media de aportaciones a inversión al mes
+//  - patrimonio = todo el superávit mensual (líquido + inversión)
+// Fuente única; deriva de resumenMensualMedio (medias sobre meses con ingresos).
+export function ritmoMensualPorTipo(movimientos) {
+  const { ahorroMedio, invertidoMedio } = resumenMensualMedio(movimientos)
+  return {
+    liquidez: Math.max(0, ahorroMedio - invertidoMedio),
+    inversion: Math.max(0, invertidoMedio),
+    patrimonio: Math.max(0, ahorroMedio),
+  }
+}
+
 // Ingreso mensual medio de los últimos N meses (solo meses con ingresos), para
 // contextualizar "lo que cobras" frente a un mes suelto. Fuente única.
 export function ingresoMensualMedio(movimientos, n = 12) {
