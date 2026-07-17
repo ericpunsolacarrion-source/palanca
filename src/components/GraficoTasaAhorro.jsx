@@ -175,6 +175,7 @@ export default function GraficoTasaAhorro({ movimientos, mesFin }) {
                 onClick={() => setSeleccionado(i)}
               >
                 {m.etiqueta}
+                {m.clave.endsWith('-01') && <span className="leyenda-mes-anio">{m.clave.slice(0, 4)}</span>}
                 <br />
                 {ratiosReales[i] === null ? '—' : `${ratiosReales[i].toFixed(0)}%`}
               </button>
