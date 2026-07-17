@@ -15,6 +15,15 @@ export default function Onboarding({ onCompletar }) {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
 
+  // El botón solo se bloquea sin objetivo o mientras se guarda; nunca por un
+  // error de email pasado. Además el error se limpia en vivo al corregir.
+  const emailOk = emailValido(email)
+
+  function cambiarEmail(valor) {
+    setEmail(valor)
+    if (error) setError(null)
+  }
+
   async function handleContinuar() {
     if (!seleccion) return
     if (!emailValido(email)) {
@@ -24,9 +33,15 @@ export default function Onboarding({ onCompletar }) {
     setGuardando(true)
     setError(null)
     const saldo = saldoInicial === '' ? 0 : Number(saldoInicial)
-    const ok = await onCompletar(seleccion, email, Number.isFinite(saldo) && saldo > 0 ? saldo : 0)
-    // Si sale bien, este componente se desmonta; si no, reactivamos el botón.
-    if (!ok) {
+    try {
+      const ok = await onCompletar(seleccion, email, Number.isFinite(saldo) && saldo > 0 ? saldo : 0)
+      // Si sale bien, este componente se desmonta; si no, reactivamos el botón.
+      if (!ok) {
+        setGuardando(false)
+        setError('No se ha podido crear tu cuenta. Revisa tu conexión e inténtalo de nuevo.')
+      }
+    } catch {
+      // Nunca dejar el botón colgado en "Preparando…": la entrada debe ser infalible.
       setGuardando(false)
       setError('No se ha podido crear tu cuenta. Revisa tu conexión e inténtalo de nuevo.')
     }
@@ -59,8 +74,9 @@ export default function Onboarding({ onCompletar }) {
           inputMode="email"
           autoComplete="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => cambiarEmail(e.target.value)}
           placeholder="nombre@correo.com"
+          className={emailOk ? 'campo-ok' : ''}
         />
         <p className="ayuda-mini">
           Lo usaremos para avisarte de novedades y para ayudarte a recuperar tu cuenta.

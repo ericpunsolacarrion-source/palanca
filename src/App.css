@@ -178,6 +178,11 @@ main {
   background: var(--bg);
 }
 
+/* Pista visual: email válido */
+.onboarding-email input.campo-ok {
+  border-color: rgba(52, 232, 158, 0.5);
+}
+
 .ayuda-mini {
   font-size: var(--fs-xs);
   opacity: 0.65;

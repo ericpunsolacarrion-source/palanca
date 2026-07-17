@@ -39,7 +39,10 @@ export default function CapturaEmail({ usuarioId, onGuardado }) {
           inputMode="email"
           autoComplete="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value)
+            if (error) setError(null)
+          }}
           placeholder="nombre@correo.com"
           aria-label="Tu correo electrónico"
         />
