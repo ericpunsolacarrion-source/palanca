@@ -1742,6 +1742,41 @@ button[type='submit']:disabled {
 }
 
 /* Inversiones */
+/* Selector del periodo de la media (12 meses / desde el inicio) */
+.inv-media-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.inv-media-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-pastilla);
+  padding: 2px;
+  gap: 2px;
+}
+
+.inv-media-toggle button {
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radio-pastilla);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.inv-media-toggle button.activo {
+  background: rgba(245, 185, 61, 0.16);
+  color: var(--inversion);
+}
+
 .inversion-plataformas {
   display: flex;
   flex-direction: column;

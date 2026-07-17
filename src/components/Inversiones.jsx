@@ -138,12 +138,6 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
     return [...mapa.entries()].sort((a, b) => b[1] - a[1])
   }, [aportaciones])
 
-  // Media móvil de los últimos 12 meses (para la línea de referencia y etiqueta).
-  const mediaMensual = useMemo(
-    () => agregarPorMes(aportaciones, 12).reduce((s, m) => s + m.invertido, 0) / 12,
-    [aportaciones],
-  )
-
   // Meses a mostrar en el gráfico: desde el primer mes con inversión hasta hoy,
   // para poder deslizar hacia atrás sin llegar antes de la primera aportación.
   const nMesesInversion = useMemo(() => {
@@ -162,6 +156,14 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
   const mesesInversion = useMemo(
     () => agregarPorMes(aportaciones, nMesesInversion),
     [aportaciones, nMesesInversion],
+  )
+
+  // Media mensual configurable: últimos 12 meses o desde la primera inversión.
+  const [periodoMedia, setPeriodoMedia] = useState('12')
+  const mesesMedia = periodoMedia === 'todo' ? nMesesInversion : Math.min(12, nMesesInversion)
+  const mediaMensual = useMemo(
+    () => (mesesMedia > 0 ? agregarPorMes(aportaciones, mesesMedia).reduce((s, m) => s + m.invertido, 0) / mesesMedia : 0),
+    [aportaciones, mesesMedia],
   )
 
   const porMes = useMemo(() => {
@@ -292,9 +294,27 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
         <span className="balance-etiqueta-principal">Total invertido</span>
         <Cifra valor={totalInvertido} className="balance-hero inversion" />
         {mediaMensual > 0 && (
-          <span className="balance-etiqueta-principal">
-            Media de {formatearEuros(mediaMensual)} al mes (últimos 12 meses)
-          </span>
+          <div className="inv-media-fila">
+            <span className="balance-etiqueta-principal">
+              Media de {formatearEuros(mediaMensual)} al mes
+            </span>
+            <div className="inv-media-toggle" role="group" aria-label="Periodo de la media">
+              <button
+                type="button"
+                className={periodoMedia === '12' ? 'activo' : ''}
+                onClick={() => setPeriodoMedia('12')}
+              >
+                12 meses
+              </button>
+              <button
+                type="button"
+                className={periodoMedia === 'todo' ? 'activo' : ''}
+                onClick={() => setPeriodoMedia('todo')}
+              >
+                Desde el inicio
+              </button>
+            </div>
+          </div>
         )}
 
         {porPlataforma.length > 0 && (
