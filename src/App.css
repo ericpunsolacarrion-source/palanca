@@ -114,6 +114,168 @@ main {
   opacity: 0.75;
 }
 
+/* ── Pantalla de acceso (Supabase Auth) ─────────────────────────────────────
+   Lo primero que ve la gente: cuidada, oscura y futurista. */
+.acceso {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 20px;
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.acceso-caja {
+  width: 100%;
+  max-width: 400px;
+  padding: 28px 24px;
+  border-radius: var(--radio-l);
+  background:
+    linear-gradient(160deg, var(--card-bg-2), var(--card-bg)) padding-box,
+    var(--borde-brillo) border-box;
+  border: 1px solid transparent;
+  box-shadow: var(--sombra-card);
+  text-align: center;
+}
+
+.acceso-logo {
+  margin: 0;
+  font-size: 30px;
+  background: linear-gradient(90deg, var(--text-h), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.acceso-sub {
+  margin: 4px 0 20px;
+  font-size: var(--fs-s);
+  opacity: 0.7;
+}
+
+.acceso-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-pastilla);
+  margin-bottom: 20px;
+}
+
+.acceso-tabs button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-weight: 600;
+  font-size: var(--fs-s);
+  border-radius: var(--radio-pastilla);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.acceso-tabs button.activo {
+  background: rgba(139, 92, 246, 0.18);
+  color: var(--text-h);
+}
+
+.acceso-titulo {
+  margin: 0 0 16px;
+  font-size: var(--fs-m);
+  color: var(--text-h);
+}
+
+.acceso-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.acceso-form label {
+  font-size: var(--fs-xs);
+  opacity: 0.8;
+  margin-top: 8px;
+}
+
+.acceso-form input {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-s);
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: var(--fs-base);
+}
+
+.acceso-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.acceso-form input.campo-ok {
+  border-color: rgba(52, 232, 158, 0.5);
+}
+
+.acceso-boton {
+  margin-top: 16px;
+  padding: 13px;
+  border: none;
+  border-radius: var(--radio-m);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #0a0b10;
+  font-weight: 700;
+  font-size: var(--fs-base);
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.acceso-boton:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.acceso-boton:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.acceso-boton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.acceso-aviso {
+  font-size: var(--fs-s);
+  color: var(--ingreso);
+  background: rgba(52, 232, 158, 0.08);
+  border: 1px solid rgba(52, 232, 158, 0.25);
+  border-radius: var(--radio-s);
+  padding: 8px 10px;
+  margin: 4px 0 0;
+}
+
+.acceso-link {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: var(--fs-s);
+}
+
+.acceso-antiguo {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding-top: 14px;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: none;
+  color: var(--text);
+  opacity: 0.55;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.acceso-antiguo:hover {
+  opacity: 0.85;
+}
+
 /* Onboarding */
 .onboarding {
   max-width: 440px;

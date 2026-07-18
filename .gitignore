@@ -14,6 +14,16 @@ dist-ssr
 .env
 .claude/settings.local.json
 
+# Volcados/backups de la base de datos: contienen datos sensibles (todas las
+# finanzas de los usuarios). NUNCA subir al repo. Los .sql de esquema SÍ se
+# versionan (no coinciden con estos patrones).
+backup_*.sql
+*.dump
+/backups/
+# Credenciales de conexión que puedas dejar en local para el backup
+.pg-credenciales
+.env.backup
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
 import { useUsuarioId } from './lib/useUsuarioId'
+import { useAuth } from './lib/useAuth'
+import { cerrarSesionAuth } from './lib/auth'
+import Auth from './components/Auth'
 import { obtenerPerfil, crearPerfil } from './lib/perfil'
 import { crearAjuste } from './lib/ajustes'
 import {
@@ -44,7 +47,13 @@ import './App.css'
 const MS_POR_DIA = 1000 * 60 * 60 * 24
 
 function App() {
-  const { usuarioId, setUsuarioId, cerrarSesion } = useUsuarioId()
+  // Sistema NUEVO (Supabase Auth) en paralelo al ANTIGUO (ID en localStorage).
+  // El usuarioId efectivo prioriza la sesión de Auth; si no la hay, cae al ID
+  // antiguo, para no perder acceso durante la transición.
+  const { usuarioId: idAntiguo, setUsuarioId, cerrarSesion } = useUsuarioId()
+  const { session, cargandoAuth, usuarioAuthId } = useAuth()
+  const usuarioId = usuarioAuthId ?? idAntiguo
+  const [modoAcceso, setModoAcceso] = useState('auth') // 'auth' | 'idAntiguo'
   const [perfil, setPerfil] = useState(null)
   const [comprobandoPerfil, setComprobandoPerfil] = useState(true)
   const [movimientos, setMovimientos] = useState([])
@@ -151,13 +160,25 @@ function App() {
   }, [movimientos, movimientosMes, objetivoInversionMensual, usuarioId, firmaPildoras, descartesPildora])
 
   // Al cerrar sesión, olvida los descartes de píldoras del usuario saliente.
-  const cerrarSesionConLimpieza = useCallback(() => {
+  // Cierra lo que esté activo: sesión de Auth o, si no, el ID antiguo.
+  const cerrarSesionConLimpieza = useCallback(async () => {
     if (usuarioId) limpiarPildoras(usuarioId)
-    cerrarSesion()
-  }, [usuarioId, cerrarSesion])
+    if (usuarioAuthId) await cerrarSesionAuth()
+    else cerrarSesion()
+  }, [usuarioId, usuarioAuthId, cerrarSesion])
+
+  // Esperando a saber si hay sesión de Auth (evita parpadeo a la pantalla de
+  // acceso cuando en realidad ya hay sesión guardada).
+  if (cargandoAuth) {
+    return null
+  }
 
   if (!usuarioId) {
-    return <PantallaId onEntrar={setUsuarioId} />
+    return modoAcceso === 'idAntiguo' ? (
+      <PantallaId onEntrar={setUsuarioId} onVolverAuth={() => setModoAcceso('auth')} />
+    ) : (
+      <Auth onAccesoAntiguo={() => setModoAcceso('idAntiguo')} />
+    )
   }
 
   if (comprobandoPerfil) {
@@ -191,7 +212,7 @@ function App() {
       <header className="app-header">
         <h1>Palanca</h1>
         <button className="link" onClick={cerrarSesionConLimpieza}>
-          Cambiar usuario ({usuarioId})
+          {usuarioAuthId ? `Cerrar sesión (${session?.user?.email ?? ''})` : `Cambiar usuario (${idAntiguo})`}
         </button>
       </header>
 

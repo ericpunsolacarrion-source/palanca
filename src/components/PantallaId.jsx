@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function PantallaId({ onEntrar }) {
+export default function PantallaId({ onEntrar, onVolverAuth }) {
   const [valor, setValor] = useState('')
 
   function handleSubmit(e) {
@@ -29,6 +29,11 @@ export default function PantallaId({ onEntrar }) {
         </p>
         <button type="submit">Entrar</button>
       </form>
+      {onVolverAuth && (
+        <button type="button" className="acceso-antiguo" onClick={onVolverAuth}>
+          ← Volver al acceso con email
+        </button>
+      )}
     </div>
   )
 }
