@@ -8,9 +8,12 @@ const OBJETIVOS = [
   { valor: 'otro', titulo: 'Otro', descripcion: 'Tengo otro objetivo en mente' },
 ]
 
-export default function Onboarding({ onCompletar }) {
+export default function Onboarding({ onCompletar, emailInicial }) {
+  // Si viene de una cuenta de Auth, el email ya se conoce: se rellena solo y no
+  // se vuelve a pedir (era lo que bloqueaba el paso a la app).
+  const cuentaAuth = Boolean(emailInicial)
   const [seleccion, setSeleccion] = useState(null)
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(emailInicial ?? '')
   const [saldoInicial, setSaldoInicial] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
@@ -66,22 +69,30 @@ export default function Onboarding({ onCompletar }) {
         ))}
       </div>
 
-      <div className="onboarding-email">
-        <label htmlFor="email-onboarding">Tu correo electrónico</label>
-        <input
-          id="email-onboarding"
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => cambiarEmail(e.target.value)}
-          placeholder="nombre@correo.com"
-          className={emailOk ? 'campo-ok' : ''}
-        />
-        <p className="ayuda-mini">
-          Lo usaremos para avisarte de novedades y para ayudarte a recuperar tu cuenta.
-        </p>
-      </div>
+      {cuentaAuth ? (
+        <div className="onboarding-email">
+          <span className="onboarding-cuenta">
+            Tu cuenta: <strong>{email}</strong>
+          </span>
+        </div>
+      ) : (
+        <div className="onboarding-email">
+          <label htmlFor="email-onboarding">Tu correo electrónico</label>
+          <input
+            id="email-onboarding"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => cambiarEmail(e.target.value)}
+            placeholder="nombre@correo.com"
+            className={emailOk ? 'campo-ok' : ''}
+          />
+          <p className="ayuda-mini">
+            Lo usaremos para avisarte de novedades y para ayudarte a recuperar tu cuenta.
+          </p>
+        </div>
+      )}
 
       <div className="onboarding-email">
         <label htmlFor="saldo-inicial">¿Cuánto dinero líquido tienes ahora? (opcional)</label>

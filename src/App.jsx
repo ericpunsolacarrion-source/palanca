@@ -188,6 +188,7 @@ function App() {
   if (!perfil) {
     return (
       <Onboarding
+        emailInicial={session?.user?.email}
         onCompletar={async (objetivo, email, saldoInicial) => {
           const nuevoPerfil = await crearPerfil(usuarioId, objetivo, email)
           if (nuevoPerfil) {

@@ -333,6 +333,20 @@ main {
   margin-top: var(--sp-5);
 }
 
+.onboarding-cuenta {
+  display: block;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-s);
+  background: var(--card-bg);
+  font-size: var(--fs-s);
+  color: var(--text);
+}
+
+.onboarding-cuenta strong {
+  color: var(--text-h);
+}
+
 .onboarding-email input {
   padding: 12px;
   border: 1px solid var(--border);
