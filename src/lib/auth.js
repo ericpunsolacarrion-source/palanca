@@ -7,7 +7,13 @@ import { supabase } from './supabaseClient'
 const norm = (email) => String(email || '').trim().toLowerCase()
 
 export async function registrar(email, password) {
-  return supabase.auth.signUp({ email: norm(email), password })
+  return supabase.auth.signUp({
+    email: norm(email),
+    password,
+    // Que el enlace de confirmación vuelva a ESTA app (no al localhost por
+    // defecto). El dominio debe estar en Supabase → Auth → Redirect URLs.
+    options: { emailRedirectTo: window.location.origin },
+  })
 }
 
 export async function iniciarSesion(email, password) {
