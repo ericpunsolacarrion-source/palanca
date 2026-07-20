@@ -488,6 +488,7 @@ button[type='submit']:disabled {
 
 .tipo-toggle button {
   flex: 1;
+  min-width: 0;
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -1812,8 +1813,17 @@ button[type='submit']:disabled {
   flex: 1;
 }
 
+/* El campo de fecha (InputFecha) reparte espacio en la fila; sin esto llevaba
+   width:100% y desbordaba el toggle Variable/Fijo (se descuadraba en Safari). */
+.fila-fecha-fijo .input-fecha {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
 .fila-fecha-fijo .tipo-toggle {
   flex: 1;
+  min-width: 0;
 }
 
 .btn-guardar-movimiento {
