@@ -24,6 +24,16 @@ export async function cerrarSesionAuth() {
   return supabase.auth.signOut()
 }
 
+// Borra la cuenta del usuario logueado y TODOS sus datos. Usa una función RPC
+// con permisos elevados (borrar_mi_cuenta) que elimina las filas del usuario y
+// su entrada en auth.users. Tras borrar, cierra la sesión.
+export async function borrarCuenta() {
+  const { error } = await supabase.rpc('borrar_mi_cuenta')
+  if (error) return { ok: false, error }
+  await supabase.auth.signOut()
+  return { ok: true }
+}
+
 export async function recuperarPassword(email) {
   return supabase.auth.resetPasswordForEmail(norm(email), {
     redirectTo: `${window.location.origin}?recuperar=1`,

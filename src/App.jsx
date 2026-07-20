@@ -4,6 +4,7 @@ import { useUsuarioId } from './lib/useUsuarioId'
 import { useAuth } from './lib/useAuth'
 import { cerrarSesionAuth } from './lib/auth'
 import Auth from './components/Auth'
+import CuentaPanel from './components/CuentaPanel'
 import { obtenerPerfil, crearPerfil } from './lib/perfil'
 import { crearAjuste } from './lib/ajustes'
 import {
@@ -54,6 +55,7 @@ function App() {
   const { session, cargandoAuth, usuarioAuthId } = useAuth()
   const usuarioId = usuarioAuthId ?? idAntiguo
   const [modoAcceso, setModoAcceso] = useState('auth') // 'auth' | 'idAntiguo'
+  const [verCuenta, setVerCuenta] = useState(false)
   const [perfil, setPerfil] = useState(null)
   const [comprobandoPerfil, setComprobandoPerfil] = useState(true)
   const [movimientos, setMovimientos] = useState([])
@@ -212,8 +214,11 @@ function App() {
     <div className="app">
       <header className="app-header">
         <h1>Palanca</h1>
-        <button className="link" onClick={cerrarSesionConLimpieza}>
-          {usuarioAuthId ? `Cerrar sesión (${session?.user?.email ?? ''})` : `Cambiar usuario (${idAntiguo})`}
+        <button
+          className="link"
+          onClick={usuarioAuthId ? () => setVerCuenta(true) : cerrarSesionConLimpieza}
+        >
+          {usuarioAuthId ? `Cuenta (${session?.user?.email ?? ''})` : `Cambiar usuario (${idAntiguo})`}
         </button>
       </header>
 
@@ -336,6 +341,16 @@ function App() {
       <BottomNav activa={pestana} onCambiar={irAPestana} />
       <Toaster />
       <Confirmador />
+      {verCuenta && (
+        <CuentaPanel
+          email={session?.user?.email ?? ''}
+          onCerrar={() => setVerCuenta(false)}
+          onCerrarSesion={() => {
+            setVerCuenta(false)
+            cerrarSesionConLimpieza()
+          }}
+        />
+      )}
       <Hitos usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
       <Consultor movimientos={movimientos} objetivo={{ texto: perfil.objetivo, usuarioId }} />
     </div>

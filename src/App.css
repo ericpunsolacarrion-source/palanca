@@ -356,6 +356,97 @@ main {
   padding-left: 18px;
 }
 
+/* Panel de cuenta */
+.cuenta-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(5, 6, 10, 0.75);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.cuenta-caja {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card-solida);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-l);
+  box-shadow: var(--sombra-card);
+  padding: 18px;
+}
+
+.cuenta-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cuenta-cab h2 {
+  margin: 0;
+  font-size: var(--fs-m);
+}
+
+.cuenta-email {
+  font-size: var(--fs-s);
+  color: var(--text);
+  margin: 0 0 16px;
+}
+
+.cuenta-boton {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+  color: var(--text-h);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cuenta-boton:hover {
+  border-color: var(--accent);
+}
+
+.cuenta-peligro {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.cuenta-peligro-titulo {
+  display: block;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gasto);
+  margin-bottom: 6px;
+}
+
+.cuenta-borrar {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px;
+  border: 1px solid rgba(255, 93, 126, 0.4);
+  border-radius: var(--radio-m);
+  background: rgba(255, 93, 126, 0.1);
+  color: var(--gasto);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.cuenta-borrar:hover:not(:disabled) {
+  background: rgba(255, 93, 126, 0.18);
+}
+
+.cuenta-borrar:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* Onboarding */
 .onboarding {
   max-width: 440px;
