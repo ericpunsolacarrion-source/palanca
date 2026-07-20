@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { emailValido } from '../lib/perfil'
 import { iniciarSesion, recuperarPassword, registrar, traducirErrorAuth } from '../lib/auth'
+import PoliticaPrivacidad from './PoliticaPrivacidad'
 
 // Pantalla de acceso: iniciar sesión / crear cuenta / recuperar contraseña.
 // Lo primero que ve la gente, así que cuidada y en la línea oscura de Palanca.
@@ -12,6 +13,8 @@ export default function Auth({ onAccesoAntiguo }) {
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState(null)
   const [aviso, setAviso] = useState(null)
+  const [consentimiento, setConsentimiento] = useState(false) // NO premarcada
+  const [verPrivacidad, setVerPrivacidad] = useState(false)
 
   const emailOk = emailValido(email)
 
@@ -21,6 +24,7 @@ export default function Auth({ onAccesoAntiguo }) {
     setAviso(null)
     setPassword('')
     setPassword2('')
+    setConsentimiento(false)
   }
 
   async function handleSubmit(e) {
@@ -43,6 +47,8 @@ export default function Auth({ onAccesoAntiguo }) {
 
     if (modo === 'registro') {
       if (password !== password2) return setError('Las contraseñas no coinciden.')
+      if (!consentimiento)
+        return setError('Debes aceptar la política de privacidad para crear la cuenta.')
       setCargando(true)
       const { data, error: err } = await registrar(email, password)
       setCargando(false)
@@ -143,6 +149,26 @@ export default function Auth({ onAccesoAntiguo }) {
             </>
           )}
 
+          {modo === 'registro' && (
+            <label className="acceso-consent">
+              <input
+                type="checkbox"
+                checked={consentimiento}
+                onChange={(e) => {
+                  setConsentimiento(e.target.checked)
+                  if (error) setError(null)
+                }}
+              />
+              <span>
+                He leído y acepto la{' '}
+                <button type="button" className="link" onClick={() => setVerPrivacidad(true)}>
+                  política de privacidad
+                </button>
+                .
+              </span>
+            </label>
+          )}
+
           {error && <p className="error">{error}</p>}
           {aviso && <p className="acceso-aviso">{aviso}</p>}
 
@@ -174,6 +200,8 @@ export default function Auth({ onAccesoAntiguo }) {
           </button>
         )}
       </div>
+
+      {verPrivacidad && <PoliticaPrivacidad onCerrar={() => setVerPrivacidad(false)} />}
     </div>
   )
 }
