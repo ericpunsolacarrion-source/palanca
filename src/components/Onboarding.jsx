@@ -14,6 +14,7 @@ export default function Onboarding({ onCompletar, emailInicial }) {
   const cuentaAuth = Boolean(emailInicial)
   const [seleccion, setSeleccion] = useState(null)
   const [email, setEmail] = useState(emailInicial ?? '')
+  const [anioNacimiento, setAnioNacimiento] = useState('')
   const [saldoInicial, setSaldoInicial] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
@@ -36,8 +37,14 @@ export default function Onboarding({ onCompletar, emailInicial }) {
     setGuardando(true)
     setError(null)
     const saldo = saldoInicial === '' ? 0 : Number(saldoInicial)
+    const anio = /^\d{4}$/.test(anioNacimiento) ? Number(anioNacimiento) : null
     try {
-      const ok = await onCompletar(seleccion, email, Number.isFinite(saldo) && saldo > 0 ? saldo : 0)
+      const ok = await onCompletar(
+        seleccion,
+        email,
+        Number.isFinite(saldo) && saldo > 0 ? saldo : 0,
+        anio,
+      )
       // Si sale bien, este componente se desmonta; si no, reactivamos el botón.
       if (!ok) {
         setGuardando(false)
@@ -93,6 +100,21 @@ export default function Onboarding({ onCompletar, emailInicial }) {
           </p>
         </div>
       )}
+
+      <div className="onboarding-email">
+        <label htmlFor="anio-nacimiento">¿En qué año naciste? (opcional)</label>
+        <input
+          id="anio-nacimiento"
+          type="number"
+          inputMode="numeric"
+          min="1900"
+          max="2025"
+          value={anioNacimiento}
+          onChange={(e) => setAnioNacimiento(e.target.value)}
+          placeholder="ej. 1998"
+        />
+        <p className="ayuda-mini">Solo el año, para adaptar mejor los contenidos. Puedes dejarlo en blanco.</p>
+      </div>
 
       <div className="onboarding-email">
         <label htmlFor="saldo-inicial">¿Cuánto dinero líquido tienes ahora? (opcional)</label>

@@ -16,23 +16,23 @@ export async function obtenerPerfil(usuarioId) {
   return data
 }
 
-export async function crearPerfil(usuarioId, objetivo, email) {
+export async function crearPerfil(usuarioId, objetivo, email, anioNacimiento) {
   const emailLimpio = email?.trim().toLowerCase() || null
+  const anio = Number.isInteger(anioNacimiento) ? anioNacimiento : null
 
-  let { data, error } = await supabase
-    .from('perfiles')
-    .insert({ usuario_id: usuarioId, objetivo, email: emailLimpio })
-    .select()
-    .single()
-
-  // Si la columna email todavía no existe en la BD, no bloqueamos el alta:
-  // guardamos el perfil sin email (se podrá añadir después desde el banner).
-  if (error && emailLimpio) {
-    ;({ data, error } = await supabase
-      .from('perfiles')
-      .insert({ usuario_id: usuarioId, objetivo })
-      .select()
-      .single())
+  // Alta tolerante: probamos con TODAS las columnas opcionales y, si alguna aún
+  // no existe en la BD, reintentamos con menos, sin bloquear el alta ni perder
+  // el email por culpa de la columna del año.
+  const intentos = [
+    { usuario_id: usuarioId, objetivo, email: emailLimpio, anio_nacimiento: anio },
+    { usuario_id: usuarioId, objetivo, email: emailLimpio },
+    { usuario_id: usuarioId, objetivo },
+  ]
+  let data = null
+  let error = null
+  for (const fila of intentos) {
+    ;({ data, error } = await supabase.from('perfiles').insert(fila).select().single())
+    if (!error) break
   }
 
   if (error) return null

@@ -189,8 +189,8 @@ function App() {
     return (
       <Onboarding
         emailInicial={session?.user?.email}
-        onCompletar={async (objetivo, email, saldoInicial) => {
-          const nuevoPerfil = await crearPerfil(usuarioId, objetivo, email)
+        onCompletar={async (objetivo, email, saldoInicial, anioNacimiento) => {
+          const nuevoPerfil = await crearPerfil(usuarioId, objetivo, email, anioNacimiento)
           if (nuevoPerfil) {
             // Saldo líquido de partida como movimiento de ajuste (bolsa de liquidez).
             if (saldoInicial > 0) {
