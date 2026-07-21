@@ -5,7 +5,7 @@ import PoliticaPrivacidad from './PoliticaPrivacidad'
 
 // Pantalla de acceso: iniciar sesión / crear cuenta / recuperar contraseña.
 // Lo primero que ve la gente, así que cuidada y en la línea oscura de Palanca.
-export default function Auth({ onAccesoAntiguo }) {
+export default function Auth() {
   const [modo, setModo] = useState('login') // 'login' | 'registro' | 'recuperar'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -194,11 +194,6 @@ export default function Auth({ onAccesoAntiguo }) {
           </button>
         )}
 
-        {onAccesoAntiguo && (
-          <button type="button" className="acceso-antiguo" onClick={onAccesoAntiguo}>
-            Acceso antiguo por ID
-          </button>
-        )}
       </div>
 
       {verPrivacidad && <PoliticaPrivacidad onCerrar={() => setVerPrivacidad(false)} />}
