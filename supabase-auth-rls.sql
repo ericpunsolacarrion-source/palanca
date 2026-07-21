@@ -45,19 +45,26 @@ $$;
 grant execute on function public.borrar_mi_cuenta() to authenticated;
 
 -- 3) RLS + políticas en todas las tablas -------------------------------------
+--    IMPORTANTE: borra TODAS las políticas existentes de cada tabla (incluidas
+--    las "abiertas" de Fase 1 que dejaban pasar a cualquiera) y deja SOLO las
+--    restrictivas por usuario. Si no, una política permisiva antigua seguiría
+--    concediendo acceso.
 do $$
-declare t text;
+declare t text; pol record;
 begin
   foreach t in array array[
     'movimientos','categorias','fuentes','perfiles',
     'presupuestos','planificaciones','objetivos_ahorro','simulaciones_guardadas'
   ]
   loop
+    -- borrar CUALQUIER política existente en la tabla
+    for pol in select policyname from pg_policies where schemaname = 'public' and tablename = t
+    loop
+      execute format('drop policy if exists %I on public.%I;', pol.policyname, t);
+    end loop;
+
     execute format('alter table public.%I enable row level security;', t);
-    execute format('drop policy if exists palanca_sel on public.%I;', t);
-    execute format('drop policy if exists palanca_ins on public.%I;', t);
-    execute format('drop policy if exists palanca_upd on public.%I;', t);
-    execute format('drop policy if exists palanca_del on public.%I;', t);
+
     execute format(
       'create policy palanca_sel on public.%I for select to authenticated using (usuario_id = auth.uid()::text);', t);
     execute format(
