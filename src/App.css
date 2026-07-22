@@ -117,14 +117,17 @@ main {
 /* ── Pantalla de acceso (Supabase Auth) ─────────────────────────────────────
    Lo primero que ve la gente: cuidada, oscura y futurista. */
 .acceso {
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
+  height: 100dvh;
+  overflow-y: auto; /* el body no hace scroll; esta pantalla sí, si es alta */
+  display: flex;
   padding: 24px 20px;
   animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .acceso-caja {
+  /* margin auto centra cuando cabe y, cuando el contenido es más alto que la
+     pantalla, se alinea arriba y permite hacer scroll (sin recortar el botón). */
+  margin: auto;
   width: 100%;
   max-width: 400px;
   padding: 28px 24px;
@@ -481,9 +484,12 @@ main {
 /* Onboarding */
 .onboarding {
   max-width: 440px;
-  margin: 60px auto;
-  padding: 0 20px;
+  margin: 0 auto;
+  padding: 48px 20px 60px;
   text-align: center;
+  /* El body no hace scroll; el onboarding (que puede ser alto) sí. */
+  height: 100dvh;
+  overflow-y: auto;
   animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
