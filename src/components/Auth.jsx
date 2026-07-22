@@ -3,6 +3,31 @@ import { emailValido } from '../lib/perfil'
 import { iniciarSesion, recuperarPassword, registrar, traducirErrorAuth } from '../lib/auth'
 import PoliticaPrivacidad from './PoliticaPrivacidad'
 
+// Botón de mostrar/ocultar contraseña (ojo).
+function BotonOjo({ mostrar, onToggle }) {
+  return (
+    <button
+      type="button"
+      className="acceso-ojo"
+      onClick={onToggle}
+      aria-label={mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+      aria-pressed={mostrar}
+    >
+      {mostrar ? (
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+          <line x1="1" y1="1" x2="23" y2="23" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      )}
+    </button>
+  )
+}
+
 // Pantalla de acceso: iniciar sesión / crear cuenta / recuperar contraseña.
 // Lo primero que ve la gente, así que cuidada y en la línea oscura de Palanca.
 export default function Auth() {
@@ -15,6 +40,7 @@ export default function Auth() {
   const [aviso, setAviso] = useState(null)
   const [consentimiento, setConsentimiento] = useState(false) // NO premarcada
   const [verPrivacidad, setVerPrivacidad] = useState(false)
+  const [mostrarPass, setMostrarPass] = useState(false)
 
   const emailOk = emailValido(email)
 
@@ -118,34 +144,40 @@ export default function Auth() {
           {modo !== 'recuperar' && (
             <>
               <label htmlFor="acceso-pass">Contraseña</label>
-              <input
-                id="acceso-pass"
-                type="password"
-                autoComplete={modo === 'registro' ? 'new-password' : 'current-password'}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value)
-                  if (error) setError(null)
-                }}
-                placeholder="Mínimo 6 caracteres"
-              />
+              <div className="acceso-pass-wrap">
+                <input
+                  id="acceso-pass"
+                  type={mostrarPass ? 'text' : 'password'}
+                  autoComplete={modo === 'registro' ? 'new-password' : 'current-password'}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    if (error) setError(null)
+                  }}
+                  placeholder="Mínimo 6 caracteres"
+                />
+                <BotonOjo mostrar={mostrarPass} onToggle={() => setMostrarPass((v) => !v)} />
+              </div>
             </>
           )}
 
           {modo === 'registro' && (
             <>
               <label htmlFor="acceso-pass2">Repite la contraseña</label>
-              <input
-                id="acceso-pass2"
-                type="password"
-                autoComplete="new-password"
-                value={password2}
-                onChange={(e) => {
-                  setPassword2(e.target.value)
-                  if (error) setError(null)
-                }}
-                placeholder="Repite la contraseña"
-              />
+              <div className="acceso-pass-wrap">
+                <input
+                  id="acceso-pass2"
+                  type={mostrarPass ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  value={password2}
+                  onChange={(e) => {
+                    setPassword2(e.target.value)
+                    if (error) setError(null)
+                  }}
+                  placeholder="Repite la contraseña"
+                />
+                <BotonOjo mostrar={mostrarPass} onToggle={() => setMostrarPass((v) => !v)} />
+              </div>
             </>
           )}
 
