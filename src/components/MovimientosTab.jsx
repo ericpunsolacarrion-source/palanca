@@ -49,6 +49,7 @@ export default function MovimientosTab({
   onGuardado,
   filtro,
   onLimpiarFiltro,
+  modoInicialRegistro,
 }) {
   const [sub, setSub] = useState('nuevo')
   const [filtroHist, setFiltroHist] = useState('todos')
@@ -130,7 +131,12 @@ export default function MovimientosTab({
       </div>
 
       {sub === 'nuevo' && (
-        <RegistroMovimiento usuarioId={usuarioId} movimientos={movimientos} onGuardado={onGuardado} />
+        <RegistroMovimiento
+          usuarioId={usuarioId}
+          movimientos={movimientos}
+          onGuardado={onGuardado}
+          modoInicial={modoInicialRegistro}
+        />
       )}
 
       {sub === 'recurrentes' && <Recurrentes usuarioId={usuarioId} onRegistrado={onGuardado} />}

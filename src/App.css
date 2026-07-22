@@ -563,6 +563,123 @@ main {
   color: var(--text-h);
 }
 
+/* Primer arranque guiado (usuario nuevo) */
+.primeros-pasos {
+  margin-bottom: var(--sp-4);
+  padding: 18px;
+  border-radius: var(--radio-l);
+  background:
+    linear-gradient(160deg, rgba(139, 92, 246, 0.16), rgba(34, 211, 238, 0.06)) padding-box,
+    var(--borde-brillo) border-box;
+  border: 1px solid transparent;
+  box-shadow: var(--sombra-card);
+}
+
+.pp-badge {
+  display: inline-block;
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+  color: var(--accent-2);
+  background: rgba(34, 211, 238, 0.12);
+  padding: 3px 9px;
+  border-radius: var(--radio-pastilla);
+}
+
+.pp-titulo {
+  margin: 10px 0 2px;
+  font-size: var(--fs-l);
+}
+
+.pp-sub {
+  margin: 0 0 14px;
+  font-size: var(--fs-s);
+  color: var(--text);
+  opacity: 0.9;
+}
+
+.pp-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pp-paso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+}
+
+.pp-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  color: transparent;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pp-paso.hecho {
+  opacity: 0.7;
+}
+
+.pp-paso.hecho .pp-check {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--ingreso), var(--accent-2));
+  color: #06121a;
+}
+
+.pp-paso.hecho .pp-texto {
+  text-decoration: line-through;
+  text-decoration-color: rgba(168, 173, 192, 0.5);
+}
+
+.pp-texto {
+  flex: 1;
+  font-size: var(--fs-s);
+  color: var(--text-h);
+}
+
+.pp-cta {
+  flex: none;
+  border: none;
+  border-radius: var(--radio-pastilla);
+  padding: 7px 14px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: #0a0b10;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.pp-cta:hover {
+  opacity: 0.92;
+}
+
+.pp-cta:active {
+  transform: scale(0.97);
+}
+
+.pp-animo {
+  margin: 12px 0 0;
+  font-size: var(--fs-s);
+  text-align: center;
+  color: var(--accent-2);
+}
+
 .onboarding-cuenta strong {
   color: var(--text-h);
 }

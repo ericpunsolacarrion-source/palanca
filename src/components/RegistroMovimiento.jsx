@@ -13,10 +13,10 @@ import GastosRapidos from './GastosRapidos'
 
 const TOAST_MODO = { gasto: 'Gasto guardado', ingreso: 'Ingreso guardado', inversion: 'Inversión guardada' }
 
-export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuardado }) {
+export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuardado, modoInicial }) {
   // modo: 'gasto' | 'ingreso' | 'inversion'. La inversión se guarda como
   // gasto + categoría "Inversion" (mismo registro que en la pantalla Inversión).
-  const [modo, setModo] = useState('gasto')
+  const [modo, setModo] = useState(modoInicial ?? 'gasto')
   const [categoriaId, setCategoriaId] = useState('')
   const [nuevaCategoria, setNuevaCategoria] = useState('')
   const [fuenteId, setFuenteId] = useState('')

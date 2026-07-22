@@ -4,6 +4,7 @@ import { useAuth } from './lib/useAuth'
 import { cerrarSesionAuth } from './lib/auth'
 import Auth from './components/Auth'
 import CuentaPanel from './components/CuentaPanel'
+import PrimerosPasos from './components/PrimerosPasos'
 import { obtenerPerfil, crearPerfil } from './lib/perfil'
 import { crearAjuste } from './lib/ajustes'
 import {
@@ -58,6 +59,7 @@ function App() {
   const [errorCarga, setErrorCarga] = useState(false)
   const [pestana, setPestana] = useState('dashboard')
   const [filtroMov, setFiltroMov] = useState(null) // tipo a filtrar en Movimientos
+  const [modoRegistro, setModoRegistro] = useState(null) // modo inicial del alta (primeros pasos)
   // Selector de periodo GLOBAL del dashboard (clave 'YYYY-MM'). Gobierna a la vez
   // métricas, tasa de ahorro, categorías y evolución. Por defecto, el mes actual.
   const [mesDashboard, setMesDashboard] = useState(claveMesActual())
@@ -66,11 +68,19 @@ function App() {
   // salvo cuando se llega expresamente con uno (verMovimientos).
   const irAPestana = useCallback((destino) => {
     setFiltroMov(null)
+    setModoRegistro(null)
     setPestana(destino)
   }, [])
 
   const verMovimientos = useCallback((tipo) => {
     setFiltroMov(tipo)
+    setPestana('movimientos')
+  }, [])
+
+  // Ir a registrar un movimiento con un modo ya seleccionado (primeros pasos).
+  const irARegistrar = useCallback((modo) => {
+    setFiltroMov(null)
+    setModoRegistro(modo)
     setPestana('movimientos')
   }, [])
 
@@ -221,6 +231,11 @@ function App() {
         {pestana === 'dashboard' && (
           <div key="dashboard" className="vista">
             {perfil.nombre && <p className="saludo-usuario">Hola, {perfil.nombre} 👋</p>}
+            <PrimerosPasos
+              nombre={perfil.nombre}
+              movimientos={movimientos}
+              onRegistrar={irARegistrar}
+            />
             {'email' in perfil && !perfil.email && (
               /* Solo se ofrece cuando la columna email ya existe en la BD */
               <CapturaEmail
@@ -293,6 +308,7 @@ function App() {
             onGuardado={cargarMovimientos}
             filtro={filtroMov}
             onLimpiarFiltro={() => setFiltroMov(null)}
+            modoInicialRegistro={modoRegistro}
           />
         )}
 
