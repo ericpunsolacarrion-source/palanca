@@ -180,8 +180,8 @@ function App() {
     return (
       <Onboarding
         emailInicial={session?.user?.email}
-        onCompletar={async (objetivo, email, saldoInicial, anioNacimiento) => {
-          const nuevoPerfil = await crearPerfil(usuarioId, objetivo, email, anioNacimiento)
+        onCompletar={async (objetivo, email, saldoInicial, anioNacimiento, nombre) => {
+          const nuevoPerfil = await crearPerfil(usuarioId, objetivo, email, anioNacimiento, nombre)
           if (nuevoPerfil) {
             // Saldo líquido de partida como movimiento de ajuste (bolsa de liquidez).
             if (saldoInicial > 0) {
@@ -220,6 +220,7 @@ function App() {
 
         {pestana === 'dashboard' && (
           <div key="dashboard" className="vista">
+            {perfil.nombre && <p className="saludo-usuario">Hola, {perfil.nombre} 👋</p>}
             {'email' in perfil && !perfil.email && (
               /* Solo se ofrece cuando la columna email ya existe en la BD */
               <CapturaEmail

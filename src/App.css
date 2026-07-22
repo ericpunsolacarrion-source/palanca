@@ -504,6 +504,10 @@ main {
   margin-top: var(--sp-5);
 }
 
+.onboarding-nombre {
+  margin-top: var(--sp-5);
+}
+
 .onboarding-cuenta {
   display: block;
   padding: 12px;
@@ -512,6 +516,14 @@ main {
   background: var(--card-bg);
   font-size: var(--fs-s);
   color: var(--text);
+}
+
+/* Saludo personalizado en el dashboard */
+.saludo-usuario {
+  margin: 0 0 4px;
+  font-size: var(--fs-m);
+  font-weight: 600;
+  color: var(--text-h);
 }
 
 .onboarding-cuenta strong {

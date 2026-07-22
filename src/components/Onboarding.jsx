@@ -13,6 +13,7 @@ export default function Onboarding({ onCompletar, emailInicial }) {
   // se vuelve a pedir (era lo que bloqueaba el paso a la app).
   const cuentaAuth = Boolean(emailInicial)
   const [seleccion, setSeleccion] = useState(null)
+  const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState(emailInicial ?? '')
   const [anioNacimiento, setAnioNacimiento] = useState('')
   const [saldoInicial, setSaldoInicial] = useState('')
@@ -44,6 +45,7 @@ export default function Onboarding({ onCompletar, emailInicial }) {
         email,
         Number.isFinite(saldo) && saldo > 0 ? saldo : 0,
         anio,
+        nombre.trim() || null,
       )
       // Si sale bien, este componente se desmonta; si no, reactivamos el botón.
       if (!ok) {
@@ -60,6 +62,21 @@ export default function Onboarding({ onCompletar, emailInicial }) {
   return (
     <div className="onboarding">
       <h1>Bienvenido a Palanca</h1>
+
+      <div className="onboarding-email onboarding-nombre">
+        <label htmlFor="nombre-onboarding">¿Cómo te llamas?</label>
+        <input
+          id="nombre-onboarding"
+          type="text"
+          autoComplete="given-name"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          placeholder="ej. Eric"
+          autoFocus
+        />
+        <p className="ayuda-mini">Para saludarte por tu nombre. Podrás cambiarlo cuando quieras.</p>
+      </div>
+
       <p className="ayuda">¿Cuál es tu objetivo principal ahora mismo?</p>
 
       <div className="opciones-objetivo">
