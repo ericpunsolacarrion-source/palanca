@@ -331,6 +331,9 @@ function App() {
       {verCuenta && (
         <CuentaPanel
           email={session?.user?.email ?? ''}
+          perfil={perfil}
+          usuarioId={usuarioId}
+          onPerfilActualizado={(p) => setPerfil(p)}
           onCerrar={() => setVerCuenta(false)}
           onCerrarSesion={() => {
             setVerCuenta(false)

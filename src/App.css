@@ -395,6 +395,37 @@ main {
   margin: 0 0 16px;
 }
 
+.cuenta-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.cuenta-form label {
+  font-size: var(--fs-xs);
+  opacity: 0.8;
+  margin-top: 6px;
+}
+
+.cuenta-form input {
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-s);
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: var(--fs-base);
+}
+
+.cuenta-guardar {
+  margin-top: 12px;
+}
+
+.cuenta-guardar:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .cuenta-boton {
   width: 100%;
   padding: 11px;
