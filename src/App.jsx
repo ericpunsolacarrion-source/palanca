@@ -231,11 +231,13 @@ function App() {
         {pestana === 'dashboard' && (
           <div key="dashboard" className="vista">
             {perfil.nombre && <p className="saludo-usuario">Hola, {perfil.nombre} 👋</p>}
-            <PrimerosPasos
-              nombre={perfil.nombre}
-              movimientos={movimientos}
-              onRegistrar={irARegistrar}
-            />
+            {!cargando && (
+              <PrimerosPasos
+                nombre={perfil.nombre}
+                movimientos={movimientos}
+                onRegistrar={irARegistrar}
+              />
+            )}
             {'email' in perfil && !perfil.email && (
               /* Solo se ofrece cuando la columna email ya existe en la BD */
               <CapturaEmail
@@ -243,58 +245,64 @@ function App() {
                 onGuardado={(email) => setPerfil({ ...perfil, email })}
               />
             )}
-            <RecordatorioBanner
-              dias={diasDesdeUltimoMovimiento}
-              onIrAMovimientos={() => irAPestana('movimientos')}
-            />
-            {/* Orden por importancia: primero el periodo y lo del mes elegido
-                (métricas + tasa de ahorro), luego lo conseguido (bolsas y
-                patrimonio) y el resto de gráficos del periodo. La proyección de
-                futuro baja: es valiosa pero no prioritaria. */}
-            <PeriodoSelector meses={mesesRango} valor={mesActivoDash} onCambiar={setMesDashboard} />
-            <MetricasPrincipales
-              usuarioId={usuarioId}
-              movimientos={movimientosPeriodo}
-              historico={movimientos}
-              etiquetaPeriodo={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
-              esMesActual={esMesActual}
-              onVerMovimientos={verMovimientos}
-            />
-            <Patrimonio
-              usuarioId={usuarioId}
-              movimientos={movimientos}
-              onGuardado={cargarMovimientos}
-              onVerInversion={() => irAPestana('inversiones')}
-            />
-            <GraficoTasaAhorro movimientos={movimientos} mesFin={mesActivoDash} />
-            <GraficoCategorias
-              movimientos={movimientosPeriodo}
-              etiqueta={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
-            />
-            <GraficoEvolucion movimientos={movimientos} mesFin={mesActivoDash} />
-            <Comparativas movimientos={movimientos} />
-            <Logros usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
-            {pildoraDash && (
-              <Pildora
-                key={pildoraDash.id}
-                usuarioId={usuarioId}
-                pildora={pildoraDash}
-                firma={firmaPildoras}
-                onCta={irAPestana}
-                onDescartar={() => setDescartesPildora((n) => n + 1)}
-              />
+            {/* Sin ningún movimiento, el dashboard solo muestra el arranque
+                guiado (nada de muros de ceros). Con datos, el dashboard completo. */}
+            {movimientos.length > 0 && (
+              <>
+                <RecordatorioBanner
+                  dias={diasDesdeUltimoMovimiento}
+                  onIrAMovimientos={() => irAPestana('movimientos')}
+                />
+                {/* Orden por importancia: primero el periodo y lo del mes elegido
+                    (métricas + tasa de ahorro), luego lo conseguido (bolsas y
+                    patrimonio) y el resto de gráficos del periodo. La proyección de
+                    futuro baja: es valiosa pero no prioritaria. */}
+                <PeriodoSelector meses={mesesRango} valor={mesActivoDash} onCambiar={setMesDashboard} />
+                <MetricasPrincipales
+                  usuarioId={usuarioId}
+                  movimientos={movimientosPeriodo}
+                  historico={movimientos}
+                  etiquetaPeriodo={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
+                  esMesActual={esMesActual}
+                  onVerMovimientos={verMovimientos}
+                />
+                <Patrimonio
+                  usuarioId={usuarioId}
+                  movimientos={movimientos}
+                  onGuardado={cargarMovimientos}
+                  onVerInversion={() => irAPestana('inversiones')}
+                />
+                <GraficoTasaAhorro movimientos={movimientos} mesFin={mesActivoDash} />
+                <GraficoCategorias
+                  movimientos={movimientosPeriodo}
+                  etiqueta={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
+                />
+                <GraficoEvolucion movimientos={movimientos} mesFin={mesActivoDash} />
+                <Comparativas movimientos={movimientos} />
+                <Logros usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
+                {pildoraDash && (
+                  <Pildora
+                    key={pildoraDash.id}
+                    usuarioId={usuarioId}
+                    pildora={pildoraDash}
+                    firma={firmaPildoras}
+                    onCta={irAPestana}
+                    onDescartar={() => setDescartesPildora((n) => n + 1)}
+                  />
+                )}
+                <ProyeccionFuturo
+                  movimientos={movimientos}
+                  onIrARegistro={() => irAPestana('movimientos')}
+                />
+                <h2 className="subtitulo-seccion">Últimos movimientos</h2>
+                <ListaMovimientos
+                  movimientos={movimientos.slice(0, 5)}
+                  cargando={cargando}
+                  soloLectura
+                  onIrARegistro={() => irAPestana('movimientos')}
+                />
+              </>
             )}
-            <ProyeccionFuturo
-              movimientos={movimientos}
-              onIrARegistro={() => irAPestana('movimientos')}
-            />
-            {movimientos.length > 0 && <h2 className="subtitulo-seccion">Últimos movimientos</h2>}
-            <ListaMovimientos
-              movimientos={movimientos.slice(0, 5)}
-              cargando={cargando}
-              soloLectura
-              onIrARegistro={() => irAPestana('movimientos')}
-            />
           </div>
         )}
 
