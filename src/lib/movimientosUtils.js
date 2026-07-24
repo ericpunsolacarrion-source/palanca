@@ -142,6 +142,28 @@ export function ultimaReconciliacion(movimientos) {
   return ultima
 }
 
+// Liquidez y patrimonio CONSOLIDADOS (para los logros de stock): nunca inflados
+// por el mes en curso. Un ingreso recién registrado dispara la liquidez teórica,
+// pero eso todavía no es dinero consolidado. Cuentan solo:
+//   (a) todos los meses ya cerrados, y
+//   (b) los movimientos del mes en curso que ya estaban registrados en la última
+//       reconciliación (ahí el saldo es un hecho verificado por el usuario).
+// Lo registrado en el mes en curso DESPUÉS de reconciliar —o todo el mes en
+// curso si nunca se reconció— queda fuera. Así un logro de liquidez/patrimonio
+// solo se celebra cuando es verdad: al cerrar el mes o al reconciliar. Misma
+// fuente y misma regla que bolsas().
+export function bolsasConsolidadas(movimientos) {
+  const mesActual = claveMesActual()
+  const corte = ultimaReconciliacion(movimientos) // ISO del último ajuste, o null
+  const consolidados = movimientos.filter((m) => {
+    if (claveMes(m.fecha) !== mesActual) return true // meses cerrados: siempre
+    if (!corte) return false // mes en curso sin reconciliar: no consolidado
+    const cuando = m.created_at || m.fecha
+    return cuando <= corte // registrado hasta la reconciliación: verificado
+  })
+  return bolsas(consolidados)
+}
+
 // Agrega por mes los últimos N meses terminando en `claveFin` (por defecto el
 // mes actual). Meses sin datos quedan a cero.
 export function agregarPorMes(movimientos, n, claveFin) {
