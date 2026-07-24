@@ -35,12 +35,13 @@ create table if not exists public.recurrentes_confirmaciones (
 
 -- 3) Gastos rápidos ----------------------------------------------------------
 create table if not exists public.gastos_rapidos (
-  id             uuid primary key default gen_random_uuid(),
-  usuario_id     text not null,
-  nombre         text not null,
-  importe        numeric,
-  categoria      text,
-  created_at     timestamptz not null default now()
+  id               uuid primary key default gen_random_uuid(),
+  usuario_id       text not null,
+  nombre           text not null,
+  importe          numeric,
+  categoria_id     uuid,
+  categoria_nombre text,
+  created_at       timestamptz not null default now()
 );
 
 -- 4) Escenarios de simulador (independencia financiera, etc.) ----------------
