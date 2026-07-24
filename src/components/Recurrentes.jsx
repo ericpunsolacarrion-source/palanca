@@ -265,7 +265,7 @@ function FilaHecha({ rec }) {
 }
 
 export default function Recurrentes({ usuarioId, onRegistrado }) {
-  const { items, crear, actualizar, eliminar, marcarAplicado } = useRecurrentes(usuarioId)
+  const { items, cargando, crear, actualizar, eliminar, marcarAplicado } = useRecurrentes(usuarioId)
   const { items: categoriasGasto } = useEtiquetas('categorias', usuarioId, 'gasto')
   const { items: categoriasIngreso } = useEtiquetas('categorias', usuarioId, 'ingreso')
   const [creando, setCreando] = useState(false)
@@ -342,7 +342,10 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
 
       <div className="rec-gestion">
         <span className="balance-etiqueta-principal">Configurar recurrentes</span>
-        {items.length === 0 && !creando && (
+        {cargando && items.length === 0 && (
+          <div className="skeleton skeleton-linea" style={{ width: '70%', height: 32 }} />
+        )}
+        {!cargando && items.length === 0 && !creando && (
           <p className="ayuda">Aún no tienes recurrentes. Crea el primero abajo.</p>
         )}
         {items.map((rec) =>
