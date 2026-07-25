@@ -67,7 +67,7 @@ export default function MetricasPrincipales({
       {/* Lo que entra: una línea fina con cobrado este mes + media (contexto). */}
       <div className="ingresos-linea">
         <span className="il-bloque">
-          <span className="il-label">{esMesActual ? 'Este mes' : etiquetaPeriodo}</span>
+          <span className="il-label">{esMesActual ? 'Ingresos este mes' : `Ingresos ${etiquetaPeriodo}`}</span>
           <strong className="ingreso">{formatearEuros(totalIngresos)}</strong>
         </span>
         {media > 0 && mediaIngresos.meses >= 2 && (

@@ -213,8 +213,17 @@ function App() {
     <div className="app">
       <header className="app-header">
         <h1>Palanca</h1>
-        <button className="link" onClick={() => setVerCuenta(true)}>
-          Cuenta ({session?.user?.email ?? ''})
+        <button
+          className="app-cuenta"
+          onClick={() => setVerCuenta(true)}
+          aria-label={`Tu cuenta${session?.user?.email ? ` (${session.user.email})` : ''}`}
+          title={session?.user?.email ?? 'Tu cuenta'}
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
+          </svg>
+          Cuenta
         </button>
       </header>
 

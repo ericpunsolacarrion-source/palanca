@@ -34,6 +34,32 @@
   padding: 0;
 }
 
+/* Botón de cuenta en la cabecera: compacto y sin el email inline (que se
+   apretaba en móvil); el email se muestra dentro del panel de cuenta. */
+.app-cuenta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-2, var(--accent-2));
+  font-size: 13px;
+  padding: 6px 12px;
+  line-height: 1;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.app-cuenta:hover {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+
+.app-cuenta svg {
+  opacity: 0.85;
+}
+
 main {
   padding: 16px;
   flex: 1;
