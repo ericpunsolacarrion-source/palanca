@@ -130,6 +130,18 @@ export function bolsas(movimientos) {
   }
 }
 
+// Valor actual de la bolsa que sigue un objetivo de ahorro, según su tipo.
+// Fuente única del progreso de objetivos (UI, logros y resumen para la IA):
+//  - inversion  → bolsa de inversión
+//  - patrimonio → patrimonio total
+//  - liquidez (por defecto) → bolsa de liquidez
+// Recibe el resultado de bolsas() para no recalcularlo por cada objetivo.
+export function valorBolsaPorTipo(bolsasCalc, tipo) {
+  if (tipo === 'inversion') return bolsasCalc.bolsaInversion
+  if (tipo === 'patrimonio') return bolsasCalc.patrimonio
+  return bolsasCalc.bolsaLiquidez
+}
+
 // Fecha (ISO) del último ajuste de saldo registrado, o null si nunca se ha
 // reconciliado. Sirve para el indicador de fiabilidad de la liquidez.
 export function ultimaReconciliacion(movimientos) {

@@ -1,4 +1,4 @@
-import { agregarPorMes, bolsas, bolsasConsolidadas, totalesDe } from './movimientosUtils'
+import { agregarPorMes, bolsas, bolsasConsolidadas, totalesDe, valorBolsaPorTipo } from './movimientosUtils'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sistema de logros por niveles, fácilmente ampliable: cada logro es una
@@ -101,13 +101,18 @@ function mesesSeguidosAhorrando(movimientos) {
 export function calcularMetricas({ movimientos, movimientosMes, objetivoInversion = 0, objetivos = [] }) {
   const totalMes = totalesDe(movimientosMes)
   // Inversión: al instante (cada aportación es un hecho, no depende del mes).
-  const { bolsaInversion } = bolsas(movimientos)
+  const bolsasFull = bolsas(movimientos)
+  const { bolsaInversion } = bolsasFull
   // Liquidez y patrimonio: solo sobre datos consolidados (meses cerrados o saldo
   // reconciliado), nunca inflados por un ingreso del mes en curso.
   const { bolsaLiquidez, patrimonio } = bolsasConsolidadas(movimientos)
-  const objetivosCompletados = objetivos.filter(
-    (o) => Number(o.importe_actual) >= Number(o.importe_objetivo),
-  ).length
+  // Objetivo cumplido = la bolsa que sigue el objetivo (según su tipo) alcanza la
+  // meta. Se deriva de la misma bolsa que muestra la UI, no del campo
+  // importe_actual (vestigial, siempre 0), para que logro y pantalla coincidan.
+  const objetivosCompletados = objetivos.filter((o) => {
+    const meta = Number(o.importe_objetivo)
+    return meta > 0 && valorBolsaPorTipo(bolsasFull, o.tipo || 'liquidez') >= meta
+  }).length
 
   return {
     // Familias de stock (dos bolsas): liquidez, inversión y patrimonio total.

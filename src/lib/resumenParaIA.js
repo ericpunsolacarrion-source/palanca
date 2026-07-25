@@ -1,11 +1,13 @@
 import { esInversion } from './categorias'
 import {
   agregarPorMes,
+  bolsas,
   claveMesActual,
   estimacionGastoMensual,
   filtrarMesActual,
   resumenMensualMedio,
   totalesDe,
+  valorBolsaPorTipo,
 } from './movimientosUtils'
 
 // Construye un resumen ESTRUCTURADO y compacto de la situación financiera del
@@ -63,7 +65,9 @@ export function construirResumenIA(movimientos, { objetivos = [], objetivo } = {
     objetivosAhorro: objetivos.map((o) => ({
       nombre: o.nombre,
       objetivo: Math.round(Number(o.importe_objetivo)),
-      actual: Math.round(Number(o.importe_actual)),
+      // Progreso real según la bolsa que sigue el objetivo (liquidez/inversión/
+      // patrimonio), no el campo importe_actual (vestigial, siempre 0).
+      actual: Math.round(valorBolsaPorTipo(bolsas(movimientos), o.tipo || 'liquidez')),
       fecha: o.fecha_objetivo ?? null,
     })),
   }

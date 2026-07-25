@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { formatearEuros } from '../../lib/categorias'
-import { bolsas, hoyIso, ritmoMensualPorTipo } from '../../lib/movimientosUtils'
+import { bolsas, hoyIso, ritmoMensualPorTipo, valorBolsaPorTipo } from '../../lib/movimientosUtils'
 import { useObjetivosAhorro } from '../../lib/useObjetivosAhorro'
 import { TIPOS_OBJETIVO, useObjetivoTipo } from '../../lib/useObjetivoTipo'
 import { toast } from '../../lib/toast'
@@ -170,9 +170,8 @@ export default function AhorroObjetivo({ usuarioId, movimientos = [] }) {
   const [editandoId, setEditandoId] = useState(null)
   const [guardando, setGuardando] = useState(false)
 
-  const { bolsaLiquidez, bolsaInversion, patrimonio } = useMemo(() => bolsas(movimientos), [movimientos])
-  const valorBolsa = (tipo) =>
-    tipo === 'inversion' ? bolsaInversion : tipo === 'patrimonio' ? patrimonio : bolsaLiquidez
+  const bolsasCalc = useMemo(() => bolsas(movimientos), [movimientos])
+  const valorBolsa = (tipo) => valorBolsaPorTipo(bolsasCalc, tipo)
 
   // Ritmo mensual según el tipo de objetivo (ahorro líquido / inversión /
   // patrimonio): cada uno crece a un ritmo distinto. Fuente única.
