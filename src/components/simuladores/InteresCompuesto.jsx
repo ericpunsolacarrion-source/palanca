@@ -4,13 +4,18 @@ import { proyectarInteresCompuesto } from '../../lib/movimientosUtils'
 import SimulacionesGuardadas from '../SimulacionesGuardadas'
 import InputImporte from '../InputImporte'
 
-// Usa la fórmula única de movimientosUtils; el toggle "al principio del mes"
-// aplica un mes extra de interés sobre esa base.
+// Usa la fórmula única de movimientosUtils (aportación a FIN de mes). Para el
+// modo "al principio de mes" (renta anticipada), SOLO las aportaciones mensuales
+// ganan un periodo extra de interés, no el capital inicial: por eso se separa el
+// término del inicial y se aplica (1+r) únicamente a las mensuales.
 function valorFinal(inicial, mensual, tasaMensual, meses, alPrincipio) {
   const anios = meses / 12
   const rentabilidadAnual = tasaMensual * 12 * 100
   const base = proyectarInteresCompuesto({ inicial, mensual, anios, rentabilidadAnual }).valorFinal
-  return alPrincipio && tasaMensual !== 0 ? base * (1 + tasaMensual) - mensual : base
+  if (!alPrincipio || tasaMensual === 0) return base
+  const inicialFV = inicial * Math.pow(1 + tasaMensual, meses) // valor futuro del capital inicial
+  const mensualesFV = base - inicialFV // valor futuro de las aportaciones (fin de mes)
+  return inicialFV + mensualesFV * (1 + tasaMensual)
 }
 
 export default function InteresCompuesto({ usuarioId }) {

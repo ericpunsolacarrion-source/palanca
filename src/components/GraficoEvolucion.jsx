@@ -51,8 +51,16 @@ export default function GraficoEvolucion({ movimientos, mesFin }) {
             aria-label={`${m.etiqueta}: ingresos ${formatearEuros(m.ingresos)}, gastos ${formatearEuros(m.gastos)}`}
           >
             <div className="grafico-par" style={{ height: ALTURA }}>
-              <div className="barra ingreso" style={{ height: `${(m.ingresos / maximo) * 100}%` }} />
-              <div className="barra gasto" style={{ height: `${(m.gastos / maximo) * 100}%` }} />
+              {/* Altura mínima para que un importe pequeño junto a uno grande no
+                  desaparezca; los meses a cero sí quedan sin barra. */}
+              <div
+                className="barra ingreso"
+                style={{ height: m.ingresos > 0 ? `max(3px, ${(m.ingresos / maximo) * 100}%)` : 0 }}
+              />
+              <div
+                className="barra gasto"
+                style={{ height: m.gastos > 0 ? `max(3px, ${(m.gastos / maximo) * 100}%)` : 0 }}
+              />
             </div>
             <span className="grafico-etiqueta">{m.etiqueta}</span>
           </button>
