@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
 import { useAuth } from './lib/useAuth'
 import { cerrarSesionAuth } from './lib/auth'
@@ -18,7 +18,6 @@ import {
 } from './lib/movimientosUtils'
 import Onboarding from './components/Onboarding'
 import CapturaEmail from './components/CapturaEmail'
-import MovimientosTab from './components/MovimientosTab'
 import ListaMovimientos from './components/ListaMovimientos'
 import MetricasPrincipales from './components/MetricasPrincipales'
 import Comparativas from './components/Comparativas'
@@ -26,10 +25,6 @@ import Pildora from './components/Pildora'
 import ProyeccionFuturo from './components/ProyeccionFuturo'
 import { pildorasDashboard, elegirPildora, firmaDatos, limpiarPildoras } from './lib/pildoras'
 import { usePresupuesto } from './lib/usePresupuesto'
-import Simulador from './components/Simulador'
-import Presupuesto from './components/Presupuesto'
-import PlanificacionFutura from './components/PlanificacionFutura'
-import Inversiones from './components/Inversiones'
 import RecordatorioBanner from './components/RecordatorioBanner'
 import GraficoEvolucion from './components/GraficoEvolucion'
 import GraficoCategorias from './components/GraficoCategorias'
@@ -41,8 +36,22 @@ import Confirmador from './components/Confirmador'
 import Hitos from './components/Hitos'
 import Logros from './components/Logros'
 import Patrimonio from './components/Patrimonio'
-import Consultor from './components/Consultor'
 import './App.css'
+
+// Pestañas no iniciales cargadas bajo demanda (code-splitting): aligeran el
+// arranque del dashboard. Cada una se descarga al entrar en su pestaña.
+const MovimientosTab = lazy(() => import('./components/MovimientosTab'))
+const Presupuesto = lazy(() => import('./components/Presupuesto'))
+const PlanificacionFutura = lazy(() => import('./components/PlanificacionFutura'))
+const Inversiones = lazy(() => import('./components/Inversiones'))
+const Simulador = lazy(() => import('./components/Simulador'))
+const Consultor = lazy(() => import('./components/Consultor'))
+
+const CargandoVista = () => (
+  <div className="vista" aria-busy="true">
+    <div className="skeleton skeleton-linea" style={{ height: 120 }} />
+  </div>
+)
 
 const MS_POR_DIA = 1000 * 60 * 60 * 24
 
@@ -315,6 +324,7 @@ function App() {
           </div>
         )}
 
+        <Suspense fallback={<CargandoVista />}>
         {pestana === 'movimientos' && (
           <MovimientosTab
             key="movimientos"
@@ -356,6 +366,7 @@ function App() {
             diasConHistorial={diasConHistorial}
           />
         )}
+        </Suspense>
       </main>
 
       <BottomNav activa={pestana} onCambiar={irAPestana} />
@@ -375,7 +386,9 @@ function App() {
         />
       )}
       <Hitos usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
-      <Consultor movimientos={movimientos} objetivo={{ texto: perfil.objetivo, usuarioId }} />
+      <Suspense fallback={null}>
+        <Consultor movimientos={movimientos} objetivo={{ texto: perfil.objetivo, usuarioId }} />
+      </Suspense>
     </div>
   )
 }
