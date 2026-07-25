@@ -305,7 +305,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
       />
 
       <div className="fila-fecha-fijo">
-        <InputFecha id="fecha" value={fecha} onChange={setFecha} />
+        <InputFecha id="fecha" value={fecha} onChange={setFecha} max={hoyIso()} />
         {!esInversion && (
           <div className="tipo-toggle">
             <button type="button" className={!esFijo ? 'activo' : ''} onClick={() => setEsFijo(false)}>

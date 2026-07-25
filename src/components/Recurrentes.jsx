@@ -215,7 +215,7 @@ function FilaChecklist({ rec, hoyDia, registrando, onRegistrar }) {
             </label>
             <label className="rec-cl-campo">
               <span>Fecha</span>
-              <InputFecha value={fecha} onChange={setFecha} />
+              <InputFecha value={fecha} onChange={setFecha} max={hoyIso()} />
             </label>
           </div>
           <div className="rec-cl-form-acc">

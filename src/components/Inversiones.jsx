@@ -357,6 +357,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
           id="fecha-inversion"
           type="date"
           value={fecha}
+          max={hoyIso()}
           onChange={(e) => setFecha(e.target.value)}
         />
 
@@ -408,7 +409,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
                   editando === d.id ? (
                     <div key={d.id} className="edicion-movimiento">
                       <InputImporte value={importeEdit} onValueChange={setImporteEdit} />
-                      <input type="date" value={fechaEdit} onChange={(e) => setFechaEdit(e.target.value)} />
+                      <input type="date" value={fechaEdit} max={hoyIso()} onChange={(e) => setFechaEdit(e.target.value)} />
                       <div className="edicion-acciones">
                         <button type="button" className="btn-eliminar" onClick={() => setEditando(null)}>
                           Cancelar

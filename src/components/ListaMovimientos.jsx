@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { esInversion, formatearEuros } from '../lib/categorias'
-import { claveMes, claveMesActual, formatearFecha, totalesDe } from '../lib/movimientosUtils'
+import { claveMes, claveMesActual, formatearFecha, hoyIso, totalesDe } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
@@ -50,7 +50,7 @@ function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
       />
 
       <label htmlFor={`fecha-${movimiento.id}`}>Fecha</label>
-      <InputFecha id={`fecha-${movimiento.id}`} value={fecha} onChange={setFecha} />
+      <InputFecha id={`fecha-${movimiento.id}`} value={fecha} onChange={setFecha} max={hoyIso()} />
 
       <div className="tipo-toggle">
         <button type="button" className={!esFijo ? 'activo' : ''} onClick={() => setEsFijo(false)}>

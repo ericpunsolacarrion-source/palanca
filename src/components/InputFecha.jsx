@@ -18,9 +18,13 @@ function aIso(texto) {
   return iso
 }
 
-export default function InputFecha({ id, value, onChange }) {
+export default function InputFecha({ id, value, onChange, max }) {
   const [texto, setTexto] = useState(() => (value ? formatearFecha(value) : ''))
   const dateRef = useRef(null)
+
+  // Válida = formato correcto y, si hay tope (`max` ISO), no posterior a él.
+  // Comparar 'yyyy-mm-dd' como cadena es equivalente al orden cronológico.
+  const valida = (iso) => !!iso && (!max || iso <= max)
 
   function abrirCalendario() {
     const el = dateRef.current
@@ -46,13 +50,13 @@ export default function InputFecha({ id, value, onChange }) {
     const t = e.target.value
     setTexto(t)
     const iso = aIso(t)
-    if (iso) onChange(iso)
+    if (valida(iso)) onChange(iso)
   }
 
-  // Al salir del campo, si el texto no es una fecha válida, se restaura el
-  // último valor bueno para no dejar basura.
+  // Al salir del campo, si el texto no es una fecha válida (o supera el tope),
+  // se restaura el último valor bueno para no dejar basura.
   function onBlur() {
-    if (!aIso(texto)) setTexto(value ? formatearFecha(value) : '')
+    if (!valida(aIso(texto))) setTexto(value ? formatearFecha(value) : '')
   }
 
   return (
@@ -84,7 +88,8 @@ export default function InputFecha({ id, value, onChange }) {
         ref={dateRef}
         type="date"
         value={value || ''}
-        onChange={(e) => e.target.value && onChange(e.target.value)}
+        max={max}
+        onChange={(e) => e.target.value && valida(e.target.value) && onChange(e.target.value)}
         className="input-fecha-nativo"
         tabIndex={-1}
         aria-hidden="true"
