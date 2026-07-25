@@ -64,10 +64,10 @@ export default function IndependenciaFinanciera({ usuarioId, gastoMensualActual,
 
   // Escenarios + (opcionalmente) el actual, con su resultado, para comparar.
   const filasComparar = escenarios.map((e) => ({ ...e, ...calcularIF(e) }))
-  const mejorMeses = Math.min(
-    ...filasComparar.map((f) => (typeof f.meses === 'number' ? f.meses : Infinity)),
-    Infinity,
-  )
+  // Solo cuentan escenarios ALCANZABLES (meses finitos): así "No alcanzable"
+  // (Infinity) nunca se resalta como el mejor. null = sin datos suficientes.
+  const mesesAlcanzables = filasComparar.map((f) => f.meses).filter((m) => Number.isFinite(m))
+  const mejorMeses = mesesAlcanzables.length > 0 ? Math.min(...mesesAlcanzables) : null
 
   function guardarEscenario() {
     if (!puedeCalcular) return
@@ -176,7 +176,7 @@ export default function IndependenciaFinanciera({ usuarioId, gastoMensualActual,
               </thead>
               <tbody>
                 {filasComparar.map((f) => (
-                  <tr key={f.id} className={typeof f.meses === 'number' && f.meses === mejorMeses ? 'mejor' : ''}>
+                  <tr key={f.id} className={mejorMeses !== null && f.meses === mejorMeses ? 'mejor' : ''}>
                     <td>
                       <button type="button" className="if-cargar" onClick={() => cargarEscenario(f)}>
                         {f.nombre}
