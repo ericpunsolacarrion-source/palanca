@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import { claveMesActual } from './movimientosUtils'
+import { toast } from './toast'
 
 // Recurrentes del usuario (alquiler, nómina, suscripción…), persistidos en
 // Supabase (tabla `recurrentes` + `recurrentes_confirmaciones` para la racha).
@@ -160,7 +161,7 @@ export function useRecurrentes(usuarioId) {
       if (!error) {
         await cargar()
         notificar()
-      }
+      } else toast('No se ha podido guardar el recurrente.', 'error')
     },
     [usuarioId, cargar],
   )
@@ -187,7 +188,7 @@ export function useRecurrentes(usuarioId) {
       if (!error) {
         await cargar()
         notificar()
-      }
+      } else toast('No se ha podido actualizar el recurrente.', 'error')
     },
     [cargar],
   )
@@ -198,7 +199,7 @@ export function useRecurrentes(usuarioId) {
       if (!error) {
         await cargar()
         notificar()
-      }
+      } else toast('No se ha podido eliminar el recurrente.', 'error')
     },
     [cargar],
   )

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import { toast } from './toast'
 
 // Accesos rápidos de gasto definidos por el usuario (café 1,50 €, comer 12 €…).
 // Persistidos en Supabase (tabla `gastos_rapidos`) para que viajen con la cuenta.
@@ -92,6 +93,7 @@ export function useGastosRapidos(usuarioId) {
         categoria_nombre: categoriaNombre ?? null,
       })
       if (!error) await cargar()
+      else toast('No se ha podido crear el acceso rápido.', 'error')
     },
     [usuarioId, cargar],
   )
@@ -111,6 +113,7 @@ export function useGastosRapidos(usuarioId) {
       if (Object.keys(fila).length === 0) return
       const { error } = await supabase.from('gastos_rapidos').update(fila).eq('id', id)
       if (!error) await cargar()
+      else toast('No se ha podido actualizar el acceso rápido.', 'error')
     },
     [cargar],
   )
@@ -119,6 +122,7 @@ export function useGastosRapidos(usuarioId) {
     async (id) => {
       const { error } = await supabase.from('gastos_rapidos').delete().eq('id', id)
       if (!error) await cargar()
+      else toast('No se ha podido eliminar el acceso rápido.', 'error')
     },
     [cargar],
   )

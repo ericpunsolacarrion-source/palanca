@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import { toast } from './toast'
 
 // Tipo de bolsa que sigue cada objetivo: 'liquidez' | 'inversion' | 'patrimonio'.
 // Persistido en la columna `objetivos_ahorro.tipo`. Migra una sola vez el mapa
@@ -79,9 +80,13 @@ export function useObjetivoTipo(usuarioId) {
         if (usuarioId) localStorage.setItem(claveLS(usuarioId), JSON.stringify(nuevo))
         return
       }
-      await supabase.from('objetivos_ahorro').update({ tipo }).eq('id', id)
+      const { error } = await supabase.from('objetivos_ahorro').update({ tipo }).eq('id', id)
+      if (error) {
+        toast('No se ha podido guardar el tipo de objetivo.', 'error')
+        cargar() // revierte el cambio optimista al estado real de la BD
+      }
     },
-    [usuarioId, legacy],
+    [usuarioId, legacy, cargar],
   )
 
   return { tipoDe, fijarTipo }

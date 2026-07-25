@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import { toast } from './toast'
 
 // Escenarios de independencia financiera guardados por el usuario para
 // compararlos (conservador / realista / optimista…). Persistidos en la tabla
@@ -81,6 +82,7 @@ export function useEscenariosIF(usuarioId) {
         .from('escenarios_simulador')
         .insert({ usuario_id: usuarioId, tipo: TIPO, nombre: nombre ?? 'Escenario', datos })
       if (!error) await cargar()
+      else toast('No se ha podido guardar el escenario.', 'error')
     },
     [usuarioId, cargar],
   )
@@ -89,6 +91,7 @@ export function useEscenariosIF(usuarioId) {
     async (id) => {
       const { error } = await supabase.from('escenarios_simulador').delete().eq('id', id)
       if (!error) await cargar()
+      else toast('No se ha podido eliminar el escenario.', 'error')
     },
     [cargar],
   )
