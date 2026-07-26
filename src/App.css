@@ -5271,6 +5271,39 @@ button[type='submit']:disabled {
   line-height: 1.5;
 }
 
+/* Insights al abrir Fulcro: tono calmado, no alarmista (no usa color de gasto
+   ni alertas). Base para la proactividad futura. */
+.consultor-insights {
+  margin: 0 0 var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+}
+
+.consultor-insights-titulo {
+  display: block;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-2, var(--accent-2));
+  margin-bottom: var(--sp-2);
+}
+
+.consultor-insights ul {
+  margin: 0;
+  padding-left: 1.1em;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.consultor-insights li {
+  font-size: var(--fs-s);
+  line-height: 1.45;
+  color: var(--text);
+}
+
 .consultor-sugerencias {
   display: flex;
   flex-direction: column;

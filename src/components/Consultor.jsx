@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { construirResumenIA } from '../lib/resumenParaIA'
 import { useObjetivosAhorro } from '../lib/useObjetivosAhorro'
 
@@ -17,6 +17,16 @@ export default function Consultor({ movimientos, objetivo }) {
   const { objetivos } = useObjetivosAhorro(objetivo?.usuarioId ?? null)
   const finRef = useRef(null)
 
+  // Resumen anónimo y agregado (fuente única: movimientosUtils). Se calcula una
+  // vez y se reutiliza para el contexto de cada pregunta y para mostrar los
+  // insights al abrir Fulcro. Los insights ya vienen redactados con cautela
+  // (los que tocan liquidez/patrimonio no reconciliado llevan su reserva).
+  const resumen = useMemo(
+    () => construirResumenIA(movimientos, { objetivos, objetivo: objetivo?.texto ?? null }),
+    [movimientos, objetivos, objetivo],
+  )
+  const insights = resumen.insights ?? []
+
   useEffect(() => {
     if (abierto) finRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [mensajes, abierto, enviando])
@@ -31,10 +41,6 @@ export default function Consultor({ movimientos, objetivo }) {
     setEnviando(true)
 
     try {
-      const resumen = construirResumenIA(movimientos, {
-        objetivos,
-        objetivo: objetivo?.texto ?? null,
-      })
       const res = await fetch('/api/consultor', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -102,8 +108,24 @@ export default function Consultor({ movimientos, objetivo }) {
                   <p>
                     Soy <strong>Fulcro</strong>. Pregúntame sobre tus finanzas y te oriento con tus
                     propios números: cómo vas, en qué se te va el dinero o cómo dar tu primer paso
-                    hacia la inversión.
+                    hacia la inversión. También te explico conceptos (interés compuesto, ETFs,
+                    colchón de emergencia…) con tus datos delante.
                   </p>
+
+                  {/* Insights: aparecen al ABRIR Fulcro (nunca como notificación
+                      que interrumpa), en tono calmado y constructivo. Base para
+                      la proactividad futura; ya redactados con cautela. */}
+                  {insights.length > 0 && (
+                    <div className="consultor-insights">
+                      <span className="consultor-insights-titulo">He visto en tus números</span>
+                      <ul>
+                        {insights.map((t, i) => (
+                          <li key={i}>{t}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <div className="consultor-sugerencias">
                     {SUGERENCIAS.map((s) => (
                       <button key={s} type="button" onClick={() => preguntar(s)}>
