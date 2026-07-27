@@ -4784,6 +4784,67 @@ button[type='submit']:disabled {
   }
 }
 
+/* Splash de arranque (evita la pantalla en negro mientras carga sesión/perfil) */
+.pantalla-carga {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  background: var(--bg);
+}
+
+.pantalla-carga-logo {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  background: linear-gradient(90deg, var(--text-h), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: pulso-carga 1.6s ease-in-out infinite;
+}
+
+.pantalla-carga-barra {
+  width: 140px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.pantalla-carga-barra-fill {
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  animation: barra-indeterminada 1.2s ease-in-out infinite;
+}
+
+@keyframes pulso-carga {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+@keyframes barra-indeterminada {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(360%); }
+}
+
+/* Skeleton del dashboard mientras cargan los datos por primera vez. Reutiliza
+   .skeleton; imita métricas + bolsas para que no haya salto de layout. */
+.dashboard-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.dashboard-skeleton .skeleton {
+  border-radius: var(--radio-m);
+}
+
 .aviso-error {
   display: flex;
   align-items: center;

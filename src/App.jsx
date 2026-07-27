@@ -3,6 +3,7 @@ import { supabase } from './lib/supabaseClient'
 import { useAuth } from './lib/useAuth'
 import { cerrarSesionAuth } from './lib/auth'
 import Auth from './components/Auth'
+import PantallaCarga from './components/PantallaCarga'
 import CuentaPanel from './components/CuentaPanel'
 import PrimerosPasos from './components/PrimerosPasos'
 import { obtenerPerfil, crearPerfil } from './lib/perfil'
@@ -182,9 +183,9 @@ function App() {
   }, [usuarioId])
 
   // Esperando a saber si hay sesión de Auth (evita parpadeo a la pantalla de
-  // acceso cuando en realidad ya hay sesión guardada).
+  // acceso cuando en realidad ya hay sesión guardada). Splash en vez de negro.
   if (cargandoAuth) {
-    return null
+    return <PantallaCarga />
   }
 
   if (!usuarioId) {
@@ -192,7 +193,7 @@ function App() {
   }
 
   if (comprobandoPerfil) {
-    return null
+    return <PantallaCarga />
   }
 
   if (!perfil) {
