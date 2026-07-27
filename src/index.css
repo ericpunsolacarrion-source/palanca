@@ -175,6 +175,17 @@ select:focus {
   font-variant-numeric: tabular-nums;
 }
 
+/* Fade solo de opacidad (sin desplazamiento): para envoltorios que ya contienen
+   hijos con su propia entrada, evita duplicar el "slide up" en cada montaje. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;

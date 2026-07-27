@@ -72,7 +72,9 @@ main {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  animation: fade-in-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* Fade suave de opacidad (los hijos ya animan su propia entrada). Antes hacía
+     fade-in-up y se duplicaba el desplazamiento en cada cambio de pestaña. */
+  animation: fade-in 0.22s ease both;
 }
 
 /* Barra inferior: fuera del área que hace scroll (main), así nunca se mueve */
