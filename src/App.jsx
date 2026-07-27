@@ -54,6 +54,18 @@ const CargandoVista = () => (
   </div>
 )
 
+// Skeleton del dashboard mientras cargan los datos por primera vez: imita la
+// línea de ingresos, el ahorro, las tarjetas y un gráfico, para que al aparecer
+// los datos no salte el layout. Reutiliza .skeleton (shimmer + reduced-motion).
+const DashboardSkeleton = () => (
+  <div className="dashboard-skeleton" aria-busy="true" aria-label="Cargando tus datos">
+    <div className="skeleton" style={{ height: 20, width: '55%' }} />
+    <div className="skeleton" style={{ height: 120 }} />
+    <div className="skeleton" style={{ height: 88 }} />
+    <div className="skeleton" style={{ height: 160 }} />
+  </div>
+)
+
 const MS_POR_DIA = 1000 * 60 * 60 * 24
 
 function App() {
@@ -250,6 +262,9 @@ function App() {
         {pestana === 'dashboard' && (
           <div key="dashboard" className="vista">
             {perfil.nombre && <p className="saludo-usuario">Hola, {perfil.nombre} 👋</p>}
+            {/* Primera carga (sin datos aún): skeleton en vez de dashboard vacío.
+                En refetch (ya hay movimientos) NO se muestra, para no parpadear. */}
+            {cargando && movimientos.length === 0 && <DashboardSkeleton />}
             {!cargando && (
               <PrimerosPasos
                 nombre={perfil.nombre}
