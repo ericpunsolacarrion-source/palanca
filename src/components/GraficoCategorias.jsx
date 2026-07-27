@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { esInversion, formatearEuros } from '../lib/categorias'
 import { formatearFecha } from '../lib/movimientosUtils'
 
-const COLORES = ['#8b5cf6', '#22d3ee', '#34e89e', '#ff5d7e', '#f59e0b', '#64748b']
+// Paleta categórica definida como tokens en index.css (theming centralizado).
+const COLORES = ['var(--cat-1)', 'var(--cat-2)', 'var(--cat-3)', 'var(--cat-4)', 'var(--cat-5)', 'var(--cat-6)']
 
 export default function GraficoCategorias({ movimientos, etiqueta = 'este mes' }) {
   const [abierta, setAbierta] = useState(null)

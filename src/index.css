@@ -22,6 +22,16 @@
   --inversion: #f5b93d;
   --inversion-glow: rgba(245, 185, 61, 0.35);
 
+  /* Paleta categórica para gráficos (colores distinguibles, NO semánticos:
+     una categoría de gasto no es "ingreso" ni "gasto"). Se usa en el donut de
+     gasto por categoría; centralizada aquí para theming coherente. */
+  --cat-1: #8b5cf6;
+  --cat-2: #22d3ee;
+  --cat-3: #34e89e;
+  --cat-4: #ff5d7e;
+  --cat-5: #f59e0b;
+  --cat-6: #64748b;
+
   /* Espaciado */
   --sp-1: 4px;
   --sp-2: 8px;
