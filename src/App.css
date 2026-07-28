@@ -3558,6 +3558,19 @@ button[type='submit']:disabled {
   color: var(--gasto);
 }
 
+/* Responsive: tablets y móviles grandes (600–859px). Ensancha el contenido para
+   no dejar una columna de móvil (480px) con márgenes muertos; mantiene el layout
+   de una columna (el grid y la nav horizontal llegan a 860px). */
+@media (min-width: 600px) and (max-width: 859px) {
+  .app {
+    max-width: 680px;
+  }
+
+  main {
+    padding: 20px;
+  }
+}
+
 /* Responsive: escritorio */
 @media (min-width: 860px) {
   .app {
