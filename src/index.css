@@ -32,6 +32,26 @@
   --cat-5: #f59e0b;
   --cat-6: #64748b;
 
+  /* Tinta oscura: texto/iconos legibles SOBRE rellenos de color (botones,
+     chips, checks, píldoras). Cada una afinada a su familia de color; el blanco
+     es para rellenos oscuros de marca. */
+  --tinta-accent: #0a0b10;
+  --tinta-cian: #06121a;
+  --tinta-pildora: #04222a;
+  --tinta-ingreso: #05281a;
+  --tinta-gasto: #33060f;
+  --tinta-inversion: #2a1c00;
+  --tinta-inversion-palida: #1a1206;
+  --blanco: #fff;
+
+  /* Tonos acompañantes de degradado (extienden los colores de marca; no se usan
+     como color con significado propio, solo como paradas de gradiente). */
+  --accent-oscuro: #6d43d8;
+  --gasto-claro: #ff9d5c;
+  --inversion-claro: #ffd77a;
+  --inversion-palido: #ffe4a8;
+  --inversion-oscuro: #b8860b;
+
   /* Espaciado */
   --sp-1: 4px;
   --sp-2: 8px;
