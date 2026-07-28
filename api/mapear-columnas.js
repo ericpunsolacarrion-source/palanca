@@ -7,8 +7,11 @@
 // de forma determinista (lib/importarCsv.js) sin enviar el grueso de los datos
 // financieros a ningún modelo. La API key vive solo en el servidor.
 
+import { usuarioDeLaPeticion } from './_auth.js'
+
 const MODELO = process.env.IMPORTADOR_MODELO || process.env.CONSULTOR_MODELO || 'claude-haiku-4-5'
 const MAX_TOKENS = 300
+const MAX_CABECERAS = 100 // nº máximo de columnas (corta payloads abusivos)
 
 // Columnas canónicas que la app entiende (ver lib/importarCsv.js).
 const COLUMNAS = ['fecha', 'tipo', 'categoria', 'concepto', 'importe', 'plataforma']
@@ -35,6 +38,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método no permitido' })
   }
 
+  // Solo usuarios con sesión válida de Palanca. Se comprueba ANTES de nada.
+  const usuario = await usuarioDeLaPeticion(req)
+  if (!usuario) {
+    return res.status(401).json({ error: 'Sesión no válida. Vuelve a iniciar sesión.', code: 'no_autorizado' })
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     return res.status(503).json({
@@ -48,6 +57,9 @@ export default async function handler(req, res) {
 
   if (!Array.isArray(cabeceras) || cabeceras.length === 0) {
     return res.status(400).json({ error: 'Faltan las cabeceras.' })
+  }
+  if (cabeceras.length > MAX_CABECERAS) {
+    return res.status(400).json({ error: 'Demasiadas columnas.' })
   }
 
   // Blindaje de privacidad en el propio servidor: como mucho 3 filas de ejemplo

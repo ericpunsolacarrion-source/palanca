@@ -6,12 +6,18 @@
 // determinista. Degrada con elegancia si el endpoint no está configurado.
 //
 // Devuelve { ok, mapeo?, code? }.
+import { supabase } from './supabaseClient'
+
 export async function deducirMapeoIA(cabeceras, filas) {
   const muestras = (filas || []).slice(0, 3)
   try {
+    const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch('/api/mapear-columnas', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        Authorization: `Bearer ${session?.access_token ?? ''}`,
+      },
       body: JSON.stringify({ cabeceras, muestras }),
     })
     if (!res.ok) {

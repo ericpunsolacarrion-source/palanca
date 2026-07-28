@@ -8,8 +8,11 @@
 // El system prompt prohíbe recomendaciones categóricas de "compra esto" y
 // promesas de rentabilidad.
 
+import { usuarioDeLaPeticion } from './_auth.js'
+
 const MODELO = process.env.CONSULTOR_MODELO || 'claude-haiku-4-5'
 const MAX_TOKENS = 900
+const MAX_RESUMEN = 20000 // caracteres del resumen (corta payloads abusivos)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NOTA TÉCNICA — evolución futura del conocimiento experto (NO implementado):
@@ -72,6 +75,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método no permitido' })
   }
 
+  // Solo usuarios con sesión válida de Palanca (evita que el endpoint se use como
+  // proxy gratis del modelo). Se comprueba ANTES de nada.
+  const usuario = await usuarioDeLaPeticion(req)
+  if (!usuario) {
+    return res.status(401).json({ error: 'Sesión no válida. Vuelve a iniciar sesión.', code: 'no_autorizado' })
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     // Degradación elegante: el frontend muestra un aviso, no se rompe.
@@ -90,6 +100,9 @@ export default async function handler(req, res) {
   }
   if (pregunta.length > 2000) {
     return res.status(400).json({ error: 'La pregunta es demasiado larga.' })
+  }
+  if (resumen && JSON.stringify(resumen).length > MAX_RESUMEN) {
+    return res.status(400).json({ error: 'El contexto es demasiado grande.' })
   }
 
   // Historial previo (para dar continuidad a la conversación), acotado.

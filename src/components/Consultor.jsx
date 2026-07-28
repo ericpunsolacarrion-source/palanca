@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { construirResumenIA } from '../lib/resumenParaIA'
 import { useObjetivosAhorro } from '../lib/useObjetivosAhorro'
+import { supabase } from '../lib/supabaseClient'
 
 const SUGERENCIAS = [
   '¿Voy bien este mes?',
@@ -41,16 +42,22 @@ export default function Consultor({ movimientos, objetivo }) {
     setEnviando(true)
 
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch('/api/consultor', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
         body: JSON.stringify({ resumen, pregunta, historial: historialPrevio }),
       })
       const datos = await res.json().catch(() => ({}))
 
       if (!res.ok) {
         const aviso =
-          datos.code === 'sin_configurar'
+          datos.code === 'no_autorizado'
+            ? 'Tu sesión ha caducado. Vuelve a iniciar sesión.'
+            : datos.code === 'sin_configurar'
             ? 'El consultor todavía no está activado. Vuelve pronto.'
             : datos.error || 'Ahora mismo no puedo responder. Inténtalo en un momento.'
         setMensajes((prev) => [...prev, { rol: 'consultor', texto: aviso, error: true }])
