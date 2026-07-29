@@ -61,6 +61,11 @@ export function rangoMeses(movimientos) {
   return claves // más reciente primero
 }
 
+// Formateador de mes corto ('ene', 'feb'…) creado UNA sola vez: instanciar
+// Intl.DateTimeFormat es caro y antes se hacía por cada mes (hasta 120 veces en
+// los gráficos), lo que dominaba el coste de cálculo del dashboard.
+const FMT_MES_CORTO = new Intl.DateTimeFormat('es-ES', { month: 'short' })
+
 // Últimos N meses terminando en `claveFin` (por defecto el mes actual):
 // [{clave, etiqueta}]. Permite anclar las series temporales a un mes elegido.
 export function ultimosNMeses(n, claveFin = claveMesActual()) {
@@ -70,7 +75,7 @@ export function ultimosNMeses(n, claveFin = claveMesActual()) {
   for (let i = n - 1; i >= 0; i -= 1) {
     const d = new Date(base.getFullYear(), base.getMonth() - i, 1)
     const clave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    const etiqueta = new Intl.DateTimeFormat('es-ES', { month: 'short' }).format(d).replace('.', '')
+    const etiqueta = FMT_MES_CORTO.format(d).replace('.', '')
     meses.push({ clave, etiqueta })
   }
   return meses
