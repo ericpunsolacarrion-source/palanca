@@ -9,11 +9,13 @@ import PrimerosPasos from './components/PrimerosPasos'
 import { obtenerPerfil, crearPerfil } from './lib/perfil'
 import { crearAjuste } from './lib/ajustes'
 import {
+  SELECT_MOVIMIENTO,
   claveMesActual,
   estimacionGastoMensual,
   etiquetaMes,
   filtrarMesActual,
   filtrarPorMes,
+  fusionarMovimientos,
   rangoMeses,
   totalesDe,
 } from './lib/movimientosUtils'
@@ -126,10 +128,8 @@ function App() {
 
     const { data, error } = await supabase
       .from('movimientos')
-      // Columnas explícitas (todas las que usa la app) EXCEPTO usuario_id, que
-      // no lee ningún componente (RLS ya garantiza que son del usuario) y viajaba
-      // repetido en cada fila. Recorta ~9% del payload sin cambiar nada visible.
-      .select('id, tipo, importe, fecha, nota, created_at, fuente_id, categoria_id, es_fijo, categoria:categorias(id, nombre), fuente:fuentes(id, nombre)')
+      // SELECT_MOVIMIENTO: columnas explícitas (sin usuario_id, que no se usa).
+      .select(SELECT_MOVIMIENTO)
       .eq('usuario_id', usuarioId)
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false })
@@ -141,6 +141,19 @@ function App() {
     }
     setCargando(false)
   }, [usuarioId])
+
+  // Refresco tras una mutación. Si el sitio pasa un `cambio` puntual (crear/
+  // editar/borrar con la fila que devuelve el servidor), se fusiona en memoria
+  // SIN recargar todo el histórico (rápido a escala). Si no se pasa nada, se
+  // recarga todo (fallback siempre correcto). La fila del cambio viene del
+  // servidor con SELECT_MOVIMIENTO, así que no hay divergencia con la BD.
+  const onGuardado = useCallback(
+    (cambio) => {
+      if (cambio) setMovimientos((prev) => fusionarMovimientos(prev, cambio))
+      else cargarMovimientos()
+    },
+    [cargarMovimientos],
+  )
 
   useEffect(() => {
     if (perfil) {
@@ -314,7 +327,7 @@ function App() {
                 <Patrimonio
                   usuarioId={usuarioId}
                   movimientos={movimientos}
-                  onGuardado={cargarMovimientos}
+                  onGuardado={onGuardado}
                   onVerInversion={() => irAPestana('inversiones')}
                 />
                 <GraficoTasaAhorro movimientos={movimientos} mesFin={mesActivoDash} />
@@ -359,7 +372,7 @@ function App() {
             movimientos={movimientos}
             movimientosMes={movimientosMes}
             cargando={cargando}
-            onGuardado={cargarMovimientos}
+            onGuardado={onGuardado}
             filtro={filtroMov}
             onLimpiarFiltro={() => setFiltroMov(null)}
             modoInicialRegistro={modoRegistro}
@@ -379,7 +392,7 @@ function App() {
             usuarioId={usuarioId}
             movimientos={movimientos}
             cargando={cargando}
-            onGuardado={cargarMovimientos}
+            onGuardado={onGuardado}
           />
         )}
 

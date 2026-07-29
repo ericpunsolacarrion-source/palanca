@@ -4,7 +4,7 @@ import { useEtiquetas } from '../lib/useEtiquetas'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
 import { CATEGORIA_INVERSION, formatearEuros } from '../lib/categorias'
-import { hoyIso } from '../lib/movimientosUtils'
+import { SELECT_MOVIMIENTO, hoyIso } from '../lib/movimientosUtils'
 import { frecuenciaCategorias, frecuentesParaRepetir, importesFrecuentes } from '../lib/sugerencias'
 import { toast } from '../lib/toast'
 import InputImporte from './InputImporte'
@@ -69,22 +69,26 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
     if (!rep.categoriaId) return
     const clave = `${rep.categoriaId}|${rep.fuenteId}|${rep.importe}`
     setDuplicandoClave(clave)
-    const { error: errorInsert } = await supabase.from('movimientos').insert({
-      usuario_id: usuarioId,
-      tipo: tipoDb,
-      categoria_id: rep.categoriaId,
-      fuente_id: rep.fuenteId,
-      importe: rep.importe,
-      fecha: hoyIso(),
-      es_fijo: esInversion ? false : rep.esFijo,
-    })
+    const { data: fila, error: errorInsert } = await supabase
+      .from('movimientos')
+      .insert({
+        usuario_id: usuarioId,
+        tipo: tipoDb,
+        categoria_id: rep.categoriaId,
+        fuente_id: rep.fuenteId,
+        importe: rep.importe,
+        fecha: hoyIso(),
+        es_fijo: esInversion ? false : rep.esFijo,
+      })
+      .select(SELECT_MOVIMIENTO)
+      .single()
     setDuplicandoClave(null)
     if (errorInsert) {
       toast('No se ha podido añadir. Inténtalo de nuevo.', 'error')
       return
     }
     toast(`Añadido: ${formatearEuros(rep.importe)}`)
-    onGuardado()
+    onGuardado(fila ? { accion: 'crear', filas: [fila] } : undefined)
   }
 
   const [registrandoRapidoId, setRegistrandoRapidoId] = useState(null)
@@ -96,22 +100,26 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
       return
     }
     setRegistrandoRapidoId(item.id)
-    const { error: errorInsert } = await supabase.from('movimientos').insert({
-      usuario_id: usuarioId,
-      tipo: 'gasto',
-      categoria_id: item.categoriaId,
-      fuente_id: null,
-      importe: Number(item.importe),
-      fecha: hoyIso(),
-      es_fijo: false,
-    })
+    const { data: fila, error: errorInsert } = await supabase
+      .from('movimientos')
+      .insert({
+        usuario_id: usuarioId,
+        tipo: 'gasto',
+        categoria_id: item.categoriaId,
+        fuente_id: null,
+        importe: Number(item.importe),
+        fecha: hoyIso(),
+        es_fijo: false,
+      })
+      .select(SELECT_MOVIMIENTO)
+      .single()
     setRegistrandoRapidoId(null)
     if (errorInsert) {
       toast('No se ha podido añadir. Inténtalo de nuevo.', 'error')
       return
     }
     toast(`${item.nombre}: ${formatearEuros(Number(item.importe))}`)
-    onGuardado()
+    onGuardado(fila ? { accion: 'crear', filas: [fila] } : undefined)
   }
 
   async function handleSubmit(e) {
@@ -154,16 +162,20 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
       return
     }
 
-    const { error: errorInsert } = await supabase.from('movimientos').insert({
-      usuario_id: usuarioId,
-      tipo: tipoDb,
-      categoria_id: idCategoria,
-      fuente_id: resultFuente.id,
-      importe: importeNumero,
-      fecha,
-      es_fijo: esInversion ? false : esFijo,
-      nota: nota.trim() || null,
-    })
+    const { data: fila, error: errorInsert } = await supabase
+      .from('movimientos')
+      .insert({
+        usuario_id: usuarioId,
+        tipo: tipoDb,
+        categoria_id: idCategoria,
+        fuente_id: resultFuente.id,
+        importe: importeNumero,
+        fecha,
+        es_fijo: esInversion ? false : esFijo,
+        nota: nota.trim() || null,
+      })
+      .select(SELECT_MOVIMIENTO)
+      .single()
 
     setGuardando(false)
 
@@ -181,7 +193,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
     setNuevaFuente('')
     setEsFijo(false)
     toast(TOAST_MODO[modo])
-    onGuardado()
+    onGuardado(fila ? { accion: 'crear', filas: [fila] } : undefined)
   }
 
   const textoBoton = { gasto: 'Guardar gasto', ingreso: 'Guardar ingreso', inversion: 'Guardar inversión' }[modo]

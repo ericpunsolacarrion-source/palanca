@@ -1,5 +1,45 @@
 import { esAjuste, esInversion } from './categorias'
 
+// Columnas que la app necesita de un movimiento (con sus joins). Compartido por
+// la carga inicial (App.jsx) y por las mutaciones que devuelven la fila creada/
+// editada, para que el refresco quirúrgico use EXACTAMENTE la misma forma que la
+// carga completa (sin divergencias memoria↔BD). Excluye usuario_id (no se usa).
+export const SELECT_MOVIMIENTO =
+  'id, tipo, importe, fecha, nota, created_at, fuente_id, categoria_id, es_fijo, categoria:categorias(id, nombre), fuente:fuentes(id, nombre)'
+
+// Ordena movimientos como la consulta: fecha desc, y a igualdad, created_at desc.
+function ordenarMovimientos(lista) {
+  return [...lista].sort((a, b) => {
+    if (a.fecha !== b.fecha) return a.fecha < b.fecha ? 1 : -1
+    return (a.created_at || '') < (b.created_at || '') ? 1 : -1
+  })
+}
+
+// Refresco QUIRÚRGICO: aplica un cambio puntual al array de movimientos en
+// memoria sin recargar todo el histórico. `cambio`:
+//   { accion: 'crear',  filas: [<fila completa del servidor>] }
+//   { accion: 'editar', fila: <fila completa del servidor> }
+//   { accion: 'borrar', ids: [<id>, ...] }
+// Las filas vienen SIEMPRE del servidor (con SELECT_MOVIMIENTO), nunca
+// reconstruidas a mano → cero riesgo de datos obsoletos. Si el cambio no es
+// reconocible, devuelve la lista igual (el llamante debe hacer recarga completa).
+export function fusionarMovimientos(movimientos, cambio) {
+  if (!cambio) return movimientos
+  if (cambio.accion === 'borrar' && cambio.ids) {
+    const fuera = new Set(cambio.ids)
+    return movimientos.filter((m) => !fuera.has(m.id))
+  }
+  if (cambio.accion === 'editar' && cambio.fila) {
+    return ordenarMovimientos(movimientos.map((m) => (m.id === cambio.fila.id ? cambio.fila : m)))
+  }
+  if (cambio.accion === 'crear' && Array.isArray(cambio.filas) && cambio.filas.length) {
+    const nuevosIds = new Set(cambio.filas.map((f) => f.id))
+    const base = movimientos.filter((m) => !nuevosIds.has(m.id)) // evita duplicar
+    return ordenarMovimientos([...cambio.filas, ...base])
+  }
+  return movimientos
+}
+
 // Clave de mes ('2026-07') a partir de la fecha del movimiento.
 // SIEMPRE se agrupa por `fecha` (cuando ocurrió), nunca por created_at.
 export function claveMes(fechaIso) {
