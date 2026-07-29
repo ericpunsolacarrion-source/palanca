@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { formatearEuros } from '../../lib/categorias'
 import { bolsas, hoyIso, ritmoMensualPorTipo, valorBolsaPorTipo } from '../../lib/movimientosUtils'
-import { useObjetivosAhorro } from '../../lib/useObjetivosAhorro'
+import { useObjetivosCompartidos } from '../../lib/DatosCompartidos'
 import { TIPOS_OBJETIVO, useObjetivoTipo } from '../../lib/useObjetivoTipo'
 import { toast } from '../../lib/toast'
 import { confirmar } from '../../lib/confirmar'
@@ -164,7 +164,7 @@ function FormularioObjetivo({ inicial, tipoInicial, onGuardar, onCancelar, guard
 }
 
 export default function AhorroObjetivo({ usuarioId, movimientos = [] }) {
-  const { objetivos, cargando, tablaFalta, crear, actualizar, eliminar } = useObjetivosAhorro(usuarioId)
+  const { objetivos, cargando, tablaFalta, crear, actualizar, eliminar } = useObjetivosCompartidos()
   const { tipoDe, fijarTipo } = useObjetivoTipo(usuarioId)
   const [creando, setCreando] = useState(false)
   const [editandoId, setEditandoId] = useState(null)

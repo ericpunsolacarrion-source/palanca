@@ -26,6 +26,8 @@ import Pildora from './components/Pildora'
 import ProyeccionFuturo from './components/ProyeccionFuturo'
 import { pildorasDashboard, elegirPildora, firmaDatos, limpiarPildoras } from './lib/pildoras'
 import { usePresupuesto } from './lib/usePresupuesto'
+import { useObjetivosAhorro } from './lib/useObjetivosAhorro'
+import { DatosCompartidosProvider } from './lib/DatosCompartidos'
 import RecordatorioBanner from './components/RecordatorioBanner'
 import GraficoEvolucion from './components/GraficoEvolucion'
 import GraficoCategorias from './components/GraficoCategorias'
@@ -173,7 +175,12 @@ function App() {
     }
   }, [movimientos])
 
-  const { objetivoInversionMensual } = usePresupuesto(usuarioId)
+  // App es el dueño ÚNICO de presupuesto y objetivos: los instancia una vez y
+  // los reparte por contexto (DatosCompartidosProvider). Evita que 3+3
+  // componentes los pidan por su cuenta y mantiene una sola fuente fresca.
+  const presupuestoData = usePresupuesto(usuarioId)
+  const objetivosData = useObjetivosAhorro(usuarioId)
+  const { objetivoInversionMensual } = presupuestoData
   const [descartesPildora, setDescartesPildora] = useState(0)
 
   // Firma de datos: cambia al crear/borrar un movimiento, lo que re-permite
@@ -235,6 +242,7 @@ function App() {
   }
 
   return (
+    <DatosCompartidosProvider presupuesto={presupuestoData} objetivos={objetivosData}>
     <div className="app">
       <header className="app-header">
         <h1>Palanca</h1>
@@ -409,6 +417,7 @@ function App() {
         <Consultor movimientos={movimientos} objetivo={{ texto: perfil.objetivo, usuarioId }} />
       </Suspense>
     </div>
+    </DatosCompartidosProvider>
   )
 }
 

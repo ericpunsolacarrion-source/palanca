@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { esInversion, formatearEuros } from '../lib/categorias'
 import { formatearPorcentaje, totalesDe } from '../lib/movimientosUtils'
-import { usePresupuesto } from '../lib/usePresupuesto'
+import { usePresupuestoCompartido } from '../lib/DatosCompartidos'
 import { toast } from '../lib/toast'
 import { useCountUp } from '../lib/useCountUp'
 import InputImporte from './InputImporte'
@@ -25,7 +25,7 @@ export default function Presupuesto({ usuarioId, movimientos, gastoEstimado }) {
     configurado,
     cargando,
     guardarPresupuesto,
-  } = usePresupuesto(usuarioId)
+  } = usePresupuestoCompartido()
 
   const [editando, setEditando] = useState(false)
   const [metodoInput, setMetodoInput] = useState('tasa')

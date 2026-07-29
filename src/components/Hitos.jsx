@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
-import { usePresupuesto } from '../lib/usePresupuesto'
-import { useObjetivosAhorro } from '../lib/useObjetivosAhorro'
+import { usePresupuestoCompartido, useObjetivosCompartidos } from '../lib/DatosCompartidos'
 import { detectarNuevoHito, marcarHitoVisto } from '../lib/hitos'
 
 // Detecta hitos recién alcanzados y muestra una celebración elegante.
 // El hito se marca como visto al cerrar (no al detectar), para que sea estable.
 export default function Hitos({ usuarioId, movimientos, movimientosMes }) {
-  const { objetivoInversionMensual, cargando } = usePresupuesto(usuarioId)
-  const { objetivos, cargando: cargandoObj } = useObjetivosAhorro(usuarioId)
+  const { objetivoInversionMensual, cargando } = usePresupuestoCompartido()
+  const { objetivos, cargando: cargandoObj } = useObjetivosCompartidos()
   const [hito, setHito] = useState(null)
 
   useEffect(() => {

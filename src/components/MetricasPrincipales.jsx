@@ -7,7 +7,7 @@ import {
   totalesDe,
 } from '../lib/movimientosUtils'
 import { useCountUp } from '../lib/useCountUp'
-import { usePresupuesto } from '../lib/usePresupuesto'
+import { usePresupuestoCompartido } from '../lib/DatosCompartidos'
 import { toast } from '../lib/toast'
 import InputImporte from './InputImporte'
 
@@ -44,7 +44,7 @@ export default function MetricasPrincipales({
           : { simbolo: '≈', texto: 'en tu media habitual', clase: '' }
       : null
 
-  const { objetivoInversionMensual, cargando, guardarObjetivoInversion } = usePresupuesto(usuarioId)
+  const { objetivoInversionMensual, cargando, guardarObjetivoInversion } = usePresupuestoCompartido()
   const [editando, setEditando] = useState(false)
   const [valorInput, setValorInput] = useState(null)
   const [guardando, setGuardando] = useState(false)

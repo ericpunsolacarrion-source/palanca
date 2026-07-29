@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { construirResumenIA } from '../lib/resumenParaIA'
-import { useObjetivosAhorro } from '../lib/useObjetivosAhorro'
+import { useObjetivosCompartidos } from '../lib/DatosCompartidos'
 import { supabase } from '../lib/supabaseClient'
 
 const SUGERENCIAS = [
@@ -15,7 +15,7 @@ export default function Consultor({ movimientos, objetivo }) {
   const [mensajes, setMensajes] = useState([])
   const [entrada, setEntrada] = useState('')
   const [enviando, setEnviando] = useState(false)
-  const { objetivos } = useObjetivosAhorro(objetivo?.usuarioId ?? null)
+  const { objetivos } = useObjetivosCompartidos()
   const finRef = useRef(null)
 
   // Resumen anónimo y agregado (fuente única: movimientosUtils). Se calcula una

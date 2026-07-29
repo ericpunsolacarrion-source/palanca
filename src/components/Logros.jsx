@@ -2,8 +2,7 @@ import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { formatearEuros } from '../lib/categorias'
 import { CATEGORIAS_HITOS, estadoLogros } from '../lib/hitos'
-import { usePresupuesto } from '../lib/usePresupuesto'
-import { useObjetivosAhorro } from '../lib/useObjetivosAhorro'
+import { usePresupuestoCompartido, useObjetivosCompartidos } from '../lib/DatosCompartidos'
 
 // Formatea el valor/meta de un hito según su métrica (euros, %, días, cuenta).
 function formatoMeta(hito) {
@@ -18,8 +17,8 @@ function formatoMeta(hito) {
 
 export default function Logros({ usuarioId, movimientos, movimientosMes }) {
   const [abierto, setAbierto] = useState(false)
-  const { objetivoInversionMensual } = usePresupuesto(usuarioId)
-  const { objetivos } = useObjetivosAhorro(usuarioId)
+  const { objetivoInversionMensual } = usePresupuestoCompartido()
+  const { objetivos } = useObjetivosCompartidos()
 
   const logros = useMemo(
     () =>
