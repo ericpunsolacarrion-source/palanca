@@ -124,7 +124,10 @@ function App() {
 
     const { data, error } = await supabase
       .from('movimientos')
-      .select('*, categoria:categorias(id, nombre), fuente:fuentes(id, nombre)')
+      // Columnas explícitas (todas las que usa la app) EXCEPTO usuario_id, que
+      // no lee ningún componente (RLS ya garantiza que son del usuario) y viajaba
+      // repetido en cada fila. Recorta ~9% del payload sin cambiar nada visible.
+      .select('id, tipo, importe, fecha, nota, created_at, fuente_id, categoria_id, es_fijo, categoria:categorias(id, nombre), fuente:fuentes(id, nombre)')
       .eq('usuario_id', usuarioId)
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false })
