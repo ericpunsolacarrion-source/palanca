@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import SelectorEtiqueta from './SelectorEtiqueta'
-import { resolverEtiqueta } from '../lib/etiquetas'
+import { NUEVA_ETIQUETA, resolverEtiqueta } from '../lib/etiquetas'
+import { confirmar } from '../lib/confirmar'
 import { CATEGORIA_INVERSION, colorDeCategoria, formatearEuros } from '../lib/categorias'
 import { SELECT_MOVIMIENTO, formatearFecha, hoyIso } from '../lib/movimientosUtils'
 import { categoriaProbable, frecuenciaCategorias, frecuentesParaRepetir, importesFrecuentes } from '../lib/sugerencias'
@@ -181,6 +182,27 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
     if (!esInversion && !categoriaId) {
       setError('Elige o crea una categoría.')
       return
+    }
+
+    // Aviso suave de duplicado: si acabas de registrar el mismo importe en la
+    // misma categoría y día hace menos de 90 s, probablemente es un doble-tap.
+    // Confirmamos antes de crear otro (no bloquea: solo pregunta).
+    if (!esInversion && categoriaId && categoriaId !== NUEVA_ETIQUETA) {
+      const ahora = Date.now()
+      const duplicadoReciente = movimientos.some(
+        (m) =>
+          Number(m.importe) === importeNumero &&
+          (m.categoria_id ?? m.categoria?.id) === categoriaId &&
+          m.fecha === fecha &&
+          m.created_at &&
+          ahora - new Date(m.created_at).getTime() < 90000,
+      )
+      if (
+        duplicadoReciente &&
+        !(await confirmar('¿Registrar otro igual? Acabas de apuntar este importe en esta categoría hace un momento.'))
+      ) {
+        return
+      }
     }
 
     setGuardando(true)
