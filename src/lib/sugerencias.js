@@ -56,6 +56,35 @@ export function frecuentesParaRepetir(movimientos, modo, max = 4) {
     .slice(0, max)
 }
 
+// Categoría más PROBABLE para pre-seleccionarla (de "elegir" a "confirmar").
+// Con un importe dado, la categoría que más veces se usó con ese importe exacto;
+// si no hay coincidencia (o no hay importe), la más frecuente del modo. Devuelve
+// el id de categoría o null. Es un valor por defecto suave: el usuario lo cambia
+// con un toque si no acierta.
+export function categoriaProbable(movimientos, modo, importe = null) {
+  const movs = paraModo(movimientos, modo)
+  const num = Number(importe)
+  const conImporte = num > 0 ? movs.filter((m) => Number(m.importe) === num) : []
+  const base = conImporte.length > 0 ? conImporte : movs
+
+  const cuenta = new Map() // id -> veces
+  for (const m of base) {
+    const id = m.categoria_id ?? m.categoria?.id
+    if (!id) continue
+    cuenta.set(id, (cuenta.get(id) ?? 0) + 1)
+  }
+
+  let mejor = null
+  let max = 0
+  for (const [id, veces] of cuenta) {
+    if (veces > max) {
+      max = veces
+      mejor = id
+    }
+  }
+  return mejor
+}
+
 // Importes más frecuentes del modo (y categoría si se pasa), para sugerir la
 // cifra de un toque. Devuelve números ordenados por frecuencia.
 export function importesFrecuentes(movimientos, modo, categoriaId = null, max = 3) {

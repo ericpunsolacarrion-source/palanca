@@ -5,7 +5,7 @@ import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
 import { CATEGORIA_INVERSION, formatearEuros } from '../lib/categorias'
 import { SELECT_MOVIMIENTO, formatearFecha, hoyIso } from '../lib/movimientosUtils'
-import { frecuenciaCategorias, frecuentesParaRepetir, importesFrecuentes } from '../lib/sugerencias'
+import { categoriaProbable, frecuenciaCategorias, frecuentesParaRepetir, importesFrecuentes } from '../lib/sugerencias'
 import { toast } from '../lib/toast'
 import InputImporte from './InputImporte'
 import InputFecha from './InputFecha'
@@ -28,6 +28,8 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
   const [mostrarNota, setMostrarNota] = useState(false)
   const [mostrarDetalles, setMostrarDetalles] = useState(false)
   const [mostrarMasCategorias, setMostrarMasCategorias] = useState(false)
+  // true cuando el usuario ha elegido categoría a mano: deja de auto-sugerir.
+  const [categoriaManual, setCategoriaManual] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
 
@@ -43,7 +45,20 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
     setFuenteId('')
     setNuevaFuente('')
     setMostrarMasCategorias(false)
+    setCategoriaManual(false)
   }, [modo])
+
+  // Categoría pre-seleccionada inteligente: mientras el usuario no elija a mano,
+  // se marca la categoría más probable (según importe/histórico), para que
+  // registrar sea confirmar, no pensar. Un toque en otro chip la fija a mano.
+  const categoriaSugeridaId = useMemo(
+    () => (esInversion ? null : categoriaProbable(movimientos, modo, importe)),
+    [movimientos, modo, importe, esInversion],
+  )
+
+  useEffect(() => {
+    if (!categoriaManual && !esInversion) setCategoriaId(categoriaSugeridaId ?? '')
+  }, [categoriaSugeridaId, categoriaManual, esInversion])
 
   // Sugerencias derivadas del histórico para registrar con menos toques.
   const categoriasOrdenadas = useMemo(() => {
@@ -215,6 +230,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
     setEsFijo(false)
     setMostrarDetalles(false)
     setMostrarMasCategorias(false)
+    setCategoriaManual(false)
     toast(TOAST_MODO[modo])
     onGuardado(fila ? { accion: 'crear', filas: [fila] } : undefined)
     requestAnimationFrame(() => document.getElementById('importe')?.focus())
@@ -321,6 +337,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
                 className={`chip ${categoriaId === c.id ? 'activo' : ''}`}
                 onClick={() => {
                   setCategoriaId(c.id)
+                  setCategoriaManual(true)
                   setNuevaCategoria('')
                   setMostrarMasCategorias(false)
                 }}
@@ -341,7 +358,10 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
               id="categoria"
               label=""
               valor={categoriaId}
-              onChange={(v) => setCategoriaId(v)}
+              onChange={(v) => {
+                setCategoriaId(v)
+                setCategoriaManual(true)
+              }}
               items={categoriasOrdenadas}
               nuevoNombre={nuevaCategoria}
               onNuevoNombreChange={setNuevaCategoria}
