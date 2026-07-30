@@ -4,7 +4,7 @@ import { useEtiquetas } from '../lib/useEtiquetas'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
 import { CATEGORIA_INVERSION, formatearEuros } from '../lib/categorias'
-import { SELECT_MOVIMIENTO, hoyIso } from '../lib/movimientosUtils'
+import { SELECT_MOVIMIENTO, formatearFecha, hoyIso } from '../lib/movimientosUtils'
 import { frecuenciaCategorias, frecuentesParaRepetir, importesFrecuentes } from '../lib/sugerencias'
 import { toast } from '../lib/toast'
 import InputImporte from './InputImporte'
@@ -26,6 +26,8 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
   const [esFijo, setEsFijo] = useState(false)
   const [nota, setNota] = useState('')
   const [mostrarNota, setMostrarNota] = useState(false)
+  const [mostrarDetalles, setMostrarDetalles] = useState(false)
+  const [mostrarMasCategorias, setMostrarMasCategorias] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
 
@@ -40,6 +42,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
     setNuevaCategoria('')
     setFuenteId('')
     setNuevaFuente('')
+    setMostrarMasCategorias(false)
   }, [modo])
 
   // Sugerencias derivadas del histórico para registrar con menos toques.
@@ -47,6 +50,21 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
     const freq = frecuenciaCategorias(movimientos, modo)
     return [...categorias].sort((a, b) => (freq.get(b.nombre) ?? 0) - (freq.get(a.nombre) ?? 0))
   }, [categorias, movimientos, modo])
+
+  // Categorías como chips (las más usadas primero). Si la elegida no está entre
+  // las visibles (viene de "Otra"), se incluye para que siga marcada.
+  const CATS_VISIBLES = 6
+  const catsChips = useMemo(() => {
+    const top = categoriasOrdenadas.slice(0, CATS_VISIBLES)
+    if (categoriaId && !top.some((c) => c.id === categoriaId)) {
+      const sel = categoriasOrdenadas.find((c) => c.id === categoriaId)
+      if (sel) return [sel, ...top].slice(0, CATS_VISIBLES)
+    }
+    return top
+  }, [categoriasOrdenadas, categoriaId])
+
+  // Resumen corto para la barra "Más detalles" plegada.
+  const resumenDetalles = `${fecha === hoyIso() ? 'Hoy' : formatearFecha(fecha)}${nota.trim() ? ' · nota' : ''}${esFijo ? ' · fijo' : ''}`
 
   const repetibles = useMemo(() => frecuentesParaRepetir(movimientos, modo), [movimientos, modo])
 
@@ -280,69 +298,113 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
         </div>
       )}
 
+      {/* Categoría: chips de las más usadas (un toque) + "Otra" para el resto/crear */}
       {!esInversion && (
-        <SelectorEtiqueta
-          id="categoria"
-          label="Categoría"
-          valor={categoriaId}
-          onChange={setCategoriaId}
-          items={categoriasOrdenadas}
-          nuevoNombre={nuevaCategoria}
-          onNuevoNombreChange={setNuevaCategoria}
-          compacto
-          placeholder={modo === 'ingreso' ? 'ej. Dividendos, Alquiler' : 'ej. Vivienda, Ocio'}
-        />
-      )}
-
-      <SelectorEtiqueta
-        id="fuente"
-        label={
-          esInversion
-            ? 'Plataforma'
-            : `Concepto ${modo === 'ingreso' ? '(ej. Restaurante, Oficina)' : '(opcional)'}`
-        }
-        valor={fuenteId}
-        onChange={setFuenteId}
-        items={fuentes}
-        nuevoNombre={nuevaFuente}
-        onNuevoNombreChange={setNuevaFuente}
-        compacto
-        placeholder={
-          esInversion
-            ? 'ej. Trade Republic, MyInvestor'
-            : modo === 'ingreso'
-              ? 'ej. Trabajo restaurante'
-              : 'ej. Alquiler piso'
-        }
-      />
-
-      <div className="fila-fecha-fijo">
-        <InputFecha id="fecha" value={fecha} onChange={setFecha} max={hoyIso()} />
-        {!esInversion && (
-          <div className="tipo-toggle">
-            <button type="button" className={!esFijo ? 'activo' : ''} onClick={() => setEsFijo(false)}>
-              Variable
-            </button>
-            <button type="button" className={esFijo ? 'activo' : ''} onClick={() => setEsFijo(true)}>
-              Fijo
+        <div className="cat-seccion">
+          <span className="campo-label">Categoría</span>
+          <div className="cat-chips">
+            {catsChips.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className={`chip ${categoriaId === c.id ? 'activo' : ''}`}
+                onClick={() => {
+                  setCategoriaId(c.id)
+                  setNuevaCategoria('')
+                  setMostrarMasCategorias(false)
+                }}
+              >
+                {c.nombre}
+              </button>
+            ))}
+            <button
+              type="button"
+              className={`chip chip-otra ${mostrarMasCategorias ? 'activo' : ''}`}
+              onClick={() => setMostrarMasCategorias((v) => !v)}
+            >
+              ＋ Otra
             </button>
           </div>
-        )}
-      </div>
+          {mostrarMasCategorias && (
+            <SelectorEtiqueta
+              id="categoria"
+              label=""
+              valor={categoriaId}
+              onChange={(v) => setCategoriaId(v)}
+              items={categoriasOrdenadas}
+              nuevoNombre={nuevaCategoria}
+              onNuevoNombreChange={setNuevaCategoria}
+              compacto
+              placeholder={modo === 'ingreso' ? 'ej. Dividendos, Alquiler' : 'ej. Vivienda, Ocio'}
+            />
+          )}
+        </div>
+      )}
 
-      {mostrarNota ? (
-        <input
-          id="nota"
-          type="text"
-          value={nota}
-          onChange={(e) => setNota(e.target.value)}
-          placeholder="ej. Compra semanal"
-          autoFocus
-        />
-      ) : (
-        <button type="button" className="link" onClick={() => setMostrarNota(true)}>
-          + Añadir nota
-        </button>
+      {/* Más detalles: concepto, fecha, Variable/Fijo y nota — plegados por defecto */}
+      <button
+        type="button"
+        className="mas-detalles-toggle"
+        onClick={() => setMostrarDetalles((v) => !v)}
+        aria-expanded={mostrarDetalles}
+      >
+        <span>{mostrarDetalles ? '▾' : '▸'} Más detalles</span>
+        {!mostrarDetalles && <span className="mas-detalles-resumen">{resumenDetalles}</span>}
+      </button>
+
+      {mostrarDetalles && (
+        <div className="mas-detalles">
+          <SelectorEtiqueta
+            id="fuente"
+            label={
+              esInversion
+                ? 'Plataforma'
+                : `Concepto ${modo === 'ingreso' ? '(ej. Restaurante)' : '(opcional)'}`
+            }
+            valor={fuenteId}
+            onChange={setFuenteId}
+            items={fuentes}
+            nuevoNombre={nuevaFuente}
+            onNuevoNombreChange={setNuevaFuente}
+            compacto
+            placeholder={
+              esInversion
+                ? 'ej. Trade Republic, MyInvestor'
+                : modo === 'ingreso'
+                  ? 'ej. Trabajo restaurante'
+                  : 'ej. Alquiler piso'
+            }
+          />
+
+          <div className="fila-fecha-fijo">
+            <InputFecha id="fecha" value={fecha} onChange={setFecha} max={hoyIso()} />
+            {!esInversion && (
+              <div className="tipo-toggle tipo-toggle-mini">
+                <button type="button" className={!esFijo ? 'activo' : ''} onClick={() => setEsFijo(false)}>
+                  Variable
+                </button>
+                <button type="button" className={esFijo ? 'activo' : ''} onClick={() => setEsFijo(true)}>
+                  Fijo
+                </button>
+              </div>
+            )}
+          </div>
+
+          {mostrarNota ? (
+            <input
+              id="nota"
+              type="text"
+              value={nota}
+              onChange={(e) => setNota(e.target.value)}
+              placeholder="ej. Compra semanal"
+              autoFocus
+            />
+          ) : (
+            <button type="button" className="link" onClick={() => setMostrarNota(true)}>
+              + Añadir nota
+            </button>
+          )}
+        </div>
       )}
 
       {error && <p className="error">{error}</p>}

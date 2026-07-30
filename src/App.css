@@ -993,6 +993,69 @@ button[type='submit']:disabled {
   opacity: 0.8;
 }
 
+/* ── Alta v2: categoría en chips + "Más detalles" plegable ─────────────────── */
+.campo-label {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--text);
+  margin-bottom: var(--sp-2);
+}
+
+.cat-seccion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.cat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.chip-otra {
+  border-style: dashed;
+  color: var(--text);
+}
+
+.mas-detalles-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 8px 2px;
+  color: var(--text);
+  font-size: var(--fs-s);
+}
+
+.mas-detalles-toggle:hover {
+  filter: none;
+  color: var(--text-h);
+}
+
+.mas-detalles-resumen {
+  color: var(--text);
+  opacity: 0.7;
+  font-size: var(--fs-xs);
+}
+
+.mas-detalles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding-top: var(--sp-1);
+  animation: fade-in 0.2s ease both;
+}
+
+/* Toggle Variable/Fijo compacto dentro de "Más detalles" */
+.tipo-toggle-mini button {
+  padding: 8px 12px;
+  font-size: var(--fs-xs);
+  min-height: 0;
+}
+
 /* Selector compacto: una sola fila deslizable con chips finos */
 .chips-fila-compacta {
   flex-wrap: nowrap;
