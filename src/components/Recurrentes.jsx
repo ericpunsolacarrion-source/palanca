@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { useRecurrentes } from '../lib/useRecurrentes'
 import { formatearEuros } from '../lib/categorias'
-import { claveMesActual, formatearFecha, hoyIso } from '../lib/movimientosUtils'
+import { SELECT_MOVIMIENTO, claveMesActual, formatearFecha, hoyIso } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
@@ -275,15 +275,19 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
   async function registrar(rec, importe, fecha) {
     if (!importe || importe <= 0) return
     setRegistrandoId(rec.id)
-    const { error } = await supabase.from('movimientos').insert({
-      usuario_id: usuarioId,
-      tipo: rec.tipo,
-      categoria_id: rec.categoriaId,
-      fuente_id: rec.fuenteId ?? null,
-      importe,
-      fecha: fecha || fechaDelMes(rec),
-      es_fijo: true,
-    })
+    const { data: filaNueva, error } = await supabase
+      .from('movimientos')
+      .insert({
+        usuario_id: usuarioId,
+        tipo: rec.tipo,
+        categoria_id: rec.categoriaId,
+        fuente_id: rec.fuenteId ?? null,
+        importe,
+        fecha: fecha || fechaDelMes(rec),
+        es_fijo: true,
+      })
+      .select(SELECT_MOVIMIENTO)
+      .single()
     setRegistrandoId(null)
     if (error) {
       toast('No se ha podido registrar. Inténtalo de nuevo.', 'error')
@@ -291,7 +295,7 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
     }
     marcarAplicado(rec.id)
     toast(`${rec.nombre} registrado`)
-    onRegistrado?.()
+    onRegistrado?.(filaNueva ? { accion: 'crear', filas: [filaNueva] } : undefined)
   }
 
   async function handleEliminar(id) {

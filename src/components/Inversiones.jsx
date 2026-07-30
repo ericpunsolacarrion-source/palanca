@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { CATEGORIA_INVERSION, esInversion, formatearEuros } from '../lib/categorias'
-import { agregarPorMes, claveMes, formatearCompacto, formatearFecha, hoyIso } from '../lib/movimientosUtils'
+import { SELECT_MOVIMIENTO, agregarPorMes, claveMes, formatearCompacto, formatearFecha, hoyIso } from '../lib/movimientosUtils'
 import { useCountUp } from '../lib/useCountUp'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
@@ -211,7 +211,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
       return
     }
     toast('Aportación eliminada')
-    onGuardado?.()
+    onGuardado?.({ accion: 'borrar', ids: [id] })
   }
 
   function empezarEdicion(d) {
@@ -224,15 +224,17 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
     const importeNumero = Number(importeEdit)
     if (!importeEdit || !importeNumero || importeNumero <= 0) return
     setGuardandoEdit(true)
-    const { error: errorUpdate } = await supabase
+    const { data: fila, error: errorUpdate } = await supabase
       .from('movimientos')
       .update({ importe: importeNumero, fecha: fechaEdit })
       .eq('id', id)
+      .select(SELECT_MOVIMIENTO)
+      .single()
     setGuardandoEdit(false)
     if (!errorUpdate) {
       setEditando(null)
       toast('Cambios guardados')
-      onGuardado?.()
+      onGuardado?.(fila ? { accion: 'editar', fila } : undefined)
     }
   }
 
@@ -264,15 +266,19 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
       return
     }
 
-    const { error: errorInsert } = await supabase.from('movimientos').insert({
-      usuario_id: usuarioId,
-      tipo: 'gasto',
-      categoria_id: categoriaId,
-      fuente_id: resultFuente.id,
-      importe: importeNumero,
-      fecha,
-      es_fijo: false,
-    })
+    const { data: fila, error: errorInsert } = await supabase
+      .from('movimientos')
+      .insert({
+        usuario_id: usuarioId,
+        tipo: 'gasto',
+        categoria_id: categoriaId,
+        fuente_id: resultFuente.id,
+        importe: importeNumero,
+        fecha,
+        es_fijo: false,
+      })
+      .select(SELECT_MOVIMIENTO)
+      .single()
 
     setGuardando(false)
 
@@ -285,7 +291,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
     setFuenteId('')
     setNuevaFuente('')
     toast('Aportación registrada')
-    onGuardado?.()
+    onGuardado?.(fila ? { accion: 'crear', filas: [fila] } : undefined)
   }
 
   return (

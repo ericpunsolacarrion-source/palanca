@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { esInversion, formatearEuros } from '../lib/categorias'
-import { claveMes, claveMesActual, formatearFecha, hoyIso, totalesDe } from '../lib/movimientosUtils'
+import { SELECT_MOVIMIENTO, claveMes, claveMesActual, formatearFecha, hoyIso, totalesDe } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
@@ -24,10 +24,12 @@ function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
     }
 
     setGuardando(true)
-    const { error: errorUpdate } = await supabase
+    const { data: fila, error: errorUpdate } = await supabase
       .from('movimientos')
       .update({ importe: importeNumero, fecha, es_fijo: esFijo, nota: nota.trim() || null })
       .eq('id', movimiento.id)
+      .select(SELECT_MOVIMIENTO)
+      .single()
 
     setGuardando(false)
 
@@ -37,7 +39,7 @@ function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
     }
 
     toast('Cambios guardados')
-    onGuardado()
+    onGuardado(fila ? { accion: 'editar', fila } : undefined)
   }
 
   return (
@@ -141,7 +143,7 @@ export default function ListaMovimientos({
       return
     }
     toast('Movimiento eliminado')
-    onEliminado?.()
+    onEliminado?.({ accion: 'borrar', ids: [id] })
   }
 
   function renderItem(m) {
@@ -153,9 +155,9 @@ export default function ListaMovimientos({
           <FilaEdicion
             movimiento={m}
             onCancelar={() => setEditandoId(null)}
-            onGuardado={() => {
+            onGuardado={(cambio) => {
               setEditandoId(null)
-              onEliminado?.()
+              onEliminado?.(cambio)
             }}
           />
         </li>
