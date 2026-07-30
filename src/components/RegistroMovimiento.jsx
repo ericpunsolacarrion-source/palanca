@@ -120,8 +120,8 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
       toast('No se ha podido añadir. Inténtalo de nuevo.', 'error')
       return
     }
-    toast(`Añadido: ${formatearEuros(rep.importe)}`)
     onGuardado(fila ? { accion: 'crear', filas: [fila] } : undefined)
+    toast(`Añadido: ${formatearEuros(rep.importe)}`, 'ok', accionDeshacer(fila))
   }
 
   const [registrandoRapidoId, setRegistrandoRapidoId] = useState(null)
@@ -151,9 +151,25 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
       toast('No se ha podido añadir. Inténtalo de nuevo.', 'error')
       return
     }
-    toast(`${item.nombre}: ${formatearEuros(Number(item.importe))}`)
     onGuardado(fila ? { accion: 'crear', filas: [fila] } : undefined)
+    toast(`${item.nombre}: ${formatearEuros(Number(item.importe))}`, 'ok', accionDeshacer(fila))
   }
+
+  // Deshacer al vuelo el último movimiento creado (desde el toast). Borra por id
+  // y refresca quirúrgicamente, sin sacar al usuario del alta.
+  async function deshacerUltimo(id) {
+    const { error: errorDelete } = await supabase.from('movimientos').delete().eq('id', id)
+    if (errorDelete) {
+      toast('No se ha podido deshacer.', 'error')
+      return
+    }
+    toast('Movimiento deshecho')
+    onGuardado({ accion: 'borrar', ids: [id] })
+  }
+
+  // Acción "Deshacer" para el toast, si el servidor devolvió la fila creada.
+  const accionDeshacer = (fila) =>
+    fila ? { texto: 'Deshacer', onAccion: () => deshacerUltimo(fila.id) } : null
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -231,8 +247,8 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
     setMostrarDetalles(false)
     setMostrarMasCategorias(false)
     setCategoriaManual(false)
-    toast(TOAST_MODO[modo])
     onGuardado(fila ? { accion: 'crear', filas: [fila] } : undefined)
+    toast(TOAST_MODO[modo], 'ok', accionDeshacer(fila))
     requestAnimationFrame(() => document.getElementById('importe')?.focus())
   }
 
