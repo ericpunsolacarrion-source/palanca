@@ -5347,6 +5347,79 @@ button[type='submit']:disabled {
   line-height: 1.5;
 }
 
+/* Standby de Fulcro: teaser "próximamente" (no un error). On-brand, oscuro. */
+.consultor-teaser {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--sp-3);
+  padding: var(--sp-5) var(--sp-4);
+  overflow: hidden;
+}
+
+.consultor-teaser-halo {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  width: 220px;
+  height: 220px;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+  filter: blur(8px);
+  pointer-events: none;
+  animation: pulso-carga 3s ease-in-out infinite;
+}
+
+.consultor-teaser-icono {
+  position: relative;
+  font-size: 44px;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 12px var(--accent-glow));
+}
+
+.consultor-teaser-badge {
+  position: relative;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-pastilla);
+  padding: 4px 12px;
+}
+
+.consultor-teaser-titulo {
+  position: relative;
+  margin: 0;
+  font-size: var(--fs-l);
+  background: linear-gradient(90deg, var(--text-h), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.consultor-teaser p {
+  position: relative;
+  margin: 0;
+  max-width: 34ch;
+  color: var(--text);
+  font-size: var(--fs-s);
+  line-height: 1.55;
+}
+
+.consultor-teaser-nota {
+  color: var(--text-2, var(--accent-2)) !important;
+  margin-top: var(--sp-2) !important;
+}
+
 /* Insights al abrir Fulcro: tono calmado, no alarmista (no usa color de gasto
    ni alertas). Base para la proactividad futura. */
 .consultor-insights {

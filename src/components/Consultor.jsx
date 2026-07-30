@@ -10,6 +10,16 @@ const SUGERENCIAS = [
   '¿Cómo podría ahorrar un poco más?',
 ]
 
+// ─── ACTIVAR FULCRO ──────────────────────────────────────────────────────────
+// Fulcro está en STANDBY ("próximamente") hasta que se active. Para activarlo:
+//   1) Pon ANTHROPIC_API_KEY en Vercel (Settings → Environment Variables).
+//   2) Añade también VITE_FULCRO_ACTIVO = true (en Vercel, para Production).
+//   3) Redeploy.
+// Con eso, el botón deja de mostrar el teaser y pasa al chat real. Nada más que
+// cambiar: el endpoint, el encuadre de seguridad y el resumen anónimo ya están
+// listos. En local, se activa con VITE_FULCRO_ACTIVO=true en .env.
+const FULCRO_ACTIVO = import.meta.env.VITE_FULCRO_ACTIVO === 'true'
+
 export default function Consultor({ movimientos, objetivo }) {
   const [abierto, setAbierto] = useState(false)
   const [mensajes, setMensajes] = useState([])
@@ -109,6 +119,29 @@ export default function Consultor({ movimientos, objetivo }) {
               </button>
             </header>
 
+            {!FULCRO_ACTIVO ? (
+              <div className="consultor-teaser">
+                <span className="consultor-teaser-halo" aria-hidden="true" />
+                <span className="consultor-teaser-icono" aria-hidden="true">
+                  ✦
+                </span>
+                <span className="consultor-teaser-badge">Próximamente</span>
+                <h3 className="consultor-teaser-titulo">Fulcro llega muy pronto</h3>
+                <p>
+                  Será tu <strong>consultor financiero personal</strong>: entenderá tus propios
+                  números y te orientará con ellos delante — cómo vas, en qué se te va el dinero y
+                  cómo dar tu primer paso hacia la inversión.
+                </p>
+                <p>
+                  También te explicará conceptos (interés compuesto, ETFs, colchón de emergencia…)
+                  en claro y a tu ritmo.
+                </p>
+                <p className="consultor-teaser-nota">
+                  Lo estamos afinando. Muy pronto podrás hablar con él. ✨
+                </p>
+              </div>
+            ) : (
+              <>
             <div className="consultor-mensajes">
               {mensajes.length === 0 && (
                 <div className="consultor-bienvenida">
@@ -183,6 +216,8 @@ export default function Consultor({ movimientos, objetivo }) {
             <p className="consultor-disclaimer">
               Orientación educativa, no asesoramiento financiero. No sustituye a un profesional.
             </p>
+              </>
+            )}
           </section>
         </div>
       )}
