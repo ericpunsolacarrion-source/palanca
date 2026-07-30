@@ -243,12 +243,17 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
           categorias={categoriasOrdenadas}
           onRegistrar={registrarRapido}
           registrandoId={registrandoRapidoId}
+          repetibles={repetibles}
+          onRepetir={duplicar}
+          duplicandoClave={duplicandoClave}
         />
       )}
 
-      {repetibles.length > 0 && (
+      {/* Ingreso/inversión: no hay accesos guardados, pero sí "repetir" del
+          histórico como añadido rápido (en gasto lo maneja GastosRapidos). */}
+      {modo !== 'gasto' && repetibles.length > 0 && (
         <div className="repetir-strip">
-          <span className="repetir-titulo">Repetir</span>
+          <span className="repetir-titulo">Añadir rápido</span>
           <div className="repetir-chips">
             {repetibles.map((rep) => {
               const clave = `${rep.categoriaId}|${rep.fuenteId}|${rep.importe}`

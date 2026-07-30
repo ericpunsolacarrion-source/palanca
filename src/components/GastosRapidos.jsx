@@ -66,7 +66,15 @@ function FormularioRapido({ inicial, categorias, onGuardar, onCancelar }) {
   )
 }
 
-export default function GastosRapidos({ usuarioId, categorias, onRegistrar, registrandoId }) {
+export default function GastosRapidos({
+  usuarioId,
+  categorias,
+  onRegistrar,
+  registrandoId,
+  repetibles = [],
+  onRepetir,
+  duplicandoClave,
+}) {
   const { items, crear, actualizar, eliminar } = useGastosRapidos(usuarioId)
   const [gestion, setGestion] = useState(false)
   const [creando, setCreando] = useState(false)
@@ -76,10 +84,20 @@ export default function GastosRapidos({ usuarioId, categorias, onRegistrar, regi
     if (await confirmar('¿Borrar este acceso rápido?')) eliminar(id)
   }
 
+  // "Añadir rápido" unificado: si tienes accesos guardados, se muestran esos
+  // (＋). Si no, se muestran sugerencias de tu histórico reciente (↻) como
+  // semilla. Nunca las dos tiras a la vez. La ayuda larga solo aparece la
+  // primera vez (ni accesos guardados ni histórico) como onboarding de una línea.
+  const hayGuardados = items.length > 0
+  const mostrarRepetibles = !hayGuardados && repetibles.length > 0
+  const mostrarAyuda = !hayGuardados && repetibles.length === 0
+
+  // Sin accesos guardados y sin histórico ni gestión abierta: solo la ayuda de
+  // una línea (con el "Editar" para empezar) — no una sección vacía y pesada.
   return (
     <div className="gastos-rapidos">
       <div className="gr-cabecera">
-        <span className="repetir-titulo">Gastos rápidos</span>
+        <span className="repetir-titulo">Añadir rápido</span>
         <button
           type="button"
           className="link"
@@ -93,7 +111,7 @@ export default function GastosRapidos({ usuarioId, categorias, onRegistrar, regi
         </button>
       </div>
 
-      {!gestion && items.length > 0 && (
+      {!gestion && hayGuardados && (
         <div className="repetir-chips">
           {items.map((it) => (
             <button
@@ -112,10 +130,32 @@ export default function GastosRapidos({ usuarioId, categorias, onRegistrar, regi
         </div>
       )}
 
-      {!gestion && items.length === 0 && (
+      {!gestion && mostrarRepetibles && (
+        <div className="repetir-chips">
+          {repetibles.map((rep) => {
+            const clave = `${rep.categoriaId}|${rep.fuenteId}|${rep.importe}`
+            const etiqueta = rep.fuenteNombre || rep.categoriaNombre || 'Movimiento'
+            return (
+              <button
+                key={clave}
+                type="button"
+                className="repetir-chip"
+                onClick={() => onRepetir?.(rep)}
+                disabled={duplicandoClave === clave}
+              >
+                <span className="repetir-chip-icono">↻</span>
+                <span className="repetir-chip-texto">
+                  {etiqueta} · {formatearEuros(rep.importe)}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {!gestion && mostrarAyuda && (
         <p className="ayuda gr-vacio">
-          Crea accesos para tus gastos del día a día (café, comer, gasolina…) y regístralos con un
-          toque. Pulsa “Editar” para empezar.
+          Pulsa “Editar” para crear accesos de un toque (café, comer, gasolina…).
         </p>
       )}
 
