@@ -78,13 +78,29 @@ export default function Auth() {
       setCargando(true)
       const { data, error: err } = await registrar(email, password)
       setCargando(false)
-      if (err) return setError(traducirErrorAuth(err.message))
-      // Si el proyecto exige confirmar el email, no hay sesión todavía.
+
+      // Mensaje NEUTRO idéntico tanto si el email es nuevo como si ya existía:
+      // así no se revela qué correos están registrados (anti-enumeración). Un
+      // email nuevo recibe el correo de confirmación; uno existente no, pero el
+      // mensaje no lo distingue y le invita a iniciar sesión.
+      const avisoNeutro =
+        'Si el email es nuevo, te hemos enviado un correo para confirmarlo (revisa también spam). Si ya tenías cuenta, inicia sesión con tu contraseña.'
+
+      if (err) {
+        const m = (err.message || '').toLowerCase()
+        if (m.includes('already registered') || m.includes('user already exists')) {
+          setAviso(avisoNeutro)
+          setModo('login')
+          return
+        }
+        return setError(traducirErrorAuth(err.message))
+      }
+      // Con confirmación de email no hay sesión aún → mismo mensaje neutro. Si el
+      // proyecto no exige confirmar, hay sesión y App entra solo (onAuthStateChange).
       if (!data.session) {
-        setAviso('Cuenta creada. Revisa tu correo (también spam) y confirma tu email para entrar.')
+        setAviso(avisoNeutro)
         setModo('login')
       }
-      // Si hay sesión, onAuthStateChange en App entra solo.
       return
     }
 

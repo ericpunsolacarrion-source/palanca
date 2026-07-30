@@ -44,8 +44,9 @@ export async function recuperarPassword(email) {
 export function traducirErrorAuth(msg) {
   const m = String(msg || '').toLowerCase()
   if (m.includes('invalid login credentials')) return 'Email o contraseña incorrectos.'
-  if (m.includes('already registered') || m.includes('user already exists'))
-    return 'Ya existe una cuenta con ese email. Inicia sesión.'
+  // NOTA: "already registered" NO se traduce a un mensaje que confirme que el
+  // email existe (eso sería enumeración de usuarios). El alta lo trata como un
+  // mensaje neutro (ver Auth.jsx). Aquí cae al mensaje genérico de abajo.
   if (m.includes('password should be at least'))
     return 'La contraseña debe tener al menos 6 caracteres.'
   if (m.includes('email not confirmed'))
