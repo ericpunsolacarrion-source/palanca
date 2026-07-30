@@ -15,7 +15,7 @@ function formatoMeta(hito) {
   return null
 }
 
-export default function Logros({ usuarioId, movimientos, movimientosMes }) {
+export default function Logros({ movimientos, movimientosMes }) {
   const [abierto, setAbierto] = useState(false)
   const { objetivoInversionMensual } = usePresupuestoCompartido()
   const { objetivos } = useObjetivosCompartidos()

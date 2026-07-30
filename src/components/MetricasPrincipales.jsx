@@ -17,7 +17,6 @@ function Cifra({ valor, className }) {
 }
 
 export default function MetricasPrincipales({
-  usuarioId,
   movimientos,
   historico,
   etiquetaPeriodo = 'este mes',

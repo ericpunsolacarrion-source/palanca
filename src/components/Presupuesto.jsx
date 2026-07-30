@@ -17,7 +17,7 @@ function diasRestantesDelMes() {
   return ultimoDia - hoy.getDate() + 1
 }
 
-export default function Presupuesto({ usuarioId, movimientos, gastoEstimado }) {
+export default function Presupuesto({ movimientos, gastoEstimado }) {
   const {
     metodo,
     tasaAhorroObjetivo,
