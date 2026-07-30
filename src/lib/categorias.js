@@ -38,3 +38,13 @@ export function esInversion(movimiento) {
 export function esAjuste(movimiento) {
   return movimiento.categoria?.nombre === CATEGORIA_AJUSTE
 }
+
+// Color ESTABLE para una categoría (paleta --cat-1..6 de index.css), para un
+// punto de reconocimiento visual en los chips. Mismo nombre → siempre el mismo
+// color. Es decorativo (no semántico): solo ayuda a distinguir de un vistazo.
+export function colorDeCategoria(nombre) {
+  const s = String(nombre || '')
+  let h = 0
+  for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) % 6
+  return `var(--cat-${h + 1})`
+}

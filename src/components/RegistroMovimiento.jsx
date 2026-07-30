@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
-import { CATEGORIA_INVERSION, formatearEuros } from '../lib/categorias'
+import { CATEGORIA_INVERSION, colorDeCategoria, formatearEuros } from '../lib/categorias'
 import { SELECT_MOVIMIENTO, formatearFecha, hoyIso } from '../lib/movimientosUtils'
 import { categoriaProbable, frecuenciaCategorias, frecuentesParaRepetir, importesFrecuentes } from '../lib/sugerencias'
 import { toast } from '../lib/toast'
@@ -342,6 +342,11 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
                   setMostrarMasCategorias(false)
                 }}
               >
+                <span
+                  className="cat-dot"
+                  style={{ background: colorDeCategoria(c.nombre) }}
+                  aria-hidden="true"
+                />
                 {c.nombre}
               </button>
             ))}
