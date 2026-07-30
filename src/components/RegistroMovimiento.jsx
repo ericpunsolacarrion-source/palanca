@@ -202,6 +202,9 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
       return
     }
 
+    // "Varios seguidos": se limpia el importe y lo específico del movimiento,
+    // pero se MANTIENE la fecha y el tipo, se pliegan los detalles y se re-enfoca
+    // el importe, listo para encadenar el siguiente sin salir de la pantalla.
     setImporte(null)
     setNota('')
     setMostrarNota(false)
@@ -210,8 +213,11 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
     setFuenteId('')
     setNuevaFuente('')
     setEsFijo(false)
+    setMostrarDetalles(false)
+    setMostrarMasCategorias(false)
     toast(TOAST_MODO[modo])
     onGuardado(fila ? { accion: 'crear', filas: [fila] } : undefined)
+    requestAnimationFrame(() => document.getElementById('importe')?.focus())
   }
 
   const textoBoton = { gasto: 'Guardar gasto', ingreso: 'Guardar ingreso', inversion: 'Guardar inversión' }[modo]
