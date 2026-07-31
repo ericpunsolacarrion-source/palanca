@@ -2148,8 +2148,13 @@ button[type='submit']:disabled {
 .plan-card {
   border: 1px solid var(--border);
   border-radius: var(--radio-m);
-  padding: var(--sp-3) var(--sp-4);
+  padding: var(--sp-4);
   background: var(--card-bg);
+  transition: border-color 0.2s ease;
+}
+
+.plan-card:hover {
+  border-color: var(--border-fuerte, var(--accent-2));
 }
 
 .plan-card-cabecera {
@@ -2161,16 +2166,53 @@ button[type='submit']:disabled {
 
 .plan-mes {
   font-weight: 600;
+  font-size: var(--fs-m);
   color: var(--text-h);
 }
 
+/* Resumen del mes planificado: rejilla 2×2 de stats etiquetadas (label arriba,
+   valor abajo), alineadas y con "Ahorro líquido" destacado como resultado. */
 .plan-resumen {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+.plan-stat {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px var(--sp-4);
-  margin-top: var(--sp-2);
-  font-size: var(--fs-s);
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: var(--radio-s);
+  background: var(--card-bg-2);
+}
+
+.plan-stat.destacado {
+  border: 1px solid var(--border);
+}
+
+.plan-stat-label {
+  font-size: var(--fs-xs);
+  color: var(--text);
+  opacity: 0.75;
+}
+
+.plan-stat-valor {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--text-h);
   font-variant-numeric: tabular-nums;
+}
+
+.plan-stat-valor.ingreso {
+  color: var(--ingreso);
+}
+.plan-stat-valor.gasto {
+  color: var(--gasto);
+}
+.plan-stat-valor.inversion {
+  color: var(--inversion);
 }
 
 .plan-form {

@@ -261,20 +261,26 @@ export default function PlanificacionFutura({ usuarioId, movimientos }) {
                 </div>
                 {plan && (
                   <div className="plan-resumen">
-                    <span>
-                      <span className="il-label">Ingreso</span> {formatearEuros(Number(plan.ingreso_previsto))}
-                    </span>
-                    <span>
-                      <span className="il-label">Gasto</span> {formatearEuros(Number(plan.gasto_previsto))}
-                    </span>
-                    <span>
-                      <span className="il-label">Invertir</span>{' '}
-                      <strong className="inversion">{formatearEuros(Number(plan.inversion_prevista))}</strong>
-                    </span>
-                    <span>
-                      <span className="il-label">Ahorro líquido</span>{' '}
-                      <strong className={liquido >= 0 ? 'ingreso' : 'gasto'}>{formatearEuros(liquido)}</strong>
-                    </span>
+                    <div className="plan-stat">
+                      <span className="plan-stat-label">Ingreso</span>
+                      <span className="plan-stat-valor">{formatearEuros(Number(plan.ingreso_previsto))}</span>
+                    </div>
+                    <div className="plan-stat">
+                      <span className="plan-stat-label">Gasto</span>
+                      <span className="plan-stat-valor gasto">{formatearEuros(Number(plan.gasto_previsto))}</span>
+                    </div>
+                    <div className="plan-stat">
+                      <span className="plan-stat-label">Invertir</span>
+                      <span className="plan-stat-valor inversion">
+                        {formatearEuros(Number(plan.inversion_prevista))}
+                      </span>
+                    </div>
+                    <div className="plan-stat destacado">
+                      <span className="plan-stat-label">Ahorro líquido</span>
+                      <span className={`plan-stat-valor ${liquido >= 0 ? 'ingreso' : 'gasto'}`}>
+                        {formatearEuros(liquido)}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
