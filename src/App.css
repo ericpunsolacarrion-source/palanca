@@ -2326,6 +2326,29 @@ button[type='submit']:disabled {
   opacity: 0.4;
 }
 
+/* Totales de ingresos y gastos de los meses planificados: contexto compacto,
+   separado del gancho (inversión + ahorro líquido) por una línea fina. */
+.pp-totales {
+  display: flex;
+  gap: var(--sp-5);
+  padding-bottom: var(--sp-3);
+  margin-bottom: var(--sp-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.pp-total {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--fs-s);
+  font-variant-numeric: tabular-nums;
+}
+
+.pp-total-label {
+  font-size: var(--fs-xs);
+  opacity: 0.6;
+}
+
 .plan-proyeccion-nota {
   font-size: var(--fs-micro);
   opacity: 0.6;

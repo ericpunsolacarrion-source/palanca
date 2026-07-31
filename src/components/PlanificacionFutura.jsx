@@ -141,6 +141,8 @@ export default function PlanificacionFutura({ usuarioId, movimientos }) {
 
   // Acumulado proyectado si el usuario cumple los planes de los próximos meses.
   const proyeccion = useMemo(() => {
+    let ingresos = 0
+    let gastos = 0
     let liquido = 0
     let inversion = 0
     let mesesConPlan = 0
@@ -148,12 +150,14 @@ export default function PlanificacionFutura({ usuarioId, movimientos }) {
       const p = planes[clave]
       if (!p) continue
       mesesConPlan += 1
+      ingresos += Number(p.ingreso_previsto)
+      gastos += Number(p.gasto_previsto)
       const superavit = Number(p.ingreso_previsto) - Number(p.gasto_previsto)
       const inv = Number(p.inversion_prevista)
       inversion += inv
       liquido += superavit - inv
     }
-    return { liquido, inversion, patrimonio: liquido + inversion, mesesConPlan }
+    return { ingresos, gastos, liquido, inversion, patrimonio: liquido + inversion, mesesConPlan }
   }, [planes, meses])
 
   if (tablaFalta) {
@@ -200,6 +204,20 @@ export default function PlanificacionFutura({ usuarioId, movimientos }) {
       {proyeccion.mesesConPlan > 0 && (
         <div className="plan-proyeccion">
           <span className="plan-proyeccion-titulo">Si cumples tus planes…</span>
+
+          {/* Totales de ingresos y gastos de los meses planificados (visibilidad
+              del origen del patrimonio que se sumaría). */}
+          <div className="pp-totales">
+            <span className="pp-total">
+              <span className="pp-total-label">Ingresos</span>
+              <strong className="ingreso">{formatearEuros(proyeccion.ingresos)}</strong>
+            </span>
+            <span className="pp-total">
+              <span className="pp-total-label">Gastos</span>
+              <strong className="gasto">{formatearEuros(proyeccion.gastos)}</strong>
+            </span>
+          </div>
+
           <div className="plan-proyeccion-cifras">
             <div className="pp-bloque">
               <span className="pp-valor inversion">{formatearEuros(proyeccion.inversion)}</span>
