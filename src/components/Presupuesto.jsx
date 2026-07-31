@@ -210,8 +210,12 @@ export default function Presupuesto({ movimientos, gastoEstimado }) {
         </p>
       ) : (
         <>
-          <Cifra valor={presupuestoGasto} className="balance-hero" />
-          <span className="balance-etiqueta-principal">disponible para gastar este mes</span>
+          {/* Héroe = lo ACCIONABLE (cuánto te queda para gastar). El tope pasa a
+              contexto (queda en el "Objetivo" de arriba). Mismos datos, otro peso. */}
+          <span className="presu-hero-label">
+            {restante >= 0 ? 'Te queda para gastar' : 'Has excedido tu presupuesto en'}
+          </span>
+          <Cifra valor={Math.abs(restante)} className={`balance-hero ${restante >= 0 ? 'ingreso' : 'gasto'}`} />
 
           <div className="ratio-barra" style={{ marginTop: 16 }}>
             <div
@@ -220,7 +224,7 @@ export default function Presupuesto({ movimientos, gastoEstimado }) {
             />
           </div>
 
-          <div className="balance-grid" style={{ marginTop: 16 }}>
+          <div className="balance-grid presu-cards" style={{ marginTop: 16 }}>
             <div className="balance-item">
               <span className="etiqueta">Gastado</span>
               <span className="valor gasto">{formatearEuros(totalGastos)}</span>

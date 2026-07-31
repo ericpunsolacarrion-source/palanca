@@ -2406,6 +2406,40 @@ button[type='submit']:disabled {
   color: var(--gasto);
 }
 
+/* Lavado de cara del "Presupuesto del mes": etiqueta del héroe accionable
+   ("Te queda") y las tres tarjetas con acabado premium (fondo, borde, cifras
+   tabulares más grandes) para dar jerarquía sin cambiar datos. */
+.presu-hero-label {
+  display: block;
+  font-size: var(--fs-s);
+  color: var(--text);
+  margin-top: var(--sp-2);
+}
+
+.presu-cards {
+  gap: var(--sp-2);
+}
+
+.presu-cards .balance-item {
+  padding: 12px 14px;
+  border-radius: var(--radio-m);
+  background: var(--card-bg-2);
+  border: 1px solid var(--border);
+  gap: 4px;
+}
+
+.presu-cards .etiqueta {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.65;
+}
+
+.presu-cards .valor {
+  font-size: var(--fs-m);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Recordatorio */
 .recordatorio {
   display: flex;
@@ -2943,6 +2977,15 @@ button[type='submit']:disabled {
   line-height: 1.1;
   margin: 5px 0 4px;
   color: var(--text-h);
+}
+
+/* El héroe "Te queda" se colorea (verde si queda, rosa si excedido). Más
+   específico que la regla de arriba para ganarle. */
+.presupuesto .balance-hero.ingreso {
+  color: var(--ingreso);
+}
+.presupuesto .balance-hero.gasto {
+  color: var(--gasto);
 }
 
 .presupuesto .ratio-barra {
