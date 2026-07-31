@@ -4,7 +4,7 @@ import { useEtiquetas } from '../lib/useEtiquetas'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { NUEVA_ETIQUETA, resolverEtiqueta } from '../lib/etiquetas'
 import { confirmar } from '../lib/confirmar'
-import { CATEGORIA_INVERSION, formatearEuros } from '../lib/categorias'
+import { CATEGORIA_AJUSTE, CATEGORIA_INVERSION, formatearEuros } from '../lib/categorias'
 import { SELECT_MOVIMIENTO, formatearFecha, hoyIso } from '../lib/movimientosUtils'
 import { categoriaProbable, frecuenciaCategorias, frecuentesParaRepetir, importesFrecuentes } from '../lib/sugerencias'
 import { toast } from '../lib/toast'
@@ -61,10 +61,14 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
     if (!categoriaManual && !esInversion) setCategoriaId(categoriaSugeridaId ?? '')
   }, [categoriaSugeridaId, categoriaManual, esInversion])
 
-  // Sugerencias derivadas del histórico para registrar con menos toques.
+  // Sugerencias derivadas del histórico para registrar con menos toques. Se
+  // excluyen las categorías RESERVADAS ("Inversion" tiene su propio botón/pestaña
+  // arriba; "Ajuste" es interno de la reconciliación): no deben elegirse a mano.
   const categoriasOrdenadas = useMemo(() => {
     const freq = frecuenciaCategorias(movimientos, modo)
-    return [...categorias].sort((a, b) => (freq.get(b.nombre) ?? 0) - (freq.get(a.nombre) ?? 0))
+    return [...categorias]
+      .filter((c) => c.nombre !== CATEGORIA_INVERSION && c.nombre !== CATEGORIA_AJUSTE)
+      .sort((a, b) => (freq.get(b.nombre) ?? 0) - (freq.get(a.nombre) ?? 0))
   }, [categorias, movimientos, modo])
 
   // Categorías como chips (las más usadas primero). Si la elegida no está entre
