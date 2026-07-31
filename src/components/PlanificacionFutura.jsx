@@ -2,10 +2,8 @@ import { useMemo, useState } from 'react'
 import { formatearEuros } from '../lib/categorias'
 import {
   claveMesActual,
-  estimacionGastoMensual,
   filtrarMesActual,
-  ingresoMensualMedio,
-  resumenMensualMedio,
+  predecirMesFuturo,
   totalesDe,
 } from '../lib/movimientosUtils'
 import { usePlanificaciones } from '../lib/usePlanificaciones'
@@ -27,12 +25,21 @@ function proximosMeses(n) {
   return arr
 }
 
-function FormularioPlan({ inicial, medias, onGuardar, onCancelar, guardando }) {
-  const [ingreso, setIngreso] = useState(inicial ? Number(inicial.ingreso_previsto) : medias.ingreso)
-  const [gasto, setGasto] = useState(inicial ? Number(inicial.gasto_previsto) : medias.gasto)
+function FormularioPlan({ inicial, prediccion, onGuardar, onCancelar, guardando }) {
+  const [ingreso, setIngreso] = useState(inicial ? Number(inicial.ingreso_previsto) : prediccion.ingreso)
+  const [gasto, setGasto] = useState(inicial ? Number(inicial.gasto_previsto) : prediccion.gasto)
   const [inversion, setInversion] = useState(
-    inicial ? Number(inicial.inversion_prevista) : medias.inversion,
+    inicial ? Number(inicial.inversion_prevista) : prediccion.inversion,
   )
+  // Mientras el usuario no toque el gasto a mano, se recalcula con el ingreso
+  // que ponga, usando la tasa de gasto histórica del mes (proporcionalidad). En
+  // un plan YA guardado se respeta su gasto (no se auto-recalcula al editar).
+  const [gastoManual, setGastoManual] = useState(!!inicial)
+
+  function cambiarIngreso(v) {
+    setIngreso(v)
+    if (!gastoManual && prediccion.tasa > 0) setGasto(Math.round((Number(v) || 0) * prediccion.tasa))
+  }
 
   const superavit = (Number(ingreso) || 0) - (Number(gasto) || 0)
   const liquido = superavit - (Number(inversion) || 0)
@@ -45,20 +52,24 @@ function FormularioPlan({ inicial, medias, onGuardar, onCancelar, guardando }) {
         onGuardar({ ingreso: Number(ingreso) || 0, gasto: Number(gasto) || 0, inversion: Number(inversion) || 0 })
       }}
     >
-      {(medias.ingreso > 0 || medias.gasto > 0) && (
-        <p className="ayuda plan-referencia">
-          De referencia, en tus últimos meses: ingresos{' '}
-          <strong>{formatearEuros(medias.ingreso)}</strong>, gastos{' '}
-          <strong>{formatearEuros(medias.gasto)}</strong>, invertido{' '}
-          <strong>{formatearEuros(medias.inversion)}</strong>.
+      {!inicial && (
+        <p className={`ayuda plan-prediccion ${prediccion.provisional ? 'provisional' : ''}`}>
+          {prediccion.explicacion}
         </p>
       )}
 
       <label htmlFor="plan-ingreso">Ingreso que esperas (€)</label>
-      <InputImporte id="plan-ingreso" value={ingreso} onValueChange={setIngreso} />
+      <InputImporte id="plan-ingreso" value={ingreso} onValueChange={cambiarIngreso} />
 
       <label htmlFor="plan-gasto">Gasto máximo que te pones (€)</label>
-      <InputImporte id="plan-gasto" value={gasto} onValueChange={setGasto} />
+      <InputImporte
+        id="plan-gasto"
+        value={gasto}
+        onValueChange={(v) => {
+          setGasto(v)
+          setGastoManual(true)
+        }}
+      />
 
       <label htmlFor="plan-inversion">Cuánto quieres invertir (€)</label>
       <InputImporte id="plan-inversion" value={inversion} onValueChange={setInversion} />
@@ -124,17 +135,6 @@ export default function PlanificacionFutura({ usuarioId, movimientos }) {
   const [guardando, setGuardando] = useState(false)
 
   const meses = useMemo(() => proximosMeses(N_MESES), [])
-
-  const medias = useMemo(() => {
-    const ing = ingresoMensualMedio(movimientos).media
-    const gas = estimacionGastoMensual(movimientos).estimacion
-    const inv = resumenMensualMedio(movimientos).invertidoMedio
-    return {
-      ingreso: Math.round(ing) || null,
-      gasto: Math.round(gas) || null,
-      inversion: Math.round(inv) || null,
-    }
-  }, [movimientos])
 
   const planMesActual = planes[claveMesActual()]
   const realMesActual = useMemo(() => totalesDe(filtrarMesActual(movimientos)), [movimientos])
@@ -230,7 +230,7 @@ export default function PlanificacionFutura({ usuarioId, movimientos }) {
                   <span className="plan-mes">{etiqueta}</span>
                   <FormularioPlan
                     inicial={plan}
-                    medias={medias}
+                    prediccion={predecirMesFuturo(movimientos, clave)}
                     guardando={guardando}
                     onGuardar={(datos) => handleGuardar(clave, datos)}
                     onCancelar={() => setEditandoMes(null)}

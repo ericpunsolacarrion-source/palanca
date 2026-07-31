@@ -2187,6 +2187,19 @@ button[type='submit']:disabled {
   padding: 8px 10px;
 }
 
+/* Explicación de la predicción inteligente (transparencia del cálculo). */
+.plan-prediccion {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-2);
+  border-radius: var(--radio-s);
+  padding: 9px 12px;
+  color: var(--text);
+}
+
+.plan-prediccion.provisional {
+  border-left-color: var(--inversion);
+}
+
 .plan-derivado {
   display: flex;
   flex-direction: column;

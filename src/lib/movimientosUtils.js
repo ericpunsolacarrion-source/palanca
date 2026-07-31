@@ -105,6 +105,8 @@ export function rangoMeses(movimientos) {
 // Intl.DateTimeFormat es caro y antes se hacía por cada mes (hasta 120 veces en
 // los gráficos), lo que dominaba el coste de cálculo del dashboard.
 const FMT_MES_CORTO = new Intl.DateTimeFormat('es-ES', { month: 'short' })
+const FMT_MES_LARGO = new Intl.DateTimeFormat('es-ES', { month: 'long' })
+const nombreMes = (mm) => FMT_MES_LARGO.format(new Date(2000, Number(mm) - 1, 1))
 
 // Últimos N meses terminando en `claveFin` (por defecto el mes actual):
 // [{clave, etiqueta}]. Permite anclar las series temporales a un mes elegido.
@@ -418,6 +420,100 @@ export function estimacionGastoMensual(movimientos) {
     mesesUsados: mesesConActividad,
     // Con menos de 2 meses la media es poco representativa: se marca provisional.
     provisional: mesesConActividad < 2,
+  }
+}
+
+// ── PREDICCIÓN INTELIGENTE DE UN MES FUTURO ─────────────────────────────────
+// Combina ESTACIONALIDAD (el propio mes del año: agostos con agostos) y la
+// RELACIÓN INGRESO–GASTO (proporción del ingreso que se suele gastar). Fuente
+// única para la planificación de meses futuros.
+//
+// Fórmula (documentada para poder ajustarla):
+//   ingreso previsto = media de los ingresos de ESE mes del año (estacional);
+//                      si no hay ese mes, media global de ingresos.
+//   tasa de gasto    = Σgastos/Σingresos de ese mes del año, SUAVIZADA hacia la
+//                      tasa global con encogimiento K: con pocos años del mes la
+//                      predicción tira de la global; con más, confía en el patrón
+//                      del mes. tasa = (n·tasaMes + K·tasaGlobal) / (n + K), K=2.
+//   gasto previsto   = ingreso previsto × tasa  → sube/baja con el ingreso Y
+//                      refleja el patrón estacional del mes.
+//   inversión prev.  = media de inversión de ese mes del año, o global.
+// Degrada con elegancia: sin histórico de ese mes → media global + provisional.
+// `ingresoPrevisto` (opcional): si se pasa (el usuario lo cambia en el form),
+// el gasto se recalcula con ese ingreso al vuelo.
+const K_ENCOGIMIENTO = 2
+
+export function predecirMesFuturo(movimientos, claveObjetivo, ingresoPrevisto = null) {
+  const mesObjetivo = claveObjetivo.slice(5, 7) // 'MM'
+
+  const porMes = new Map()
+  for (const m of movimientos) {
+    const clave = claveMes(m.fecha)
+    if (!porMes.has(clave)) porMes.set(clave, [])
+    porMes.get(clave).push(m)
+  }
+
+  let sumaIngGlobal = 0
+  let sumaGasGlobal = 0
+  let sumaInvGlobal = 0
+  let nMesesConIng = 0
+  const mesesDelMes = [] // mismos MM de otros años con actividad
+
+  for (const [clave, movs] of porMes) {
+    const t = totalesDe(movs)
+    if (t.ingresos > 0) {
+      sumaIngGlobal += t.ingresos
+      sumaGasGlobal += t.gastos
+      sumaInvGlobal += t.invertido
+      nMesesConIng += 1
+    }
+    if (clave.slice(5, 7) === mesObjetivo && (t.ingresos > 0 || t.gastos > 0)) {
+      mesesDelMes.push({ anio: clave.slice(0, 4), ...t })
+    }
+  }
+
+  const tasaGlobal = sumaIngGlobal > 0 ? sumaGasGlobal / sumaIngGlobal : 0
+
+  const nMes = mesesDelMes.length
+  const sumaIngMes = mesesDelMes.reduce((a, x) => a + x.ingresos, 0)
+  const sumaGasMes = mesesDelMes.reduce((a, x) => a + x.gastos, 0)
+  const sumaInvMes = mesesDelMes.reduce((a, x) => a + x.invertido, 0)
+  const nMesConIng = mesesDelMes.filter((x) => x.ingresos > 0).length
+
+  // Tasa del mes suavizada hacia la global (encogimiento por falta de datos).
+  const tasaMes = sumaIngMes > 0 ? sumaGasMes / sumaIngMes : tasaGlobal
+  const tasa = (nMes * tasaMes + K_ENCOGIMIENTO * tasaGlobal) / (nMes + K_ENCOGIMIENTO)
+
+  // Ingreso estacional del mes (o global si no hay ese mes).
+  const ingresoEstacional =
+    nMesConIng > 0 ? sumaIngMes / nMesConIng : nMesesConIng > 0 ? sumaIngGlobal / nMesesConIng : 0
+  const ingreso =
+    ingresoPrevisto != null && Number(ingresoPrevisto) > 0 ? Number(ingresoPrevisto) : ingresoEstacional
+
+  const gasto = ingreso * tasa
+  const inversion = nMes > 0 ? sumaInvMes / nMes : nMesesConIng > 0 ? sumaInvGlobal / nMesesConIng : 0
+
+  // Transparencia: el mensaje se adapta a cuántos años de ese mes hay.
+  const mes = nombreMes(mesObjetivo)
+  const provisional = nMes === 0
+  let explicacion
+  if (nMes >= 2) {
+    const anios = [...new Set(mesesDelMes.map((x) => x.anio))].sort()
+    explicacion = `Media de tus ${mes}s (${anios[0]}–${anios[anios.length - 1]}), ajustada a tu ingreso previsto.`
+  } else if (nMes === 1) {
+    explicacion = `Basado en tu ${mes} de ${mesesDelMes[0].anio} y tu ritmo de gasto; se afinará con más años.`
+  } else {
+    explicacion = `Estimación provisional (aún sin ${mes}s anteriores): tu media reciente. Se afinará con más meses.`
+  }
+
+  return {
+    ingreso: Math.round(ingreso),
+    gasto: Math.round(gasto),
+    inversion: Math.round(inversion),
+    tasa,
+    explicacion,
+    provisional,
+    aniosDelMes: nMes,
   }
 }
 
