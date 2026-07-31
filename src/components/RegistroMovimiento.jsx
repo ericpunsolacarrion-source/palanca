@@ -4,7 +4,7 @@ import { useEtiquetas } from '../lib/useEtiquetas'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { NUEVA_ETIQUETA, resolverEtiqueta } from '../lib/etiquetas'
 import { confirmar } from '../lib/confirmar'
-import { CATEGORIA_INVERSION, colorDeCategoria, formatearEuros } from '../lib/categorias'
+import { CATEGORIA_INVERSION, formatearEuros } from '../lib/categorias'
 import { SELECT_MOVIMIENTO, formatearFecha, hoyIso } from '../lib/movimientosUtils'
 import { categoriaProbable, frecuenciaCategorias, frecuentesParaRepetir, importesFrecuentes } from '../lib/sugerencias'
 import { toast } from '../lib/toast'
@@ -69,7 +69,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
 
   // Categorías como chips (las más usadas primero). Si la elegida no está entre
   // las visibles (viene de "Otra"), se incluye para que siga marcada.
-  const CATS_VISIBLES = 6
+  const CATS_VISIBLES = 12
   const catsChips = useMemo(() => {
     const top = categoriasOrdenadas.slice(0, CATS_VISIBLES)
     if (categoriaId && !top.some((c) => c.id === categoriaId)) {
@@ -372,7 +372,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
               <button
                 key={c.id}
                 type="button"
-                className={`chip ${categoriaId === c.id ? 'activo' : ''}`}
+                className={`chip chip-sm ${categoriaId === c.id ? 'activo' : ''}`}
                 onClick={() => {
                   setCategoriaId(c.id)
                   setCategoriaManual(true)
@@ -380,17 +380,12 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
                   setMostrarMasCategorias(false)
                 }}
               >
-                <span
-                  className="cat-dot"
-                  style={{ background: colorDeCategoria(c.nombre) }}
-                  aria-hidden="true"
-                />
                 {c.nombre}
               </button>
             ))}
             <button
               type="button"
-              className={`chip chip-otra ${mostrarMasCategorias ? 'activo' : ''}`}
+              className={`chip chip-sm chip-otra ${mostrarMasCategorias ? 'activo' : ''}`}
               onClick={() => setMostrarMasCategorias((v) => !v)}
             >
               ＋ Otra

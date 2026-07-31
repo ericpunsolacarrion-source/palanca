@@ -1007,29 +1007,25 @@ button[type='submit']:disabled {
   gap: var(--sp-2);
 }
 
+/* Categorías en UNA fila horizontal deslizable (aparecen 2-3 y se desliza para
+   ver más), no apiladas. Botones finos como el resto de chips de la app. */
 .cat-chips {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  gap: 6px;
+  padding-bottom: 2px;
+}
+
+.cat-chips::-webkit-scrollbar {
+  display: none;
 }
 
 .chip-otra {
   border-style: dashed;
   color: var(--text);
-}
-
-/* Punto de color por categoría (reconocimiento visual en los chips) */
-.cat-chips .chip {
-  display: inline-flex;
-  align-items: center;
-}
-
-.cat-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  margin-right: 8px;
-  flex: none;
 }
 
 .mas-detalles-toggle {
