@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import { aCentimos } from './importe'
 import { toast } from './toast'
 
 // Accesos rápidos de gasto definidos por el usuario (café 1,50 €, comer 12 €…).
@@ -35,6 +36,7 @@ async function migrarDesdeLS(usuarioId, legacy) {
     usuario_id: usuarioId,
     nombre: it.nombre,
     importe: it.importe ?? null,
+    importe_centimos: aCentimos(it.importe ?? null),
     categoria_id: esUuid(it.categoriaId) ? it.categoriaId : null,
     categoria_nombre: it.categoriaNombre ?? null,
   }))
@@ -89,6 +91,7 @@ export function useGastosRapidos(usuarioId) {
         usuario_id: usuarioId,
         nombre: nombre.trim(),
         importe: importe ?? null,
+        importe_centimos: aCentimos(importe ?? null),
         categoria_id: esUuid(categoriaId) ? categoriaId : null,
         categoria_nombre: categoriaNombre ?? null,
       })
@@ -111,6 +114,7 @@ export function useGastosRapidos(usuarioId) {
         if (k in campos) fila[col] = campos[k]
       }
       if (Object.keys(fila).length === 0) return
+      if ('importe' in campos) fila.importe_centimos = aCentimos(campos.importe)
       const { error } = await supabase.from('gastos_rapidos').update(fila).eq('id', id)
       if (!error) await cargar()
       else toast('No se ha podido actualizar el acceso rápido.', 'error')

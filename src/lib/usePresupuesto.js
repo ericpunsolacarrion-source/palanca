@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import { aCentimos } from './importe'
 
 export function usePresupuesto(usuarioId) {
   const [metodo, setMetodo] = useState('tasa')
@@ -40,6 +41,7 @@ export function usePresupuesto(usuarioId) {
       updated_at: new Date().toISOString(),
       tasa_ahorro_objetivo: nuevoMetodo === 'tasa' ? valor : null,
       gasto_maximo_fijo: nuevoMetodo === 'fijo' ? valor : null,
+      gasto_maximo_fijo_centimos: nuevoMetodo === 'fijo' ? aCentimos(valor) : null,
     }
 
     const { error } = await supabase.from('presupuestos').upsert(payload)
@@ -59,6 +61,7 @@ export function usePresupuesto(usuarioId) {
       .upsert({
         usuario_id: usuarioId,
         objetivo_inversion_mensual: nuevoObjetivo,
+        objetivo_inversion_mensual_centimos: aCentimos(nuevoObjetivo),
         updated_at: new Date().toISOString(),
       })
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import { aCentimos } from './importe'
 
 // Objetivos de ahorro múltiples por usuario. Degradación elegante: si la tabla
 // aún no existe en la BD, se comporta como lista vacía sin romper la app.
@@ -40,7 +41,9 @@ export function useObjetivosAhorro(usuarioId) {
         usuario_id: usuarioId,
         nombre: nombre.trim(),
         importe_objetivo: importeObjetivo,
+        importe_objetivo_centimos: aCentimos(importeObjetivo),
         importe_actual: importeActual || 0,
+        importe_actual_centimos: aCentimos(importeActual || 0),
         fecha_objetivo: fechaObjetivo || null,
       })
       .select()
@@ -50,7 +53,10 @@ export function useObjetivosAhorro(usuarioId) {
   }
 
   async function actualizar(id, campos) {
-    const { error } = await supabase.from('objetivos_ahorro').update(campos).eq('id', id)
+    const conCentimos = { ...campos }
+    if ('importe_objetivo' in campos) conCentimos.importe_objetivo_centimos = aCentimos(campos.importe_objetivo)
+    if ('importe_actual' in campos) conCentimos.importe_actual_centimos = aCentimos(campos.importe_actual)
+    const { error } = await supabase.from('objetivos_ahorro').update(conCentimos).eq('id', id)
     if (!error) await cargar()
     return !error
   }

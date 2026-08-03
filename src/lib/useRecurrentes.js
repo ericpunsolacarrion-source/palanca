@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import { claveMesActual } from './movimientosUtils'
+import { aCentimos } from './importe'
 import { toast } from './toast'
 
 // Recurrentes del usuario (alquiler, nómina, suscripción…), persistidos en
@@ -52,6 +53,7 @@ async function migrarDesdeLS(usuarioId, legacy) {
         tipo: it.tipo,
         nombre: it.nombre,
         importe: it.importe,
+        importe_centimos: aCentimos(it.importe),
         categoria_id: esUuid(it.categoriaId) ? it.categoriaId : null,
         categoria_nombre: it.categoriaNombre ?? null,
         fuente_id: esUuid(it.fuenteId) ? it.fuenteId : null,
@@ -151,6 +153,7 @@ export function useRecurrentes(usuarioId) {
         tipo: datos.tipo,
         nombre: datos.nombre,
         importe: datos.importe,
+        importe_centimos: aCentimos(datos.importe),
         categoria_id: esUuid(datos.categoriaId) ? datos.categoriaId : null,
         categoria_nombre: datos.categoriaNombre ?? null,
         fuente_id: esUuid(datos.fuenteId) ? datos.fuenteId : null,
@@ -184,6 +187,7 @@ export function useRecurrentes(usuarioId) {
         if (k in campos) fila[col] = campos[k]
       }
       if (Object.keys(fila).length === 0) return
+      if ('importe' in campos) fila.importe_centimos = aCentimos(campos.importe)
       const { error } = await supabase.from('recurrentes').update(fila).eq('id', id)
       if (!error) {
         await cargar()

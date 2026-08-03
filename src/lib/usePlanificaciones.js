@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import { aCentimos } from './importe'
 
 // Planificaciones de meses futuros por usuario. Degradación elegante: si la
 // tabla aún no existe, se comporta como vacío sin romper la app.
@@ -39,8 +40,11 @@ export function usePlanificaciones(usuarioId) {
         usuario_id: usuarioId,
         mes,
         ingreso_previsto: ingreso || 0,
+        ingreso_previsto_centimos: aCentimos(ingreso || 0),
         gasto_previsto: gasto || 0,
+        gasto_previsto_centimos: aCentimos(gasto || 0),
         inversion_prevista: inversion || 0,
+        inversion_prevista_centimos: aCentimos(inversion || 0),
         nota: nota?.trim() || null,
       },
       { onConflict: 'usuario_id,mes' },
