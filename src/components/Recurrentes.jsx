@@ -36,7 +36,7 @@ function Hero({ gastoMes, estado }) {
         {formatearEuros(gastoMes)}
         <span className="tb-hero-mes">/mes</span>
       </div>
-      {gastoMes > 0 && <span className="tb-hero-anual">≈ {formatearEuros(gastoMes * 12)} al año</span>}
+      {gastoMes > 0 && <span className="tb-hero-anual">≈ {formatearEuros(Math.round(gastoMes * 12))} al año</span>}
       {estado && (
         <div className={`tb-hero-estado ${estado.tono}`}>
           {estado.tono === 'ok' && <span className="tb-estado-punto" aria-hidden="true" />}
@@ -110,8 +110,8 @@ function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEd
 
   const datos = [
     { k: 'Antigüedad', v: bio.meses >= 1 ? bio.antiguedad : 'nuevo' },
-    { k: 'Pagado en total', v: formatearEuros(bio.total) },
-    { k: 'Veces registrado', v: `${bio.nPagos} ${bio.nPagos === 1 ? 'vez' : 'veces'}` },
+    { k: 'Pagado en total', v: bio.total > 0 ? formatearEuros(bio.total) : '—' },
+    { k: 'Veces registrado', v: bio.nPagos > 0 ? `${bio.nPagos} ${bio.nPagos === 1 ? 'vez' : 'veces'}` : '—' },
     { k: 'Próximo', v: hecho ? 'hecho este mes' : bio.proximo?.texto ?? '—' },
   ]
 
@@ -157,7 +157,7 @@ function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEd
             <button
               type="button"
               className="tb-confirmar-btn"
-              disabled={registrando}
+              disabled={registrando || (rec.confirmar && !(Number(importe) > 0))}
               onClick={() => onRegistrar(rec, rec.confirmar ? Number(importe) : Number(rec.importe), rec.confirmar ? fecha : fechaDelMes(rec))}
             >
               {registrando ? 'Registrando…' : `Confirmar ${signo(rec.tipo)}${formatearEuros(rec.confirmar ? Number(importe) || 0 : Number(rec.importe))}`}
