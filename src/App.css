@@ -6078,6 +6078,25 @@ button[type='submit']:disabled {
   }
 }
 
+/* "Sello" al confirmar: el anillo se rellena, el check se dibuja y da un pop
+   con muelle + un destello verde que se expande. Solo en el recién confirmado. */
+.tb-ring.recien {
+  animation: tb-asentar 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes tb-asentar {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(52, 232, 158, 0.55);
+  }
+  35% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 11px rgba(52, 232, 158, 0);
+  }
+}
+
 .tb-row-main {
   flex: 1;
   min-width: 0;
@@ -6398,7 +6417,8 @@ button[type='submit']:disabled {
 
 /* Respeta la preferencia del sistema: sin animaciones llamativas. */
 @media (prefers-reduced-motion: reduce) {
-  .tb-ring.toca {
+  .tb-ring.toca,
+  .tb-ring.recien {
     animation: none;
   }
   .tb-sheet,

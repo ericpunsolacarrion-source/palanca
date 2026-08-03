@@ -48,7 +48,7 @@ function Hero({ gastoMes, estado }) {
 }
 
 // ── Fila de compromiso: nombre + biografía + importe + anillo de estado ──────
-function CompromisoRow({ rec, mesActual, registrando, onAbrir, onConfirmarRapido }) {
+function CompromisoRow({ rec, mesActual, registrando, recien, onAbrir, onConfirmarRapido }) {
   const bio = useMemo(() => biografiaRecurrente(rec), [rec])
   const esIngreso = rec.tipo === 'ingreso'
   const hecho = rec.aplicadoEn === mesActual
@@ -73,7 +73,7 @@ function CompromisoRow({ rec, mesActual, registrando, onAbrir, onConfirmarRapido
     >
       <button
         type="button"
-        className={`tb-ring ${estadoAnillo}`}
+        className={`tb-ring ${estadoAnillo} ${recien ? 'recien' : ''}`}
         disabled={registrando}
         aria-label={hecho ? 'Confirmado este mes' : `Confirmar ${rec.nombre}`}
         onClick={(e) => {
@@ -255,6 +255,7 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
   const [detalle, setDetalle] = useState(null) // rec en hoja de detalle
   const [form, setForm] = useState(null) // { rec } edición | {} alta | null
   const [registrandoId, setRegistrandoId] = useState(null)
+  const [recienId, setRecienId] = useState(null) // id recién confirmado (anima el sello)
 
   const mesActual = claveMesActual()
 
@@ -279,6 +280,9 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
     if (error) return toast('No se ha podido registrar. Inténtalo de nuevo.', 'error')
     marcarAplicado(rec.id)
     setDetalle(null)
+    setRecienId(rec.id)
+    if (navigator.vibrate) navigator.vibrate(10)
+    setTimeout(() => setRecienId((id) => (id === rec.id ? null : id)), 800)
     toast(`${rec.nombre} registrado`)
     onRegistrado?.(filaNueva ? { accion: 'crear', filas: [filaNueva] } : undefined)
   }
@@ -345,6 +349,7 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
               rec={rec}
               mesActual={mesActual}
               registrando={registrandoId === rec.id}
+              recien={recienId === rec.id}
               onAbrir={setDetalle}
               onConfirmarRapido={confirmarRapido}
             />
