@@ -111,7 +111,7 @@ export default function MovimientosTab({
           className={sub === 'recurrentes' ? 'activo' : ''}
           onClick={() => cambiarSub('recurrentes')}
         >
-          Recurrentes
+          Base
           {pendientes.length > 0 && <span className="sub-tab-badge">{pendientes.length}</span>}
         </button>
         <button

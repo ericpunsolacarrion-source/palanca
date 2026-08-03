@@ -38,6 +38,7 @@ function aItem(row, mesesPorRec) {
     diaMes: row.dia_mes,
     confirmar: row.confirmar,
     activo: row.activo,
+    desde: row.created_at,
     mesesAplicados: meses,
     aplicadoEn: meses.includes(claveMesActual()) ? claveMesActual() : null,
   }

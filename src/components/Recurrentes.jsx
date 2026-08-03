@@ -1,16 +1,18 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { useRecurrentes } from '../lib/useRecurrentes'
 import { formatearEuros } from '../lib/categorias'
-import { SELECT_MOVIMIENTO, claveMesActual, formatearFecha, hoyIso } from '../lib/movimientosUtils'
+import { SELECT_MOVIMIENTO, claveMesActual, hoyIso } from '../lib/movimientosUtils'
+import { biografiaRecurrente } from '../lib/biografiaRecurrente'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
 import InputFecha from './InputFecha'
 
-// Fecha por defecto al marcar un recurrente: el día del mes definido, en el mes
-// en curso (acotado al último día del mes). Sin día definido, el día de hoy.
+// Fecha por defecto al confirmar: el día definido, en el mes en curso (acotado
+// al último día del mes). Sin día definido, hoy.
 function fechaDelMes(rec) {
   const now = new Date()
   const y = now.getFullYear()
@@ -23,22 +25,174 @@ function fechaDelMes(rec) {
   return hoyIso()
 }
 
+const signo = (tipo) => (tipo === 'ingreso' ? '+' : '−')
+
+// ── Héroe: el peso de tu dinero fijo ────────────────────────────────────────
+function Hero({ gastoMes, estado }) {
+  return (
+    <header className="tb-hero">
+      <span className="tb-hero-label">Gastos fijos</span>
+      <div className="tb-hero-cifra">
+        {formatearEuros(gastoMes)}
+        <span className="tb-hero-mes">/mes</span>
+      </div>
+      {gastoMes > 0 && <span className="tb-hero-anual">≈ {formatearEuros(gastoMes * 12)} al año</span>}
+      {estado && (
+        <div className={`tb-hero-estado ${estado.tono}`}>
+          {estado.tono === 'ok' && <span className="tb-estado-punto" aria-hidden="true" />}
+          {estado.texto}
+        </div>
+      )}
+    </header>
+  )
+}
+
+// ── Fila de compromiso: nombre + biografía + importe + anillo de estado ──────
+function CompromisoRow({ rec, mesActual, registrando, onAbrir, onConfirmarRapido }) {
+  const bio = useMemo(() => biografiaRecurrente(rec), [rec])
+  const esIngreso = rec.tipo === 'ingreso'
+  const hecho = rec.aplicadoEn === mesActual
+  const toca = !hecho && bio.proximo && bio.proximo.dias <= 0
+
+  // Biografía compacta: "2 años · 360 € · en 4 días". Máx. 3 señales.
+  const partes = []
+  if (bio.meses >= 1) partes.push(bio.antiguedad)
+  if (bio.total > 0) partes.push(formatearEuros(bio.total))
+  if (hecho) partes.push('hecho este mes')
+  else if (bio.proximo) partes.push(bio.proximo.texto)
+
+  const estadoAnillo = hecho ? 'hecho' : toca ? 'toca' : 'pendiente'
+
+  return (
+    <div
+      className={`tb-row ${hecho ? 'is-hecho' : ''} ${!rec.activo ? 'is-pausado' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => onAbrir(rec)}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onAbrir(rec)}
+    >
+      <button
+        type="button"
+        className={`tb-ring ${estadoAnillo}`}
+        disabled={registrando}
+        aria-label={hecho ? 'Confirmado este mes' : `Confirmar ${rec.nombre}`}
+        onClick={(e) => {
+          e.stopPropagation()
+          if (hecho) return onAbrir(rec)
+          onConfirmarRapido(rec)
+        }}
+      >
+        <svg viewBox="0 0 24 24" className="tb-ring-check" aria-hidden="true">
+          <path d="M6 12.5l4 4 8-9" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      <div className="tb-row-main">
+        <span className="tb-row-nombre">{rec.nombre}</span>
+        {partes.length > 0 && <span className="tb-row-bio">{partes.join('  ·  ')}</span>}
+      </div>
+
+      <span className={`tb-row-importe ${esIngreso ? 'ingreso' : 'gasto'}`}>
+        {signo(rec.tipo)}
+        {formatearEuros(Number(rec.importe))}
+      </span>
+    </div>
+  )
+}
+
+// ── Hoja de detalle: la biografía completa + acciones (progressive disclosure) ─
+function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEditar, onPausar, onBorrar }) {
+  const bio = useMemo(() => biografiaRecurrente(rec), [rec])
+  const esIngreso = rec.tipo === 'ingreso'
+  const hecho = rec.aplicadoEn === mesActual
+  const [importe, setImporte] = useState(Number(rec.importe))
+  const [fecha, setFecha] = useState(() => fechaDelMes(rec))
+
+  const datos = [
+    { k: 'Antigüedad', v: bio.meses >= 1 ? bio.antiguedad : 'nuevo' },
+    { k: 'Pagado en total', v: formatearEuros(bio.total) },
+    { k: 'Veces registrado', v: `${bio.nPagos} ${bio.nPagos === 1 ? 'mes' : 'meses'}` },
+    { k: 'Próximo', v: hecho ? 'hecho este mes' : bio.proximo?.texto ?? '—' },
+  ]
+
+  return createPortal(
+    <div className="tb-sheet-back" onClick={onCerrar}>
+      <div className="tb-sheet" role="dialog" aria-label={rec.nombre} onClick={(e) => e.stopPropagation()}>
+        <div className="tb-sheet-tirador" aria-hidden="true" />
+
+        <div className="tb-sheet-cab">
+          <div>
+            <span className="tb-sheet-nombre">{rec.nombre}</span>
+            <span className="tb-sheet-cat">{rec.categoriaNombre}</span>
+          </div>
+          <span className={`tb-sheet-importe ${esIngreso ? 'ingreso' : 'gasto'}`}>
+            {signo(rec.tipo)}
+            {formatearEuros(Number(rec.importe))}
+          </span>
+        </div>
+
+        <div className="tb-bio-grid">
+          {datos.map((d) => (
+            <div key={d.k} className="tb-bio-celda">
+              <span className="tb-bio-valor">{d.v}</span>
+              <span className="tb-bio-clave">{d.k}</span>
+            </div>
+          ))}
+        </div>
+
+        {rec.activo && !hecho && (
+          <div className="tb-confirmar">
+            {rec.confirmar ? (
+              <div className="tb-confirmar-campos">
+                <label>
+                  <span>Importe este mes</span>
+                  <InputImporte value={importe} onValueChange={setImporte} />
+                </label>
+                <label>
+                  <span>Fecha</span>
+                  <InputFecha value={fecha} onChange={setFecha} max={hoyIso()} />
+                </label>
+              </div>
+            ) : null}
+            <button
+              type="button"
+              className="tb-confirmar-btn"
+              disabled={registrando}
+              onClick={() => onRegistrar(rec, rec.confirmar ? Number(importe) : Number(rec.importe), rec.confirmar ? fecha : fechaDelMes(rec))}
+            >
+              {registrando ? 'Registrando…' : `Confirmar ${signo(rec.tipo)}${formatearEuros(rec.confirmar ? Number(importe) || 0 : Number(rec.importe))}`}
+            </button>
+          </div>
+        )}
+
+        {hecho && <p className="tb-hecho-nota">Ya registrado este mes ✓</p>}
+
+        <div className="tb-sheet-acc">
+          <button type="button" onClick={() => onEditar(rec)}>Editar</button>
+          <button type="button" onClick={() => onPausar(rec)}>{rec.activo ? 'Pausar' : 'Activar'}</button>
+          <button type="button" className="peligro" onClick={() => onBorrar(rec)}>Borrar</button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+// ── Formulario (alta / edición), en hoja ─────────────────────────────────────
 function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onGuardar, onCancelar }) {
   const [tipo, setTipo] = useState(inicial?.tipo ?? 'gasto')
   const [nombre, setNombre] = useState(inicial?.nombre ?? '')
   const [importe, setImporte] = useState(inicial ? Number(inicial.importe) : null)
   const [categoriaId, setCategoriaId] = useState(inicial?.categoriaId ?? '')
   const [diaMes, setDiaMes] = useState(inicial?.diaMes ? String(inicial.diaMes) : '')
-  // Por defecto: gastos automáticos (sin confirmar), ingresos a confirmar cada mes.
   const [confirmarImporte, setConfirmarImporte] = useState(
     inicial ? Boolean(inicial.confirmar) : (inicial?.tipo ?? 'gasto') === 'ingreso',
   )
   const [error, setError] = useState(null)
-
   const categorias = tipo === 'ingreso' ? categoriasIngreso : categoriasGasto
 
   function handleSubmit() {
-    if (!nombre.trim()) return setError('Ponle un nombre (ej. Alquiler, Nómina).')
+    if (!nombre.trim()) return setError('Ponle un nombre.')
     if (!importe || Number(importe) <= 0) return setError('Pon el importe habitual.')
     if (!categoriaId) return setError('Elige una categoría.')
     const cat = categorias.find((c) => c.id === categoriaId)
@@ -54,213 +208,43 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
     })
   }
 
-  return (
-    <div className="rec-form">
-      <div className="tipo-toggle">
-        <button
-          type="button"
-          className={tipo === 'gasto' ? 'activo' : ''}
-          onClick={() => {
-            setTipo('gasto')
-            setCategoriaId('')
-            setConfirmarImporte(false)
-          }}
-        >
-          Gasto
-        </button>
-        <button
-          type="button"
-          className={tipo === 'ingreso' ? 'activo' : ''}
-          onClick={() => {
-            setTipo('ingreso')
-            setCategoriaId('')
-            setConfirmarImporte(true)
-          }}
-        >
-          Ingreso
-        </button>
-      </div>
-
-      <input
-        type="text"
-        value={nombre}
-        onChange={(e) => setNombre(e.target.value)}
-        placeholder={tipo === 'ingreso' ? 'Nombre (ej. Nómina)' : 'Nombre (ej. Alquiler)'}
-        autoFocus
-      />
-      <InputImporte value={importe} onValueChange={setImporte} placeholder="Importe habitual" />
-
-      <div className="chips-fila chips-fila-compacta" role="group" aria-label="Categoría">
-        {categorias.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className={`chip chip-sm ${categoriaId === c.id ? 'activo' : ''}`}
-            onClick={() => setCategoriaId(c.id)}
-          >
-            {c.nombre}
-          </button>
-        ))}
-      </div>
-
-      <label className="rec-dia">
-        <span>¿Qué día del mes ocurre? (opcional)</span>
-        <input
-          type="number"
-          min="1"
-          max="31"
-          inputMode="numeric"
-          value={diaMes}
-          onChange={(e) => setDiaMes(e.target.value)}
-          placeholder="ej. 1, 28"
-        />
-      </label>
-      <p className="ayuda-mini">
-        Se usará como fecha del movimiento cuando lo marques en la checklist. Si lo dejas vacío, se
-        usará el día en que lo marques.
-      </p>
-
-      <label className="rec-check">
-        <input
-          type="checkbox"
-          checked={confirmarImporte}
-          onChange={(e) => setConfirmarImporte(e.target.checked)}
-        />
-        Confirmar el importe cada mes (recomendado para ingresos, que suelen variar)
-      </label>
-
-      {error && <p className="error">{error}</p>}
-      <div className="edicion-acciones">
-        <button type="button" className="btn-eliminar" onClick={onCancelar}>
-          Cancelar
-        </button>
-        <button type="button" onClick={handleSubmit}>
-          Guardar recurrente
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// Nº de meses que el recurrente lleva registrado (histórico conservado).
-function mesesRegistrados(rec) {
-  return Array.isArray(rec.mesesAplicados) ? rec.mesesAplicados.length : 0
-}
-
-// Ítem PENDIENTE de la checklist. Al marcar el check se abre una confirmación
-// explícita ("¿Confirmas X € el DD/MM?") con importe y fecha editables antes de
-// registrar, para que cualquiera entienda qué pasa al confirmar.
-function FilaChecklist({ rec, hoyDia, registrando, onRegistrar }) {
-  const esIngreso = rec.tipo === 'ingreso'
-  const [abierto, setAbierto] = useState(false)
-  const [importe, setImporte] = useState(Number(rec.importe))
-  const [fecha, setFecha] = useState(() => fechaDelMes(rec))
-
-  const diasRestantes = rec.diaMes ? rec.diaMes - hoyDia : null
-  const toca = diasRestantes === null || diasRestantes <= 0
-  const meses = mesesRegistrados(rec)
-
-  const cuando = () => {
-    if (!rec.diaMes) return null
-    if (diasRestantes <= 0) return ' · toca ya'
-    if (diasRestantes === 1) return ' · mañana'
-    return ` · en ${diasRestantes} días`
-  }
-
-  return (
-    <div className={`rec-cl-fila ${toca ? '' : 'proximo'} ${abierto ? 'abierto' : ''}`}>
-      <div className="rec-cl-linea">
-        <label className="rec-cl-check">
-          <input
-            type="checkbox"
-            checked={false}
-            disabled={registrando}
-            onChange={() => setAbierto(true)}
-            aria-label={`Marcar ${rec.nombre} como hecho este mes`}
-          />
-          <span className="rec-cl-tick" aria-hidden="true" />
-        </label>
-        <div className="rec-cl-info">
-          <span className="rec-cl-nombre">{rec.nombre}</span>
-          <span className="rec-cl-sub">
-            {rec.categoriaNombre}
-            {rec.diaMes && <span className={`rec-cuando ${toca ? 'toca' : ''}`}>{cuando()}</span>}
-            {meses > 0 && (
-              <span className="rec-cl-racha">
-                {' · '}llevas {meses} {meses === 1 ? 'mes' : 'meses'}
-              </span>
-            )}
-          </span>
+  return createPortal(
+    <div className="tb-sheet-back" onClick={onCancelar}>
+      <div className="tb-sheet tb-form" role="dialog" aria-label="Compromiso" onClick={(e) => e.stopPropagation()}>
+        <div className="tb-sheet-tirador" aria-hidden="true" />
+        <div className="tipo-toggle tb-toggle">
+          <button type="button" className={tipo === 'gasto' ? 'activo' : ''} onClick={() => { setTipo('gasto'); setCategoriaId(''); setConfirmarImporte(false) }}>Gasto</button>
+          <button type="button" className={tipo === 'ingreso' ? 'activo' : ''} onClick={() => { setTipo('ingreso'); setCategoriaId(''); setConfirmarImporte(true) }}>Ingreso</button>
         </div>
-        <span className={`rec-cl-importe ${esIngreso ? 'ingreso' : 'gasto'}`}>
-          {esIngreso ? '+' : '−'}
-          {formatearEuros(Number(rec.importe))}
-        </span>
-      </div>
 
-      {abierto && (
-        <div className="rec-cl-form">
-          <p className="rec-cl-confirma">
-            ¿Confirmas{' '}
-            <strong className={esIngreso ? 'ingreso' : 'gasto'}>
-              {esIngreso ? '+' : '−'}
-              {formatearEuros(Number(importe) || 0)}
-            </strong>{' '}
-            el <strong>{formatearFecha(fecha)}</strong>? Se registrará como movimiento.
-          </p>
-          <div className="rec-cl-campos">
-            <label className="rec-cl-campo">
-              <span>Importe{rec.confirmar ? ' (ajústalo si varía)' : ''}</span>
-              <InputImporte value={importe} onValueChange={setImporte} />
-            </label>
-            <label className="rec-cl-campo">
-              <span>Fecha</span>
-              <InputFecha value={fecha} onChange={setFecha} max={hoyIso()} />
-            </label>
-          </div>
-          <div className="rec-cl-form-acc">
-            <button type="button" className="btn-eliminar" onClick={() => setAbierto(false)}>
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={() => onRegistrar(rec, Number(importe), fecha)}
-              disabled={registrando}
-            >
-              {registrando ? '…' : 'Confirmar y registrar'}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+        <input className="tb-input-nombre" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder={tipo === 'ingreso' ? 'Nómina' : 'Alquiler'} autoFocus />
+        <InputImporte value={importe} onValueChange={setImporte} placeholder="Importe habitual" />
 
-// Ítem YA HECHO este mes: marcado, sin acción. Muestra la racha de meses.
-function FilaHecha({ rec }) {
-  const esIngreso = rec.tipo === 'ingreso'
-  const meses = mesesRegistrados(rec)
-  return (
-    <div className="rec-cl-fila hecha">
-      <div className="rec-cl-linea">
-        <span className="rec-cl-check hecha">
-          <span className="rec-cl-tick" aria-hidden="true">
-            ✓
-          </span>
-        </span>
-        <div className="rec-cl-info">
-          <span className="rec-cl-nombre">{rec.nombre}</span>
-          <span className="rec-cl-sub">
-            Hecho este mes
-            {meses > 0 && ` · llevas ${meses} ${meses === 1 ? 'mes' : 'meses'}`}
-          </span>
+        <div className="chips-fila chips-fila-compacta" role="group" aria-label="Categoría">
+          {categorias.map((c) => (
+            <button key={c.id} type="button" className={`chip chip-sm ${categoriaId === c.id ? 'activo' : ''}`} onClick={() => setCategoriaId(c.id)}>{c.nombre}</button>
+          ))}
         </div>
-        <span className={`rec-cl-importe hecha ${esIngreso ? 'ingreso' : 'gasto'}`}>
-          {esIngreso ? '+' : '−'}
-          {formatearEuros(Number(rec.importe))}
-        </span>
+
+        <div className="tb-form-fila">
+          <label className="tb-dia">
+            <span>Día del mes</span>
+            <input type="number" min="1" max="31" inputMode="numeric" value={diaMes} onChange={(e) => setDiaMes(e.target.value)} placeholder="—" />
+          </label>
+          <label className="tb-check">
+            <input type="checkbox" checked={confirmarImporte} onChange={(e) => setConfirmarImporte(e.target.checked)} />
+            <span>Importe variable</span>
+          </label>
+        </div>
+
+        {error && <p className="error">{error}</p>}
+        <div className="tb-sheet-acc tb-form-acc">
+          <button type="button" onClick={onCancelar}>Cancelar</button>
+          <button type="button" className="tb-form-guardar" onClick={handleSubmit}>Guardar</button>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -268,9 +252,11 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
   const { items, cargando, crear, actualizar, eliminar, marcarAplicado } = useRecurrentes(usuarioId)
   const { items: categoriasGasto } = useEtiquetas('categorias', usuarioId, 'gasto')
   const { items: categoriasIngreso } = useEtiquetas('categorias', usuarioId, 'ingreso')
-  const [creando, setCreando] = useState(false)
-  const [editandoId, setEditandoId] = useState(null)
+  const [detalle, setDetalle] = useState(null) // rec en hoja de detalle
+  const [form, setForm] = useState(null) // { rec } edición | {} alta | null
   const [registrandoId, setRegistrandoId] = useState(null)
+
+  const mesActual = claveMesActual()
 
   async function registrar(rec, importe, fecha) {
     if (!importe || importe <= 0) return
@@ -283,133 +269,119 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
         categoria_id: rec.categoriaId,
         fuente_id: rec.fuenteId ?? null,
         importe,
+        importe_centimos: Math.round(importe * 100),
         fecha: fecha || fechaDelMes(rec),
         es_fijo: true,
       })
       .select(SELECT_MOVIMIENTO)
       .single()
     setRegistrandoId(null)
-    if (error) {
-      toast('No se ha podido registrar. Inténtalo de nuevo.', 'error')
-      return
-    }
+    if (error) return toast('No se ha podido registrar. Inténtalo de nuevo.', 'error')
     marcarAplicado(rec.id)
+    setDetalle(null)
     toast(`${rec.nombre} registrado`)
     onRegistrado?.(filaNueva ? { accion: 'crear', filas: [filaNueva] } : undefined)
   }
 
-  async function handleEliminar(id) {
-    if (await confirmar('¿Borrar este recurrente?')) eliminar(id)
+  function confirmarRapido(rec) {
+    if (rec.confirmar) return setDetalle(rec) // variable → ajusta en la hoja
+    registrar(rec, Number(rec.importe), fechaDelMes(rec))
   }
 
-  const mesActual = claveMesActual()
-  const hoyDia = new Date().getDate()
+  async function borrar(rec) {
+    if (await confirmar(`¿Borrar ${rec.nombre}? Se conserva tu histórico de movimientos.`)) {
+      eliminar(rec.id)
+      setDetalle(null)
+    }
+  }
 
-  const activos = items.filter((r) => r.activo)
-  // Pendientes de este mes: los que ya tocan primero (por día).
-  const pendientes = activos
-    .filter((r) => r.aplicadoEn !== mesActual)
-    .sort((a, b) => (a.diaMes ?? 99) - (b.diaMes ?? 99))
-  const hechos = activos.filter((r) => r.aplicadoEn === mesActual)
+  // Orden: primero lo que pide atención (pendiente/toca, por proximidad), luego
+  // lo ya hecho este mes (sereno). Pausados al final.
+  const ordenados = useMemo(() => {
+    const activos = items.filter((r) => r.activo)
+    const pausados = items.filter((r) => !r.activo)
+    const pend = activos.filter((r) => r.aplicadoEn !== mesActual).sort((a, b) => (a.diaMes ?? 99) - (b.diaMes ?? 99))
+    const hechos = activos.filter((r) => r.aplicadoEn === mesActual)
+    return [...pend, ...hechos, ...pausados]
+  }, [items, mesActual])
+
+  const gastoMes = useMemo(
+    () => items.filter((r) => r.activo && r.tipo === 'gasto').reduce((s, r) => s + Number(r.importe), 0),
+    [items],
+  )
+
+  const estado = useMemo(() => {
+    const pend = items.filter((r) => r.activo && r.aplicadoEn !== mesActual)
+    if (items.filter((r) => r.activo).length === 0) return null
+    if (pend.length === 0) return { tono: 'ok', texto: 'Todo al día este mes' }
+    const prox = pend
+      .map((r) => ({ r, p: biografiaRecurrente(r).proximo }))
+      .filter((x) => x.p)
+      .sort((a, b) => a.p.dias - b.p.dias)[0]
+    if (prox) return { tono: 'aviso', texto: `Próximo · ${prox.r.nombre} ${prox.p.texto}` }
+    return { tono: 'aviso', texto: `${pend.length} sin confirmar este mes` }
+  }, [items, mesActual])
 
   return (
-    <div className="recurrentes vista">
-      <p className="ayuda">
-        Tu checklist del mes: <strong>marca cada recurrente cuando ocurra</strong> (se ha cobrado la
-        nómina, se ha pagado el recibo) y se registrará solo, con la fecha que le pusiste. Los de
-        importe variable te dejan ajustar la cifra al marcarlos.
-      </p>
+    <div className="tubase vista fade-in-up">
+      <Hero gastoMes={gastoMes} estado={estado} />
 
-      {activos.length > 0 && (
-        <div className="rec-checklist">
-          <span className="balance-etiqueta-principal">
-            Checklist de este mes
-            {pendientes.length > 0 && <span className="rec-cl-cuenta"> · {pendientes.length} por marcar</span>}
-          </span>
-          {pendientes.map((rec) => (
-            <FilaChecklist
-              key={rec.id}
-              rec={rec}
-              hoyDia={hoyDia}
-              onRegistrar={registrar}
-              registrando={registrandoId === rec.id}
-            />
-          ))}
-          {hechos.map((rec) => (
-            <FilaHecha key={rec.id} rec={rec} />
-          ))}
-          {pendientes.length === 0 && (
-            <p className="ayuda rec-cl-todo">¡Todo marcado este mes! 🎉</p>
-          )}
+      {cargando && items.length === 0 && (
+        <div className="skeleton skeleton-linea" style={{ width: '70%', height: 44, marginTop: 24 }} />
+      )}
+
+      {!cargando && items.length === 0 && (
+        <div className="tb-vacio">
+          <p>Aún no has añadido tus gastos fijos.</p>
+          <span>Alquiler, suscripciones, nómina… Empieza por uno.</span>
         </div>
       )}
 
-      <div className="rec-gestion">
-        <span className="balance-etiqueta-principal">Configurar recurrentes</span>
-        {cargando && items.length === 0 && (
-          <div className="skeleton skeleton-linea" style={{ width: '70%', height: 32 }} />
-        )}
-        {!cargando && items.length === 0 && !creando && (
-          <p className="ayuda">Aún no tienes recurrentes. Crea el primero abajo.</p>
-        )}
-        {items.map((rec) =>
-          editandoId === rec.id ? (
-            <FormularioRecurrente
+      {ordenados.length > 0 && (
+        <div className="tb-lista">
+          {ordenados.map((rec) => (
+            <CompromisoRow
               key={rec.id}
-              inicial={rec}
-              categoriasGasto={categoriasGasto}
-              categoriasIngreso={categoriasIngreso}
-              onGuardar={(datos) => {
-                actualizar(rec.id, datos)
-                setEditandoId(null)
-              }}
-              onCancelar={() => setEditandoId(null)}
+              rec={rec}
+              mesActual={mesActual}
+              registrando={registrandoId === rec.id}
+              onAbrir={setDetalle}
+              onConfirmarRapido={confirmarRapido}
             />
-          ) : (
-            <div key={rec.id} className={`rec-item ${rec.activo ? '' : 'pausado'}`}>
-              <div className="rec-item-info">
-                <span className="rec-item-nombre">
-                  {rec.nombre}
-                  <span className={`rec-badge ${rec.tipo}`}>{rec.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}</span>
-                  {!rec.activo && <span className="rec-badge pausado">Pausado</span>}
-                </span>
-                <span className="rec-item-detalle">
-                  {formatearEuros(Number(rec.importe))} · {rec.categoriaNombre}
-                  {rec.diaMes ? ` · día ${rec.diaMes}` : ''}
-                  {rec.confirmar ? ' · confirmar importe' : ' · importe fijo'}
-                </span>
-              </div>
-              <span className="grupo-botones">
-                <button type="button" className="btn-editar" onClick={() => actualizar(rec.id, { activo: !rec.activo })}>
-                  {rec.activo ? 'Pausar' : 'Activar'}
-                </button>
-                <button type="button" className="btn-editar" onClick={() => setEditandoId(rec.id)}>
-                  Editar
-                </button>
-                <button type="button" className="btn-eliminar" onClick={() => handleEliminar(rec.id)}>
-                  Borrar
-                </button>
-              </span>
-            </div>
-          ),
-        )}
+          ))}
+        </div>
+      )}
 
-        {creando ? (
-          <FormularioRecurrente
-            categoriasGasto={categoriasGasto}
-            categoriasIngreso={categoriasIngreso}
-            onGuardar={(datos) => {
-              crear(datos)
-              setCreando(false)
-            }}
-            onCancelar={() => setCreando(false)}
-          />
-        ) : (
-          <button type="button" className="btn-nuevo-objetivo" onClick={() => setCreando(true)}>
-            + Nuevo recurrente
-          </button>
-        )}
-      </div>
+      <button type="button" className="tb-add" onClick={() => setForm({})}>
+        <span aria-hidden="true">+</span> Añadir compromiso
+      </button>
+
+      {detalle && (
+        <DetalleSheet
+          rec={items.find((r) => r.id === detalle.id) ?? detalle}
+          mesActual={mesActual}
+          registrando={registrandoId === detalle.id}
+          onCerrar={() => setDetalle(null)}
+          onRegistrar={registrar}
+          onEditar={(rec) => { setDetalle(null); setForm({ rec }) }}
+          onPausar={(rec) => { actualizar(rec.id, { activo: !rec.activo }); setDetalle(null) }}
+          onBorrar={borrar}
+        />
+      )}
+
+      {form && (
+        <FormularioRecurrente
+          inicial={form.rec}
+          categoriasGasto={categoriasGasto}
+          categoriasIngreso={categoriasIngreso}
+          onGuardar={(datos) => {
+            if (form.rec) actualizar(form.rec.id, datos)
+            else crear(datos)
+            setForm(null)
+          }}
+          onCancelar={() => setForm(null)}
+        />
+      )}
     </div>
   )
 }
