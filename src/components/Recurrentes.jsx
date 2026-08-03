@@ -54,12 +54,12 @@ function CompromisoRow({ rec, mesActual, registrando, onAbrir, onConfirmarRapido
   const hecho = rec.aplicadoEn === mesActual
   const toca = !hecho && bio.proximo && bio.proximo.dias <= 0
 
-  // Biografía compacta: "2 años · 360 € · en 4 días". Máx. 3 señales.
+  // Biografía compacta: "2 años · 360 € · en 4 días". Si está hecho, el anillo
+  // ya lo comunica, así que no repetimos el estado en texto.
   const partes = []
   if (bio.meses >= 1) partes.push(bio.antiguedad)
   if (bio.total > 0) partes.push(formatearEuros(bio.total))
-  if (hecho) partes.push('hecho este mes')
-  else if (bio.proximo) partes.push(bio.proximo.texto)
+  if (!hecho && bio.proximo) partes.push(bio.proximo.texto)
 
   const estadoAnillo = hecho ? 'hecho' : toca ? 'toca' : 'pendiente'
 
@@ -111,7 +111,7 @@ function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEd
   const datos = [
     { k: 'Antigüedad', v: bio.meses >= 1 ? bio.antiguedad : 'nuevo' },
     { k: 'Pagado en total', v: formatearEuros(bio.total) },
-    { k: 'Veces registrado', v: `${bio.nPagos} ${bio.nPagos === 1 ? 'mes' : 'meses'}` },
+    { k: 'Veces registrado', v: `${bio.nPagos} ${bio.nPagos === 1 ? 'vez' : 'veces'}` },
     { k: 'Próximo', v: hecho ? 'hecho este mes' : bio.proximo?.texto ?? '—' },
   ]
 
