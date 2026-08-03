@@ -49,3 +49,24 @@ export function numeroAImporte(valor) {
   const redondeado = Math.round(Number(valor) * 100) / 100
   return String(redondeado).replace('.', ',')
 }
+
+// ── Frontera euros ↔ céntimos (contrato docs/MOTOR.md, P1–P3) ────────────────
+// El núcleo trabaja en céntimos ENTEROS; estos dos son la única conversión.
+// aCentimos: euros (número o string, ≤2 decimales) → entero de céntimos. Como
+// todos los importes almacenados tienen ≤2 decimales, Math.round(x*100) es
+// EXACTO y elimina la deriva de float (0,1 + 0,2 deja de ser 0,30000000000004).
+// Devuelve null si el valor no es un número (vacío/no finito).
+export function aCentimos(valor) {
+  if (valor === '' || valor === null || valor === undefined) return null
+  const n = Number(valor)
+  if (!Number.isFinite(n)) return null
+  return Math.round(n * 100)
+}
+
+// aEuros: céntimos enteros → euros (solo para presentar/formatear; P3). 0 si no
+// es un número finito.
+export function aEuros(centimos) {
+  const n = Number(centimos)
+  if (!Number.isFinite(n)) return 0
+  return n / 100
+}

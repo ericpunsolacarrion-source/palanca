@@ -1,11 +1,23 @@
 import { esAjuste, esInversion } from './categorias'
+import { aCentimos, aEuros } from './importe'
+
+// Importe de un movimiento en céntimos ENTEROS (frontera única de dinero del
+// motor; contrato docs/MOTOR.md P1). Prefiere la columna `importe_centimos` si
+// viene en la fila (tras conmutar las lecturas); si no, convierte el `importe`
+// en euros. Así el núcleo suma siempre enteros y no acumula deriva de float.
+function centimosDe(m) {
+  if (m.importe_centimos !== undefined && m.importe_centimos !== null) {
+    return Math.round(Number(m.importe_centimos))
+  }
+  return aCentimos(m.importe) ?? 0
+}
 
 // Columnas que la app necesita de un movimiento (con sus joins). Compartido por
 // la carga inicial (App.jsx) y por las mutaciones que devuelven la fila creada/
 // editada, para que el refresco quirúrgico use EXACTAMENTE la misma forma que la
 // carga completa (sin divergencias memoria↔BD). Excluye usuario_id (no se usa).
 export const SELECT_MOVIMIENTO =
-  'id, tipo, importe, fecha, nota, created_at, fuente_id, categoria_id, es_fijo, categoria:categorias(id, nombre), fuente:fuentes(id, nombre)'
+  'id, tipo, importe, importe_centimos, fecha, nota, created_at, fuente_id, categoria_id, es_fijo, categoria:categorias(id, nombre), fuente:fuentes(id, nombre)'
 
 // Ordena movimientos como la consulta: fecha desc, y a igualdad, created_at desc.
 function ordenarMovimientos(lista) {
@@ -128,20 +140,28 @@ export function ultimosNMeses(n, claveFin = claveMesActual()) {
 //   ahorro  = ingresos - gastos de consumo (la inversión ES parte del ahorro)
 //   invertido = movimientos de gasto con categoría "Inversion"
 export function totalesDe(movimientos) {
+  // Suma en CÉNTIMOS enteros (exacto), euros solo al devolver.
   let ingresos = 0
   let gastos = 0
   let invertido = 0
   for (const m of movimientos) {
     // Los ajustes de saldo no son flujo mensual: no cuentan como ingreso ni gasto.
     if (esAjuste(m)) continue
-    const importe = Number(m.importe)
+    const importe = centimosDe(m)
     if (m.tipo === 'ingreso') ingresos += importe
     else if (esInversion(m)) invertido += importe
     else gastos += importe
   }
   const ahorro = ingresos - gastos
+  // El ratio se calcula de enteros (numerador/denominador exactos).
   const ratioAhorro = ingresos > 0 ? (ahorro / ingresos) * 100 : 0
-  return { ingresos, gastos, invertido, ahorro, ratioAhorro }
+  return {
+    ingresos: aEuros(ingresos),
+    gastos: aEuros(gastos),
+    invertido: aEuros(invertido),
+    ahorro: aEuros(ahorro),
+    ratioAhorro,
+  }
 }
 
 // ── Modelo de DOS BOLSAS (stock acumulado) ──────────────────────────────────
@@ -152,11 +172,12 @@ export function totalesDe(movimientos) {
 // - PATRIMONIO TOTAL = Inversión + Liquidez.
 // Fuente única. La liquidez solo es fiable si el usuario reconcilia (ver saldo).
 export function bolsas(movimientos) {
+  // Suma en CÉNTIMOS enteros (patrimonio exacto al céntimo; contrato E2/P2).
   let liquidez = 0 // ingresos − gastos − invertido (+ ajustes)
   let invertido = 0
   let ajusteTotal = 0
   for (const m of movimientos) {
-    const importe = Number(m.importe)
+    const importe = centimosDe(m)
     if (esAjuste(m)) {
       const signo = m.tipo === 'ingreso' ? 1 : -1
       ajusteTotal += signo * importe
@@ -170,10 +191,10 @@ export function bolsas(movimientos) {
     } else liquidez -= importe
   }
   return {
-    bolsaInversion: invertido,
-    bolsaLiquidez: liquidez,
-    patrimonio: invertido + liquidez,
-    ajusteTotal,
+    bolsaInversion: aEuros(invertido),
+    bolsaLiquidez: aEuros(liquidez),
+    patrimonio: aEuros(invertido + liquidez),
+    ajusteTotal: aEuros(ajusteTotal),
   }
 }
 

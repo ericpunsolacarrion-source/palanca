@@ -4,6 +4,7 @@ import { esInversion, formatearEuros } from '../lib/categorias'
 import { SELECT_MOVIMIENTO, claveMes, claveMesActual, formatearFecha, hoyIso, totalesDe } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
+import { aCentimos } from '../lib/importe'
 import InputImporte from './InputImporte'
 import InputFecha from './InputFecha'
 
@@ -26,7 +27,7 @@ function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
     setGuardando(true)
     const { data: fila, error: errorUpdate } = await supabase
       .from('movimientos')
-      .update({ importe: importeNumero, fecha, es_fijo: esFijo, nota: nota.trim() || null })
+      .update({ importe: importeNumero, importe_centimos: aCentimos(importeNumero), fecha, es_fijo: esFijo, nota: nota.trim() || null })
       .eq('id', movimiento.id)
       .select(SELECT_MOVIMIENTO)
       .single()

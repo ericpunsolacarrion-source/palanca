@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient'
 import { CATEGORIA_AJUSTE } from './categorias'
 import { hoyIso } from './movimientosUtils'
+import { aCentimos } from './importe'
 
 // Encuentra o crea la categoría "Ajuste" del tipo indicado (ingreso/gasto).
 async function categoriaAjusteId(usuarioId, tipo) {
@@ -32,6 +33,7 @@ export async function crearAjuste(usuarioId, { importe, tipo, nota, fecha }) {
     categoria_id: catId,
     fuente_id: null,
     importe: monto,
+    importe_centimos: aCentimos(monto),
     fecha: fecha || hoyIso(),
     es_fijo: false,
     nota: nota || null,

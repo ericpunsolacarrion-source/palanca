@@ -6,6 +6,7 @@ import { deducirMapeoIA } from '../lib/mapearColumnasIA'
 import { useImportaciones } from '../lib/useImportaciones'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
+import { aCentimos } from '../lib/importe'
 
 const ETIQUETA_COL = {
   fecha: 'Fecha',
@@ -154,6 +155,7 @@ export default function ImportadorCsv({ usuarioId, movimientos, onImportado }) {
         categoria_id: catMap[`${v.tipo}|${v.esInversion ? CATEGORIA_INVERSION : v.categoria}`] ?? null,
         fuente_id: v.esInversion && v.plataforma ? fuenteMap[v.plataforma] ?? null : null,
         importe: v.importe,
+        importe_centimos: aCentimos(v.importe),
         fecha: v.fecha,
         es_fijo: false,
         nota: v.nota || null,

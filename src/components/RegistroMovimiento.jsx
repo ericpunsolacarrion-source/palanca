@@ -7,6 +7,7 @@ import { confirmar } from '../lib/confirmar'
 import { CATEGORIA_AJUSTE, CATEGORIA_INVERSION, formatearEuros } from '../lib/categorias'
 import { SELECT_MOVIMIENTO, formatearFecha, hoyIso } from '../lib/movimientosUtils'
 import { categoriaProbable, frecuenciaCategorias, frecuentesParaRepetir, importesFrecuentes } from '../lib/sugerencias'
+import { aCentimos } from '../lib/importe'
 import { toast } from '../lib/toast'
 import InputImporte from './InputImporte'
 import InputFecha from './InputFecha'
@@ -115,6 +116,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
         categoria_id: rep.categoriaId,
         fuente_id: rep.fuenteId,
         importe: rep.importe,
+        importe_centimos: aCentimos(rep.importe),
         fecha: hoyIso(),
         es_fijo: esInversion ? false : rep.esFijo,
       })
@@ -146,6 +148,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
         categoria_id: item.categoriaId,
         fuente_id: null,
         importe: Number(item.importe),
+        importe_centimos: aCentimos(item.importe),
         fecha: hoyIso(),
         es_fijo: false,
       })
@@ -245,6 +248,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
         categoria_id: idCategoria,
         fuente_id: resultFuente.id,
         importe: importeNumero,
+        importe_centimos: aCentimos(importeNumero),
         fecha,
         es_fijo: esInversion ? false : esFijo,
         nota: nota.trim() || null,

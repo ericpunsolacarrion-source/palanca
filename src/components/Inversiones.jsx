@@ -8,6 +8,7 @@ import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
+import { aCentimos } from '../lib/importe'
 import Pildora from './Pildora'
 import { firmaDatos, PILDORA_INVERSION } from '../lib/pildoras'
 import InputImporte from './InputImporte'
@@ -226,7 +227,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
     setGuardandoEdit(true)
     const { data: fila, error: errorUpdate } = await supabase
       .from('movimientos')
-      .update({ importe: importeNumero, fecha: fechaEdit })
+      .update({ importe: importeNumero, importe_centimos: aCentimos(importeNumero), fecha: fechaEdit })
       .eq('id', id)
       .select(SELECT_MOVIMIENTO)
       .single()
@@ -274,6 +275,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
         categoria_id: categoriaId,
         fuente_id: resultFuente.id,
         importe: importeNumero,
+        importe_centimos: aCentimos(importeNumero),
         fecha,
         es_fijo: false,
       })
