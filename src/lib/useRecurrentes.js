@@ -24,9 +24,20 @@ function leerLS(usuarioId) {
 
 const esUuid = (v) => typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v)
 
-// Fila de la BD → forma que esperan los componentes.
-function aItem(row, mesesPorRec) {
-  const meses = mesesPorRec[row.id] || []
+// Fila de la BD → forma que esperan los componentes. `totalCentimos` es el
+// total REAL pagado: suma del importe guardado en cada confirmación (exacto,
+// también en los variables); para confirmaciones antiguas sin importe se estima
+// con el importe actual del recurrente.
+function aItem(row, infoPorRec) {
+  const info = infoPorRec[row.id] || { meses: [], porMes: {} }
+  const meses = info.meses
+  const importeCent = row.importe_centimos ?? aCentimos(row.importe) ?? 0
+  let totalCentimos = 0
+  for (const m of meses) {
+    const pm = info.porMes[m]
+    totalCentimos += pm && pm.importeCentimos != null ? pm.importeCentimos : importeCent
+  }
+  const mesActual = claveMesActual()
   return {
     id: row.id,
     tipo: row.tipo,
@@ -40,7 +51,8 @@ function aItem(row, mesesPorRec) {
     activo: row.activo,
     desde: row.created_at,
     mesesAplicados: meses,
-    aplicadoEn: meses.includes(claveMesActual()) ? claveMesActual() : null,
+    totalCentimos,
+    aplicadoEn: meses.includes(mesActual) ? mesActual : null,
   }
 }
 
@@ -130,13 +142,15 @@ export function useRecurrentes(usuarioId) {
 
     const { data: confs } = await supabase
       .from('recurrentes_confirmaciones')
-      .select('recurrente_id, mes')
+      .select('recurrente_id, mes, importe_centimos, movimiento_id')
       .eq('usuario_id', usuarioId)
-    const mesesPorRec = {}
+    const infoPorRec = {}
     for (const c of confs || []) {
-      ;(mesesPorRec[c.recurrente_id] ||= []).push(c.mes)
+      const info = (infoPorRec[c.recurrente_id] ||= { meses: [], porMes: {} })
+      info.meses.push(c.mes)
+      info.porMes[c.mes] = { importeCentimos: c.importe_centimos, movimientoId: c.movimiento_id }
     }
-    setItems((recs || []).map((r) => aItem(r, mesesPorRec)))
+    setItems((recs || []).map((r) => aItem(r, infoPorRec)))
   }, [usuarioId])
 
   useEffect(() => {
@@ -211,13 +225,13 @@ export function useRecurrentes(usuarioId) {
 
   // Marca el recurrente como aplicado en el mes actual (histórico → racha).
   const marcarAplicado = useCallback(
-    async (id) => {
+    async (id, { movimientoId = null, importeCentimos = null } = {}) => {
       const mes = claveMesActual()
       const { error } = await supabase
         .from('recurrentes_confirmaciones')
         .upsert(
-          { usuario_id: usuarioId, recurrente_id: id, mes },
-          { onConflict: 'recurrente_id,mes', ignoreDuplicates: true },
+          { usuario_id: usuarioId, recurrente_id: id, mes, movimiento_id: movimientoId, importe_centimos: importeCentimos },
+          { onConflict: 'recurrente_id,mes' },
         )
       if (!error) {
         await cargar()
@@ -227,10 +241,37 @@ export function useRecurrentes(usuarioId) {
     [usuarioId, cargar],
   )
 
+  // Deshace la confirmación del mes en curso: borra el movimiento creado (si se
+  // conoce su id) y la confirmación. Devuelve el id del movimiento borrado o null.
+  const desmarcar = useCallback(
+    async (id) => {
+      const mes = claveMesActual()
+      const { data: conf } = await supabase
+        .from('recurrentes_confirmaciones')
+        .select('movimiento_id')
+        .eq('usuario_id', usuarioId)
+        .eq('recurrente_id', id)
+        .eq('mes', mes)
+        .maybeSingle()
+      const movId = conf?.movimiento_id ?? null
+      if (movId) await supabase.from('movimientos').delete().eq('id', movId)
+      await supabase
+        .from('recurrentes_confirmaciones')
+        .delete()
+        .eq('usuario_id', usuarioId)
+        .eq('recurrente_id', id)
+        .eq('mes', mes)
+      await cargar()
+      notificar()
+      return movId
+    },
+    [usuarioId, cargar],
+  )
+
   const claveActual = claveMesActual()
   const pendientes = items.filter(
     (it) => it.activo && !it.mesesAplicados.includes(claveActual),
   )
 
-  return { items, pendientes, cargando, modoLegacy, crear, actualizar, eliminar, marcarAplicado }
+  return { items, pendientes, cargando, modoLegacy, crear, actualizar, eliminar, marcarAplicado, desmarcar }
 }

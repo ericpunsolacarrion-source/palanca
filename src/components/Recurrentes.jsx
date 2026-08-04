@@ -48,7 +48,7 @@ function Hero({ gastoMes, estado }) {
 }
 
 // ── Fila de compromiso: nombre + biografía + importe + anillo de estado ──────
-function CompromisoRow({ rec, mesActual, registrando, recien, onAbrir, onConfirmarRapido }) {
+function CompromisoRow({ rec, mesActual, registrando, recien, onAbrir, onConfirmarRapido, onDesmarcar }) {
   const bio = useMemo(() => biografiaRecurrente(rec), [rec])
   const esIngreso = rec.tipo === 'ingreso'
   const hecho = rec.aplicadoEn === mesActual
@@ -75,10 +75,10 @@ function CompromisoRow({ rec, mesActual, registrando, recien, onAbrir, onConfirm
         type="button"
         className={`tb-ring ${estadoAnillo} ${recien ? 'recien' : ''}`}
         disabled={registrando}
-        aria-label={hecho ? 'Confirmado este mes' : `Confirmar ${rec.nombre}`}
+        aria-label={hecho ? `Deshacer ${rec.nombre}` : `Confirmar ${rec.nombre}`}
         onClick={(e) => {
           e.stopPropagation()
-          if (hecho) return onAbrir(rec)
+          if (hecho) return onDesmarcar(rec)
           onConfirmarRapido(rec)
         }}
       >
@@ -101,7 +101,7 @@ function CompromisoRow({ rec, mesActual, registrando, recien, onAbrir, onConfirm
 }
 
 // ── Hoja de detalle: la biografía completa + acciones (progressive disclosure) ─
-function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEditar, onPausar, onBorrar }) {
+function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEditar, onPausar, onBorrar, onDesmarcar }) {
   const bio = useMemo(() => biografiaRecurrente(rec), [rec])
   const esIngreso = rec.tipo === 'ingreso'
   const hecho = rec.aplicadoEn === mesActual
@@ -165,7 +165,14 @@ function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEd
           </div>
         )}
 
-        {hecho && <p className="tb-hecho-nota">Ya registrado este mes ✓</p>}
+        {hecho && (
+          <div className="tb-hecho-fila">
+            <span className="tb-hecho-nota">Registrado este mes ✓</span>
+            <button type="button" className="tb-deshacer" onClick={() => onDesmarcar(rec)}>
+              Deshacer
+            </button>
+          </div>
+        )}
 
         <div className="tb-sheet-acc">
           <button type="button" onClick={() => onEditar(rec)}>Editar</button>
@@ -249,7 +256,7 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
 }
 
 export default function Recurrentes({ usuarioId, onRegistrado }) {
-  const { items, cargando, crear, actualizar, eliminar, marcarAplicado } = useRecurrentes(usuarioId)
+  const { items, cargando, crear, actualizar, eliminar, marcarAplicado, desmarcar } = useRecurrentes(usuarioId)
   const { items: categoriasGasto } = useEtiquetas('categorias', usuarioId, 'gasto')
   const { items: categoriasIngreso } = useEtiquetas('categorias', usuarioId, 'ingreso')
   const [detalle, setDetalle] = useState(null) // rec en hoja de detalle
@@ -278,7 +285,7 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
       .single()
     setRegistrandoId(null)
     if (error) return toast('No se ha podido registrar. Inténtalo de nuevo.', 'error')
-    marcarAplicado(rec.id)
+    marcarAplicado(rec.id, { movimientoId: filaNueva?.id ?? null, importeCentimos: Math.round(importe * 100) })
     setDetalle(null)
     setRecienId(rec.id)
     if (navigator.vibrate) navigator.vibrate(10)
@@ -290,6 +297,16 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
   function confirmarRapido(rec) {
     if (rec.confirmar) return setDetalle(rec) // variable → ajusta en la hoja
     registrar(rec, Number(rec.importe), fechaDelMes(rec))
+  }
+
+  // Segundo toque sobre el anillo verde: deshace TODO lo que hizo el primero
+  // (borra el movimiento creado y la confirmación). Correspondencia 1:1.
+  async function desmarcarRec(rec) {
+    const movId = await desmarcar(rec.id)
+    setRecienId(null)
+    setDetalle(null)
+    toast(`${rec.nombre} deshecho`)
+    if (movId) onRegistrado?.({ accion: 'borrar', ids: [movId] })
   }
 
   async function borrar(rec) {
@@ -322,7 +339,7 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
       .map((r) => ({ r, p: biografiaRecurrente(r).proximo }))
       .filter((x) => x.p)
       .sort((a, b) => a.p.dias - b.p.dias)[0]
-    if (prox) return { tono: 'aviso', texto: `Próximo · ${prox.r.nombre} ${prox.p.texto}` }
+    if (prox) return { tono: 'aviso', texto: `Próximo · ${prox.r.nombre} · ${prox.p.texto}` }
     return { tono: 'aviso', texto: `${pend.length} sin confirmar este mes` }
   }, [items, mesActual])
 
@@ -352,6 +369,7 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
               recien={recienId === rec.id}
               onAbrir={setDetalle}
               onConfirmarRapido={confirmarRapido}
+              onDesmarcar={desmarcarRec}
             />
           ))}
         </div>
@@ -371,6 +389,7 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
           onEditar={(rec) => { setDetalle(null); setForm({ rec }) }}
           onPausar={(rec) => { actualizar(rec.id, { activo: !rec.activo }); setDetalle(null) }}
           onBorrar={borrar}
+          onDesmarcar={desmarcarRec}
         />
       )}
 

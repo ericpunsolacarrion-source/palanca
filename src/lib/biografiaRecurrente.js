@@ -58,7 +58,7 @@ export function biografiaRecurrente(rec, hoy = new Date()) {
     nPagos,
     meses,
     antiguedad: textoAntiguedad(meses),
-    total: nPagos * Number(rec.importe),
+    total: rec.totalCentimos != null ? rec.totalCentimos / 100 : nPagos * Number(rec.importe),
     proximo: proximoCobro(rec.diaMes, hoy),
   }
 }

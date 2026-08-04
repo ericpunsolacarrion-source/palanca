@@ -6020,12 +6020,18 @@ button[type='submit']:disabled {
 .tb-row:active {
   background: var(--card-bg-2);
 }
-/* Hecho este mes: el check verde se mantiene nítido (el logro no se apaga);
-   solo el texto e importe receden. */
-.tb-row.is-hecho .tb-row-nombre,
-.tb-row.is-hecho .tb-row-bio,
+/* Hecho este mes = "esto ya está resuelto": la tarjeta recede en jerarquía
+   (nombre atenuado, biografía difuminada, importe con menos intensidad) pero
+   sigue siendo legible. El check verde se mantiene nítido: el logro no se apaga. */
+.tb-row.is-hecho .tb-row-nombre {
+  opacity: 0.55;
+}
+.tb-row.is-hecho .tb-row-bio {
+  opacity: 0.4;
+}
 .tb-row.is-hecho .tb-row-importe {
-  opacity: 0.45;
+  opacity: 0.5;
+  font-weight: 500;
 }
 .tb-row.is-pausado {
   opacity: 0.36;
@@ -6327,11 +6333,42 @@ button[type='submit']:disabled {
   opacity: 0.6;
   cursor: default;
 }
+.tb-hecho-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 0 2px;
+}
 .tb-hecho-nota {
-  text-align: center;
   color: var(--ingreso);
   font-size: var(--fs-s);
-  margin: 12px 0 2px;
+  margin: 0;
+}
+.tb-deshacer {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: var(--fs-s);
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--radio-s);
+  transition: color 0.2s, background 0.2s;
+}
+.tb-deshacer:hover {
+  color: var(--text-h);
+  background: var(--card-bg);
+}
+
+/* Foco visible para teclado (accesibilidad + sensación premium). */
+.tb-row:focus-visible,
+.tb-ring:focus-visible,
+.tb-add:focus-visible,
+.tb-deshacer:focus-visible,
+.tb-confirmar-btn:focus-visible,
+.tb-sheet-acc button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .tb-sheet-acc {
