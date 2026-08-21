@@ -1,5 +1,9 @@
 # Palanca — Estado de la plataforma (dossier para planificación)
 
+> **¿Solo quieres la foto rápida?** Ve a **[ESTADO.md](ESTADO.md)** (mapa de una
+> pantalla: qué está vivo, roadmap, deuda técnica). Este documento es el dossier
+> largo para planificar el crecimiento.
+>
 > Documento de contexto para planificar el crecimiento. **No contiene datos
 > sensibles** (ni claves, ni URLs del proyecto, ni connection string, ni datos
 > personales de usuarios). Describe qué es Palanca, cómo está construida, qué

@@ -3,8 +3,14 @@
 React + Vite + vite-plugin-pwa. Backend: Supabase (anon key en `.env`).
 Deploy: push a `main` → Vercel (https://palanca-zeta.vercel.app).
 
+**Empieza aquí (visión general y estado actual): `docs/ESTADO.md`** — mapa de
+una pantalla (qué está vivo, roadmap, deuda técnica). Mantenerlo al día tras
+cada cambio relevante o despliegue.
+
 **Guía detallada pantalla a pantalla: `docs/PANTALLAS.md`** (leerla al
 empezar a trabajar en la app; mantenerla al día cuando cambien pantallas).
+
+**Contrato del motor financiero (invariantes, inamovible): `docs/MOTOR.md`.**
 
 ## Reglas de cálculo (única definición, aplicar en TODA la app)
 
