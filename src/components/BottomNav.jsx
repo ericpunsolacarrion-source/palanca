@@ -3,7 +3,6 @@ const PESTANAS = [
   { id: 'movimientos', etiqueta: 'Movimientos', icono: '≡' },
   { id: 'presupuesto', etiqueta: 'Presupuesto', icono: '◐' },
   { id: 'inversiones', etiqueta: 'Inversión', icono: '▲' },
-  { id: 'simulador', etiqueta: 'Simulador', icono: '◎' },
 ]
 
 export default function BottomNav({ activa, onCambiar }) {
