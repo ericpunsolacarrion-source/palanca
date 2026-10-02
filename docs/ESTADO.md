@@ -4,7 +4,7 @@
 > sesión: qué está vivo, dónde mirar, qué sigue. Mantenerlo al día tras cada
 > cambio relevante o despliegue.
 >
-> **Última actualización:** 2026-08-03 · **Último deploy:** `a549a33`
+> **Última actualización:** 2026-10-03 · **Rama de trabajo:** `feat/mvp-dashboard-priority`
 
 ---
 
@@ -50,9 +50,11 @@ Frontera euros↔céntimos: `src/lib/importe.js` (`aCentimos`/`aEuros`).
 ## Deuda técnica / cosas a vigilar
 - Housekeeping de Fase 1 (arriba).
 - **Base · "Total pagado":** exacto desde ahora (guarda el importe real por
-  confirmación); las confirmaciones hechas **antes** del arreglo del anillo no
-  tienen `movimiento_id` → al deshacerlas se quita la marca pero no se borra su
-  movimiento antiguo. No hacer deshacer+remarcar en esas.
+  confirmación). Las confirmaciones antiguas sin `movimiento_id` siguen siendo
+  una deuda de migración y no deben tratarse como si pudieran deshacer un
+  movimiento con seguridad.
+- **Base · undo:** el borrado del movimiento y de la confirmación se valida por
+  separado; si falla una operación, la confirmación no se oculta silenciosamente.
 - La valoración a mercado, multidivisa y dividendos NO están (patrimonio a
   coste); son ampliaciones previstas (ver MOTOR.md §F2b/§10).
 

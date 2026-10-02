@@ -23,7 +23,6 @@ import Onboarding from './components/Onboarding'
 import CapturaEmail from './components/CapturaEmail'
 import ListaMovimientos from './components/ListaMovimientos'
 import MetricasPrincipales from './components/MetricasPrincipales'
-import Comparativas from './components/Comparativas'
 import Pildora from './components/Pildora'
 import ProyeccionFuturo from './components/ProyeccionFuturo'
 import { pildorasDashboard, elegirPildora, firmaDatos, limpiarPildoras } from './lib/pildoras'
@@ -31,15 +30,12 @@ import { usePresupuesto } from './lib/usePresupuesto'
 import { useObjetivosAhorro } from './lib/useObjetivosAhorro'
 import { DatosCompartidosProvider } from './lib/DatosCompartidos'
 import RecordatorioBanner from './components/RecordatorioBanner'
-import GraficoEvolucion from './components/GraficoEvolucion'
-import GraficoCategorias from './components/GraficoCategorias'
 import GraficoTasaAhorro from './components/GraficoTasaAhorro'
 import PeriodoSelector from './components/PeriodoSelector'
 import BottomNav from './components/BottomNav'
 import Toaster from './components/Toaster'
 import Confirmador from './components/Confirmador'
 import Hitos from './components/Hitos'
-import Logros from './components/Logros'
 import Patrimonio from './components/Patrimonio'
 import './App.css'
 
@@ -330,14 +326,9 @@ function App() {
                   onGuardado={onGuardado}
                   onVerInversion={() => irAPestana('inversiones')}
                 />
+                {/* Dashboard MVP: el detalle histórico y categórico vive fuera
+                    de la portada. Aquí dejamos una única lectura de comportamiento. */}
                 <GraficoTasaAhorro movimientos={movimientos} mesFin={mesActivoDash} />
-                <GraficoCategorias
-                  movimientos={movimientosPeriodo}
-                  etiqueta={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
-                />
-                <GraficoEvolucion movimientos={movimientos} mesFin={mesActivoDash} />
-                <Comparativas movimientos={movimientos} />
-                <Logros usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
                 {pildoraDash && (
                   <Pildora
                     key={pildoraDash.id}

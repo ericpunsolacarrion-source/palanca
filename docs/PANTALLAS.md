@@ -28,22 +28,31 @@ A futuro (Fase 2): familias, login real con Supabase Auth.
 Barra inferior **siempre visible** (solo el contenido central hace scroll), con blur y 5 pestañas: Dashboard · Movimientos · Presupuesto · Inversión · Simulador. En escritorio (≥860 px) se convierte en píldoras horizontales.
 
 ### 3. Dashboard
-Escaparate del **periodo elegido**, ordenado por importancia (métricas y tasa de ahorro arriba; la proyección de futuro, al final):
-- **Banner "Completa tu cuenta"** si el usuario aún no dejó su email (usuarios antiguos).
-- **Banner recordatorio** si lleva 2+ días sin registrar movimientos (botón directo a registrar).
-- **Selector de periodo GLOBAL** (`PeriodoSelector.jsx`): una barra **fina y minimalista** (‹ › fantasma + desplegable de meses + píldora "Hoy") que **gobierna a la vez** métricas, tasa de ahorro, gasto por categoría y evolución. Al cambiar de mes, TODA la pantalla se recalcula para ese periodo, sin subsecciones por gráfico. El rango va del primer movimiento al mes actual (`rangoMeses` en `movimientosUtils`). Patrimonio, comparativas, logros y proyección quedan fuera del selector (histórico/mes actual, por diseño).
-- **Métricas principales** (`MetricasPrincipales.jsx`): bloque superior tipo hero. **Línea fina de ingresos** ("Este mes / [Mes] X € · media Y €/mes" con ≈/▲/▼ frente a la media del último año); el **ahorro del periodo como número hero** (verde/rosa con glow); debajo **3 tarjetas de métrica** (Ingresos verde, Gastos rosa, Inversión dorado) **clicables** → movimientos del mes filtrados por ese tipo. Barra de ratio, y el **objetivo de inversión mensual** con barra dorada que **puede superar el 100 %** (`progresoObjetivo`). Las etiquetas reflejan el mes elegido.
-- **Patrimonio y bolsas** (`Patrimonio.jsx`): **patrimonio total** en grande = **bolsa de inversión** (dorado, Σ aportaciones) + **bolsa de ahorro líquido** (saldo inicial + Σ superávit − inversión). Prioritario: la visibilidad de lo conseguido. La bolsa de **Inversión es clicable** y lleva al apartado Inversión ("Ver ›"); la de ahorro líquido no tiene enlace (aún no hay apartado propio). Incluye un **indicador de fiabilidad** honesto: mientras no se reconcilie, avisa de que la liquidez es una estimación; muestra "reconciliado hace N días" y un aviso discreto si pasan >45 días. Botón **"Ajustar saldo"** (modal vía `createPortal`): el usuario introduce su saldo real de banco y la app calcula la diferencia frente a la liquidez teórica y crea un **movimiento de ajuste visible y explicado** (nunca oculto). Cálculo en `bolsas()`/`ultimaReconciliacion()` de `movimientosUtils`; fecha de reconciliación en localStorage (`lib/useSaldo.js`); alta del ajuste en `lib/ajustes.js`. Principio: nunca mostrar una cifra de liquidez como un hecho cuando es una estimación sin verificar.
-- **Tasa de ahorro mensual** (`GraficoTasaAhorro.jsx`): línea **deslizable** por el historial hasta el mes elegido, que se destaca por defecto. Estética cuidada (degradado morado→cian, área con gradiente, glow en el punto activo); al pasar por un mes muestra el **porcentaje**, una **píldora de comparación con el mes anterior** (▲/▼ N pts) y los **euros** ahorrado (verde) e invertido (dorado).
-- **Gasto por categoría (periodo)** (`GraficoCategorias.jsx`): barra apilada + leyenda del mes elegido (el título muestra el mes). **Navegable**: al tocar una categoría se abre el detalle con todos sus movimientos del periodo y botón "← Categorías".
-- **Evolución 6 meses** (`GraficoEvolucion.jsx`): barras verde/rosa de los 6 meses que terminan en el mes elegido, **interactiva** — tocar un mes muestra ingresos, gastos y el **resultado neto**.
-- **Comparativas** (`Comparativas.jsx`): microcomparativas contra el propio historial ("estás ahorrando un X% más que el mes pasado"). Solo contra uno mismo. Máx. 2.
-- **Camino de logros** (`Logros.jsx`): tarjeta con el progreso (X/Y desbloqueados y el próximo) que abre un panel con TODOS los logros por familia. Los logros lejanos se **difuminan de forma progresiva** (opacidad y desenfoque por distancia) para dar sensación de camino sin fin. Ver Extras.
-- **Píldora educativa** (`Pildora.jsx` + `lib/pildoras.js`): 1 nota contextual breve según el estado del mes. Se cierra con la ×, pero **no se silencia para siempre**: reaparece al registrar/borrar un movimiento (cambia la firma de datos) o al cerrar sesión y volver a entrar; no es repetitiva dentro de la misma sesión (descarte en sessionStorage + firma de datos, ver la regla documentada en `lib/pildoras.js`).
-- **Proyección de futuro** (`ProyeccionFuturo.jsx`): el momento "ajá" (baja en el orden, no prioritaria). Toma el ahorro mensual medio REAL y muestra "dinero parado" vs "invertido al 7%" a 5/10/20/30 años. Reutiliza `proyectarInteresCompuesto` de `movimientosUtils`.
-- **Últimos movimientos**: los 5 más recientes, solo lectura (editar/borrar se hace en Movimientos).
 
-### 4. Movimientos (`MovimientosTab.jsx`)
+Portada de interpretación. Su trabajo es responder, en este orden: **qué ha pasado este periodo, cuánto patrimonio tienes, cómo estás ahorrando y qué trayectoria estás construyendo**.
+
+- **Banner "Completa tu cuenta"** cuando corresponda.
+- **Recordatorio** si lleva 2+ días sin registrar movimientos.
+- **Selector de periodo global**: gobierna las métricas del periodo elegido.
+- **Métricas principales**: ingresos, gastos, inversión y ahorro/ratio.
+- **Patrimonio**: patrimonio total y sus bolsas; permite revisar/ajustar liquidez.
+- **Tasa de ahorro**: única visualización histórica mantenida en portada para leer comportamiento.
+- **Píldora contextual**: una sola observación accionable cuando aporta contexto.
+- **Proyección de futuro**: una única lectura de trayectoria, después del estado actual.
+- **Últimos movimientos**: los 5 más recientes, solo lectura.
+
+### Qué NO vive en la portada
+
+El dashboard no debe convertirse en un catálogo de todos los análisis de Palanca. Se mantienen fuera de la portada:
+- gasto por categoría;
+- evolución mensual detallada;
+- comparativas;
+- camino de logros;
+- demás análisis secundarios.
+
+Esos contenidos pueden existir en sus módulos o pantallas propias sin competir con las cuatro preguntas de la portada.
+
+## 4. Movimientos (`MovimientosTab.jsx`)
 Cuatro sub-pestañas por frecuencia de uso: **Nuevo · Recurrentes · Historial · Importar**
 (el historial se consulta a diario; el importador, una o dos veces). Se puede llegar también
 desde las **tarjetas de métrica del dashboard** (Ingresos/Gastos/Inversión),

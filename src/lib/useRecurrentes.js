@@ -254,13 +254,34 @@ export function useRecurrentes(usuarioId) {
         .eq('mes', mes)
         .maybeSingle()
       const movId = conf?.movimiento_id ?? null
-      if (movId) await supabase.from('movimientos').delete().eq('id', movId)
-      await supabase
+      // La operación se hace en orden seguro: si falla el borrado del
+      // movimiento, NO eliminamos la confirmación, evitando perder la referencia
+      // al hecho que hay que deshacer.
+      if (movId) {
+        const { error: errorMovimiento } = await supabase
+          .from('movimientos')
+          .delete()
+          .eq('id', movId)
+          .eq('usuario_id', usuarioId)
+        if (errorMovimiento) {
+          toast('No se ha podido deshacer. Inténtalo de nuevo.', 'error')
+          return null
+        }
+      }
+
+      const { error: errorConfirmacion } = await supabase
         .from('recurrentes_confirmaciones')
         .delete()
         .eq('usuario_id', usuarioId)
         .eq('recurrente_id', id)
         .eq('mes', mes)
+
+      if (errorConfirmacion) {
+        // No ocultamos el estado si la confirmación sigue existiendo.
+        toast('No se ha podido completar el deshacer. Inténtalo de nuevo.', 'error')
+        return null
+      }
+
       await cargar()
       notificar()
       return movId
