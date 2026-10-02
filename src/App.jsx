@@ -330,14 +330,11 @@ function App() {
                   onGuardado={onGuardado}
                   onVerInversion={() => irAPestana('inversiones')}
                 />
+                {/* Dashboard MVP: después de las métricas y el patrimonio mostramos
+                    solo una capa de contexto y una única proyección. El resto de
+                    análisis sigue disponible en sus módulos/periodos y no compite
+                    por atención en la pantalla principal. */}
                 <GraficoTasaAhorro movimientos={movimientos} mesFin={mesActivoDash} />
-                <GraficoCategorias
-                  movimientos={movimientosPeriodo}
-                  etiqueta={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
-                />
-                <GraficoEvolucion movimientos={movimientos} mesFin={mesActivoDash} />
-                <Comparativas movimientos={movimientos} />
-                <Logros usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
                 {pildoraDash && (
                   <Pildora
                     key={pildoraDash.id}
