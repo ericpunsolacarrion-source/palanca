@@ -6,13 +6,12 @@ import { useRecurrentes } from '../lib/useRecurrentes'
 import { formatearEuros } from '../lib/categorias'
 import { SELECT_MOVIMIENTO, claveMesActual, hoyIso } from '../lib/movimientosUtils'
 import { biografiaRecurrente } from '../lib/biografiaRecurrente'
+import { proyeccionCompromiso, resumenBase, lecturaBase } from '../lib/baseInsights'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
 import InputFecha from './InputFecha'
 
-// Fecha por defecto al confirmar: el día definido, en el mes en curso (acotado
-// al último día del mes). Sin día definido, hoy.
 function fechaDelMes(rec) {
   const now = new Date()
   const y = now.getFullYear()
@@ -27,7 +26,6 @@ function fechaDelMes(rec) {
 
 const signo = (tipo) => (tipo === 'ingreso' ? '+' : '−')
 
-// ── Héroe: el peso de tu dinero fijo ────────────────────────────────────────
 function Hero({ gastoMes, estado }) {
   return (
     <header className="tb-hero">
@@ -47,15 +45,58 @@ function Hero({ gastoMes, estado }) {
   )
 }
 
-// ── Fila de compromiso: nombre + biografía + importe + anillo de estado ──────
+function LecturaBase({ items }) {
+  const resumen = useMemo(() => resumenBase(items), [items])
+  const lecturas = useMemo(() => lecturaBase(items), [items])
+
+  if (!items.some((r) => r.activo !== false)) return null
+
+  return (
+    <section className="tb-lectura" aria-label="Lectura de tu Base">
+      <div className="tb-lectura-cab">
+        <span className="tb-lectura-titulo">Tu base</span>
+        <span className="tb-lectura-meta">
+          {resumen.compromisos} {resumen.compromisos === 1 ? 'compromiso' : 'compromisos'}
+        </span>
+      </div>
+
+      {resumen.ingresoMensualCentimos > 0 && resumen.gastoMensualCentimos > 0 && (
+        <div className="tb-base-ratio">
+          <div>
+            <span className="tb-lectura-num">{formatearEuros(resumen.gastoMensualCentimos / 100)}</span>
+            <span className="tb-lectura-label">comprometidos / mes</span>
+          </div>
+          <div className="tb-base-ratio-bar" aria-hidden="true">
+            <span
+              style={{ width: `${Math.min(100, (resumen.gastoMensualCentimos / resumen.ingresoMensualCentimos) * 100)}%` }}
+            />
+          </div>
+          <span className="tb-lectura-sub">
+            de {formatearEuros(resumen.ingresoMensualCentimos / 100)} recurrentes
+          </span>
+        </div>
+      )}
+
+      {resumen.gastoMensualCentimos > 0 && (
+        <div className="tb-lectura-anual">
+          <span>Si mantienes tu Base actual</span>
+          <strong>{formatearEuros(resumen.gastoAnualCentimos / 100)} / año</strong>
+        </div>
+      )}
+
+      {lecturas.length > 0 && (
+        <p className="tb-lectura-copy">{lecturas[0].texto}</p>
+      )}
+    </section>
+  )
+}
+
 function CompromisoRow({ rec, mesActual, registrando, recien, onAbrir, onConfirmarRapido, onDesmarcar }) {
   const bio = useMemo(() => biografiaRecurrente(rec), [rec])
   const esIngreso = rec.tipo === 'ingreso'
   const hecho = rec.aplicadoEn === mesActual
   const toca = !hecho && bio.proximo && bio.proximo.dias <= 0
 
-  // Biografía compacta: "2 años · 360 € · en 4 días". Si está hecho, el anillo
-  // ya lo comunica, así que no repetimos el estado en texto.
   const partes = []
   if (bio.meses >= 1) partes.push(bio.antiguedad)
   if (bio.total > 0) partes.push(formatearEuros(bio.total))
@@ -100,7 +141,6 @@ function CompromisoRow({ rec, mesActual, registrando, recien, onAbrir, onConfirm
   )
 }
 
-// ── Hoja de detalle: la biografía completa + acciones (progressive disclosure) ─
 function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEditar, onPausar, onBorrar, onDesmarcar }) {
   const bio = useMemo(() => biografiaRecurrente(rec), [rec])
   const esIngreso = rec.tipo === 'ingreso'
@@ -110,10 +150,13 @@ function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEd
 
   const datos = [
     { k: 'Antigüedad', v: bio.meses >= 1 ? bio.antiguedad : 'nuevo' },
-    { k: 'Pagado en total', v: bio.total > 0 ? formatearEuros(bio.total) : '—' },
+    { k: esIngreso ? 'Recibido en total' : 'Pagado en total', v: bio.total > 0 ? formatearEuros(bio.total) : '—' },
     { k: 'Veces registrado', v: bio.nPagos > 0 ? `${bio.nPagos} ${bio.nPagos === 1 ? 'vez' : 'veces'}` : '—' },
     { k: 'Próximo', v: hecho ? 'hecho este mes' : bio.proximo?.texto ?? '—' },
   ]
+
+  const proyeccion1 = proyeccionCompromiso(rec, 1)
+  const proyeccion5 = proyeccionCompromiso(rec, 5)
 
   return createPortal(
     <div className="tb-sheet-back" onClick={onCerrar}>
@@ -138,6 +181,17 @@ function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEd
               <span className="tb-bio-clave">{d.k}</span>
             </div>
           ))}
+        </div>
+
+        <div className="tb-proyeccion">
+          <div>
+            <span className="tb-proyeccion-titulo">Si mantienes este compromiso</span>
+            <span className="tb-proyeccion-nota">con el importe habitual actual</span>
+          </div>
+          <div className="tb-proyeccion-valores">
+            <span><strong>{formatearEuros(proyeccion1 / 100)}</strong><small>1 año</small></span>
+            <span><strong>{formatearEuros(proyeccion5 / 100)}</strong><small>5 años</small></span>
+          </div>
         </div>
 
         {rec.activo && !hecho && (
@@ -185,7 +239,6 @@ function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEd
   )
 }
 
-// ── Formulario (alta / edición), en hoja ─────────────────────────────────────
 function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onGuardar, onCancelar }) {
   const [tipo, setTipo] = useState(inicial?.tipo ?? 'gasto')
   const [nombre, setNombre] = useState(inicial?.nombre ?? '')
@@ -259,10 +312,10 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
   const { items, cargando, crear, actualizar, eliminar, marcarAplicado, desmarcar } = useRecurrentes(usuarioId)
   const { items: categoriasGasto } = useEtiquetas('categorias', usuarioId, 'gasto')
   const { items: categoriasIngreso } = useEtiquetas('categorias', usuarioId, 'ingreso')
-  const [detalle, setDetalle] = useState(null) // rec en hoja de detalle
-  const [form, setForm] = useState(null) // { rec } edición | {} alta | null
+  const [detalle, setDetalle] = useState(null)
+  const [form, setForm] = useState(null)
   const [registrandoId, setRegistrandoId] = useState(null)
-  const [recienId, setRecienId] = useState(null) // id recién confirmado (anima el sello)
+  const [recienId, setRecienId] = useState(null)
 
   const mesActual = claveMesActual()
 
@@ -295,12 +348,10 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
   }
 
   function confirmarRapido(rec) {
-    if (rec.confirmar) return setDetalle(rec) // variable → ajusta en la hoja
+    if (rec.confirmar) return setDetalle(rec)
     registrar(rec, Number(rec.importe), fechaDelMes(rec))
   }
 
-  // Segundo toque sobre el anillo verde: deshace TODO lo que hizo el primero
-  // (borra el movimiento creado y la confirmación). Correspondencia 1:1.
   async function desmarcarRec(rec) {
     const movId = await desmarcar(rec.id)
     setRecienId(null)
@@ -316,8 +367,6 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
     }
   }
 
-  // Orden: primero lo que pide atención (pendiente/toca, por proximidad), luego
-  // lo ya hecho este mes (sereno). Pausados al final.
   const ordenados = useMemo(() => {
     const activos = items.filter((r) => r.activo)
     const pausados = items.filter((r) => !r.activo)
@@ -346,6 +395,8 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
   return (
     <div className="tubase vista fade-in-up">
       <Hero gastoMes={gastoMes} estado={estado} />
+
+      {items.length > 0 && <LecturaBase items={items} />}
 
       {cargando && items.length === 0 && (
         <div className="skeleton skeleton-linea" style={{ width: '70%', height: 44, marginTop: 24 }} />
