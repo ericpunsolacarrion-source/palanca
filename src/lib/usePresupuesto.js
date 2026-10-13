@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
-import { aCentimos } from './importe'
+import { aCentimos, eurosDe } from './importe'
 
 export function usePresupuesto(usuarioId) {
   const [metodo, setMetodo] = useState('tasa')
@@ -23,8 +23,8 @@ export function usePresupuesto(usuarioId) {
     if (!error) {
       setMetodo(data?.metodo ?? 'tasa')
       setTasaAhorroObjetivo(data?.tasa_ahorro_objetivo ?? null)
-      setGastoMaximoFijo(data?.gasto_maximo_fijo ?? null)
-      setObjetivoInversionMensual(data?.objetivo_inversion_mensual ?? null)
+      setGastoMaximoFijo(eurosDe(data?.gasto_maximo_fijo_centimos, data?.gasto_maximo_fijo))
+      setObjetivoInversionMensual(eurosDe(data?.objetivo_inversion_mensual_centimos, data?.objetivo_inversion_mensual))
       setConfigurado(data?.tasa_ahorro_objetivo != null || data?.gasto_maximo_fijo != null)
     }
     setCargando(false)

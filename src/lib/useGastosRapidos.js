@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
-import { aCentimos } from './importe'
+import { aCentimos, eurosDe } from './importe'
 import { toast } from './toast'
 
 // Accesos rápidos de gasto definidos por el usuario (café 1,50 €, comer 12 €…).
@@ -26,7 +26,7 @@ const esUuid = (v) => typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v)
 const aItem = (row) => ({
   id: row.id,
   nombre: row.nombre,
-  importe: row.importe == null ? null : Number(row.importe),
+  importe: eurosDe(row.importe_centimos, row.importe),
   categoriaId: row.categoria_id,
   categoriaNombre: row.categoria_nombre,
 })

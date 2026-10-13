@@ -70,3 +70,13 @@ export function aEuros(centimos) {
   if (!Number.isFinite(n)) return 0
   return n / 100
 }
+
+// Lectura desde la BD prefiriendo la columna de céntimos; si falta (filas
+// antiguas anteriores a la doble escritura), cae al valor en euros. Devuelve
+// número o null. Fuente única para conmutar las lecturas a céntimos.
+export function eurosDe(centimos, euros) {
+  if (centimos != null && Number.isFinite(Number(centimos))) return Number(centimos) / 100
+  if (euros == null || euros === '') return null
+  const n = Number(euros)
+  return Number.isFinite(n) ? n : null
+}

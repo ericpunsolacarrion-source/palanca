@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
-import { aCentimos } from './importe'
+import { aCentimos, eurosDe } from './importe'
 
 // Objetivos de ahorro múltiples por usuario. Degradación elegante: si la tabla
 // aún no existe en la BD, se comporta como lista vacía sin romper la app.
@@ -24,7 +24,13 @@ export function useObjetivosAhorro(usuarioId) {
       setTablaFalta(error.code === '42P01' || /objetivos_ahorro/.test(error.message))
       setObjetivos([])
     } else {
-      setObjetivos(data)
+      setObjetivos(
+        (data || []).map((o) => ({
+          ...o,
+          importe_objetivo: eurosDe(o.importe_objetivo_centimos, o.importe_objetivo),
+          importe_actual: eurosDe(o.importe_actual_centimos, o.importe_actual),
+        })),
+      )
       setTablaFalta(false)
     }
     setCargando(false)

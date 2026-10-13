@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
-import { aCentimos } from './importe'
+import { aCentimos, eurosDe } from './importe'
 
 // Planificaciones de meses futuros por usuario. Degradación elegante: si la
 // tabla aún no existe, se comporta como vacío sin romper la app.
@@ -23,7 +23,14 @@ export function usePlanificaciones(usuarioId) {
       setPlanes({})
     } else {
       const mapa = {}
-      for (const p of data) mapa[p.mes] = p
+      for (const p of data) {
+        mapa[p.mes] = {
+          ...p,
+          ingreso_previsto: eurosDe(p.ingreso_previsto_centimos, p.ingreso_previsto),
+          gasto_previsto: eurosDe(p.gasto_previsto_centimos, p.gasto_previsto),
+          inversion_prevista: eurosDe(p.inversion_prevista_centimos, p.inversion_prevista),
+        }
+      }
       setPlanes(mapa)
       setTablaFalta(false)
     }

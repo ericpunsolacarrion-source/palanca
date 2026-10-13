@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { aCentimos, aEuros } from './importe'
+import { aCentimos, aEuros, eurosDe } from './importe'
 
 describe('aCentimos / aEuros (frontera euros ↔ céntimos)', () => {
   it('convierte euros con 2 decimales a céntimos enteros exactos', () => {
@@ -47,5 +47,24 @@ describe('aCentimos / aEuros (frontera euros ↔ céntimos)', () => {
     for (const euros of [0, 0.01, 0.1, 0.2, 1.99, 300, 1234.56, 19765.9, 22414.83]) {
       expect(aEuros(aCentimos(euros))).toBeCloseTo(euros, 10)
     }
+  })
+})
+
+describe('eurosDe (lectura prefiriendo céntimos, con respaldo a euros)', () => {
+  it('prefiere los céntimos cuando existen', () => {
+    expect(eurosDe(123456, 1234.56)).toBe(1234.56)
+    expect(eurosDe(500, 9.99)).toBe(5) // gana céntimos aunque el euro difiera
+    expect(eurosDe(0, null)).toBe(0) // 0 céntimos es válido
+  })
+
+  it('cae al valor en euros si faltan los céntimos (filas antiguas)', () => {
+    expect(eurosDe(null, 1234.56)).toBe(1234.56)
+    expect(eurosDe(undefined, '300')).toBe(300)
+  })
+
+  it('devuelve null cuando no hay ni céntimos ni euros', () => {
+    expect(eurosDe(null, null)).toBeNull()
+    expect(eurosDe(null, '')).toBeNull()
+    expect(eurosDe(undefined, undefined)).toBeNull()
   })
 })

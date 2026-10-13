@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import { claveMesActual } from './movimientosUtils'
-import { aCentimos } from './importe'
+import { aCentimos, eurosDe } from './importe'
 import { toast } from './toast'
 
 // Recurrentes del usuario (alquiler, nómina, suscripción…), persistidos en
@@ -42,7 +42,7 @@ function aItem(row, infoPorRec) {
     id: row.id,
     tipo: row.tipo,
     nombre: row.nombre,
-    importe: Number(row.importe),
+    importe: eurosDe(row.importe_centimos, row.importe) ?? 0,
     categoriaId: row.categoria_id,
     categoriaNombre: row.categoria_nombre,
     fuenteId: row.fuente_id,
