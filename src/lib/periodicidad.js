@@ -61,6 +61,13 @@ export function proximoCobro(rec, hoy = new Date()) {
     const clave = claveDe(y, m)
     if (!tocaEnMes(rec, clave) || confirmados.has(clave)) continue
     const fecha = fechaEnMes(rec, y, m)
+    // Sin día fijado no hay fecha concreta: se informa del MES, nunca de un
+    // "atraso" (el día 1 es solo un ancla interna). `sinDia` lo marca para que
+    // el calendario y los avisos no lo traten como un cobro con fecha.
+    if (!Number(rec.diaMes)) {
+      const texto = i === 0 ? 'este mes' : textoDias(Math.max(46, Math.round((fecha - base) / 86400000)), fecha, base)
+      return { fecha: isoLocal(fecha), mes: clave, dias: Math.max(0, Math.round((fecha - base) / 86400000)), texto, sinDia: true }
+    }
     const dias = Math.round((fecha - base) / 86400000)
     return { fecha: isoLocal(fecha), mes: clave, dias, texto: textoDias(dias, fecha, base) }
   }
@@ -94,7 +101,8 @@ export function cobrosProximos(recs, dias = 30, hoy = new Date()) {
   for (const rec of recs) {
     if (!rec.activo) continue
     const p = proximoCobro(rec, hoy)
-    if (p && p.dias <= dias) lista.push({ rec, ...p, importe: Number(rec.importe) })
+    // Sin día fijado no se puede situar en el calendario ni avisar "mañana".
+    if (p && !p.sinDia && p.dias <= dias) lista.push({ rec, ...p, importe: Number(rec.importe) })
   }
   return lista.sort((a, b) => a.dias - b.dias || b.importe - a.importe)
 }

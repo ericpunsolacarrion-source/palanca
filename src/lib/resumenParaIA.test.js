@@ -33,3 +33,14 @@ describe('construirResumenIA · presupuesto, objetivos y proyección', () => {
     expect(r.objetivosAhorro[0]).toMatchObject({ faltan: 3000, ritmoMensual: 0, mesesParaAlcanzarloASuRitmo: null })
   })
 })
+
+describe('presupuesto incoherente (revisión de código)', () => {
+  it('método fijo sin cantidad → no configurado (nunca "0 € de límite")', () => {
+    const r = construirResumenIA([], { presupuesto: { metodo: 'fijo', gastoMaximoFijo: null, tasaAhorroObjetivo: 20 } })
+    expect(r.presupuesto).toEqual({ configurado: false })
+  })
+  it('respeta configurado:false del hook', () => {
+    const r = construirResumenIA([], { presupuesto: { configurado: false, metodo: 'tasa', tasaAhorroObjetivo: 20 } })
+    expect(r.presupuesto).toEqual({ configurado: false })
+  })
+})

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { formatearEuros } from '../lib/categorias'
-import { formatearPorcentaje, gastoPorCategoria, totalesDe } from '../lib/movimientosUtils'
+import { diasRestantesDelMes, formatearPorcentaje, gastoPorCategoria, limiteGastoPresupuesto, totalesDe } from '../lib/movimientosUtils'
 import { usePresupuestoCompartido } from '../lib/DatosCompartidos'
 import { toast } from '../lib/toast'
 import { useCountUp } from '../lib/useCountUp'
@@ -9,12 +9,6 @@ import InputImporte from './InputImporte'
 function Cifra({ valor, className }) {
   const animado = useCountUp(valor)
   return <span className={className}>{formatearEuros(animado)}</span>
-}
-
-function diasRestantesDelMes() {
-  const hoy = new Date()
-  const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate()
-  return ultimoDia - hoy.getDate() + 1
 }
 
 export default function Presupuesto({ movimientos, gastoEstimado }) {
@@ -168,7 +162,7 @@ export default function Presupuesto({ movimientos, gastoEstimado }) {
     )
   }
 
-  const presupuestoGasto = metodo === 'fijo' ? gastoMaximoFijo : totalIngresos * (1 - tasaAhorroObjetivo / 100)
+  const presupuestoGasto = limiteGastoPresupuesto({ metodo, tasaAhorroObjetivo, gastoMaximoFijo }, totalIngresos) ?? 0
   const restante = presupuestoGasto - totalGastos
   const porcentajeGastado = presupuestoGasto > 0 ? (totalGastos / presupuestoGasto) * 100 : 0
   const sobrepasado = totalGastos > presupuestoGasto && presupuestoGasto > 0

@@ -5,7 +5,7 @@ import { aCentimos, aEuros } from './importe'
 // motor; contrato docs/MOTOR.md P1). Prefiere la columna `importe_centimos` si
 // viene en la fila (tras conmutar las lecturas); si no, convierte el `importe`
 // en euros. Así el núcleo suma siempre enteros y no acumula deriva de float.
-function centimosDe(m) {
+export function centimosDe(m) {
   if (m.importe_centimos !== undefined && m.importe_centimos !== null) {
     return Math.round(Number(m.importe_centimos))
   }
@@ -599,4 +599,25 @@ export function proyectarInteresCompuesto({ inicial = 0, mensual = 0, anios, ren
   const factor = (Math.pow(1 + r, meses) - 1) / r
   const valorFinal = inicial * Math.pow(1 + r, meses) + mensual * factor
   return { valorFinal, aportado, intereses: valorFinal - aportado }
+}
+
+// ── Presupuesto (fuente única: pantalla Presupuesto y Fulcro) ───────────────
+// Límite de gasto de consumo del mes según el método elegido:
+//   'fijo' → la cantidad fijada; 'tasa' → ingresos × (1 − tasa objetivo).
+// Devuelve null si el método no tiene su valor (presupuesto sin configurar o
+// incoherente): así nunca se trata un límite ausente como "0 €".
+export function limiteGastoPresupuesto({ metodo, tasaAhorroObjetivo, gastoMaximoFijo } = {}, ingresos = 0) {
+  if (metodo === 'fijo') {
+    const fijo = Number(gastoMaximoFijo)
+    return gastoMaximoFijo != null && Number.isFinite(fijo) && fijo > 0 ? fijo : null
+  }
+  const tasa = Number(tasaAhorroObjetivo)
+  if (tasaAhorroObjetivo == null || !Number.isFinite(tasa)) return null
+  return Math.max(0, Number(ingresos) || 0) * (1 - tasa / 100)
+}
+
+// Días que quedan del mes contando hoy (para el "puedes gastar X al día").
+export function diasRestantesDelMes(hoy = new Date()) {
+  const ultimo = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate()
+  return ultimo - hoy.getDate() + 1
 }

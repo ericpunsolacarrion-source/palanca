@@ -6,10 +6,12 @@ import {
   bolsas,
   claveMes,
   claveMesActual,
+  diasRestantesDelMes,
   estimacionGastoMensual,
   filtrarMesActual,
   filtrarPorMes,
   gastoPorCategoria,
+  limiteGastoPresupuesto,
   proyectarInteresCompuesto,
   resumenMensualMedio,
   ritmoMensualPorTipo,
@@ -105,12 +107,9 @@ function construirInsights({ tasaEste, tasaMedia, tendencia, subidaCat, haceMese
 // Presupuesto del mes (pestaña Presupuesto): límite de gasto según el método
 // elegido, cuánto lleva gastado, cuánto le queda y a qué ritmo diario.
 function resumenPresupuesto(p, tMes) {
-  if (!p || (p.tasaAhorroObjetivo == null && p.gastoMaximoFijo == null)) return { configurado: false }
-  const limite =
-    p.metodo === 'fijo' ? Number(p.gastoMaximoFijo) : tMes.ingresos * (1 - Number(p.tasaAhorroObjetivo) / 100)
-  const hoy = new Date()
-  const diasMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate()
-  const diasRestantes = diasMes - hoy.getDate() + 1
+  const limite = p?.configurado === false ? null : limiteGastoPresupuesto(p ?? {}, tMes.ingresos)
+  if (limite == null) return { configurado: false }
+  const diasRestantes = diasRestantesDelMes()
   const restante = limite - tMes.gastos
   return {
     configurado: true,
@@ -124,7 +123,7 @@ function resumenPresupuesto(p, tMes) {
   }
 }
 
-function resumenFijos(recurrentes, movimientos) {
+function resumenFijos(recurrentes, movimientos, descartadas) {
   const activos = recurrentes.filter((r) => r.activo && r.tipo === 'gasto')
   const cent = (x) => Math.round(x * 100)
   return {
@@ -138,11 +137,14 @@ function resumenFijos(recurrentes, movimientos) {
       costeAnual: Math.round(costeAnual(r)),
     })),
     proximos30Dias: cobrosProximos(activos, 30).map((c) => ({ nombre: c.rec.nombre, importe: c.importe, cuando: c.texto })),
-    avisos: calcularAvisos(recurrentes, movimientos).map((a) => `${a.titulo}: ${a.detalle}`),
+    avisos: calcularAvisos(recurrentes, movimientos, new Date(), { descartadas }).map((a) => `${a.titulo}: ${a.detalle}`),
   }
 }
 
-export function construirResumenIA(movimientos, { objetivos = [], objetivo, recurrentes = [], presupuesto = null } = {}) {
+export function construirResumenIA(
+  movimientos,
+  { objetivos = [], objetivo, recurrentes = [], presupuesto = null, descartadas = new Set() } = {},
+) {
   const mes = filtrarMesActual(movimientos)
   const tMes = totalesDe(mes)
   const { ahorroMedio, invertidoMedio } = resumenMensualMedio(movimientos)
@@ -282,7 +284,7 @@ export function construirResumenIA(movimientos, { objetivos = [], objetivo, recu
       : null,
     // Suscripciones y gastos fijos (pestaña Fijos): coste prorrateado, próximos
     // cobros y avisos (renovaciones, subidas de precio).
-    fijos: resumenFijos(recurrentes, movimientos),
+    fijos: resumenFijos(recurrentes, movimientos, descartadas),
     // Observaciones no alarmistas ya calculadas (base de proactividad, Fase 3).
     // Las que tocan liquidez/patrimonio no reconciliado ya llevan su reserva.
     insights,

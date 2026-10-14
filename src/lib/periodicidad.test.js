@@ -68,3 +68,15 @@ describe('textoCalendario', () => {
     expect(textoCalendario({ periodoMeses: 3, mesInicio: 11, diaMes: 1 })).toBe('trimestral · feb, may, ago, nov · día 1')
   })
 })
+
+describe('sin día fijado (revisión de código)', () => {
+  it('no es "atrasado": informa del mes y no entra en calendario ni avisos', () => {
+    const gym = { nombre: 'Gym', activo: true, importe: 40 } // mensual, sin día
+    expect(proximoCobro(gym, HOY)).toMatchObject({ sinDia: true, texto: 'este mes' })
+    expect(proximoCobro(gym, HOY).dias).toBeGreaterThanOrEqual(0)
+    expect(cobrosProximos([gym], 30, HOY)).toEqual([])
+  })
+  it('anual sin día: el mes de la renovación', () => {
+    expect(proximoCobro({ periodoMeses: 12, mesInicio: 3 }, HOY)).toMatchObject({ sinDia: true, texto: 'mar 2027' })
+  })
+})

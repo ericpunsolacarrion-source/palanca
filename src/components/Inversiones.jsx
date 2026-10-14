@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { CATEGORIA_INVERSION, esInversion, formatearEuros } from '../lib/categorias'
-import { SELECT_MOVIMIENTO, agregarPorMes, claveMes, formatearCompacto, formatearFecha, hoyIso, sumarImportes } from '../lib/movimientosUtils'
+import { SELECT_MOVIMIENTO, agregarPorMes, claveMes, formatearCompacto, formatearFecha, hoyIso, centimosDe, sumarImportes } from '../lib/movimientosUtils'
 import { useCountUp } from '../lib/useCountUp'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
@@ -135,7 +135,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
     const mapa = new Map()
     for (const a of aportaciones) {
       const nombre = a.fuente?.nombre ?? 'Sin especificar'
-      mapa.set(nombre, (mapa.get(nombre) ?? 0) + (aCentimos(a.importe) ?? 0))
+      mapa.set(nombre, (mapa.get(nombre) ?? 0) + centimosDe(a))
     }
     return [...mapa.entries()].map(([n, c]) => [n, c / 100]).sort((a, b) => b[1] - a[1])
   }, [aportaciones])

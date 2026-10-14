@@ -11,6 +11,7 @@
 // movimientosUtils (consumo = esConsumo, sumas exactas en céntimos).
 
 import {
+  centimosDe,
   claveMesActual,
   esConsumo,
   filtrarPorMes,
@@ -19,7 +20,6 @@ import {
   ultimosNMeses,
 } from './movimientosUtils'
 import { normalizarComercio } from './suscripciones'
-import { aCentimos } from './importe'
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 
@@ -52,7 +52,7 @@ function serieMensual(movimientos, filtro, n = 6) {
   const idx = new Map(meses.map((m) => [m.clave, 0]))
   for (const m of movimientos) {
     const clave = m.fecha.slice(0, 7)
-    if (idx.has(clave) && filtro(m)) idx.set(clave, idx.get(clave) + (aCentimos(m.importe) ?? 0))
+    if (idx.has(clave) && filtro(m)) idx.set(clave, idx.get(clave) + centimosDe(m))
   }
   return meses.map((m) => ({ mes: m.clave, total: euros(idx.get(m.clave)) }))
 }
@@ -64,7 +64,7 @@ function detalleCategoria(nombre, movimientos) {
   for (const m of movimientos) {
     if (!deCat(m) || !recientes.has(m.fecha.slice(0, 7))) continue
     const c = comercioDe(m) || 'sin concepto'
-    porComercio.set(c, (porComercio.get(c) ?? 0) + (aCentimos(m.importe) ?? 0))
+    porComercio.set(c, (porComercio.get(c) ?? 0) + centimosDe(m))
   }
   const top = [...porComercio.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
   return {
@@ -82,7 +82,7 @@ function detalleComercio(clave, movimientos) {
   for (const m of movimientos) {
     if (!deCom(m) || !doce.has(m.fecha.slice(0, 7))) continue
     n += 1
-    cent += aCentimos(m.importe) ?? 0
+    cent += centimosDe(m)
   }
   return {
     comercio: clave,
@@ -148,20 +148,35 @@ export function contextoParaPregunta(pregunta, movimientos = []) {
 }
 
 // Mensajes de cortesía que no necesitan la IA: se responden aquí, gratis y al
-// instante, y no gastan preguntas del día.
+// instante, y no gastan preguntas del día. Solo si el mensaje es ÚNICAMENTE
+// cortesía (todas sus palabras): "Hola, ¿voy bien?" lleva una pregunta → IA.
 const CORTESIA = [
-  { patron: /^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|ey|holi)\b/, respuesta: '¡Hola! Pregúntame lo que quieras sobre tu dinero: cómo vas este mes, en qué se te va o cómo llegar a un objetivo.' },
-  { patron: /^(gracias|muchas gracias|mil gracias|thanks|grac)/, respuesta: '¡A ti! Si te surge otra duda, aquí estoy.' },
-  { patron: /^(ok|okay|vale|genial|perfecto|entendido|de acuerdo|guay|bien|top)$/, respuesta: 'Perfecto. ¿Quieres que miremos algo más?' },
+  {
+    clave: ['hola', 'buenas', 'buenos', 'hey', 'ey', 'holi', 'saludos'],
+    permitidas: ['hola', 'buenas', 'buenos', 'dias', 'tardes', 'noches', 'hey', 'ey', 'holi', 'saludos', 'fulcro', 'que', 'tal'],
+    respuesta: '¡Hola! Pregúntame lo que quieras sobre tu dinero: cómo vas este mes, en qué se te va o cómo llegar a un objetivo.',
+  },
+  {
+    clave: ['gracias', 'thanks', 'thx'],
+    permitidas: ['gracias', 'muchas', 'mil', 'muchisimas', 'thanks', 'thx', 'fulcro', 'por', 'todo', 'de', 'nuevo', 'genial', 'perfecto', 'vale', 'ok'],
+    respuesta: '¡A ti! Si te surge otra duda, aquí estoy.',
+  },
+  {
+    clave: ['ok', 'okay', 'vale', 'genial', 'perfecto', 'entendido', 'acuerdo', 'guay', 'top', 'bien'],
+    permitidas: ['ok', 'okay', 'vale', 'genial', 'perfecto', 'entendido', 'de', 'acuerdo', 'guay', 'top', 'muy', 'bien', 'fulcro'],
+    respuesta: 'Perfecto. ¿Quieres que miremos algo más?',
+  },
 ]
 export function respuestaDeCortesia(texto) {
-  const t = texto
+  const palabras = String(texto || '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
-    .replace(/[¡!¿?.,:;)( ]+$/g, '')
-    .replace(/^[¡¿ ]+/, '')
-    .trim()
-  if (t.split(/\s+/).length > 4) return null // algo más que un saludo: va a la IA
-  return CORTESIA.find((c) => c.patron.test(t))?.respuesta ?? null
+    .split(/[^a-z0-9ñ]+/)
+    .filter(Boolean)
+  if (palabras.length === 0 || palabras.length > 5) return null
+  const tipo = CORTESIA.find(
+    (c) => palabras.some((p) => c.clave.includes(p)) && palabras.every((p) => c.permitidas.includes(p)),
+  )
+  return tipo?.respuesta ?? null
 }

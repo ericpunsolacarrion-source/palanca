@@ -1,23 +1,11 @@
 import { useMemo, useState } from 'react'
 import { formatearEuros } from '../lib/categorias'
 import { formatearFecha } from '../lib/movimientosUtils'
-import { costeAnualTotal, detectarSuscripciones } from '../lib/suscripciones'
+import { costeAnualTotal, detectarSuscripciones, guardarDescartadas, leerDescartadas } from '../lib/suscripciones'
 
 // Cargos periódicos detectados en tus movimientos (p. ej. tras importar el
-// extracto del banco) que aún no sigues en Base. Un toque para añadirlos; otro
-// para descartar los que no son suscripción. El descarte es una comodidad de
-// este dispositivo (localStorage), no un dato del motor.
-const claveLS = (usuarioId) => `palanca_susc_descartadas_${usuarioId}`
-
-function leerDescartadas(usuarioId) {
-  try {
-    const arr = JSON.parse(localStorage.getItem(claveLS(usuarioId)) || '[]')
-    return new Set(Array.isArray(arr) ? arr : [])
-  } catch {
-    return new Set()
-  }
-}
-
+// extracto del banco) que aún no sigues en Fijos. Un toque para añadirlos; otro
+// para descartar los que no son suscripción (descartes en lib/suscripciones).
 export default function SuscripcionesDetectadas({ usuarioId, movimientos, recurrentes, onAnadir }) {
   const [descartadas, setDescartadas] = useState(() => leerDescartadas(usuarioId))
   const [anadiendo, setAnadiendo] = useState(null)
@@ -32,11 +20,7 @@ export default function SuscripcionesDetectadas({ usuarioId, movimientos, recurr
   function descartar(clave) {
     const nuevo = new Set(descartadas).add(clave)
     setDescartadas(nuevo)
-    try {
-      localStorage.setItem(claveLS(usuarioId), JSON.stringify([...nuevo]))
-    } catch {
-      // sin persistencia: el descarte dura esta sesión
-    }
+    guardarDescartadas(usuarioId, nuevo)
   }
 
   async function anadir(d) {
@@ -52,6 +36,8 @@ export default function SuscripcionesDetectadas({ usuarioId, movimientos, recurr
       confirmar: false,
       periodoMeses: d.periodoMeses,
       mesInicio: d.mesInicio,
+      // El cargo detectado ya está en tus movimientos: su mes cuenta como pagado.
+      mesesYaPagados: [d.ultimaFecha.slice(0, 7)],
     })
     setAnadiendo(null)
   }

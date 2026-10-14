@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { avisosNotificables, calcularAvisos } from '../lib/avisos'
+import { EVENTO_DESCARTES, leerDescartadas } from '../lib/suscripciones'
 
 // Tarjeta del dashboard: lo que está a punto de salir de tu cuenta (cobros de
 // los próximos días, renovaciones y subidas de precio). Además, si el usuario
@@ -49,9 +50,17 @@ export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimie
   const [cerrados, setCerrados] = useState(() => leerSet(claveCerrados(usuarioId)))
   const [permiso, setPermiso] = useState(() => (soportaNotificaciones() ? Notification.permission : 'unsupported'))
 
+  // Comercios descartados en Fijos ("No es una suscripción"): sin avisos.
+  const [descartadas, setDescartadas] = useState(() => leerDescartadas(usuarioId))
+  useEffect(() => {
+    const refrescar = () => setDescartadas(leerDescartadas(usuarioId))
+    window.addEventListener(EVENTO_DESCARTES, refrescar)
+    return () => window.removeEventListener(EVENTO_DESCARTES, refrescar)
+  }, [usuarioId])
+
   const avisos = useMemo(
-    () => calcularAvisos(recurrentes, movimientos).filter((a) => !cerrados.has(a.id)),
-    [recurrentes, movimientos, cerrados],
+    () => calcularAvisos(recurrentes, movimientos, new Date(), { descartadas }).filter((a) => !cerrados.has(a.id)),
+    [recurrentes, movimientos, cerrados, descartadas],
   )
 
   // Notificación del sistema: una sola vez por aviso.

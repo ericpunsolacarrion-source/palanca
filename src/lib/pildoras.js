@@ -1,6 +1,5 @@
 import { esInversion } from './categorias'
-import { agregarPorMes, claveMes, claveMesActual, esConsumo, totalesDe, ultimosNMeses } from './movimientosUtils'
-import { aCentimos } from './importe'
+import { agregarPorMes, centimosDe, claveMes, claveMesActual, esConsumo, totalesDe, ultimosNMeses } from './movimientosUtils'
 
 // Píldoras educativas: breves, contextuales y descartables.
 //
@@ -67,7 +66,7 @@ function invertidoPorMes(movimientos) {
   for (const m of movimientos) {
     if (m.tipo === 'gasto' && esInversion(m)) {
       const clave = claveMes(m.fecha)
-      mapa.set(clave, (mapa.get(clave) ?? 0) + (aCentimos(m.importe) ?? 0) / 100)
+      mapa.set(clave, (mapa.get(clave) ?? 0) + centimosDe(m) / 100)
     }
   }
   return mapa
@@ -85,7 +84,7 @@ function categoriaDisparada(movimientos) {
     if (i === undefined) continue
     const nombre = m.categoria?.nombre ?? 'Sin categoría'
     if (!porCat.has(nombre)) porCat.set(nombre, new Array(7).fill(0))
-    porCat.get(nombre)[i] += aCentimos(m.importe) ?? 0
+    porCat.get(nombre)[i] += centimosDe(m)
   }
 
   let mejor = null

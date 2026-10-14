@@ -222,45 +222,54 @@ export default async function handler(req, res) {
   const mensajes = construirMensajes({ resumen, detalle, pregunta, historial })
 
   // Límite diario por usuario (en el servidor: no se puede saltar desde la app).
-  // Si la tabla aún no existe (SQL sin ejecutar), no se bloquea: se responde
-  // igualmente y queda el tope de gasto de la cuenta de Anthropic.
   const sb = clienteDelUsuario(req)
-  let usadasHoy = null
-  if (sb && LIMITE_DIARIO > 0) {
-    const inicioDia = new Date()
-    inicioDia.setUTCHours(0, 0, 0, 0)
-    const { count, error } = await sb
-      .from('fulcro_uso')
-      .select('id', { count: 'exact', head: true })
-      .eq('usuario_id', usuario.id)
-      .gte('created_at', inicioDia.toISOString())
-    if (!error) usadasHoy = count ?? 0
-    if (usadasHoy !== null && usadasHoy >= LIMITE_DIARIO) {
-      return res.status(429).json({
-        error: `Has usado tus ${LIMITE_DIARIO} preguntas de hoy. Mañana puedes seguir.`,
-        code: 'limite_diario',
-        restantes: 0,
-      })
-    }
+  const reserva = sb ? await reservarPregunta(sb, usuario.id) : { modo: 'sin_registro' }
+  if (reserva.bloqueado) {
+    return res.status(429).json({
+      error: `Has usado tus ${LIMITE_DIARIO} preguntas de hoy. Mañana puedes seguir.`,
+      code: 'limite_diario',
+      restantes: 0,
+    })
   }
+  const usadasHoy = reserva.usadas ?? null
 
   const client = new Anthropic() // lee ANTHROPIC_API_KEY del entorno
   const peticion = peticionPara(mensajes)
   const conRespaldo = CON_RESPALDO ? RESPALDO : null
 
-  // Registro de uso (para el límite diario y para ver el coste real).
+  // Registro de uso (tokens reales, para ver el coste). Con la reserva atómica
+  // se completa la fila reservada; sin ella (SQL v2 sin ejecutar), se inserta.
   async function registrarUso(respuesta) {
     if (!sb) return
     const u = respuesta.usage || {}
-    await sb.from('fulcro_uso').insert({
-      usuario_id: usuario.id,
-      modelo: respuesta.model || MODELO,
-      tokens_entrada: (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0),
-      tokens_salida: u.output_tokens ?? 0,
-      tokens_cache: u.cache_read_input_tokens ?? 0,
-    })
+    const tokens = {
+      entrada: (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0),
+      salida: u.output_tokens ?? 0,
+      cache: u.cache_read_input_tokens ?? 0,
+    }
+    if (reserva.id) {
+      await sb.rpc('fulcro_registrar', {
+        p_id: reserva.id,
+        p_entrada: tokens.entrada,
+        p_salida: Math.max(1, tokens.salida),
+        p_cache: tokens.cache,
+        p_modelo: respuesta.model || MODELO,
+      })
+    } else if (reserva.modo === 'legado') {
+      await sb.from('fulcro_uso').insert({
+        usuario_id: usuario.id,
+        modelo: respuesta.model || MODELO,
+        tokens_entrada: tokens.entrada,
+        tokens_salida: tokens.salida,
+        tokens_cache: tokens.cache,
+      })
+    }
   }
-  const restantes = usadasHoy !== null ? Math.max(0, LIMITE_DIARIO - usadasHoy - 1) : null
+  // Con la reserva atómica, usadasHoy ya incluye esta pregunta.
+  const restantes =
+    LIMITE_DIARIO > 0 && usadasHoy !== null
+      ? Math.max(0, LIMITE_DIARIO - usadasHoy - (reserva.id ? 0 : 1))
+      : null
   const textoDe = (respuesta) =>
     (respuesta.content || [])
       .filter((b) => b.type === 'text')
@@ -313,6 +322,53 @@ export default async function handler(req, res) {
     }
     return res.status(502).json({ error: mensajeDeError(e) })
   }
+}
+
+// Reserva una pregunta del cupo diario.
+//  1) Atómica (SQL v2 `fulcro_reservar`): bloqueo por usuario + día de Madrid;
+//     imposible de saltar con peticiones en paralelo.
+//  2) Legado (si la función aún no existe): cuenta las de hoy (día de Madrid)
+//     y registra al terminar; aproximado ante peticiones simultáneas.
+// Si falla la llamada al modelo, la pregunta reservada cuenta igualmente
+// (así nadie puede vaciar su contador provocando errores).
+async function reservarPregunta(sb, usuarioId) {
+  const { data, error } = await sb.rpc('fulcro_reservar', { p_limite: LIMITE_DIARIO, p_modelo: MODELO })
+  if (!error) {
+    const fila = Array.isArray(data) ? data[0] : data
+    if (!fila?.reserva_id) return { bloqueado: true, usadas: fila?.usadas_hoy ?? LIMITE_DIARIO }
+    return { id: fila.reserva_id, usadas: fila.usadas_hoy }
+  }
+  // Función no disponible → modo legado.
+  if (LIMITE_DIARIO <= 0) return { modo: 'legado' }
+  const { count, error: errCount } = await sb
+    .from('fulcro_uso')
+    .select('id', { count: 'exact', head: true })
+    .eq('usuario_id', usuarioId)
+    .gte('created_at', inicioDelDiaEnMadrid().toISOString())
+  if (errCount) return { modo: 'sin_registro' } // tabla inexistente: no se bloquea
+  if ((count ?? 0) >= LIMITE_DIARIO) return { bloqueado: true, usadas: count }
+  return { modo: 'legado', usadas: count ?? 0 }
+}
+
+// Medianoche de hoy en Madrid, como instante UTC (para el modo legado).
+export function inicioDelDiaEnMadrid(ahora = new Date()) {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Madrid',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
+    })
+      .formatToParts(ahora)
+      .map((p) => [p.type, p.value]),
+  )
+  const comoUTC = Date.UTC(+partes.year, +partes.month - 1, +partes.day, +partes.hour, +partes.minute, +partes.second)
+  const desfase = Math.round((comoUTC - ahora.getTime()) / 60000) * 60000
+  return new Date(Date.UTC(+partes.year, +partes.month - 1, +partes.day) - desfase)
 }
 
 const MENSAJE_RECHAZO =

@@ -4,6 +4,7 @@ import { construirResumenIA } from '../lib/resumenParaIA'
 import { contextoParaPregunta, respuestaDeCortesia } from '../lib/contextoFulcro'
 import { useObjetivosCompartidos, usePresupuestoCompartido } from '../lib/DatosCompartidos'
 import { supabase } from '../lib/supabaseClient'
+import { leerDescartadas } from '../lib/suscripciones'
 
 // ─── ACTIVAR FULCRO ──────────────────────────────────────────────────────────
 // Fulcro se activa cuando el servidor tiene la clave (ANTHROPIC_API_KEY en
@@ -101,20 +102,26 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [] }) {
   const presupuesto = usePresupuestoCompartido()
   const finRef = useRef(null)
 
-  // Resumen anónimo y agregado del motor (fuente única: movimientosUtils). Los
-  // insights ya vienen redactados con cautela.
+  // Resumen anónimo y agregado del motor (fuente única: movimientosUtils). Solo
+  // se calcula con el panel ABIERTO (recorre todo el histórico: no tiene sentido
+  // hacerlo en cada render de la app) y con dependencias estables (primitivos).
+  const objetivoTexto = objetivo?.texto ?? null
+  const { metodo, tasaAhorroObjetivo, gastoMaximoFijo, objetivoInversionMensual, configurado } = presupuesto
   const resumen = useMemo(
     () =>
-      construirResumenIA(movimientos, {
-        objetivos,
-        objetivo: objetivo?.texto ?? null,
-        recurrentes,
-        presupuesto,
-      }),
-    [movimientos, objetivos, objetivo, recurrentes, presupuesto],
+      abierto
+        ? construirResumenIA(movimientos, {
+            objetivos,
+            objetivo: objetivoTexto,
+            recurrentes,
+            presupuesto: { metodo, tasaAhorroObjetivo, gastoMaximoFijo, objetivoInversionMensual, configurado },
+            descartadas: leerDescartadas(usuarioId),
+          })
+        : null,
+    [abierto, movimientos, objetivos, objetivoTexto, recurrentes, metodo, tasaAhorroObjetivo, gastoMaximoFijo, objetivoInversionMensual, configurado, usuarioId],
   )
-  const insights = resumen.insights ?? []
-  const sugerencias = useMemo(() => sugerenciasDe(resumen), [resumen])
+  const insights = resumen?.insights ?? []
+  const sugerencias = useMemo(() => (resumen ? sugerenciasDe(resumen) : BASICAS), [resumen])
 
   useEffect(() => {
     try {
@@ -151,7 +158,7 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [] }) {
   const preguntar = useCallback(
     async (texto) => {
       const pregunta = texto.trim()
-      if (!pregunta || enviando) return
+      if (!pregunta || enviando || !resumen) return
 
       const cortesia = respuestaDeCortesia(pregunta)
       if (cortesia) {

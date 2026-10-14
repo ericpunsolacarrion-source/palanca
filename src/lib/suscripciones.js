@@ -7,8 +7,7 @@
 // El usuario solo tiene que confirmarlo con un toque (procedencia "sugerido",
 // ratificado por el usuario: contrato MOTOR.md F4).
 
-import { esConsumo, hoyIso } from './movimientosUtils'
-import { aCentimos } from './importe'
+import { centimosDe, esConsumo, hoyIso } from './movimientosUtils'
 
 const DIA_MS = 86400000
 
@@ -122,7 +121,7 @@ export function detectarSuscripciones(movimientos, recurrentes = [], opciones = 
     // Importe estable (una suscripción no cambia mucho de un mes a otro). Se
     // miran los últimos cargos para tolerar subidas de precio antiguas.
     const recientes = porDia.slice(-6)
-    const cent = recientes.map((m) => aCentimos(m.importe) ?? 0)
+    const cent = recientes.map((m) => centimosDe(m))
     const centMed = mediana(cent)
     if (centMed <= 0) continue
     if (cent.some((c) => Math.abs(c - centMed) / centMed > 0.25)) continue
@@ -138,9 +137,13 @@ export function detectarSuscripciones(movimientos, recurrentes = [], opciones = 
     const importeCent = cent.at(-1)
     // Subida de precio: el último importe supera al anterior distinto en ≥1 %.
     const previoDistinto = [...cent].reverse().find((c) => c !== importeCent)
+    // Fecha del PRIMER cargo con el precio actual: cuándo subió de verdad (no
+    // el último cargo), para avisar una sola vez por subida.
+    let inicioPrecio = recientes.length - 1
+    while (inicioPrecio > 0 && cent[inicioPrecio - 1] === importeCent) inicioPrecio -= 1
     const subida =
       previoDistinto != null && importeCent > previoDistinto && (importeCent - previoDistinto) / previoDistinto >= 0.01
-        ? { antes: previoDistinto / 100, ahora: importeCent / 100 }
+        ? { antes: previoDistinto / 100, ahora: importeCent / 100, desde: recientes[inicioPrecio].fecha }
         : null
 
     resultado.push({
@@ -169,4 +172,33 @@ export function detectarSuscripciones(movimientos, recurrentes = [], opciones = 
 // Total anual (exacto en céntimos) de una lista de detecciones.
 export function costeAnualTotal(detectadas) {
   return detectadas.reduce((s, d) => s + Math.round(d.costeAnual * 100), 0) / 100
+}
+
+// ── Descartes ("No es una suscripción") ─────────────────────────────────────
+// Comodidad de este dispositivo (localStorage), no un dato del motor. Los usan
+// el detector, los avisos del inicio y el resumen de Fulcro. Al cambiar se
+// emite EVENTO_DESCARTES para que las demás pantallas se actualicen.
+export const EVENTO_DESCARTES = 'palanca-descartes'
+const claveDescartes = (usuarioId) => `palanca_susc_descartadas_${usuarioId}`
+
+export function leerDescartadas(usuarioId) {
+  try {
+    const arr = JSON.parse(localStorage.getItem(claveDescartes(usuarioId)) || '[]')
+    return new Set(Array.isArray(arr) ? arr : [])
+  } catch {
+    return new Set()
+  }
+}
+
+export function guardarDescartadas(usuarioId, set) {
+  try {
+    localStorage.setItem(claveDescartes(usuarioId), JSON.stringify([...set]))
+  } catch {
+    // sin persistencia: el descarte dura esta sesión
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(EVENTO_DESCARTES))
+  } catch {
+    // fuera del navegador (tests): nada que notificar
+  }
 }

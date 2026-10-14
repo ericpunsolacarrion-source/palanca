@@ -35,3 +35,22 @@ describe('calcularAvisos', () => {
     expect(a.detalle).toMatch(/\+12\s€ al año/) // 1 €/mes × 12 (Intl usa espacio duro)
   })
 })
+
+describe('subidas de precio (revisión de código)', () => {
+  const g = (fecha, importe) => ({ tipo: 'gasto', importe, fecha, nota: 'SPOTIFY', categoria: { nombre: 'Ocio' } })
+  it('una subida antigua no vuelve a avisar en los meses siguientes', () => {
+    // Subió en junio; en octubre (4 meses después) ya no es noticia.
+    const movs = [g('2026-04-05', 10.99), g('2026-05-05', 10.99), g('2026-06-05', 11.99), g('2026-07-05', 11.99), g('2026-08-05', 11.99), g('2026-09-05', 11.99), g('2026-10-05', 11.99)]
+    expect(calcularAvisos([], movs, HOY)).toEqual([])
+  })
+  it('el id es el mismo cada mes mientras sea la misma subida', () => {
+    const base = [g('2026-07-05', 10.99), g('2026-08-05', 10.99), g('2026-09-05', 11.99)]
+    const a = calcularAvisos([], base, new Date(2026, 8, 20))[0]
+    const b = calcularAvisos([], [...base, g('2026-10-05', 11.99)], HOY)[0]
+    expect(a.id).toBe(b.id)
+  })
+  it('no avisa de comercios descartados por el usuario', () => {
+    const movs = [g('2026-07-05', 10.99), g('2026-08-05', 10.99), g('2026-09-05', 11.99), g('2026-10-05', 11.99)]
+    expect(calcularAvisos([], movs, HOY, { descartadas: new Set(['spotify']) })).toEqual([])
+  })
+})

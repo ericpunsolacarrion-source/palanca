@@ -21,7 +21,7 @@ const cuando = (c) => (c.dias < 0 ? `pendiente desde ${c.texto}` : c.texto)
  * @returns [{ id, tipo: 'cobro'|'renovacion'|'subida', titulo, detalle, importe, dias, urgente }]
  *          ordenados por urgencia.
  */
-export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Date()) {
+export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Date(), { descartadas = new Set() } = {}) {
   const avisos = []
   const gastos = recurrentes.filter((r) => r.tipo === 'gasto')
 
@@ -53,13 +53,17 @@ export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Dat
   }
 
   const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`
-  for (const d of detectarSuscripciones(movimientos, [], { hoy: hoyIso })) {
+  // Los comercios que el usuario marcó "No es una suscripción" no avisan.
+  for (const d of detectarSuscripciones(movimientos, [], { hoy: hoyIso, descartadas })) {
     if (!d.subida) continue
-    const dias = Math.round((new Date(`${hoyIso}T00:00:00`) - new Date(`${d.ultimaFecha}T00:00:00`)) / 86400000)
+    // Se mide desde que SUBIÓ (primer cargo con el precio nuevo), no desde el
+    // último cargo: así el aviso dura ~1,5 meses y no reaparece cada mes.
+    const dias = Math.round((new Date(`${hoyIso}T00:00:00`) - new Date(`${d.subida.desde}T00:00:00`)) / 86400000)
     if (dias > DIAS_SUBIDA) continue
     const extraAnual = Math.round((d.subida.ahora - d.subida.antes) * (12 / d.periodoMeses) * 100) / 100
     avisos.push({
-      id: `subida:${d.clave}:${d.ultimaFecha}`,
+      // Un id por SUBIDA (precio anterior → nuevo): descartarlo es definitivo.
+      id: `subida:${d.clave}:${d.subida.antes}->${d.subida.ahora}`,
       tipo: 'subida',
       titulo: `${d.nombre} ha subido de precio`,
       detalle: `De ${formatearEuros(d.subida.antes)} a ${formatearEuros(d.subida.ahora)} (+${formatearEuros(extraAnual)} al año)`,

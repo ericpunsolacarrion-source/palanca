@@ -109,17 +109,17 @@ function camposPeriodo(datos) {
 // Guarda intentando incluir la periodicidad. Si la BD aún no tiene esas
 // columnas (SQL de supabase-schema-periodicidad.sql sin ejecutar), reintenta
 // sin ellas: un compromiso mensual se guarda igual; uno no mensual se guarda
-// como mensual y se avisa. Devuelve el error final o null.
+// como mensual y se avisa. Devuelve { error, data } del intento final.
 async function guardarConPeriodo(fila, operacion) {
-  const { error } = await operacion(fila)
-  if (!error) return null
-  if (!/periodo_meses|mes_inicio/.test(error.message || '')) return error
+  const primero = await operacion(fila)
+  if (!primero.error) return primero
+  if (!/periodo_meses|mes_inicio/.test(primero.error.message || '')) return primero
   const { periodo_meses: periodo, mes_inicio: _mi, ...sinPeriodo } = fila
-  const { error: error2 } = await operacion(sinPeriodo)
-  if (!error2 && periodo !== 1) {
+  const segundo = await operacion(sinPeriodo)
+  if (!segundo.error && periodo !== 1) {
     toast('Guardado como mensual: falta activar las periodicidades en la base de datos.', 'error')
   }
-  return error2
+  return segundo
 }
 
 // Pub/sub para que todas las instancias (badge de la pestaña y vista de gestión)
@@ -206,11 +206,33 @@ export function useRecurrentes(usuarioId) {
         activo: true,
         ...camposPeriodo(datos),
       }
-      const error = await guardarConPeriodo(fila, (f) => supabase.from('recurrentes').insert(f))
-      if (!error) {
-        await cargar()
-        notificar()
-      } else toast('No se ha podido guardar el recurrente.', 'error')
+      const { error, data } = await guardarConPeriodo(fila, (f) =>
+        supabase.from('recurrentes').insert(f).select('id').single(),
+      )
+      if (error) {
+        toast('No se ha podido guardar el recurrente.', 'error')
+        return null
+      }
+      // Meses que YA están pagados (p. ej. un cargo detectado en el extracto):
+      // se marcan como confirmados SIN crear movimiento (ya existe), para que no
+      // salgan como pendientes ni se dupliquen al confirmar. Deshacer solo quita
+      // la marca (movimiento_id null): nunca borra el movimiento importado.
+      const pagados = Array.isArray(datos.mesesYaPagados) ? datos.mesesYaPagados : []
+      if (data?.id && pagados.length) {
+        await supabase.from('recurrentes_confirmaciones').upsert(
+          pagados.map((mes) => ({
+            usuario_id: usuarioId,
+            recurrente_id: data.id,
+            mes,
+            movimiento_id: null,
+            importe_centimos: aCentimos(datos.importe),
+          })),
+          { onConflict: 'recurrente_id,mes', ignoreDuplicates: true },
+        )
+      }
+      await cargar()
+      notificar()
+      return data?.id ?? null
     },
     [usuarioId, cargar],
   )
@@ -237,7 +259,7 @@ export function useRecurrentes(usuarioId) {
       if (Object.keys(fila).length === 0) return
       if ('importe' in campos) fila.importe_centimos = aCentimos(campos.importe)
       if ('periodoMeses' in campos) Object.assign(fila, camposPeriodo(campos))
-      const error = await guardarConPeriodo(fila, (f) => supabase.from('recurrentes').update(f).eq('id', id))
+      const { error } = await guardarConPeriodo(fila, (f) => supabase.from('recurrentes').update(f).eq('id', id))
       if (!error) {
         await cargar()
         notificar()
