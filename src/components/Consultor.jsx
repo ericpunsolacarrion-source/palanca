@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Icono, { Marca } from './Icono'
+import Icono from './Icono'
 import { construirResumenIA } from '../lib/resumenParaIA'
 import { useObjetivosCompartidos } from '../lib/DatosCompartidos'
 import { supabase } from '../lib/supabaseClient'
@@ -140,7 +140,7 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [] }) {
               <div className="consultor-teaser">
                 <span className="consultor-teaser-halo" aria-hidden="true" />
                 <span className="consultor-teaser-icono" aria-hidden="true">
-                  <Marca soloFulcro tam={30} />
+                  <Icono nombre="consultor" tam={30} />
                 </span>
                 <span className="consultor-teaser-badge">Próximamente</span>
                 <h3 className="consultor-teaser-titulo">Fulcro llega muy pronto</h3>

@@ -49,8 +49,9 @@ El color **siempre significa algo**. Si no significa nada, es gris.
 ## Iconos y marca
 - `Icono.jsx`: rejilla 24, trazo 1,6, puntas redondeadas, `currentColor`.
   Si falta un icono, se dibuja en ese mismo estilo y se añade ahí.
-- **Marca**: una palanca sobre su fulcro (barra + triángulo índigo). El
-  consultor "Fulcro" usa un icono de conversación (claridad antes que guiño).
+- **Marca**: "La P que crece" (dos barras ascendentes + la "P" en índigo).
+  Detalle y mascota aparcada en `docs/marca/README.md`. El consultor "Fulcro"
+  usa un icono de conversación (claridad antes que guiño).
 
 ## Componentes base
 - **Botón principal**: relleno `--accent`, texto blanco, sin degradado ni brillo.

@@ -81,7 +81,8 @@ Fuera la estética "de IA": sin degradados morado→cian, sin glows ni manchas
 de fondo, sin emojis/✦. Tipografía Geist + Geist Mono (autoalojadas), un solo
 acento índigo, semánticos calmados, iconos SVG propios (`Icono.jsx`), marca
 de palanca, etiquetas de sección unificadas, Fulcro compacto que no tapa
-contenido. Pendiente de pulir en siguientes pasadas: pantallas secundarias
+contenido. Logo elegido: **"La P que crece"**; mascota de Fulcro aparcada
+(ver `docs/marca/`). Pendiente de pulir en siguientes pasadas: pantallas secundarias
 (simuladores, cuenta, onboarding, logros) con el mismo criterio.
 
 ## Foco de producto (2026-10-14): suscripciones + seguimiento financiero

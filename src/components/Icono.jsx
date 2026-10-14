@@ -34,21 +34,27 @@ export default function Icono({ nombre, tam = 22, className = '', ...resto }) {
   )
 }
 
-// Marca: una palanca (barra inclinada) sobre su fulcro (triángulo). El fulcro
-// solo, sin barra, es el icono de "Fulcro", el consultor: misma familia.
-export function Marca({ tam = 22, soloFulcro = false, className = '' }) {
+// Marca "La P que crece": dos barras ascendentes y la tercera ya es la "P" de
+// Palanca (tu dinero creciendo). Las barras van en el color del texto con
+// opacidad; la "P" en el acento. Mismo dibujo en favicon e iconos de la PWA.
+const MARCA_SVG = {
+  barras: [
+    { x: 2.5, y: 14, h: 6, opacidad: 0.4 },
+    { x: 7.6, y: 10, h: 10, opacidad: 0.7 },
+  ],
+  pAsta: { x: 12.7, y: 4, w: 3.4, h: 16 },
+  pBucle: 'M14.5 4h3.3a4.3 4.3 0 0 1 0 8.6h-3.3v-2.8h3.3a1.5 1.5 0 0 0 0-3h-3.3Z',
+}
+
+export function Marca({ tam = 22, className = '' }) {
+  const { barras, pAsta, pBucle } = MARCA_SVG
   return (
     <svg viewBox="0 0 24 24" width={tam} height={tam} className={`marca ${className}`} aria-hidden="true">
-      {!soloFulcro && (
-        <path d="M2.5 16 21.5 9" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" fill="none" />
-      )}
-      <path
-        d={soloFulcro ? 'M12 6.5 18.5 18h-13Z' : 'M11 13.3 15 20.2H7Z'}
-        fill="var(--accent-2)"
-        stroke="var(--accent-2)"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-      />
+      {barras.map((b) => (
+        <rect key={b.x} x={b.x} y={b.y} width="3.4" height={b.h} rx="1.1" fill="currentColor" opacity={b.opacidad} />
+      ))}
+      <rect x={pAsta.x} y={pAsta.y} width={pAsta.w} height={pAsta.h} rx="1.1" fill="var(--accent-2)" />
+      <path d={pBucle} fill="var(--accent-2)" />
     </svg>
   )
 }
