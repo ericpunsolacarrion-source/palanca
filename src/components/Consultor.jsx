@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Icono from './Icono'
 import { construirResumenIA } from '../lib/resumenParaIA'
-import { contextoParaPregunta } from '../lib/contextoFulcro'
+import { contextoParaPregunta, respuestaDeCortesia } from '../lib/contextoFulcro'
 import { useObjetivosCompartidos, usePresupuestoCompartido } from '../lib/DatosCompartidos'
 import { supabase } from '../lib/supabaseClient'
 
@@ -153,7 +153,15 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [] }) {
       const pregunta = texto.trim()
       if (!pregunta || enviando) return
 
-      const historialPrevio = mensajes.filter((m) => !m.error && !m.pendiente)
+      const cortesia = respuestaDeCortesia(pregunta)
+      if (cortesia) {
+        setMensajes((prev) => [...prev, { rol: 'usuario', texto: pregunta }, { rol: 'consultor', texto: cortesia, local: true }])
+        setEntrada('')
+        return
+      }
+
+      // Las respuestas locales no se reenvían a la IA (no aportan contexto).
+      const historialPrevio = mensajes.filter((m) => !m.error && !m.pendiente && !m.local)
       setMensajes((prev) => [
         ...prev,
         { rol: 'usuario', texto: pregunta },

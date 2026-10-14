@@ -1,0 +1,71 @@
+# Fulcro — el consultor de Palanca
+
+> Guía de cómo funciona, **hasta dónde llega**, cuánto cuesta y cómo se prueba.
+> Código: `api/consultor.js` (servidor), `src/components/Consultor.jsx` (chat),
+> `src/lib/resumenParaIA.js` + `src/lib/contextoFulcro.js` (datos del motor).
+
+## Estado
+En pruebas **solo en dev**: se enciende en los despliegues de prueba de Vercel
+(rama `develop` → "Preview"). En la app pública sigue en "Próximamente" hasta
+poner `FULCRO_PUBLICO=true`. Requiere `ANTHROPIC_API_KEY` en Vercel (solo
+Preview) y la tabla `fulcro_uso` (`supabase-schema-fulcro.sql`, ya ejecutado).
+
+## Qué ve (y qué no)
+- **Siempre**: un resumen agregado calculado por el motor (~900 tokens): mes
+  actual y gasto por categoría, tasa de ahorro y tendencia, evolución 6 meses,
+  medias, bolsas y patrimonio con su fiabilidad, inversión, presupuesto (límite,
+  gastado, restante, € al día), objetivos (progreso, lo que falta, meses a su
+  ritmo), proyección a 10 años, fijos (coste, próximos cobros, avisos) e insights.
+- **Según la pregunta**: si nombra una categoría, un comercio o un mes, solo ese
+  desglose (evolución, comercios, compras y ticket medio, totales del mes).
+- **Nunca**: movimientos uno a uno, nombre, email ni datos bancarios.
+
+## Hasta dónde llega
+| Sí responde (con sus cifras) | No puede (lo dice y ofrece alternativa) |
+|---|---|
+| Cómo va el mes y frente a su media | Ver movimientos uno a uno o fechas de cada gasto |
+| En qué se le va el dinero (categoría, comercio, mes) | Saldos bancarios en tiempo real |
+| Presupuesto: cuánto le queda y al día | Cotizaciones / valor de mercado (Palanca cuenta a coste) |
+| Cuándo llega a sus objetivos a su ritmo | Recomendar productos concretos o cifras fiscales exactas |
+| Qué fijos/suscripciones pesan, renovaciones, subidas | Hacer cambios (registrar, borrar, cancelar): indica dónde |
+| Patrimonio (con su fiabilidad) y "qué pasaría si…" | Temas que no son de dinero: reconduce en una frase |
+| Conceptos financieros y cómo usar Palanca | |
+
+Tres líneas rojas fijas en el system prompt: sin recomendaciones de inversión
+concretas, sin cifras fiscales/legales de memoria, y cuidado especial ante
+angustia por dinero.
+
+## Coste (fase inicial: mínimo)
+- Modelo `claude-haiku-5-5` ($0,10 / $0,50 por millón de tokens), esfuerzo
+  `low`, respuestas de 60–150 palabras por defecto (la salida es lo caro).
+- **Caché**: system prompt (~2.900 tokens) y resumen (~900) se cachean; en una
+  conversación, las preguntas siguientes los leen al 10 % del precio.
+- Estimación: **0,01–0,06 céntimos de $ por pregunta** (la primera de una
+  conversación escribe la caché; las siguientes la reutilizan).
+- **Gratis**: saludos y "gracias/vale" se responden en la app, sin IA.
+- **Topes**: 10 preguntas/usuario/día (`FULCRO_LIMITE_DIARIO`), registro de
+  tokens en `fulcro_uso`, y límite de gasto mensual en console.anthropic.com.
+- Variables: `CONSULTOR_MODELO`, `CONSULTOR_ESFUERZO`, `FULCRO_LIMITE_DIARIO`,
+  `FULCRO_PUBLICO`.
+
+Consulta de coste real en Supabase (SQL Editor):
+```sql
+select date(created_at) as dia, count(*) as preguntas,
+       sum(tokens_entrada) as entrada, sum(tokens_cache) as cache, sum(tokens_salida) as salida,
+       round((sum(tokens_entrada) * 0.10 + sum(tokens_cache) * 0.01 + sum(tokens_salida) * 0.50) / 1e6, 4) as dolares_aprox
+from fulcro_uso group by 1 order by 1 desc;
+```
+
+## Banco de pruebas
+`scripts/probar-fulcro.mjs` hace 18 preguntas típicas (datos, conceptos,
+límites, bienestar) + una conversación de dos turnos sobre un usuario de ejemplo
+(`scripts/data/fulcro-demo.json`, generado con el motor real) con la MISMA
+petición que la app, y muestra cada respuesta junto a lo que debería hacer, sus
+tokens y su coste. La batería completa cuesta < 1 céntimo.
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-... node scripts/probar-fulcro.mjs
+```
+
+Úsalo tras cada cambio del system prompt: es la forma de ver si una mejora
+ayuda de verdad y no rompe otra cosa.

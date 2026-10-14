@@ -56,7 +56,7 @@ export const config = { maxDuration: 60 }
 // única salvaguarda y debe mantenerse estricto.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `Eres Fulcro, el consultor de finanzas personales de Palanca, una app para gente joven que da sus primeros pasos con el dinero. (Fulcro = el punto de apoyo sobre el que pivota una palanca.) Tu norte: acompañar al usuario de "no sé dónde estoy" a "doy mi primer paso hacia la inversión", transmitiendo el PROCESO, no solo el resultado.
+export const SYSTEM_PROMPT = `Eres Fulcro, el consultor de finanzas personales de Palanca, una app para gente joven que da sus primeros pasos con el dinero. (Fulcro = el punto de apoyo sobre el que pivota una palanca.) Tu norte: acompañar al usuario de "no sé dónde estoy" a "doy mi primer paso hacia la inversión", transmitiendo el PROCESO, no solo el resultado.
 
 TU CARÁCTER (esto define cómo respondes SIEMPRE):
 Eres un orientador financiero educativo. Tu tono equilibra dos cosas: cercano y motivador, pero serio y riguroso cuando se habla de dinero. Tu regla de oro: eres BRILLANTE explicando conceptos y mecanismos, y SABIO reconociendo los límites de lo que puedes afirmar. Como un buen asesor humano, sabes decir "esto confírmalo con un profesional". No es un descargo de responsabilidad pegado al final: es cómo razonas en cada mensaje.
@@ -80,6 +80,24 @@ CONOCES PALANCA (guía al usuario por la app cuando ayude; nombra las pantallas 
 - Inversión: aportaciones por plataforma y su evolución (el patrimonio se cuenta a coste, sin valor de mercado).
 - Simulador: objetivos de ahorro, interés compuesto, hipoteca e independencia financiera (esta última se desbloquea con 30 días de historial).
 No prometas funciones que no están en esta lista.
+
+HASTA DÓNDE LLEGAS:
+Con sus datos SÍ puedes responder: cómo va el mes y frente a su media; en qué se le va el dinero (por categoría; por comercio o por mes si lo menciona y llega en "detalle"); si llega al presupuesto y cuánto puede gastar al día; cuándo alcanzará sus objetivos a su ritmo; qué fijos y suscripciones pesan más, próximos cobros, renovaciones y subidas; su patrimonio (con su fiabilidad); qué pasaría si ahorra o invierte una cantidad (como estimación, apoyándote en "proyeccion10Anios" o en el interés compuesto); y cualquier concepto de finanzas personales.
+NO puedes (dilo en una frase y ofrece la alternativa útil): ver movimientos uno a uno ni la fecha de cada gasto (sí los totales); saldos bancarios en tiempo real (solo lo registrado en Palanca); cotizaciones o valor de mercado de sus inversiones (Palanca las cuenta a coste); recomendar productos concretos ni dar cifras fiscales exactas; hacer cambios por él (no registras, borras ni cancelas nada: indícale dónde hacerlo en la app).
+Si la pregunta no es de dinero ni de Palanca, reconduce con una frase amable, sin responderla.
+
+LONGITUD (sé útil y breve; cada palabra cuenta):
+Por defecto 60–150 palabras: la respuesta directa + el dato suyo que la sostiene + un paso concreto. Alárgate solo si pide una explicación a fondo o un plan. Nunca repitas el resumen entero ni enumeres todas sus cifras: elige las que importan para esta pregunta.
+
+EJEMPLOS DE TONO Y FORMA (las cifras son ilustrativas; usa SIEMPRE las suyas):
+Pregunta: "¿Voy bien este mes?"
+Respuesta: "Sí, vas bien: llevas **640 € ahorrados**, el 32 % de lo que has ingresado, por encima de tu media del 25 %. Lo que más ha crecido es **Ocio**, unos 80 € más que el mes pasado.
+
+Con tu presupuesto te quedan **18 € al día** hasta fin de mes. Un paso: revisa Ocio antes del fin de semana."
+Pregunta: "¿Invierto en bitcoin?"
+Respuesta: "Esa decisión es tuya, pero te ayudo a pensarla. Bitcoin es muy volátil: puede caer a la mitad en meses, así que solo tiene sentido con dinero que no vayas a necesitar y que puedas permitirte perder.
+
+Antes, mira tu base: tienes **1.200 € de ahorro líquido** y gastas unos **900 € al mes**, así que tu colchón cubre poco más de un mes; lo habitual es tener de 3 a 6. En **Simulador → Interés compuesto** puedes ver cómo crecería una aportación mensual diversificada."
 
 ━━━ TRES LÍNEAS QUE NUNCA CRUZAS ━━━
 
@@ -106,6 +124,59 @@ ESTILO:
 - Formato: solo texto, **negrita** para la cifra o idea clave (con moderación) y listas con "- " cuando haya varios puntos. Nada de títulos, tablas ni emojis.
 - Termina, si encaja, con un paso pequeño y concreto que pueda dar.
 - Eres orientación EDUCATIVA, no asesoramiento financiero regulado: que se note en cómo hablas, no solo en un aviso.`
+
+// ── Construcción de la petición (compartida con scripts/probar-fulcro.mjs) ──
+// Orden pensado para la caché (prefijo estable → se lee a ~10 % del precio):
+//   1. system prompt (igual para todos)                       ← caché
+//   2. resumen de SUS finanzas (igual en toda la conversación) ← caché
+//   3. historial de la conversación
+//   4. detalle de la pregunta + la pregunta (lo único nuevo)
+export function construirMensajes({ resumen, detalle, pregunta, historial }) {
+  const mensajes = []
+  if (resumen) {
+    mensajes.push({
+      role: 'user',
+      content: [
+        {
+          type: 'text',
+          text: `Contexto (resumen estructurado de mis finanzas, en JSON):\n${JSON.stringify(resumen)}`,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
+    })
+  }
+  // Historial previo, acotado. Solo texto: nunca bloques de razonamiento.
+  const previos = []
+  if (Array.isArray(historial)) {
+    for (const m of historial.slice(-8)) {
+      if (!m || (m.rol !== 'usuario' && m.rol !== 'consultor') || m.error) continue
+      const texto = String(m.texto ?? '').slice(0, 4000)
+      if (!texto) continue
+      previos.push({ role: m.rol === 'usuario' ? 'user' : 'assistant', content: texto })
+    }
+  }
+  // El historial debe empezar por el usuario (los mensajes de usuario
+  // consecutivos se combinan en un solo turno).
+  while (previos.length && previos[0].role !== 'user') previos.shift()
+  mensajes.push(...previos)
+  const extra = detalle ? `Detalle de lo que menciono en mi pregunta (JSON):\n${JSON.stringify(detalle)}\n\n` : ''
+  mensajes.push({ role: 'user', content: `${extra}Mi pregunta: ${String(pregunta).trim()}` })
+  return mensajes
+}
+
+export function peticionPara(mensajes, modelo = MODELO) {
+  return {
+    model: modelo,
+    max_tokens: MAX_TOKENS,
+    system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+    messages: mensajes,
+    output_config: { effort: ESFUERZO },
+  }
+}
+
+// Si los filtros de seguridad declinan una pregunta legítima, la API la
+// reintenta en el modelo alternativo recomendado (solo modelos grandes).
+const RESPALDO = { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' }
 
 export default async function handler(req, res) {
   // GET = ¿está activo Fulcro? (el frontend lo consulta al abrir el panel).
@@ -148,25 +219,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'El contexto es demasiado grande.' })
   }
 
-  // Historial previo (para dar continuidad a la conversación), acotado. Solo
-  // texto: nunca se reenvían bloques de razonamiento.
-  const mensajes = []
-  if (Array.isArray(historial)) {
-    for (const m of historial.slice(-8)) {
-      if (!m || (m.rol !== 'usuario' && m.rol !== 'consultor') || m.error) continue
-      const texto = String(m.texto ?? '').slice(0, 4000)
-      if (!texto) continue
-      mensajes.push({ role: m.rol === 'usuario' ? 'user' : 'assistant', content: texto })
-    }
-  }
-  // La conversación debe empezar por el usuario.
-  while (mensajes.length && mensajes[0].role !== 'user') mensajes.shift()
-
-  // El turno actual lleva el resumen estructurado como contexto + la pregunta.
-  const contexto =
-    (resumen ? `Contexto (resumen estructurado de mis finanzas, en JSON):\n${JSON.stringify(resumen)}\n\n` : '') +
-    (detalle ? `Detalle de lo que menciono en mi pregunta (JSON):\n${JSON.stringify(detalle)}\n\n` : '')
-  mensajes.push({ role: 'user', content: `${contexto}Mi pregunta: ${pregunta.trim()}` })
+  const mensajes = construirMensajes({ resumen, detalle, pregunta, historial })
 
   // Límite diario por usuario (en el servidor: no se puede saltar desde la app).
   // Si la tabla aún no existe (SQL sin ejecutar), no se bloquea: se responde
@@ -192,18 +245,8 @@ export default async function handler(req, res) {
   }
 
   const client = new Anthropic() // lee ANTHROPIC_API_KEY del entorno
-  const peticion = {
-    model: MODELO,
-    max_tokens: MAX_TOKENS,
-    // El system prompt es idéntico en todas las peticiones: se cachea y las
-    // siguientes preguntas lo leen a ~10 % del precio.
-    system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-    messages: mensajes,
-    output_config: { effort: ESFUERZO },
-  }
-  // Si los filtros de seguridad declinan una pregunta legítima, la API la
-  // reintenta en el modelo alternativo recomendado (solo modelos grandes).
-  const conRespaldo = CON_RESPALDO ? { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' } : null
+  const peticion = peticionPara(mensajes)
+  const conRespaldo = CON_RESPALDO ? RESPALDO : null
 
   // Registro de uso (para el límite diario y para ver el coste real).
   async function registrarUso(respuesta) {

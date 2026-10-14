@@ -29,6 +29,7 @@ premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](EST
 | **Contrato del motor** (invariantes, inamovible) | **[MOTOR.md](MOTOR.md)** |
 | Guía pantalla a pantalla | [PANTALLAS.md](PANTALLAS.md) |
 | **Sistema visual** (colores, tipografía, iconos, qué NO hacer) | **[DISENO.md](DISENO.md)** |
+| **Fulcro** (qué ve, hasta dónde llega, coste, pruebas) | **[FULCRO.md](FULCRO.md)** |
 | Estado de plataforma / negocio (dossier largo) | [ESTADO-PLATAFORMA.md](ESTADO-PLATAFORMA.md) |
 | Reglas de cálculo y disciplina | [../CLAUDE.md](../CLAUDE.md) |
 
@@ -84,8 +85,13 @@ calendario, avisos) y el **rediseño visual v2** (ver DISENO.md).
   listas), sugerencias según sus datos, "Qué ve Fulcro", conversación de la
   sesión, contador de preguntas. Abrible con pregunta desde cualquier pantalla
   (evento `palanca-fulcro`).
-- **Para probar en dev**: `ANTHROPIC_API_KEY` en Vercel solo para "Preview" +
-  SQL de `fulcro_uso` + límite de gasto en console.anthropic.com.
+- **Alcance y coste afinados**: mapa de lo que puede/no puede responder,
+  60–150 palabras por defecto, 2 ejemplos de respuesta ideal, resumen cacheado
+  en la conversación, saludos/gracias gratis en local. Banco de pruebas:
+  `scripts/probar-fulcro.mjs`. Detalle en **docs/FULCRO.md**.
+- **Para probar en dev**: SQL de `fulcro_uso` ✅ ejecutado. Falta
+  `ANTHROPIC_API_KEY` en Vercel solo para "Preview" + límite de gasto en
+  console.anthropic.com.
 
 ## Rediseño visual v2 (2026-10-14, en `develop`)
 Fuera la estética "de IA": sin degradados morado→cian, sin glows ni manchas

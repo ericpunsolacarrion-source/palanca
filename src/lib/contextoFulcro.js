@@ -146,3 +146,22 @@ export function contextoParaPregunta(pregunta, movimientos = []) {
   if (mesesMencionados.length) detalle.meses = mesesMencionados.map((i) => detalleMes(i, movimientos))
   return detalle
 }
+
+// Mensajes de cortesía que no necesitan la IA: se responden aquí, gratis y al
+// instante, y no gastan preguntas del día.
+const CORTESIA = [
+  { patron: /^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|ey|holi)\b/, respuesta: '¡Hola! Pregúntame lo que quieras sobre tu dinero: cómo vas este mes, en qué se te va o cómo llegar a un objetivo.' },
+  { patron: /^(gracias|muchas gracias|mil gracias|thanks|grac)/, respuesta: '¡A ti! Si te surge otra duda, aquí estoy.' },
+  { patron: /^(ok|okay|vale|genial|perfecto|entendido|de acuerdo|guay|bien|top)$/, respuesta: 'Perfecto. ¿Quieres que miremos algo más?' },
+]
+export function respuestaDeCortesia(texto) {
+  const t = texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[¡!¿?.,:;)( ]+$/g, '')
+    .replace(/^[¡¿ ]+/, '')
+    .trim()
+  if (t.split(/\s+/).length > 4) return null // algo más que un saludo: va a la IA
+  return CORTESIA.find((c) => c.patron.test(t))?.respuesta ?? null
+}

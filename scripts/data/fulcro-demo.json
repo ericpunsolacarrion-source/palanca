@@ -1,0 +1,322 @@
+{
+  "generado": "2026-10-14",
+  "resumen": {
+    "moneda": "EUR",
+    "objetivoUsuario": "Ahorrar para independizarme y empezar a invertir",
+    "mesActual": {
+      "clave": "2026-10",
+      "ingresos": 1850,
+      "gastos": 988,
+      "ahorro": 862,
+      "invertido": 150,
+      "ratioAhorroPct": 47,
+      "gastoPorCategoria": {
+        "Vivienda": 650,
+        "Ocio": 65,
+        "Comida": 219,
+        "Transporte": 55
+      }
+    },
+    "tasaAhorro": {
+      "esteMesPct": 47,
+      "mediaPct": 44,
+      "tendencia": "estable"
+    },
+    "inversion": {
+      "esteMes": 150,
+      "mediaMensual": 150,
+      "totalAcumulado": 1050,
+      "mesesInvirtiendo": 7,
+      "haceMesesUltimaAportacion": 0
+    },
+    "bolsas": {
+      "liquidez": 7945,
+      "inversion": 1050,
+      "patrimonio": 8995
+    },
+    "fiabilidad": {
+      "liquidezReconciliada": true,
+      "ultimaReconciliacion": "2026-04-01T09:00:00Z"
+    },
+    "medias": {
+      "ahorroMensualMedio": 828,
+      "gastoMensualEstimado": 1022,
+      "mesesDeHistorial": 7
+    },
+    "evolucion6Meses": [
+      {
+        "mes": "2026-05",
+        "ingresos": 1850,
+        "gastos": 1012,
+        "ahorro": 838,
+        "invertido": 150,
+        "tasaAhorroPct": 45
+      },
+      {
+        "mes": "2026-06",
+        "ingresos": 1850,
+        "gastos": 1042,
+        "ahorro": 808,
+        "invertido": 150,
+        "tasaAhorroPct": 44
+      },
+      {
+        "mes": "2026-07",
+        "ingresos": 1850,
+        "gastos": 1012,
+        "ahorro": 838,
+        "invertido": 150,
+        "tasaAhorroPct": 45
+      },
+      {
+        "mes": "2026-08",
+        "ingresos": 1850,
+        "gastos": 1043,
+        "ahorro": 807,
+        "invertido": 150,
+        "tasaAhorroPct": 44
+      },
+      {
+        "mes": "2026-09",
+        "ingresos": 1850,
+        "gastos": 1073,
+        "ahorro": 777,
+        "invertido": 150,
+        "tasaAhorroPct": 42
+      },
+      {
+        "mes": "2026-10",
+        "ingresos": 1850,
+        "gastos": 988,
+        "ahorro": 862,
+        "invertido": 150,
+        "tasaAhorroPct": 47
+      }
+    ],
+    "objetivosAhorro": [
+      {
+        "nombre": "Colchón de emergencia",
+        "tipo": "liquidez",
+        "objetivo": 5400,
+        "actual": 7945,
+        "progresoPct": 147,
+        "faltan": 0,
+        "ritmoMensual": 678,
+        "mesesParaAlcanzarloASuRitmo": 0,
+        "cercaDeCumplir": false,
+        "fiabilidadEstimada": false,
+        "fecha": null
+      },
+      {
+        "nombre": "Viaje a Japón",
+        "tipo": "liquidez",
+        "objetivo": 3000,
+        "actual": 7945,
+        "progresoPct": 265,
+        "faltan": 0,
+        "ritmoMensual": 678,
+        "mesesParaAlcanzarloASuRitmo": 0,
+        "cercaDeCumplir": false,
+        "fiabilidadEstimada": false,
+        "fecha": "2027-07-01"
+      }
+    ],
+    "presupuesto": {
+      "configurado": true,
+      "metodo": "tasa de ahorro objetivo del 25 %",
+      "limiteGastoMes": 1388,
+      "gastadoMes": 988,
+      "restante": 399,
+      "diasRestantesMes": 18,
+      "puedeGastarAlDia": 22,
+      "objetivoInversionMensual": 150
+    },
+    "proyeccion10Anios": {
+      "ahorroMensualSupuesto": 828,
+      "dineroParado": 99337,
+      "invertidoAl7": 143281
+    },
+    "fijos": {
+      "nCompromisos": 5,
+      "costeMensualProrrateado": 747,
+      "costeAnual": 8965,
+      "compromisos": [
+        {
+          "nombre": "Alquiler",
+          "importe": 650,
+          "periodicidad": "mensual",
+          "costeAnual": 7800
+        },
+        {
+          "nombre": "Netflix",
+          "importe": 13.99,
+          "periodicidad": "mensual",
+          "costeAnual": 168
+        },
+        {
+          "nombre": "Spotify",
+          "importe": 10.99,
+          "periodicidad": "mensual",
+          "costeAnual": 132
+        },
+        {
+          "nombre": "Gimnasio",
+          "importe": 39.9,
+          "periodicidad": "mensual",
+          "costeAnual": 479
+        },
+        {
+          "nombre": "Seguro del coche",
+          "importe": 386.4,
+          "periodicidad": "anual",
+          "costeAnual": 386
+        }
+      ],
+      "proximos30Dias": [
+        {
+          "nombre": "Spotify",
+          "importe": 10.99,
+          "cuando": "hace 9 días"
+        },
+        {
+          "nombre": "Gimnasio",
+          "importe": 39.9,
+          "cuando": "hace 7 días"
+        },
+        {
+          "nombre": "Alquiler",
+          "importe": 650,
+          "cuando": "en 19 días"
+        },
+        {
+          "nombre": "Netflix",
+          "importe": 13.99,
+          "cuando": "en 20 días"
+        }
+      ],
+      "avisos": [
+        "Spotify · pendiente desde hace 9 días: 10,99 €",
+        "Gimnasio · pendiente desde hace 7 días: 39,90 €",
+        "Netflix ha subido de precio: De 12,99 € a 13,99 € (+12 € al año)"
+      ]
+    },
+    "insights": []
+  },
+  "detalles": {
+    "¿Cuánto gasto en comida?": {
+      "categorias": [
+        {
+          "categoria": "Comida",
+          "ultimos6Meses": [
+            {
+              "mes": "2026-05",
+              "total": 169
+            },
+            {
+              "mes": "2026-06",
+              "total": 179
+            },
+            {
+              "mes": "2026-07",
+              "total": 189
+            },
+            {
+              "mes": "2026-08",
+              "total": 199
+            },
+            {
+              "mes": "2026-09",
+              "total": 209
+            },
+            {
+              "mes": "2026-10",
+              "total": 219
+            }
+          ],
+          "principalesComerciosUltimos3Meses": [
+            {
+              "comercio": "mercadona",
+              "total": 511.5
+            },
+            {
+              "comercio": "lidl",
+              "total": 115.5
+            }
+          ]
+        }
+      ]
+    },
+    "¿Y en Mercadona, cuánto me dejo al mes?": {
+      "comercios": [
+        {
+          "comercio": "mercadona",
+          "ultimos6Meses": [
+            {
+              "mes": "2026-05",
+              "total": 130.5
+            },
+            {
+              "mes": "2026-06",
+              "total": 140.5
+            },
+            {
+              "mes": "2026-07",
+              "total": 150.5
+            },
+            {
+              "mes": "2026-08",
+              "total": 160.5
+            },
+            {
+              "mes": "2026-09",
+              "total": 170.5
+            },
+            {
+              "mes": "2026-10",
+              "total": 180.5
+            }
+          ],
+          "compras12Meses": 14,
+          "total12Meses": 1053.5,
+          "ticketMedio": 75.25
+        }
+      ]
+    },
+    "¿Me compensa seguir con Netflix?": {
+      "comercios": [
+        {
+          "comercio": "netflix",
+          "ultimos6Meses": [
+            {
+              "mes": "2026-05",
+              "total": 12.99
+            },
+            {
+              "mes": "2026-06",
+              "total": 12.99
+            },
+            {
+              "mes": "2026-07",
+              "total": 12.99
+            },
+            {
+              "mes": "2026-08",
+              "total": 13.99
+            },
+            {
+              "mes": "2026-09",
+              "total": 13.99
+            },
+            {
+              "mes": "2026-10",
+              "total": 13.99
+            }
+          ],
+          "compras12Meses": 7,
+          "total12Meses": 93.93,
+          "ticketMedio": 13.42
+        }
+      ]
+    }
+  }
+}

@@ -261,16 +261,12 @@ export function construirResumenIA(movimientos, { objetivos = [], objetivo, recu
     fiabilidad: {
       liquidezReconciliada: reconciliada,
       ultimaReconciliacion: reconcISO,
-      nota: reconciliada
-        ? 'El saldo fue reconciliado; la liquidez y el patrimonio son fiables.'
-        : 'La liquidez y el patrimonio son estimaciones a partir de lo registrado: el usuario aún no ha reconciliado su saldo real. No afirmes estas cifras como hechos.',
     },
     medias: {
       ahorroMensualMedio: Math.round(ahorroMedio),
       gastoMensualEstimado: Math.round(gastoEstimado),
       mesesDeHistorial: mesesUsados,
     },
-    invertidoTotalAcumulado: Math.round(bolsasCalc.bolsaInversion),
     evolucion6Meses: evolucion,
     objetivosAhorro,
     presupuesto: resumenPresupuesto(presupuesto, tMes),
