@@ -2,18 +2,24 @@
 // coma decimal). Mantiene el valor numérico real por debajo para los cálculos.
 // La UI usa <InputImporte>; estas funciones son la lógica pura y testeable.
 
+// Tope de 9 cifras enteras (hasta 999.999.999,99 €): más es siempre un error
+// de tecleo y rompería todas las cifras de la app.
+const MAX_ENTEROS = 9
+
 // Deja solo dígitos y una coma decimal (máx. 2 decimales). Los puntos que
 // escriba el usuario se tratan como separador de miles y se ignoran.
 export function limpiarImporte(str) {
   let s = String(str ?? '').replace(/[^\d,]/g, '')
   const i = s.indexOf(',')
   if (i !== -1) {
-    const enteros = s.slice(0, i).replace(/,/g, '')
+    const enteros = s.slice(0, i).replace(/,/g, '').slice(0, MAX_ENTEROS)
     const decimales = s
       .slice(i + 1)
       .replace(/,/g, '')
       .slice(0, 2)
     s = `${enteros},${decimales}`
+  } else {
+    s = s.slice(0, MAX_ENTEROS)
   }
   return s
 }

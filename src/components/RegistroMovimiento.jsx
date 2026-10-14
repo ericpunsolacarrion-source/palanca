@@ -192,6 +192,22 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
       return
     }
 
+    // Importe fuera de lo normal (un cero de más es el error más caro): si es
+    // ≥ 10.000 € y más del triple de lo mayor que ha apuntado de ese tipo, se
+    // pregunta antes de guardar. No bloquea: solo confirma.
+    const tipoMov = modo === 'ingreso' ? 'ingreso' : 'gasto'
+    let mayorHabitual = 0
+    for (const m of movimientos) {
+      if (m.tipo === tipoMov && m.categoria?.nombre !== CATEGORIA_AJUSTE) mayorHabitual = Math.max(mayorHabitual, Number(m.importe) || 0)
+    }
+    if (
+      importeNumero >= 10000 &&
+      importeNumero > mayorHabitual * 3 &&
+      !(await confirmar(`¿${formatearEuros(importeNumero)}? Es mucho más de lo que sueles apuntar. Revisa que no sobre ningún cero.`))
+    ) {
+      return
+    }
+
     // Aviso suave de duplicado: si acabas de registrar el mismo importe en la
     // misma categoría y día hace menos de 90 s, probablemente es un doble-tap.
     // Confirmamos antes de crear otro (no bloquea: solo pregunta).

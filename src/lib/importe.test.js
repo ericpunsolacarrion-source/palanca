@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { aCentimos, aEuros } from './importe'
+import { aCentimos, aEuros, limpiarImporte } from './importe'
 
 describe('aCentimos / aEuros (frontera euros ↔ céntimos)', () => {
   it('convierte euros con 2 decimales a céntimos enteros exactos', () => {
@@ -47,5 +47,17 @@ describe('aCentimos / aEuros (frontera euros ↔ céntimos)', () => {
     for (const euros of [0, 0.01, 0.1, 0.2, 1.99, 300, 1234.56, 19765.9, 22414.83]) {
       expect(aEuros(aCentimos(euros))).toBeCloseTo(euros, 10)
     }
+  })
+})
+
+describe('tope de cifras al teclear importes', () => {
+  it('nunca más de 9 cifras enteras', () => {
+    expect(limpiarImporte('12345678901')).toBe('123456789')
+    expect(limpiarImporte('12345678901,55')).toBe('123456789,55')
+  })
+  it('lo normal no cambia', () => {
+    expect(limpiarImporte('1.234,5')).toBe('1234,5')
+    expect(limpiarImporte('50,00')).toBe('50,00')
+    expect(limpiarImporte('abc')).toBe('')
   })
 })
