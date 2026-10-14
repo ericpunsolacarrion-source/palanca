@@ -72,11 +72,31 @@ calendario, avisos) y el **rediseño visual v2** (ver DISENO.md). Además
 inicio) y **datos de ejemplo + demo rápida** para usuarios nuevos. Detalle en
 PANTALLAS.md §3 y §4b.
 
+**Noche del 2026-10-14 (rondas de producto, todo en `develop`):**
+- **Fulcro listo para usar**: funciona con datos de ejemplo, acceso directo
+  "¿Cómo voy?" en el Inicio, sabe qué cobros están por confirmar y si el
+  ingreso llega a final de mes; `max_tokens` 4000. Falta solo poner la clave
+  (pasos en FULCRO.md → "Activarlo").
+- **Primeros minutos**: acceso con propuesta clara; alta en 4 pasos; logros
+  honestos (sin el saldo inicial); "Ver la app con datos de ejemplo" en Tu cuenta.
+- **Navegación en 5 pestañas** (Plan = Presupuesto + Simuladores) y
+  **buscador** en el historial; movimientos con nombre legible.
+- **Clientes extremos** (10 años, jubilado, estudiante, patrimonio alto,
+  endeudado, datos caóticos; 320–390 px): cifras que nunca se cortan; sin
+  falsas alarmas si el ingreso llega a final de mes; tope de 9 cifras y
+  confirmación ante un "cero de más"; avisos de subida solo con precio estable.
+- **Pantallas secundarias**: simuladores abren con un caso ya calculado;
+  iconos propios en logros y avisos, sin emojis.
+
+**Pendiente del usuario (no se puede hacer desde la sesión: sin red a
+Supabase/Vercel):** clave de Anthropic en Vercel (Preview) para Fulcro; el
+SQL v2 de `supabase-schema-fulcro.sql` es opcional (sin él, modo respaldo).
+
 ## Fulcro (consultor IA) — en pruebas SOLO en dev (en `develop`)
 - **Solo en dev**: el servidor lo enciende fuera de producción (`VERCEL_ENV`);
   en la app pública sigue "Próximamente" hasta `FULCRO_PUBLICO=true`.
 - **Modo ahorro**: `claude-haiku-5-5` (~0,04 céntimos/pregunta; cambiable con
-  `CONSULTOR_MODELO`), esfuerzo `low`, ≤2000 tokens, system prompt cacheado,
+  `CONSULTOR_MODELO`), esfuerzo `low`, ≤4000 tokens (incluye su razonamiento), system prompt cacheado,
   **10 preguntas/usuario/día** en el servidor (`FULCRO_LIMITE_DIARIO`) y
   registro de tokens en `fulcro_uso` (`supabase-schema-fulcro.sql`).
 - **Datos del motor**: resumen agregado (mes, tasa de ahorro, evolución,

@@ -10,16 +10,18 @@ A futuro (Fase 2): familias, login real con Supabase Auth.
 
 ## Flujo de entrada
 
-### 1. Pantalla de ID (`PantallaId.jsx`)
-- El usuario escribe un **ID libre** (ej. "eric2026") que se guarda en localStorage.
-- No hay contraseña (limitación consciente de Fase 1: cualquiera que conozca el ID accede a esos datos).
-- El mismo ID en otro dispositivo recupera los mismos datos.
+### 1. Acceso (`Auth.jsx`)
+- Arriba, la **propuesta**: marca, "Tu dinero, por fin claro." y 3 ventajas (en Crear cuenta).
+- Abre en **Crear cuenta** si el dispositivo nunca entró (`palanca_ya_entro`); si no, en **Entrar**.
+- Crear cuenta: email + una contraseña (con ojo para verla; sin repetirla) + aceptar la privacidad. Mensaje neutro anti-enumeración. Recuperar contraseña por email.
 
-### 2. Onboarding (`Onboarding.jsx`) — solo la primera vez
-- Pregunta el **objetivo**: Ahorrar / Jubilación / Planificación / Otro → se guarda en `perfiles.objetivo`.
-- Pide el **correo electrónico** (validado) → `perfiles.email`. La validación es **infalible**: el error se limpia en vivo al corregir el correo (con pista verde cuando es válido) y el botón nunca se queda colgado (try/catch). Los correos recogidos se ven en Supabase → Table Editor → `perfiles`.
-- Pide (opcional) el **saldo inicial de liquidez** (cuánto tiene ahora en cuenta) para que la bolsa de ahorro líquido parta de una base real; se registra como un movimiento de **ajuste** ("Saldo inicial"), editable después.
-- Al completar, siembra las categorías iniciales: Nomina (ingreso) y Vivienda, Comida, Ocio, Transporte, Ahorro, Inversion (gasto).
+### 2. Alta por pasos (`Onboarding.jsx`) — solo la primera vez
+Una pregunta por pantalla, barra de progreso y botón atrás:
+1. **Nombre** ("¿Cómo te llamamos?"; se saluda por el nombre de pila).
+2. **Objetivo** (un toque y avanza): saber en qué se me va · controlar suscripciones · ahorrar más · preparar mi futuro → `perfiles.objetivo`.
+3. **Saldo de hoy** (opcional, "Lo pongo después") → movimiento de **ajuste** "Saldo inicial".
+4. **Año de nacimiento** (opcional, "Prefiero no decirlo"; 1900 – año actual − 14).
+Al terminar: datos de ejemplo + demo rápida (ver §3). El saldo inicial NO cuenta como "ahorrado" en logros ni como "+X este mes".
 
 ---
 
