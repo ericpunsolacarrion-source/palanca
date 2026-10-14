@@ -140,7 +140,7 @@ export default function MovimientosTab({
         />
       )}
 
-      {sub === 'recurrentes' && <Recurrentes usuarioId={usuarioId} onRegistrado={onGuardado} />}
+      {sub === 'recurrentes' && <Recurrentes usuarioId={usuarioId} movimientos={movimientos} onRegistrado={onGuardado} />}
 
       {sub === 'importar' && (
         <ImportadorCsv usuarioId={usuarioId} movimientos={movimientos} onImportado={onGuardado} />

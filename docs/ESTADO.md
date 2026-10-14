@@ -57,8 +57,15 @@ recurrentes no crean movimientos con fecha futura ni duplicados por doble
 toque; sumas exactas en céntimos en Inversiones; CSV: separador `;`, `1.234`
 como miles, importes negativos y columna `tipo` opcional (el signo decide).
 
-**Pendiente de decidir (contrato):** la categoría inicial de gasto `Ahorro`
-cuenta como consumo y resta patrimonio (contradice E4, traspaso neutro).
+**Decidido:** la categoría `Ahorro` (tipo gasto) es un **traspaso neutro**
+(`esTraspaso`): ni gasto ni cambio de patrimonio. Ya no se crea de serie.
+
+## Foco de producto (2026-10-14): suscripciones + seguimiento financiero
+Base es la puerta de entrada. Hecho: **detector de cargos periódicos**
+(`lib/suscripciones.js`) sobre el histórico/CSV, con coste anual y aviso de
+subida de precio; añadir con un toque. Siguiente: periodicidad no mensual en
+`recurrentes` (necesita SQL), avisos de renovación (push/email) y medir
+retención con usuarios reales.
 
 ## Deuda técnica / cosas a vigilar
 - Housekeeping de Fase 1 (arriba).

@@ -10,6 +10,7 @@ import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
 import InputFecha from './InputFecha'
+import SuscripcionesDetectadas from './SuscripcionesDetectadas'
 import { aCentimos } from '../lib/importe'
 
 // Fecha por defecto al confirmar: el día definido, en el mes en curso (acotado
@@ -260,7 +261,7 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
   )
 }
 
-export default function Recurrentes({ usuarioId, onRegistrado }) {
+export default function Recurrentes({ usuarioId, movimientos, onRegistrado }) {
   const { items, cargando, crear, actualizar, eliminar, marcarAplicado, desmarcar } = useRecurrentes(usuarioId)
   const { items: categoriasGasto } = useEtiquetas('categorias', usuarioId, 'gasto')
   const { items: categoriasIngreso } = useEtiquetas('categorias', usuarioId, 'ingreso')
@@ -355,6 +356,15 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
     <div className="tubase vista fade-in-up">
       <Hero gastoMes={gastoMes} estado={estado} />
 
+      {!cargando && (
+        <SuscripcionesDetectadas
+          usuarioId={usuarioId}
+          movimientos={movimientos}
+          recurrentes={items}
+          onAnadir={crear}
+        />
+      )}
+
       {cargando && items.length === 0 && (
         <div className="skeleton skeleton-linea" style={{ width: '70%', height: 44, marginTop: 24 }} />
       )}
@@ -362,7 +372,7 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
       {!cargando && items.length === 0 && (
         <div className="tb-vacio">
           <p>Aún no has añadido tus gastos fijos.</p>
-          <span>Alquiler, suscripciones, nómina… Empieza por uno.</span>
+          <span>Alquiler, suscripciones, nómina… Empieza por uno, o importa el extracto de tu banco y los detectamos por ti.</span>
         </div>
       )}
 
