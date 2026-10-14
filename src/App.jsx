@@ -143,6 +143,12 @@ function App() {
     setPestana('movimientos')
   }, [])
 
+  // Este dispositivo ya ha entrado alguna vez: la pantalla de acceso abrirá
+  // en "Entrar" en vez de "Crear cuenta".
+  useEffect(() => {
+    if (usuarioId) guardarMarca('palanca_ya_entro')
+  }, [usuarioId])
+
   useEffect(() => {
     if (!usuarioId) return
     setComprobandoPerfil(true)
@@ -234,7 +240,12 @@ function App() {
     () => movimientosReales.some((m) => !esAjuste(m)) || recurrentesReales.length > 0,
     [movimientosReales, recurrentesReales],
   )
-  const enDemo = Boolean(perfil) && !cargando && !cargandoRecurrentes && !errorCarga && !tieneDatosPropios && !demoDescartada
+  // "Ver con datos de ejemplo" (Tu cuenta): enseñar la app sin mostrar tu
+  // dinero. Solo en esta sesión; no toca nada de lo guardado.
+  const [forzarEjemplo, setForzarEjemplo] = useState(false)
+  const enDemo =
+    forzarEjemplo ||
+    (Boolean(perfil) && !cargando && !cargandoRecurrentes && !errorCarga && !tieneDatosPropios && !demoDescartada)
   const movimientos = enDemo ? demo.movimientos : movimientosReales
   const recurrentes = enDemo ? demo.recurrentes : recurrentesReales
   const nPendientesFijos = enDemo
@@ -253,13 +264,20 @@ function App() {
   }, [enDemo, usuarioId])
 
   const empezarConMisDatos = useCallback(() => {
+    if (forzarEjemplo) {
+      setForzarEjemplo(false)
+      setTourAbierto(false)
+      setPestana('dashboard')
+      toast('De vuelta a tus datos')
+      return
+    }
     guardarMarca(`palanca_demo_fuera_${usuarioId}`)
     setDemoDescartada(true)
     setTourAbierto(false)
     setFiltroMov(null)
     setPestana('dashboard')
     toast('¡Vamos! Empieza apuntando tu primer ingreso y tu primer gasto.')
-  }, [usuarioId])
+  }, [usuarioId, forzarEjemplo])
 
   const movimientosMes = useMemo(() => filtrarMesActual(movimientos), [movimientos])
   const totalesMes = useMemo(() => totalesDe(movimientosMes), [movimientosMes])
@@ -440,14 +458,18 @@ function App() {
               <div className="demo-banner fade-in-up">
                 <div className="demo-banner-texto">
                   <strong>Estás viendo datos de ejemplo</strong>
-                  <span>Así se ve Palanca tras unos meses de uso. Nada de esto es tuyo.</span>
+                  <span>
+                    {forzarEjemplo
+                      ? 'Tus datos siguen guardados; aquí no se ve nada tuyo.'
+                      : 'Así se ve Palanca tras unos meses de uso. Nada de esto es tuyo.'}
+                  </span>
                 </div>
                 <div className="demo-banner-acc">
                   <button type="button" className="demo-banner-tour" onClick={() => setTourAbierto(true)}>
                     Ver demo
                   </button>
                   <button type="button" className="demo-banner-empezar" onClick={empezarConMisDatos}>
-                    Empezar con mis datos
+                    {forzarEjemplo ? 'Volver a mis datos' : 'Empezar con mis datos'}
                   </button>
                 </div>
               </div>
@@ -610,6 +632,13 @@ function App() {
             setVerCuenta(false)
             setTourAbierto(true)
           }}
+          verEjemplo={enDemo}
+          onVerEjemplo={() => {
+            setVerCuenta(false)
+            if (forzarEjemplo) return empezarConMisDatos()
+            setForzarEjemplo(true)
+            setPestana('dashboard')
+          }}
           onCerrar={() => setVerCuenta(false)}
           onCerrarSesion={() => {
             setVerCuenta(false)
@@ -617,7 +646,9 @@ function App() {
           }}
         />
       )}
-      {!enDemo && <Hitos usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />}
+      {/* Solo con los datos ya cargados: la primera pasada fija la base (no
+          celebra lo que ya había, como el saldo inicial). */}
+      {!enDemo && !cargando && <Hitos usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />}
       {tourAbierto && (
         <TourRapido
           enDemo={enDemo}

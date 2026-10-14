@@ -110,7 +110,8 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerIn
         </span>
       )}
 
-      {serie.length > 1 && <LineaPatrimonio serie={serie} />}
+      {/* La línea solo cuenta algo con al menos 2 meses con datos. */}
+      {serie.filter((p) => p.valor !== 0).length >= 2 && <LineaPatrimonio serie={serie} />}
 
       <div className="hp-reparto" aria-hidden="true">
         <span className="hp-reparto-liq" style={{ flexGrow: 100 - pctInvertido }} />

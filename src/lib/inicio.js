@@ -25,14 +25,16 @@ export function evolucionPatrimonio(movimientos, n = 6, hoy = new Date()) {
 }
 
 /**
- * Cambio del patrimonio en el mes en curso: hoy frente al cierre del mes
- * anterior (incluye ajustes de saldo: es "cuánto ha cambiado lo que tienes").
+ * Cambio del patrimonio en el mes en curso por lo que ha PASADO este mes: hoy
+ * frente al cierre del mes anterior, sin contar los ajustes de saldo (el saldo
+ * inicial o cuadrar con el banco son correcciones, no ganancias ni pérdidas).
  */
 export function cambioPatrimonioMes(movimientos, hoy = new Date()) {
   const cierreAnterior = isoDe(new Date(hoy.getFullYear(), hoy.getMonth(), 0))
-  const antes = bolsas(movimientos, cierreAnterior).patrimonio
-  const ahora = bolsas(movimientos, isoDe(hoy)).patrimonio
-  return Math.round((ahora - antes) * 100) / 100
+  const antes = bolsas(movimientos, cierreAnterior)
+  const ahora = bolsas(movimientos, isoDe(hoy))
+  const cambio = ahora.patrimonio - ahora.ajusteTotal - (antes.patrimonio - antes.ajusteTotal)
+  return Math.round(cambio * 100) / 100
 }
 
 /**

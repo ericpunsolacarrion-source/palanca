@@ -2,6 +2,24 @@ import { useState } from 'react'
 import { emailValido } from '../lib/perfil'
 import { iniciarSesion, recuperarPassword, registrar, traducirErrorAuth } from '../lib/auth'
 import PoliticaPrivacidad from './PoliticaPrivacidad'
+import Icono, { Marca } from './Icono'
+
+// Quien ya entró alguna vez en este dispositivo ve primero "Entrar"; quien
+// llega por primera vez (la mayoría, desde un enlace) ve "Crear cuenta".
+const CLAVE_YA_ENTRO = 'palanca_ya_entro'
+function yaEntroAntes() {
+  try {
+    return localStorage.getItem(CLAVE_YA_ENTRO) === '1'
+  } catch {
+    return false
+  }
+}
+
+const VENTAJAS = [
+  'Sabes en qué se te va cada euro, de un vistazo',
+  'Te avisamos el día de cada cobro y de cada subida',
+  'Sin conectar tu banco: tú decides qué apuntas',
+]
 
 // Botón de mostrar/ocultar contraseña (ojo).
 function BotonOjo({ mostrar, onToggle }) {
@@ -31,10 +49,9 @@ function BotonOjo({ mostrar, onToggle }) {
 // Pantalla de acceso: iniciar sesión / crear cuenta / recuperar contraseña.
 // Lo primero que ve la gente, así que cuidada y en la línea oscura de Palanca.
 export default function Auth() {
-  const [modo, setModo] = useState('login') // 'login' | 'registro' | 'recuperar'
+  const [modo, setModo] = useState(() => (yaEntroAntes() ? 'login' : 'registro')) // 'login' | 'registro' | 'recuperar'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [password2, setPassword2] = useState('')
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState(null)
   const [aviso, setAviso] = useState(null)
@@ -49,7 +66,6 @@ export default function Auth() {
     setError(null)
     setAviso(null)
     setPassword('')
-    setPassword2('')
     setConsentimiento(false)
   }
 
@@ -72,7 +88,6 @@ export default function Auth() {
     if (password.length < 6) return setError('La contraseña debe tener al menos 6 caracteres.')
 
     if (modo === 'registro') {
-      if (password !== password2) return setError('Las contraseñas no coinciden.')
       if (!consentimiento)
         return setError('Debes aceptar la política de privacidad para crear la cuenta.')
       setCargando(true)
@@ -113,13 +128,28 @@ export default function Auth() {
   }
 
   const titulo =
-    modo === 'registro' ? 'Crea tu cuenta' : modo === 'recuperar' ? 'Recuperar contraseña' : 'Bienvenido de nuevo'
+    modo === 'registro' ? 'Crea tu cuenta en un minuto' : modo === 'recuperar' ? 'Recuperar contraseña' : 'Hola de nuevo'
 
   return (
     <div className="acceso">
+      <header className="acceso-hero fade-in-up">
+        <span className="acceso-marca">
+          <Marca tam={28} />
+          Palanca
+        </span>
+        <h1 className="acceso-lema">Tu dinero, por fin claro.</h1>
+        {modo === 'registro' && (
+          <ul className="acceso-ventajas">
+            {VENTAJAS.map((v) => (
+              <li key={v}>
+                <Icono nombre="check" tam={16} />
+                {v}
+              </li>
+            ))}
+          </ul>
+        )}
+      </header>
       <div className="acceso-caja fade-in-up">
-        <h1 className="acceso-logo">Palanca</h1>
-        <p className="acceso-sub">Estructura tus finanzas desde el inicio.</p>
 
         <div className="acceso-tabs">
           <button
@@ -170,27 +200,7 @@ export default function Auth() {
                     setPassword(e.target.value)
                     if (error) setError(null)
                   }}
-                  placeholder="Mínimo 6 caracteres"
-                />
-                <BotonOjo mostrar={mostrarPass} onToggle={() => setMostrarPass((v) => !v)} />
-              </div>
-            </>
-          )}
-
-          {modo === 'registro' && (
-            <>
-              <label htmlFor="acceso-pass2">Repite la contraseña</label>
-              <div className="acceso-pass-wrap">
-                <input
-                  id="acceso-pass2"
-                  type={mostrarPass ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  value={password2}
-                  onChange={(e) => {
-                    setPassword2(e.target.value)
-                    if (error) setError(null)
-                  }}
-                  placeholder="Repite la contraseña"
+                  placeholder={modo === 'registro' ? 'Elige una (mínimo 6 caracteres)' : 'Tu contraseña'}
                 />
                 <BotonOjo mostrar={mostrarPass} onToggle={() => setMostrarPass((v) => !v)} />
               </div>
@@ -224,7 +234,7 @@ export default function Auth() {
             {cargando
               ? 'Un momento…'
               : modo === 'registro'
-                ? 'Crear cuenta'
+                ? 'Crear mi cuenta'
                 : modo === 'recuperar'
                   ? 'Enviar enlace'
                   : 'Entrar'}

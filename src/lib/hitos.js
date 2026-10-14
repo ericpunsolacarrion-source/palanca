@@ -105,7 +105,10 @@ export function calcularMetricas({ movimientos, movimientosMes, objetivoInversio
   const { bolsaInversion } = bolsasFull
   // Liquidez y patrimonio: solo sobre datos consolidados (meses cerrados o saldo
   // reconciliado), nunca inflados por un ingreso del mes en curso.
-  const { bolsaLiquidez, patrimonio } = bolsasConsolidadas(movimientos)
+  // El ahorro que se CELEBRA es el generado (ingresos − gastos − invertido),
+  // sin los ajustes: el saldo inicial o una reconciliación no son "ahorrar".
+  const { bolsaLiquidez: liquidezConsolidada, ajusteTotal, patrimonio } = bolsasConsolidadas(movimientos)
+  const bolsaLiquidez = liquidezConsolidada - ajusteTotal
   // Objetivo cumplido = la bolsa que sigue el objetivo (según su tipo) alcanza la
   // meta. Se deriva de la misma bolsa que muestra la UI, no del campo
   // importe_actual (vestigial, siempre 0), para que logro y pantalla coincidan.

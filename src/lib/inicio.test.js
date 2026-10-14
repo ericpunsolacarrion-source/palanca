@@ -73,3 +73,18 @@ describe('textos de listas', () => {
     expect(conceptoDe({ tipo: 'ingreso', importe: 1, fecha: '2026-10-01', categoria: { nombre: 'Ajuste' } })).toBe('Ajuste de saldo')
   })
 })
+
+describe('cambio del mes sin ajustes', () => {
+  it('el saldo inicial no cuenta como "+X este mes"', () => {
+    const movs = [{ tipo: 'ingreso', importe: 1200, fecha: '2026-10-01', categoria: { nombre: 'Ajuste' } }]
+    expect(cambioPatrimonioMes(movs, HOY)).toBe(0)
+  })
+  it('sí cuenta lo ahorrado este mes', () => {
+    const movs = [
+      { tipo: 'ingreso', importe: 1200, fecha: '2026-09-01', categoria: { nombre: 'Ajuste' } },
+      { tipo: 'ingreso', importe: 2000, fecha: '2026-10-01', categoria: { nombre: 'Nomina' } },
+      { tipo: 'gasto', importe: 300, fecha: '2026-10-05', categoria: { nombre: 'Comida' } },
+    ]
+    expect(cambioPatrimonioMes(movs, HOY)).toBe(1700)
+  })
+})

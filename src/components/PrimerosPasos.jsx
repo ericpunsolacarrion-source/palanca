@@ -1,3 +1,4 @@
+import Icono from './Icono'
 import { esAjuste } from '../lib/categorias'
 import { esConsumo } from '../lib/movimientosUtils'
 
@@ -32,12 +33,12 @@ export default function PrimerosPasos({ nombre, movimientos, onRegistrar }) {
         {pasos.map((p) => (
           <li key={p.modo} className={`pp-paso ${p.hecho ? 'hecho' : ''}`}>
             <span className="pp-check" aria-hidden="true">
-              {p.hecho ? '✓' : ''}
+              {p.hecho && <Icono nombre="check" tam={14} />}
             </span>
             <span className="pp-texto">{p.texto}</span>
             {!p.hecho && (
               <button type="button" className="pp-cta" onClick={() => onRegistrar(p.modo)}>
-                {p.cta} →
+                {p.cta}
               </button>
             )}
           </li>
@@ -45,7 +46,7 @@ export default function PrimerosPasos({ nombre, movimientos, onRegistrar }) {
       </ul>
 
       {hechos === 1 && (
-        <p className="pp-animo">¡Vas por la mitad! Un paso más y se desbloquea todo. 🚀</p>
+        <p className="pp-animo">¡Vas por la mitad! Un paso más y se desbloquea todo.</p>
       )}
     </div>
   )
