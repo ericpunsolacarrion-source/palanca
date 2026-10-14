@@ -87,3 +87,18 @@ describe('detectarSuscripciones', () => {
     expect(detectarSuscripciones(spotify, [{ nombre: 'Otro', fuenteId: 'f1' }], { hoy: HOY })).toEqual([])
   })
 })
+
+describe('subidas de precio: solo con precio anterior estable', () => {
+  const cargo = (fecha, importe) => ({ tipo: 'gasto', importe, fecha, nota: 'IBERDROLA', categoria: { nombre: 'Vivienda' } })
+  it('un recibo variable (luz) no avisa de subida', () => {
+    const movs = [cargo('2026-05-20', 64.1), cargo('2026-06-20', 70.3), cargo('2026-07-20', 61.9), cargo('2026-08-20', 72.4), cargo('2026-09-20', 75.2)]
+    const [d] = detectarSuscripciones(movs, [], { hoy: '2026-10-01' })
+    expect(d).toBeTruthy()
+    expect(d.subida).toBeNull()
+  })
+  it('una suscripción con precio fijo que sube sí avisa', () => {
+    const movs = ['05', '06', '07'].map((m) => cargo(`2026-${m}-03`, 12.99)).concat([cargo('2026-08-03', 13.99), cargo('2026-09-03', 13.99)])
+    const [d] = detectarSuscripciones(movs, [], { hoy: '2026-10-01' })
+    expect(d.subida).toEqual({ antes: 12.99, ahora: 13.99, desde: '2026-08-03' })
+  })
+})

@@ -10,6 +10,24 @@ En pruebas **solo en dev**: se enciende en los despliegues de prueba de Vercel
 poner `FULCRO_PUBLICO=true`. Requiere `ANTHROPIC_API_KEY` en Vercel (solo
 Preview) y la tabla `fulcro_uso` (`supabase-schema-fulcro.sql`, ya ejecutado).
 
+## Activarlo (5 minutos, una sola vez)
+1. console.anthropic.com → **API Keys** → crear clave. En **Limits**, poner un
+   tope de gasto mensual (p. ej. 5 $).
+2. Vercel → proyecto **palanca** → Settings → **Environment Variables** →
+   `ANTHROPIC_API_KEY` = la clave, marcando **solo "Preview"** → Save.
+3. Vercel → Deployments → el último de `develop` → **⋯ → Redeploy**.
+4. Abrir esa versión de prueba, entrar con tu cuenta y pulsar **Fulcro**.
+Sin el SQL v2 de `supabase-schema-fulcro.sql` funciona igual (modo de
+respaldo del límite diario); el SQL v2 solo hace el límite a prueba de
+peticiones simultáneas.
+
+## Dónde aparece
+- Botón flotante **Fulcro** en todas las pantallas.
+- Inicio → "Así va [mes]" → **"¿Cómo voy? Pregunta a Fulcro"** (pregunta ya hecha).
+- Con **datos de ejemplo** (usuario nuevo) responde sobre el ejemplo y lo dice
+  (`datosDeEjemplo: true` en el resumen); sin datos propios ofrece preguntas
+  de arranque.
+
 ## Qué ve (y qué no)
 - **Siempre**: un resumen agregado calculado por el motor (~900 tokens): mes
   actual y gasto por categoría, tasa de ahorro y tendencia, evolución 6 meses,
@@ -38,6 +56,9 @@ angustia por dinero.
 ## Coste (fase inicial: mínimo)
 - Modelo `claude-haiku-5-5` ($0,10 / $0,50 por millón de tokens), esfuerzo
   `low`, respuestas de 60–150 palabras por defecto (la salida es lo caro).
+  `max_tokens` 4.000: Haiku 5.5 razona (adaptativo) antes de responder y ese
+  razonamiento cuenta en el tope; con margen nunca se corta a medias y solo
+  se paga lo usado.
 - **Caché**: system prompt (~2.900 tokens) y resumen (~900) se cachean; en una
   conversación, las preguntas siguientes los leen al 10 % del precio.
 - Estimación: **0,01–0,06 céntimos de $ por pregunta** (la primera de una

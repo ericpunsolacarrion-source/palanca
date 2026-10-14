@@ -1,4 +1,4 @@
-import { cobrosProximos, costeAnual, costeMensual, periodoDe } from './periodicidad'
+import { cobrosProximos, estadoCobro, costeAnual, costeMensual, periodoDe } from './periodicidad'
 import { calcularAvisos } from './avisos'
 import { esInversion } from './categorias'
 import {
@@ -139,6 +139,9 @@ function resumenFijos(recurrentes, movimientos, descartadas) {
       periodicidad: periodoDe(r).id,
       costeAnual: Math.round(costeAnual(r)),
     })),
+    // Cobros cuyo día ya llegó y el usuario aún no ha confirmado en Fijos.
+    porConfirmar: activos.filter((r) => estadoCobro(r) === 'confirmar').map((r) => recortar(r.nombre)),
+    sinDiaDeCobro: activos.filter((r) => estadoCobro(r) === 'sin-dia').map((r) => recortar(r.nombre)),
     proximos30Dias: cobrosProximos(activos, 30).map((c) => ({ nombre: recortar(c.rec.nombre), importe: c.importe, cuando: c.texto })),
     avisos: calcularAvisos(recurrentes, movimientos, new Date(), { descartadas }).map((a) => `${a.titulo}: ${a.detalle}`),
   }

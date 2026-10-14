@@ -630,7 +630,7 @@ function App() {
         />
       )}
       <Suspense fallback={null}>
-        <Consultor movimientos={movimientosReales} recurrentes={recurrentesReales} objetivo={{ texto: perfil.objetivo, usuarioId }} />
+        <Consultor movimientos={movimientos} recurrentes={recurrentes} ejemplo={enDemo} objetivo={{ texto: perfil.objetivo, usuarioId }} />
       </Suspense>
     </div>
     </DatosCompartidosProvider>

@@ -5,6 +5,7 @@ import { contextoParaPregunta, respuestaDeCortesia } from '../lib/contextoFulcro
 import { useObjetivosCompartidos, usePresupuestoCompartido } from '../lib/DatosCompartidos'
 import { supabase } from '../lib/supabaseClient'
 import { leerDescartadas } from '../lib/suscripciones'
+import { EVENTO_FULCRO } from '../lib/fulcro'
 
 // ─── ACTIVAR FULCRO ──────────────────────────────────────────────────────────
 // Fulcro se activa cuando el servidor tiene la clave (ANTHROPIC_API_KEY en
@@ -14,9 +15,15 @@ import { leerDescartadas } from '../lib/suscripciones'
 // sin servidor de /api, se puede forzar con VITE_FULCRO_ACTIVO=true en .env.
 const FORZAR_ACTIVO = import.meta.env.VITE_FULCRO_ACTIVO === 'true'
 
-// Abrir Fulcro con una pregunta desde cualquier pantalla:
-//   window.dispatchEvent(new CustomEvent('palanca-fulcro', { detail: { pregunta } }))
-export const EVENTO_FULCRO = 'palanca-fulcro'
+// Abrir Fulcro con una pregunta desde cualquier pantalla: preguntarAFulcro() en lib/fulcro.js.
+
+// Sin nada apuntado todavía: preguntas de arranque (no dependen de sus datos).
+const PARA_EMPEZAR = [
+  '¿Por dónde empiezo a ordenar mi dinero?',
+  '¿Qué gastos me conviene apuntar?',
+  '¿Qué es un colchón de emergencia?',
+  '¿Cómo funciona el interés compuesto?',
+]
 
 const BASICAS = [
   '¿Voy bien este mes?',
@@ -89,7 +96,7 @@ function leerConversacion(usuarioId) {
   }
 }
 
-export default function Consultor({ movimientos, objetivo, recurrentes = [] }) {
+export default function Consultor({ movimientos, objetivo, recurrentes = [], ejemplo = false }) {
   const usuarioId = objetivo?.usuarioId ?? 'anon'
   const [activo, setActivo] = useState(FORZAR_ACTIVO ? true : null) // null = sin comprobar
   const [abierto, setAbierto] = useState(false)
@@ -110,18 +117,26 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [] }) {
   const resumen = useMemo(
     () =>
       abierto
-        ? construirResumenIA(movimientos, {
-            objetivos,
-            objetivo: objetivoTexto,
-            recurrentes,
-            presupuesto: { metodo, tasaAhorroObjetivo, gastoMaximoFijo, objetivoInversionMensual, configurado },
-            descartadas: leerDescartadas(usuarioId),
-          })
+        ? {
+            ...construirResumenIA(movimientos, {
+              objetivos: ejemplo ? [] : objetivos,
+              objetivo: objetivoTexto,
+              recurrentes,
+              presupuesto: { metodo, tasaAhorroObjetivo, gastoMaximoFijo, objetivoInversionMensual, configurado },
+              descartadas: leerDescartadas(usuarioId),
+            }),
+            // Con los datos de ejemplo (usuario nuevo), Fulcro lo sabe y lo dice.
+            ...(ejemplo ? { datosDeEjemplo: true } : {}),
+          }
         : null,
-    [abierto, movimientos, objetivos, objetivoTexto, recurrentes, metodo, tasaAhorroObjetivo, gastoMaximoFijo, objetivoInversionMensual, configurado, usuarioId],
+    [abierto, movimientos, objetivos, objetivoTexto, recurrentes, metodo, tasaAhorroObjetivo, gastoMaximoFijo, objetivoInversionMensual, configurado, usuarioId, ejemplo],
   )
   const insights = resumen?.insights ?? []
-  const sugerencias = useMemo(() => (resumen ? sugerenciasDe(resumen) : BASICAS), [resumen])
+  const sinDatos = movimientos.length === 0
+  const sugerencias = useMemo(
+    () => (sinDatos ? PARA_EMPEZAR : resumen ? sugerenciasDe(resumen) : BASICAS),
+    [resumen, sinDatos],
+  )
 
   useEffect(() => {
     try {
@@ -296,7 +311,9 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [] }) {
               </span>
               <div className="consultor-cabecera-texto">
                 <h2>Fulcro</h2>
-                <p className="consultor-sub">Con tus datos de Palanca</p>
+                <p className="consultor-sub">
+                  {ejemplo ? 'Con los datos de ejemplo' : sinDatos ? 'Pregúntale lo que quieras' : 'Con tus datos de Palanca'}
+                </p>
               </div>
               {activo && mensajes.length > 0 && (
                 <button
@@ -342,8 +359,22 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [] }) {
                   {mensajes.length === 0 && (
                     <div className="consultor-bienvenida">
                       <p className="fulcro-hola">
-                        Hola. Soy Fulcro: te ayudo a entender <strong>tus</strong> números y a decidir mejor. Pregúntame
-                        lo que quieras.
+                        {ejemplo ? (
+                          <>
+                            Hola. Soy Fulcro. Ahora ves los <strong>datos de ejemplo</strong>: pregúntame sobre ellos para
+                            ver cómo te ayudaría con los tuyos.
+                          </>
+                        ) : sinDatos ? (
+                          <>
+                            Hola. Soy Fulcro. Cuando apuntes tus gastos e ingresos podré hablarte de <strong>tus</strong>{' '}
+                            números; mientras, pregúntame lo que quieras sobre dinero.
+                          </>
+                        ) : (
+                          <>
+                            Hola. Soy Fulcro: te ayudo a entender <strong>tus</strong> números y a decidir mejor.
+                            Pregúntame lo que quieras.
+                          </>
+                        )}
                       </p>
 
                       {insights.length > 0 && (

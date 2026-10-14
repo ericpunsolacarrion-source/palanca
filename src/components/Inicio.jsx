@@ -6,6 +6,7 @@ import { usePresupuestoCompartido } from '../lib/DatosCompartidos'
 import Patrimonio from './Patrimonio'
 import AvisosCobros from './AvisosCobros'
 import Icono from './Icono'
+import { preguntarAFulcro } from '../lib/fulcro'
 
 // INICIO: lo esencial de un vistazo, en orden de importancia.
 //   1. Lo que tienes (patrimonio, cómo ha cambiado, evolución).
@@ -140,9 +141,14 @@ function MesEnCurso({ movimientos, onVerAnalisis, onVerPresupuesto }) {
         </div>
       )}
 
-      <button type="button" className="ini-ver-mas" onClick={onVerAnalisis}>
-        Ver análisis completo <Icono nombre="chevron" tam={16} />
-      </button>
+      <div className="ini-mes-pie">
+        <button type="button" className="ini-ver-mas" onClick={onVerAnalisis}>
+          Ver análisis <Icono nombre="chevron" tam={16} />
+        </button>
+        <button type="button" className="ini-ver-mas ini-fulcro" onClick={() => preguntarAFulcro('¿Cómo voy este mes?')}>
+          <Icono nombre="consultor" tam={16} /> ¿Cómo voy? Pregunta a Fulcro
+        </button>
+      </div>
     </section>
   )
 }

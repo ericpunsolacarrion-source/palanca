@@ -8165,3 +8165,27 @@ input[type='number']::-webkit-outer-spin-button {
   flex: none;
   white-space: nowrap;
 }
+
+/* Pie de "Así va…": análisis y pregunta a Fulcro, lado a lado */
+.ini-mes-pie {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-2);
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.ini-mes-pie .ini-ver-mas {
+  margin: 0;
+  padding: 6px 0;
+  border: 0;
+  justify-content: flex-start;
+}
+.ini-mes-pie .ini-fulcro {
+  justify-content: flex-end;
+  gap: 6px;
+  color: var(--text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -141,8 +141,16 @@ export function detectarSuscripciones(movimientos, recurrentes = [], opciones = 
     // el último cargo), para avisar una sola vez por subida.
     let inicioPrecio = recientes.length - 1
     while (inicioPrecio > 0 && cent[inicioPrecio - 1] === importeCent) inicioPrecio -= 1
+    // Solo es "subida" si el precio anterior era ESTABLE (los dos cargos previos
+    // al cambio, idénticos): así se comporta una suscripción. Un recibo variable
+    // (luz, agua) cambia cada vez y no debe avisar de "ha subido" cada mes.
+    const precioAnteriorEstable =
+      inicioPrecio >= 2 && cent[inicioPrecio - 1] === previoDistinto && cent[inicioPrecio - 2] === previoDistinto
     const subida =
-      previoDistinto != null && importeCent > previoDistinto && (importeCent - previoDistinto) / previoDistinto >= 0.01
+      previoDistinto != null &&
+      precioAnteriorEstable &&
+      importeCent > previoDistinto &&
+      (importeCent - previoDistinto) / previoDistinto >= 0.01
         ? { antes: previoDistinto / 100, ahora: importeCent / 100, desde: recientes[inicioPrecio].fecha }
         : null
 
