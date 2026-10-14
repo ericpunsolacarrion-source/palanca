@@ -38,6 +38,9 @@ function AccionesRapidas({ onRegistrar, diasSinRegistrar }) {
   )
 }
 
+// A partir de 10.000 € los céntimos no aportan y no caben en tres columnas.
+const redondoSiGrande = (v) => (Math.abs(v) >= 10000 ? Math.round(v) : v)
+
 function MesEnCurso({ movimientos, onVerAnalisis, onVerPresupuesto }) {
   const presupuesto = usePresupuestoCompartido()
   const r = useMemo(() => resumenDelMes(movimientos), [movimientos])
@@ -62,33 +65,42 @@ function MesEnCurso({ movimientos, onVerAnalisis, onVerPresupuesto }) {
         </span>
       </header>
 
-      <div className="ini-mes-ahorro">
-        <span className="ini-mes-etq">{ahorroPositivo ? 'Has ahorrado' : 'Has gastado más de lo que ha entrado'}</span>
-        <span className={`ini-mes-cifra ${ahorroPositivo ? 'positivo' : 'negativo'}`}>
-          {ahorroPositivo ? '' : '−'}
-          {formatearEuros(Math.abs(t.ahorro))}
-        </span>
-        {t.ingresos > 0 && (
-          <span className="ini-mes-sub">
-            {ahorroPositivo
-              ? `El ${formatearPorcentaje(t.ratioAhorro, 0)} de lo que has ingresado`
-              : 'Revisa en qué se te ha ido'}
+      {r.ingresoPendiente ? (
+        // Cobra más adelante en el mes: no es "ir en negativo", solo va por delante.
+        <div className="ini-mes-ahorro">
+          <span className="ini-mes-etq">Llevas gastado</span>
+          <span className="ini-mes-cifra">{formatearEuros(t.gastos)}</span>
+          <span className="ini-mes-sub">Tu ingreso suele llegar hacia el día {r.diaIngresoHabitual}</span>
+        </div>
+      ) : (
+        <div className="ini-mes-ahorro">
+          <span className="ini-mes-etq">{ahorroPositivo ? 'Has ahorrado' : 'Has gastado más de lo que ha entrado'}</span>
+          <span className={`ini-mes-cifra ${ahorroPositivo ? 'positivo' : 'negativo'}`}>
+            {ahorroPositivo ? '' : '−'}
+            {formatearEuros(Math.abs(t.ahorro))}
           </span>
-        )}
-      </div>
+          {t.ingresos > 0 && (
+            <span className="ini-mes-sub">
+              {ahorroPositivo
+                ? `El ${formatearPorcentaje(t.ratioAhorro, 0)} de lo que has ingresado`
+                : 'Revisa en qué se te ha ido'}
+            </span>
+          )}
+        </div>
+      )}
 
       <dl className="ini-trio">
         <div>
           <dt><i className="ini-punto ingreso" />Ingresos</dt>
-          <dd>{formatearEuros(t.ingresos)}</dd>
+          <dd>{formatearEuros(redondoSiGrande(t.ingresos))}</dd>
         </div>
         <div>
           <dt><i className="ini-punto gasto" />Gastos</dt>
-          <dd>{formatearEuros(t.gastos)}</dd>
+          <dd>{formatearEuros(redondoSiGrande(t.gastos))}</dd>
         </div>
         <div>
           <dt><i className="ini-punto inversion" />Invertido</dt>
-          <dd>{formatearEuros(t.invertido)}</dd>
+          <dd>{formatearEuros(redondoSiGrande(t.invertido))}</dd>
         </div>
       </dl>
 

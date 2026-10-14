@@ -8452,3 +8452,42 @@ input[type='number']::-webkit-outer-spin-button {
   text-align: center;
   padding: 24px 0;
 }
+.hp-cifra.larga {
+  font-size: clamp(26px, 8.5vw, var(--fs-hero));
+}
+.hp-cifra.negativa {
+  color: var(--gasto);
+}
+.hp-reparto + .hp-bolsas,
+.hp-bolsas {
+  margin-top: 12px;
+}
+
+/* Tarjetas Ingresos/Gastos/Inversión del Análisis: en móvil, tres cifras de
+   miles no caben en columnas. Por debajo de 420 px pasan a filas (etiqueta a
+   la izquierda, cifra a la derecha): nunca se cortan. */
+@media (max-width: 420px) {
+  .metricas-cards {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .metrica-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .metrica-card .etiqueta {
+    flex: 1;
+  }
+  .metrica-card .mc-ver {
+    display: none;
+  }
+}
+.ini-trio dd {
+  font-size: clamp(13px, 4vw, var(--fs-base));
+  letter-spacing: -0.01em;
+}
+.ini-mes-cifra:not(.positivo):not(.negativo) {
+  color: var(--text-h);
+}

@@ -82,7 +82,24 @@ export function resumenDelMes(movimientos, hoy = new Date()) {
     }
   }
 
-  return { clave, dia, diasMes, diasRestantes: diasMes - dia + 1, totales, categorias: top, ritmo }
+  // ¿Cuándo suele llegar su ingreso principal? (día del mayor ingreso de cada
+  // uno de los 3 meses previos con ingresos; la mediana). Si cobra a final de
+  // mes y aún no ha llegado, el mes no va "en negativo": solo va por delante.
+  const dias = []
+  for (let k = 1; k <= 6 && dias.length < 3; k += 1) {
+    const c = claveDe(new Date(hoy.getFullYear(), hoy.getMonth() - k, 1))
+    let mayor = null
+    for (const m of movimientos) {
+      if (m.tipo !== 'ingreso' || esAjuste(m) || m.fecha.slice(0, 7) !== c) continue
+      if (!mayor || Number(m.importe) > Number(mayor.importe)) mayor = m
+    }
+    if (mayor) dias.push(Number(mayor.fecha.slice(8, 10)))
+  }
+  dias.sort((a, b) => a - b)
+  const diaIngresoHabitual = dias.length ? dias[Math.floor(dias.length / 2)] : null
+  const ingresoPendiente = totales.ingresos === 0 && diaIngresoHabitual != null && diaIngresoHabitual > dia
+
+  return { clave, dia, diasMes, diasRestantes: diasMes - dia + 1, totales, categorias: top, ritmo, diaIngresoHabitual, ingresoPendiente }
 }
 
 /** "Hoy", "Ayer" o "12 oct" (con año si no es el actual). */

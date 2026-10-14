@@ -1,3 +1,4 @@
+import { resumenDelMes } from './inicio'
 import { cobrosProximos, estadoCobro, costeAnual, costeMensual, periodoDe } from './periodicidad'
 import { calcularAvisos } from './avisos'
 import { esInversion } from './categorias'
@@ -247,6 +248,12 @@ export function construirResumenIA(
       gastoPorCategoria: Object.fromEntries(
         Object.entries(porCategoria).map(([k, v]) => [k, Math.round(v)]),
       ),
+      // Su ingreso principal suele llegar más adelante este mes (p. ej. pensión
+      // el 25): el mes no va "en negativo", solo va por delante del cobro.
+      ...(() => {
+        const r = resumenDelMes(movimientos)
+        return r.ingresoPendiente ? { ingresoAunNoLlegado: true, diaIngresoHabitual: r.diaIngresoHabitual } : {}
+      })(),
     },
     tasaAhorro: {
       esteMesPct: tasaEste,

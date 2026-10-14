@@ -448,7 +448,7 @@ function App() {
         {pestana === 'dashboard' && (
           <div key="dashboard" className="vista">
             <div className="saludo">
-              <p className="saludo-usuario">{perfil.nombre ? `Hola, ${perfil.nombre}` : 'Hola'}</p>
+              <p className="saludo-usuario">{perfil.nombre?.trim() ? `Hola, ${perfil.nombre.trim().split(/\s+/)[0]}` : 'Hola'}</p>
               <p className="saludo-fecha">{capitalizar(FMT_HOY.format(new Date()))}</p>
             </div>
             {/* Primera carga (sin datos aún): skeleton en vez de dashboard vacío.

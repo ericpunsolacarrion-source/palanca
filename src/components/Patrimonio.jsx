@@ -101,7 +101,10 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerIn
   return (
     <section className="hp fade-in-up" aria-label="Tu patrimonio">
       <span className="hp-etiqueta">Tu patrimonio</span>
-      <div className="hp-cifra">{formatearEuros(patrimonio)}</div>
+      {/* Cifras muy largas (patrimonios altos o negativos) bajan de tamaño para caber. */}
+      <div className={`hp-cifra ${formatearEuros(patrimonio).length > 12 ? 'larga' : ''} ${patrimonio < 0 ? 'negativa' : ''}`}>
+        {formatearEuros(patrimonio)}
+      </div>
       {cambioMes !== 0 && (
         <span className={`hp-cambio ${sube ? 'sube' : 'baja'}`}>
           <Icono nombre={sube ? 'sube' : 'baja'} tam={14} />
@@ -113,10 +116,12 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerIn
       {/* La línea solo cuenta algo con al menos 2 meses con datos. */}
       {serie.filter((p) => p.valor !== 0).length >= 2 && <LineaPatrimonio serie={serie} />}
 
+      {patrimonio > 0 && (
       <div className="hp-reparto" aria-hidden="true">
         <span className="hp-reparto-liq" style={{ flexGrow: 100 - pctInvertido }} />
         {pctInvertido > 0 && <span className="hp-reparto-inv" style={{ flexGrow: pctInvertido }} />}
       </div>
+      )}
       <div className="hp-bolsas">
         <div className="hp-bolsa">
           <span className="hp-bolsa-etq"><i className="hp-punto liq" />Disponible</span>
