@@ -18,6 +18,7 @@ export default function BottomNav({ activa, onCambiar, avisos = {} }) {
         <button
           key={p.id}
           type="button"
+          data-pestana={p.id}
           className={activa === p.id ? 'nav-item activo' : 'nav-item'}
           onClick={() => onCambiar(p.id)}
           aria-current={activa === p.id ? 'page' : undefined}

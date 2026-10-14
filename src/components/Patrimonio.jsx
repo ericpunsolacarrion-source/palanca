@@ -127,20 +127,20 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerIn
         </button>
       </div>
 
-      <div className="hp-pie">
-        <span className={`hp-fiabilidad ${!ultima || dias > DIAS_AVISO ? 'aviso' : ''}`}>
-          {!ultima
-            ? 'Saldo sin cuadrar con tu banco'
-            : dias > DIAS_AVISO
-              ? `Cuadrado hace ${dias} días`
-              : `Cuadrado con tu banco ${dias === 0 ? 'hoy' : `hace ${dias} día${dias === 1 ? '' : 's'}`}`}
-        </span>
-        {!soloLectura && (
+      {!soloLectura && (
+        <div className="hp-pie">
+          <span className={`hp-fiabilidad ${!ultima || dias > DIAS_AVISO ? 'aviso' : ''}`}>
+            {!ultima
+              ? 'Saldo sin cuadrar con tu banco'
+              : dias > DIAS_AVISO
+                ? `Cuadrado hace ${dias} días`
+                : `Cuadrado con tu banco ${dias === 0 ? 'hoy' : `hace ${dias} día${dias === 1 ? '' : 's'}`}`}
+          </span>
           <button type="button" className="link" onClick={() => setAbierto(true)}>
             Ajustar saldo
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {abierto &&
         createPortal(

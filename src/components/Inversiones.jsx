@@ -1,3 +1,4 @@
+import { AVISO_DEMO, esDemo } from '../lib/datosDemo'
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
@@ -203,6 +204,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
   const [guardandoEdit, setGuardandoEdit] = useState(false)
 
   async function handleEliminar(id) {
+    if (esDemo(id)) return toast(AVISO_DEMO)
     if (!(await confirmar('¿Eliminar esta aportación?'))) return
     setEliminandoId(id)
     const { error: errorDelete } = await supabase.from('movimientos').delete().eq('id', id)
@@ -216,6 +218,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
   }
 
   function empezarEdicion(d) {
+    if (esDemo(d.id)) return toast(AVISO_DEMO)
     setEditando(d.id)
     setImporteEdit(Number(d.importe))
     setFechaEdit(d.fecha)

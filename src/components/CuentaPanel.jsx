@@ -7,7 +7,7 @@ import { confirmar } from '../lib/confirmar'
 
 // Panel de cuenta (usuarios de Auth): editar nombre y año de nacimiento, ver
 // email, cerrar sesión y borrar la cuenta con todos sus datos (supresión).
-export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualizado, onCerrar, onCerrarSesion }) {
+export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualizado, onCerrar, onCerrarSesion, onVerDemo }) {
   const [nombre, setNombre] = useState(perfil?.nombre ?? '')
   const [anio, setAnio] = useState(perfil?.anio_nacimiento ? String(perfil.anio_nacimiento) : '')
   const [guardando, setGuardando] = useState(false)
@@ -100,6 +100,11 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
           </button>
         </div>
 
+        {onVerDemo && (
+          <button type="button" className="cuenta-boton" onClick={onVerDemo}>
+            Ver la demo rápida
+          </button>
+        )}
         <button type="button" className="cuenta-boton" onClick={onCerrarSesion}>
           Cerrar sesión
         </button>

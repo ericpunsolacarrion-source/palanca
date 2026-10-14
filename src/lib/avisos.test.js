@@ -54,3 +54,25 @@ describe('subidas de precio (revisión de código)', () => {
     expect(calcularAvisos([], movs, HOY, { descartadas: new Set(['spotify']) })).toEqual([])
   })
 })
+
+describe('avisos que piden confirmar', () => {
+  const hoy = new Date(2026, 9, 14)
+  const base = { activo: true, periodoMeses: 1, mesesAplicados: [] }
+  it('el día del cobro: "Hoy se cobra" y se puede confirmar', () => {
+    const [a] = calcularAvisos([{ ...base, id: 'x', tipo: 'gasto', nombre: 'Netflix', importe: 13.99, diaMes: 14 }], [], hoy)
+    expect(a.titulo).toBe('Hoy se cobra Netflix')
+    expect(a.porConfirmar).toBe(true)
+    expect(a.recId).toBe('x')
+  })
+  it('antes del día: aviso sin confirmar', () => {
+    const [a] = calcularAvisos([{ ...base, id: 'x', tipo: 'gasto', nombre: 'Netflix', importe: 13.99, diaMes: 15 }], [], hoy)
+    expect(a.porConfirmar).toBe(false)
+  })
+  it('ingreso fijo: solo cuando toca, para confirmar que ha llegado', () => {
+    const nomina = { ...base, id: 'n', tipo: 'ingreso', nombre: 'Nómina', importe: 2000 }
+    expect(calcularAvisos([{ ...nomina, diaMes: 20 }], [], hoy)).toEqual([])
+    const [a] = calcularAvisos([{ ...nomina, diaMes: 14 }], [], hoy)
+    expect(a.titulo).toBe('Hoy entra Nómina')
+    expect(a.porConfirmar).toBe(true)
+  })
+})

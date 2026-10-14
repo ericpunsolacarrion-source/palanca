@@ -43,6 +43,10 @@ import Inicio from './components/Inicio'
 import Icono, { Marca } from './components/Icono'
 import { fijarImportesOcultos, importesOcultos } from './lib/privacidad'
 import { toast } from './lib/toast'
+import { generarDemo } from './lib/datosDemo'
+import { esAjuste } from './lib/categorias'
+import { estadoCobro } from './lib/periodicidad'
+import TourRapido from './components/TourRapido'
 import './App.css'
 
 // Pestañas no iniciales cargadas bajo demanda (code-splitting): aligeran el
@@ -77,6 +81,21 @@ const MS_POR_DIA = 1000 * 60 * 60 * 24
 const FMT_HOY = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
 const capitalizar = (s) => s.charAt(0).toUpperCase() + s.slice(1)
 
+function leerMarca(clave) {
+  try {
+    return localStorage.getItem(clave) === '1'
+  } catch {
+    return false
+  }
+}
+function guardarMarca(clave) {
+  try {
+    localStorage.setItem(clave, '1')
+  } catch {
+    // sin persistencia: se volverá a ofrecer
+  }
+}
+
 function App() {
   // Acceso SOLO con Supabase Auth (el ID antiguo en localStorage se retiró tras
   // la migración; los datos quedan aislados por usuario con RLS).
@@ -85,7 +104,7 @@ function App() {
   const [verCuenta, setVerCuenta] = useState(false)
   const [perfil, setPerfil] = useState(null)
   const [comprobandoPerfil, setComprobandoPerfil] = useState(true)
-  const [movimientos, setMovimientos] = useState([])
+  const [movimientosReales, setMovimientos] = useState([])
   const [cargando, setCargando] = useState(true)
   const [errorCarga, setErrorCarga] = useState(false)
   const [pestana, setPestana] = useState('dashboard')
@@ -192,6 +211,56 @@ function App() {
     }
   }, [perfil, cargarMovimientos])
 
+  // Compromisos de Fijos (suscripciones, recibos): globo de pendientes en la
+  // navegación y avisos de cobros en el inicio.
+  const {
+    items: recurrentesReales,
+    pendientes: recurrentesPendientes,
+    cargando: cargandoRecurrentes,
+    confirmarCobro,
+    desmarcar: desmarcarCobro,
+  } = useRecurrentes(usuarioId)
+
+  // ── Datos de EJEMPLO para quien acaba de llegar ──────────────────────────
+  // Sin nada propio todavía (el saldo inicial no cuenta), la app se enseña
+  // llena con datos de ejemplo en memoria (lib/datosDemo.js) hasta que el
+  // usuario apunta lo primero o pulsa "Empezar con mis datos".
+  const [demoDescartada, setDemoDescartada] = useState(false)
+  useEffect(() => {
+    setDemoDescartada(leerMarca(`palanca_demo_fuera_${usuarioId}`))
+  }, [usuarioId])
+  const demo = useMemo(() => generarDemo(), [])
+  const tieneDatosPropios = useMemo(
+    () => movimientosReales.some((m) => !esAjuste(m)) || recurrentesReales.length > 0,
+    [movimientosReales, recurrentesReales],
+  )
+  const enDemo = Boolean(perfil) && !cargando && !cargandoRecurrentes && !errorCarga && !tieneDatosPropios && !demoDescartada
+  const movimientos = enDemo ? demo.movimientos : movimientosReales
+  const recurrentes = enDemo ? demo.recurrentes : recurrentesReales
+  const nPendientesFijos = enDemo
+    ? demo.recurrentes.filter((r) => ['confirmar', 'sin-dia'].includes(estadoCobro(r))).length
+    : recurrentesPendientes.length
+
+  // Demo rápida (recorrido guiado): se ofrece sola la primera vez que se ven
+  // los datos de ejemplo, y siempre desde "Tu cuenta".
+  const [tourAbierto, setTourAbierto] = useState(false)
+  useEffect(() => {
+    if (!enDemo || !usuarioId) return
+    const clave = `palanca_tour_visto_${usuarioId}`
+    if (leerMarca(clave)) return
+    guardarMarca(clave)
+    setTourAbierto(true)
+  }, [enDemo, usuarioId])
+
+  const empezarConMisDatos = useCallback(() => {
+    guardarMarca(`palanca_demo_fuera_${usuarioId}`)
+    setDemoDescartada(true)
+    setTourAbierto(false)
+    setFiltroMov(null)
+    setPestana('dashboard')
+    toast('¡Vamos! Empieza apuntando tu primer ingreso y tu primer gasto.')
+  }, [usuarioId])
+
   const movimientosMes = useMemo(() => filtrarMesActual(movimientos), [movimientos])
   const totalesMes = useMemo(() => totalesDe(movimientosMes), [movimientosMes])
   const gastoEstimado = useMemo(() => estimacionGastoMensual(movimientos), [movimientos])
@@ -230,15 +299,6 @@ function App() {
   // los reparte por contexto (DatosCompartidosProvider). Evita que 3+3
   // componentes los pidan por su cuenta y mantiene una sola fuente fresca.
   const presupuestoData = usePresupuesto(usuarioId)
-  // Compromisos de Base (suscripciones, recibos): globo de pendientes en la
-  // navegación y avisos de próximos cobros en el dashboard.
-  const {
-    items: recurrentes,
-    pendientes: recurrentesPendientes,
-    cargando: cargandoRecurrentes,
-    confirmarCobro,
-    desmarcar: desmarcarCobro,
-  } = useRecurrentes(usuarioId)
   // Compromiso a abrir al llegar a Fijos (confirmar uno de importe variable).
   const [abrirFijoId, setAbrirFijoId] = useState(null)
 
@@ -376,7 +436,23 @@ function App() {
             {/* Primera carga (sin datos aún): skeleton en vez de dashboard vacío.
                 En refetch (ya hay movimientos) NO se muestra, para no parpadear. */}
             {cargando && movimientos.length === 0 && <DashboardSkeleton />}
-            {!cargando && (
+            {enDemo && (
+              <div className="demo-banner fade-in-up">
+                <div className="demo-banner-texto">
+                  <strong>Estás viendo datos de ejemplo</strong>
+                  <span>Así se ve Palanca tras unos meses de uso. Nada de esto es tuyo.</span>
+                </div>
+                <div className="demo-banner-acc">
+                  <button type="button" className="demo-banner-tour" onClick={() => setTourAbierto(true)}>
+                    Ver demo
+                  </button>
+                  <button type="button" className="demo-banner-empezar" onClick={empezarConMisDatos}>
+                    Empezar con mis datos
+                  </button>
+                </div>
+              </div>
+            )}
+            {!cargando && !enDemo && (
               <PrimerosPasos
                 nombre={perfil.nombre}
                 movimientos={movimientos}
@@ -411,6 +487,7 @@ function App() {
                     recurrentes={recurrentes}
                     cargandoRecurrentes={cargandoRecurrentes}
                     diasSinRegistrar={diasDesdeUltimoMovimiento}
+                    soloLectura={enDemo}
                     onGuardado={onGuardado}
                     onRegistrar={irARegistrar}
                     onConfirmarCobro={confirmarDesdeInicio}
@@ -455,7 +532,7 @@ function App() {
                       movimientos={movimientos}
                       onIrARegistro={() => irAPestana('movimientos')}
                     />
-                    <Logros usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
+                    {!enDemo && <Logros usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />}
                   </>
                 )}
               </>
@@ -482,7 +559,8 @@ function App() {
           <Recurrentes
             key="suscripciones"
             usuarioId={usuarioId}
-            movimientos={movimientos}
+            movimientos={movimientosReales}
+            itemsDemo={enDemo ? demo.recurrentes : null}
             onRegistrado={onGuardado}
             abrirId={abrirFijoId}
             onAbierto={() => setAbrirFijoId(null)}
@@ -519,7 +597,7 @@ function App() {
         </Suspense>
       </main>
 
-      <BottomNav activa={pestana} onCambiar={irAPestana} avisos={{ suscripciones: recurrentesPendientes.length }} />
+      <BottomNav activa={pestana} onCambiar={irAPestana} avisos={{ suscripciones: nPendientesFijos }} />
       <Toaster />
       <Confirmador />
       {verCuenta && (
@@ -528,6 +606,10 @@ function App() {
           perfil={perfil}
           usuarioId={usuarioId}
           onPerfilActualizado={(p) => setPerfil(p)}
+          onVerDemo={() => {
+            setVerCuenta(false)
+            setTourAbierto(true)
+          }}
           onCerrar={() => setVerCuenta(false)}
           onCerrarSesion={() => {
             setVerCuenta(false)
@@ -535,9 +617,20 @@ function App() {
           }}
         />
       )}
-      <Hitos usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
+      {!enDemo && <Hitos usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />}
+      {tourAbierto && (
+        <TourRapido
+          enDemo={enDemo}
+          onIrA={irAPestana}
+          onTerminar={() => {
+            setTourAbierto(false)
+            irAPestana('dashboard')
+          }}
+          onEmpezarConMisDatos={empezarConMisDatos}
+        />
+      )}
       <Suspense fallback={null}>
-        <Consultor movimientos={movimientos} recurrentes={recurrentes} objetivo={{ texto: perfil.objetivo, usuarioId }} />
+        <Consultor movimientos={movimientosReales} recurrentes={recurrentesReales} objetivo={{ texto: perfil.objetivo, usuarioId }} />
       </Suspense>
     </div>
     </DatosCompartidosProvider>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cobrosProximos, costeAnual, costeMensual, proximoCobro, textoCalendario, tocaEnMes } from './periodicidad'
+import { cobrosProximos, costeAnual, costeMensual, estadoCobro, fechaCobroEnMes, proximoCobro, textoCalendario, tocaEnMes } from './periodicidad'
 
 const HOY = new Date(2026, 9, 14) // 14 oct 2026
 
@@ -78,5 +78,27 @@ describe('sin día fijado (revisión de código)', () => {
   })
   it('anual sin día: el mes de la renovación', () => {
     expect(proximoCobro({ periodoMeses: 12, mesInicio: 3 }, HOY)).toMatchObject({ sinDia: true, texto: 'mar 2027' })
+  })
+})
+
+describe('confirmación de cobros en su día', () => {
+  const hoy = new Date(2026, 9, 14) // 14/10/2026
+  const rec = (extra) => ({ activo: true, tipo: 'gasto', importe: 10, periodoMeses: 1, mesesAplicados: [], ...extra })
+  it('fecha del cobro en un mes, acotada al último día', () => {
+    expect(fechaCobroEnMes(rec({ diaMes: 31 }), '2026-02')).toBe('2026-02-28')
+    expect(fechaCobroEnMes(rec({ diaMes: 5 }), '2026-10')).toBe('2026-10-05')
+    expect(fechaCobroEnMes(rec({ diaMes: null }), '2026-10')).toBeNull()
+  })
+  it('estado: esperando antes del día, confirmar desde el día, hecho al confirmar', () => {
+    expect(estadoCobro(rec({ diaMes: 20 }), hoy)).toBe('esperando')
+    expect(estadoCobro(rec({ diaMes: 14 }), hoy)).toBe('confirmar')
+    expect(estadoCobro(rec({ diaMes: 3 }), hoy)).toBe('confirmar')
+    expect(estadoCobro(rec({ diaMes: 3, mesesAplicados: ['2026-10'] }), hoy)).toBe('hecho')
+  })
+  it('estado: sin día, pausado y meses en que no toca', () => {
+    expect(estadoCobro(rec({ diaMes: null }), hoy)).toBe('sin-dia')
+    expect(estadoCobro(rec({ diaMes: 3, activo: false }), hoy)).toBe('no-toca')
+    expect(estadoCobro(rec({ diaMes: 3, periodoMeses: 12, mesInicio: 3 }), hoy)).toBe('no-toca')
+    expect(estadoCobro(rec({ diaMes: 3, periodoMeses: 12, mesInicio: 10 }), hoy)).toBe('confirmar')
   })
 })

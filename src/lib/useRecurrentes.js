@@ -4,6 +4,7 @@ import { SELECT_MOVIMIENTO, claveMesActual, hoyIso } from './movimientosUtils'
 import { estadoCobro, fechaCobroEnMes } from './periodicidad'
 import { aCentimos } from './importe'
 import { toast } from './toast'
+import { AVISO_DEMO, esDemo } from './datosDemo'
 
 // Recurrentes del usuario (alquiler, nómina, suscripción…), persistidos en
 // Supabase (tabla `recurrentes` + `recurrentes_confirmaciones` para la racha).
@@ -239,6 +240,7 @@ export function useRecurrentes(usuarioId) {
 
   const actualizar = useCallback(
     async (id, campos) => {
+      if (esDemo(id)) return toast(AVISO_DEMO)
       const mapa = {
         tipo: 'tipo',
         nombre: 'nombre',
@@ -270,6 +272,7 @@ export function useRecurrentes(usuarioId) {
 
   const eliminar = useCallback(
     async (id) => {
+      if (esDemo(id)) return toast(AVISO_DEMO)
       const { error } = await supabase.from('recurrentes').delete().eq('id', id)
       if (!error) {
         await cargar()
@@ -303,6 +306,10 @@ export function useRecurrentes(usuarioId) {
   // cobrado") o importes variables. Devuelve la fila creada o null si falla.
   const confirmarCobro = useCallback(
     async (rec, { importe = Number(rec.importe), fecha = null } = {}) => {
+      if (esDemo(rec.id)) {
+        toast(AVISO_DEMO)
+        return null
+      }
       if (!usuarioId || !(Number(importe) > 0)) return null
       const hoy = hoyIso()
       const delDia = fechaCobroEnMes(rec, claveMesActual())
@@ -337,6 +344,7 @@ export function useRecurrentes(usuarioId) {
   // conoce su id) y la confirmación. Devuelve el id del movimiento borrado o null.
   const desmarcar = useCallback(
     async (id) => {
+      if (esDemo(id)) return toast(AVISO_DEMO)
       const mes = claveMesActual()
       const { data: conf } = await supabase
         .from('recurrentes_confirmaciones')

@@ -213,7 +213,7 @@ export default function Inicio({
         recurrentes={recurrentes}
         movimientos={movimientos}
         onVerSuscripciones={() => onIrA('suscripciones')}
-        onConfirmar={soloLectura ? null : onConfirmarCobro}
+        onConfirmar={onConfirmarCobro}
       />
       <MesEnCurso movimientos={movimientos} onVerAnalisis={onVerAnalisis} onVerPresupuesto={() => onIrA('presupuesto')} />
       <UltimosMovimientos movimientos={movimientos} onVerTodos={() => onRegistrar('historial')} />

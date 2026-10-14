@@ -397,8 +397,13 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
   )
 }
 
-export default function Recurrentes({ usuarioId, movimientos, onRegistrado, abrirId = null, onAbierto }) {
-  const { items, cargando, crear, actualizar, eliminar, confirmarCobro, desmarcar } = useRecurrentes(usuarioId)
+export default function Recurrentes({ usuarioId, movimientos, onRegistrado, abrirId = null, onAbierto, itemsDemo = null }) {
+  const hook = useRecurrentes(usuarioId)
+  const { crear, actualizar, eliminar, confirmarCobro, desmarcar } = hook
+  // Con datos de ejemplo (usuario nuevo) se enseñan sus compromisos de ejemplo;
+  // tocarlos no escribe nada (useRecurrentes bloquea los ids "demo-").
+  const items = itemsDemo ?? hook.items
+  const cargando = itemsDemo ? false : hook.cargando
   const { items: categoriasGasto } = useEtiquetas('categorias', usuarioId, 'gasto')
   const { items: categoriasIngreso } = useEtiquetas('categorias', usuarioId, 'ingreso')
   const [detalle, setDetalle] = useState(null) // rec en hoja de detalle

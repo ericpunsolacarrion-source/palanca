@@ -1,3 +1,4 @@
+import { AVISO_DEMO, esDemo } from '../lib/datosDemo'
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { esInversion, esTraspaso, formatearEuros } from '../lib/categorias'
@@ -135,6 +136,7 @@ export default function ListaMovimientos({
   }
 
   async function handleEliminar(id) {
+    if (esDemo(id)) return toast(AVISO_DEMO)
     if (!(await confirmar('¿Eliminar este movimiento?'))) return
     setEliminandoId(id)
     const { error } = await supabase.from('movimientos').delete().eq('id', id)
@@ -185,7 +187,7 @@ export default function ListaMovimientos({
           </span>
           {!soloLectura && (
             <span className="grupo-botones">
-              <button type="button" className="btn-editar" onClick={() => setEditandoId(m.id)}>
+              <button type="button" className="btn-editar" onClick={() => (esDemo(m.id) ? toast(AVISO_DEMO) : setEditandoId(m.id))}>
                 Editar
               </button>
               <button

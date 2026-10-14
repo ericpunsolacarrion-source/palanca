@@ -66,7 +66,11 @@ como miles, importes negativos y columna `tipo` opcional (el signo decide).
 Decisión del usuario (2026-10-14): **no lanzar aún**; se publica cuando él lo
 diga ("lánzalo" → fast-forward de `develop` a `main`). Incluye: Ahorro como
 traspaso, detector de suscripciones, pestaña Fijos (periodicidades,
-calendario, avisos) y el **rediseño visual v2** (ver DISENO.md).
+calendario, avisos) y el **rediseño visual v2** (ver DISENO.md). Además
+(2026-10-14, tarde): **Inicio nuevo** (Resumen/Análisis, modo discreto),
+**fijos con día obligatorio y confirmación en su día** (también desde el
+inicio) y **datos de ejemplo + demo rápida** para usuarios nuevos. Detalle en
+PANTALLAS.md §3 y §4b.
 
 ## Fulcro (consultor IA) — en pruebas SOLO en dev (en `develop`)
 - **Solo en dev**: el servidor lo enciende fuera de producción (`VERCEL_ENV`);
