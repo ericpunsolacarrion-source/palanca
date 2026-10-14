@@ -123,6 +123,9 @@ function resumenPresupuesto(p, tMes) {
   }
 }
 
+// Textos libres del usuario, recortados (coste y tope de tamaño).
+const recortar = (t, n = 60) => String(t ?? '').slice(0, n)
+
 function resumenFijos(recurrentes, movimientos, descartadas) {
   const activos = recurrentes.filter((r) => r.activo && r.tipo === 'gasto')
   const cent = (x) => Math.round(x * 100)
@@ -131,12 +134,12 @@ function resumenFijos(recurrentes, movimientos, descartadas) {
     costeMensualProrrateado: Math.round(activos.reduce((s, r) => s + cent(costeMensual(r)), 0) / 100),
     costeAnual: Math.round(activos.reduce((s, r) => s + cent(costeAnual(r)), 0) / 100),
     compromisos: activos.slice(0, 25).map((r) => ({
-      nombre: r.nombre,
+      nombre: recortar(r.nombre),
       importe: Number(r.importe) || 0,
       periodicidad: periodoDe(r).id,
       costeAnual: Math.round(costeAnual(r)),
     })),
-    proximos30Dias: cobrosProximos(activos, 30).map((c) => ({ nombre: c.rec.nombre, importe: c.importe, cuando: c.texto })),
+    proximos30Dias: cobrosProximos(activos, 30).map((c) => ({ nombre: recortar(c.rec.nombre), importe: c.importe, cuando: c.texto })),
     avisos: calcularAvisos(recurrentes, movimientos, new Date(), { descartadas }).map((a) => `${a.titulo}: ${a.detalle}`),
   }
 }
@@ -194,7 +197,8 @@ export function construirResumenIA(
   // no el campo importe_actual (vestigial). fiabilidadEstimada = el progreso
   // depende de la liquidez y el saldo no está reconciliado (dato a matizar).
   const ritmos = ritmoMensualPorTipo(movimientos)
-  const objetivosAhorro = objetivos.map((o) => {
+  // Acotado (como los fijos): el resumen nunca debe superar el tope del servidor.
+  const objetivosAhorro = objetivos.slice(0, 15).map((o) => {
     const tipo = o.tipo || 'liquidez'
     const actual = Math.round(valorBolsaPorTipo(bolsasCalc, tipo))
     const meta = Math.round(Number(o.importe_objetivo))
@@ -203,7 +207,7 @@ export function construirResumenIA(
     const ritmo = Math.round(ritmos[tipo] ?? 0)
     const falta = Math.max(0, meta - actual)
     return {
-      nombre: o.nombre,
+      nombre: recortar(o.nombre),
       tipo,
       objetivo: meta,
       actual,
@@ -229,7 +233,7 @@ export function construirResumenIA(
 
   return {
     moneda: 'EUR',
-    objetivoUsuario: objetivo ?? null,
+    objetivoUsuario: objetivo ? recortar(objetivo, 300) : null,
     mesActual: {
       clave: claveActual,
       ingresos: Math.round(tMes.ingresos),

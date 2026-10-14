@@ -8,6 +8,7 @@ import {
   comparativasConMesAnterior,
   estimacionGastoMensual,
   gastoPorCategoria,
+  limiteGastoPresupuesto,
   predecirMesFuturo,
   rangoMeses,
   resumenMensualMedio,
@@ -173,5 +174,20 @@ describe('rendimiento con años de historial', () => {
     // Márgenes generosos para máquinas lentas; en local tarda decenas de ms.
     expect(t1 - t0).toBeLessThan(2500)
     expect(t2 - t1).toBeLessThan(2500)
+  })
+})
+
+describe('límites de tamaño del resumen de Fulcro', () => {
+  it('textos largos y muchos objetivos se acotan; tasa fuera de rango no da límite negativo', () => {
+    const objetivos = Array.from({ length: 60 }, (_, i) => ({ nombre: 'x'.repeat(500) + i, importe_objetivo: 1000 }))
+    const recurrentes = [{ activo: true, tipo: 'gasto', nombre: 'y'.repeat(500), importe: 10, diaMes: 5 }]
+    const r = construirResumenIA([], { objetivos, recurrentes, objetivo: 'z'.repeat(5000) })
+    expect(r.objetivosAhorro.length).toBe(15)
+    expect(r.objetivosAhorro[0].nombre.length).toBeLessThanOrEqual(60)
+    expect(r.fijos.compromisos[0].nombre.length).toBeLessThanOrEqual(60)
+    expect(r.objetivoUsuario.length).toBeLessThanOrEqual(300)
+    expect(JSON.stringify(r).length).toBeLessThan(30000)
+    expect(limiteGastoPresupuesto({ metodo: 'tasa', tasaAhorroObjetivo: 150 }, 1000)).toBe(0)
+    expect(limiteGastoPresupuesto({ metodo: 'tasa', tasaAhorroObjetivo: -20 }, 1000)).toBe(1000)
   })
 })

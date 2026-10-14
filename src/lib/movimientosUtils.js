@@ -613,7 +613,8 @@ export function limiteGastoPresupuesto({ metodo, tasaAhorroObjetivo, gastoMaximo
   }
   const tasa = Number(tasaAhorroObjetivo)
   if (tasaAhorroObjetivo == null || !Number.isFinite(tasa)) return null
-  return Math.max(0, Number(ingresos) || 0) * (1 - tasa / 100)
+  // Tasa acotada a 0–100 %: un valor fuera de rango nunca da un límite negativo.
+  return Math.max(0, Number(ingresos) || 0) * (1 - Math.min(100, Math.max(0, tasa)) / 100)
 }
 
 // Días que quedan del mes contando hoy (para el "puedes gastar X al día").
