@@ -4,7 +4,7 @@
 > sesión: qué está vivo, dónde mirar, qué sigue. Mantenerlo al día tras cada
 > cambio relevante o despliegue.
 >
-> **Última actualización:** 2026-10-14 · **Último deploy:** `a549a33`
+> **Última actualización:** 2026-10-14 · **Último deploy:** `28c4bfe`
 
 ---
 
