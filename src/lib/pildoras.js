@@ -1,5 +1,6 @@
 import { esInversion } from './categorias'
-import { agregarPorMes, claveMes, claveMesActual, totalesDe, ultimosNMeses } from './movimientosUtils'
+import { agregarPorMes, claveMes, claveMesActual, esConsumo, totalesDe, ultimosNMeses } from './movimientosUtils'
+import { aCentimos } from './importe'
 
 // Píldoras educativas: breves, contextuales y descartables.
 //
@@ -66,7 +67,7 @@ function invertidoPorMes(movimientos) {
   for (const m of movimientos) {
     if (m.tipo === 'gasto' && esInversion(m)) {
       const clave = claveMes(m.fecha)
-      mapa.set(clave, (mapa.get(clave) ?? 0) + Number(m.importe))
+      mapa.set(clave, (mapa.get(clave) ?? 0) + (aCentimos(m.importe) ?? 0) / 100)
     }
   }
   return mapa
@@ -79,12 +80,12 @@ function categoriaDisparada(movimientos) {
   const idx = new Map(meses.map((m, i) => [m.clave, i]))
   const porCat = new Map()
   for (const m of movimientos) {
-    if (m.tipo !== 'gasto' || esInversion(m)) continue
+    if (!esConsumo(m)) continue
     const i = idx.get(claveMes(m.fecha))
     if (i === undefined) continue
     const nombre = m.categoria?.nombre ?? 'Sin categoría'
     if (!porCat.has(nombre)) porCat.set(nombre, new Array(7).fill(0))
-    porCat.get(nombre)[i] += Number(m.importe)
+    porCat.get(nombre)[i] += aCentimos(m.importe) ?? 0
   }
 
   let mejor = null
@@ -96,8 +97,9 @@ function categoriaDisparada(movimientos) {
     if (media <= 0) continue
     const ratio = actual / media
     // Salto claro (>=50 %) y con importe relevante (evita ruido de cifras pequeñas).
-    if (ratio >= 1.5 && actual - media >= 60) {
-      if (mejor === null || ratio > mejor.ratio) mejor = { nombre, actual, media, ratio }
+    // (serie en céntimos: 60 € = 6000)
+    if (ratio >= 1.5 && actual - media >= 6000) {
+      if (mejor === null || ratio > mejor.ratio) mejor = { nombre, actual: actual / 100, media: media / 100, ratio }
     }
   }
   return mejor

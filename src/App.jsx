@@ -126,18 +126,34 @@ function App() {
     if (!usuarioId) return
     setErrorCarga(false)
 
-    const { data, error } = await supabase
-      .from('movimientos')
-      // SELECT_MOVIMIENTO: columnas explícitas (sin usuario_id, que no se usa).
-      .select(SELECT_MOVIMIENTO)
-      .eq('usuario_id', usuarioId)
-      .order('fecha', { ascending: false })
-      .order('created_at', { ascending: false })
+    // Supabase devuelve como MÁXIMO 1000 filas por consulta: sin paginar, a
+    // partir de 1000 movimientos se perderían los más antiguos (saldo inicial
+    // incluido) y el patrimonio saldría mal. Se pide por páginas hasta agotar.
+    const POR_PAGINA = 1000
+    const todos = []
+    let error = null
+    for (let desde = 0; ; desde += POR_PAGINA) {
+      const { data, error: err } = await supabase
+        .from('movimientos')
+        // SELECT_MOVIMIENTO: columnas explícitas (sin usuario_id, que no se usa).
+        .select(SELECT_MOVIMIENTO)
+        .eq('usuario_id', usuarioId)
+        .order('fecha', { ascending: false })
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false }) // desempate estable entre páginas
+        .range(desde, desde + POR_PAGINA - 1)
+      if (err) {
+        error = err
+        break
+      }
+      todos.push(...data)
+      if (data.length < POR_PAGINA) break
+    }
 
     if (error) {
       setErrorCarga(true)
     } else {
-      setMovimientos(data)
+      setMovimientos(todos)
     }
     setCargando(false)
   }, [usuarioId])
@@ -180,8 +196,16 @@ function App() {
       return { diasDesdeUltimoMovimiento: null, diasConHistorial: 0 }
     }
     const ahora = Date.now()
-    const ultimoRegistro = Math.max(...movimientos.map((m) => new Date(m.created_at).getTime()))
-    const primeraFecha = Math.min(...movimientos.map((m) => new Date(m.fecha).getTime()))
+    // Bucle en vez de Math.max(...array): con decenas de miles de movimientos
+    // el spread desborda la pila.
+    let ultimoRegistro = -Infinity
+    let primeraFecha = Infinity
+    for (const m of movimientos) {
+      const r = new Date(m.created_at).getTime()
+      const f = new Date(m.fecha).getTime()
+      if (r > ultimoRegistro) ultimoRegistro = r
+      if (f < primeraFecha) primeraFecha = f
+    }
     return {
       diasDesdeUltimoMovimiento: Math.floor((ahora - ultimoRegistro) / MS_POR_DIA),
       diasConHistorial: Math.floor((ahora - primeraFecha) / MS_POR_DIA),

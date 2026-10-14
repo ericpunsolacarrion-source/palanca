@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { formatearEuros } from '../lib/categorias'
-import { bolsas, ultimaReconciliacion } from '../lib/movimientosUtils'
+import { bolsas, hoyIso, ultimaReconciliacion } from '../lib/movimientosUtils'
 import { crearAjuste } from '../lib/ajustes'
 import { useSaldo } from '../lib/useSaldo'
 import { toast } from '../lib/toast'
@@ -19,7 +19,12 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerIn
   const [guardando, setGuardando] = useState(false)
   const { ultimaReconciliacion: ultimaMeta, marcarReconciliado } = useSaldo(usuarioId)
 
-  const { bolsaInversion, bolsaLiquidez, patrimonio } = useMemo(() => bolsas(movimientos), [movimientos])
+  const { bolsaInversion, bolsaLiquidez, patrimonio } = useMemo(
+    // Patrimonio A HOY (contrato T2): un movimiento con fecha futura (p. ej.
+    // importado por CSV) no cuenta todavía, ni descuadra la reconciliación.
+    () => bolsas(movimientos, hoyIso()),
+    [movimientos],
+  )
 
   // La reconciliación más reciente: la marca local o el último ajuste registrado.
   const ultimaAjuste = useMemo(() => ultimaReconciliacion(movimientos), [movimientos])

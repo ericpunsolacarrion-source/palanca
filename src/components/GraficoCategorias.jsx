@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import { esInversion, formatearEuros } from '../lib/categorias'
-import { formatearFecha } from '../lib/movimientosUtils'
+import { formatearEuros } from '../lib/categorias'
+import { esConsumo, formatearFecha, gastoPorCategoria } from '../lib/movimientosUtils'
 
 // Paleta categórica definida como tokens en index.css (theming centralizado).
 const COLORES = ['var(--cat-1)', 'var(--cat-2)', 'var(--cat-3)', 'var(--cat-4)', 'var(--cat-5)', 'var(--cat-6)']
@@ -9,12 +9,7 @@ export default function GraficoCategorias({ movimientos, etiqueta = 'este mes' }
   const [abierta, setAbierta] = useState(null)
 
   const datos = useMemo(() => {
-    const mapa = new Map()
-    for (const m of movimientos) {
-      if (m.tipo !== 'gasto' || esInversion(m)) continue
-      const nombre = m.categoria?.nombre ?? 'Sin categoría'
-      mapa.set(nombre, (mapa.get(nombre) ?? 0) + Number(m.importe))
-    }
+    const mapa = gastoPorCategoria(movimientos)
     const total = [...mapa.values()].reduce((s, v) => s + v, 0)
     return {
       total,
@@ -35,8 +30,7 @@ export default function GraficoCategorias({ movimientos, etiqueta = 'este mes' }
     return movimientos
       .filter(
         (m) =>
-          m.tipo === 'gasto' &&
-          !esInversion(m) &&
+          esConsumo(m) &&
           (m.categoria?.nombre ?? 'Sin categoría') === abierta,
       )
       .sort((a, b) => (a.fecha < b.fecha ? 1 : -1))

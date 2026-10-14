@@ -10,6 +10,7 @@ import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
 import InputFecha from './InputFecha'
+import { aCentimos } from '../lib/importe'
 
 // Fecha por defecto al confirmar: el día definido, en el mes en curso (acotado
 // al último día del mes). Sin día definido, hoy.
@@ -20,7 +21,11 @@ function fechaDelMes(rec) {
   if (rec.diaMes) {
     const ultimo = new Date(y, m + 1, 0).getDate()
     const d = Math.min(rec.diaMes, ultimo)
-    return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    // Confirmar ANTES del día habitual no crea un movimiento con fecha futura
+    // (inflaría el patrimonio de hoy y el selector no permite fechas futuras).
+    const hoy = hoyIso()
+    return iso > hoy ? hoy : iso
   }
   return hoyIso()
 }
@@ -268,6 +273,9 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
 
   async function registrar(rec, importe, fecha) {
     if (!importe || importe <= 0) return
+    // Doble toque: un segundo registro crearía un movimiento huérfano (solo
+    // hay una confirmación por mes).
+    if (registrandoId) return
     setRegistrandoId(rec.id)
     const { data: filaNueva, error } = await supabase
       .from('movimientos')
@@ -277,7 +285,7 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
         categoria_id: rec.categoriaId,
         fuente_id: rec.fuenteId ?? null,
         importe,
-        importe_centimos: Math.round(importe * 100),
+        importe_centimos: aCentimos(importe),
         fecha: fecha || fechaDelMes(rec),
         es_fijo: true,
       })
@@ -285,7 +293,7 @@ export default function Recurrentes({ usuarioId, onRegistrado }) {
       .single()
     setRegistrandoId(null)
     if (error) return toast('No se ha podido registrar. Inténtalo de nuevo.', 'error')
-    marcarAplicado(rec.id, { movimientoId: filaNueva?.id ?? null, importeCentimos: Math.round(importe * 100) })
+    marcarAplicado(rec.id, { movimientoId: filaNueva?.id ?? null, importeCentimos: aCentimos(importe) })
     setDetalle(null)
     setRecienId(rec.id)
     if (navigator.vibrate) navigator.vibrate(10)

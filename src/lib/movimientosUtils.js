@@ -12,6 +12,44 @@ function centimosDe(m) {
   return aCentimos(m.importe) ?? 0
 }
 
+// Gasto de CONSUMO: tipo gasto que no es inversión ni ajuste de saldo. Misma
+// regla que totalesDe(); usarla en todo desglose por categoría para que la suma
+// de categorías cuadre siempre con la métrica de "gastos".
+export function esConsumo(m) {
+  return m.tipo === 'gasto' && !esInversion(m) && !esAjuste(m)
+}
+
+// Suma EXACTA (en céntimos) de los importes de una lista; devuelve euros.
+export function sumarImportes(movimientos) {
+  let total = 0
+  for (const m of movimientos) total += centimosDe(m)
+  return aEuros(total)
+}
+
+// Gasto de consumo por categoría (suma exacta en céntimos). Devuelve un Map
+// nombre → euros. Fuente única para gráficos, presupuesto, píldoras e IA.
+export function gastoPorCategoria(movimientos) {
+  const mapa = new Map()
+  for (const m of movimientos) {
+    if (!esConsumo(m)) continue
+    const nombre = m.categoria?.nombre ?? 'Sin categoría'
+    mapa.set(nombre, (mapa.get(nombre) ?? 0) + centimosDe(m))
+  }
+  for (const [k, v] of mapa) mapa.set(k, aEuros(v))
+  return mapa
+}
+
+// Efecto NETO de los ajustes de saldo sobre la liquidez (ingreso suma, gasto
+// resta). Para mostrar "ajustes" sin sumar en valor absoluto ambos signos.
+export function netoAjustes(movimientos) {
+  let total = 0
+  for (const m of movimientos) {
+    if (!esAjuste(m)) continue
+    total += (m.tipo === 'ingreso' ? 1 : -1) * centimosDe(m)
+  }
+  return aEuros(total)
+}
+
 // Columnas que la app necesita de un movimiento (con sus joins). Compartido por
 // la carga inicial (App.jsx) y por las mutaciones que devuelven la fila creada/
 // editada, para que el refresco quirúrgico use EXACTAMENTE la misma forma que la
@@ -171,12 +209,15 @@ export function totalesDe(movimientos) {
 //   saldo inicial y las reconciliaciones (movimientos de categoría Ajuste).
 // - PATRIMONIO TOTAL = Inversión + Liquidez.
 // Fuente única. La liquidez solo es fiable si el usuario reconcilia (ver saldo).
-export function bolsas(movimientos) {
+// `hasta` (opcional, 'YYYY-MM-DD'): patrimonio A ESA FECHA — solo cuenta los
+// movimientos con fecha ≤ hasta (contrato T2). Sin `hasta`, todo el histórico.
+export function bolsas(movimientos, hasta = null) {
   // Suma en CÉNTIMOS enteros (patrimonio exacto al céntimo; contrato E2/P2).
   let liquidez = 0 // ingresos − gastos − invertido (+ ajustes)
   let invertido = 0
   let ajusteTotal = 0
   for (const m of movimientos) {
+    if (hasta && m.fecha > hasta) continue
     const importe = centimosDe(m)
     if (esAjuste(m)) {
       const signo = m.tipo === 'ingreso' ? 1 : -1
@@ -390,15 +431,7 @@ export function cambioPorCategoria(movimientos) {
   const clavePrev = ultimosNMeses(2)[0].clave
   const claveAct = claveMesActual()
 
-  const sumaPorCat = (clave) => {
-    const mapa = new Map()
-    for (const m of movimientos) {
-      if (m.tipo !== 'gasto' || esInversion(m) || claveMes(m.fecha) !== clave) continue
-      const nombre = m.categoria?.nombre ?? 'Sin categoría'
-      mapa.set(nombre, (mapa.get(nombre) ?? 0) + Number(m.importe))
-    }
-    return mapa
-  }
+  const sumaPorCat = (clave) => gastoPorCategoria(filtrarPorMes(movimientos, clave))
 
   const prev = sumaPorCat(clavePrev)
   const act = sumaPorCat(claveAct)

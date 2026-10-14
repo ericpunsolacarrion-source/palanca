@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import { esInversion, formatearEuros } from '../lib/categorias'
-import { formatearPorcentaje, totalesDe } from '../lib/movimientosUtils'
+import { formatearEuros } from '../lib/categorias'
+import { formatearPorcentaje, gastoPorCategoria, totalesDe } from '../lib/movimientosUtils'
 import { usePresupuestoCompartido } from '../lib/DatosCompartidos'
 import { toast } from '../lib/toast'
 import { useCountUp } from '../lib/useCountUp'
@@ -49,12 +49,7 @@ export default function Presupuesto({ movimientos, gastoEstimado }) {
   } = totalesDe(movimientos)
 
   const topCategorias = useMemo(() => {
-    const mapa = new Map()
-    for (const m of movimientos) {
-      if (m.tipo !== 'gasto' || esInversion(m)) continue
-      const nombre = m.categoria?.nombre ?? 'Sin categoría'
-      mapa.set(nombre, (mapa.get(nombre) ?? 0) + Number(m.importe))
-    }
+    const mapa = gastoPorCategoria(movimientos)
     return [...mapa.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4)
   }, [movimientos])
 

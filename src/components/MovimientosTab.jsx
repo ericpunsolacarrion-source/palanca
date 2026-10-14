@@ -4,7 +4,7 @@ import ListaMovimientos from './ListaMovimientos'
 import Recurrentes from './Recurrentes'
 import ImportadorCsv from './ImportadorCsv'
 import { esAjuste, esInversion, formatearEuros } from '../lib/categorias'
-import { totalesDe } from '../lib/movimientosUtils'
+import { netoAjustes, sumarImportes, totalesDe } from '../lib/movimientosUtils'
 import { useRecurrentes } from '../lib/useRecurrentes'
 
 const ETIQUETA_FILTRO = { ingreso: 'Ingresos', gasto: 'Gastos', inversion: 'Inversión', ajuste: 'Ajustes' }
@@ -77,7 +77,8 @@ export default function MovimientosTab({
   }
 
   if (sub === 'filtrado' && filtro) {
-    const total = movsFiltrados.reduce((s, m) => s + Number(m.importe), 0)
+    // Ajustes: efecto NETO (los de signo − restan); el resto, suma exacta.
+    const total = filtro === 'ajuste' ? netoAjustes(movsFiltrados) : sumarImportes(movsFiltrados)
     return (
       <div className="vista">
         <div className="filtro-cabecera">

@@ -3,7 +3,8 @@
 
 // Columnas esperadas (formato documentado para el usuario).
 export const COLUMNAS = ['fecha', 'tipo', 'categoria', 'concepto', 'importe', 'plataforma']
-export const COLUMNAS_REQUERIDAS = ['fecha', 'tipo', 'importe']
+// 'tipo' es opcional: en extractos bancarios lo deduce el signo del importe.
+export const COLUMNAS_REQUERIDAS = ['fecha', 'importe']
 
 // --- Parser CSV con soporte de comillas ---
 export function parseCsv(texto) {
@@ -11,12 +12,30 @@ export function parseCsv(texto) {
     .split(/\r?\n/)
     .filter((l) => l.trim().length > 0)
   if (lineas.length === 0) return { cabeceras: [], filas: [] }
-  const cabeceras = splitLinea(lineas[0])
-  const filas = lineas.slice(1).map((l) => splitLinea(l))
+  const sep = detectarSeparador(lineas[0])
+  const cabeceras = splitLinea(lineas[0].replace(/^\uFEFF/, ''), sep)
+  const filas = lineas.slice(1).map((l) => splitLinea(l, sep))
   return { cabeceras, filas }
 }
 
-function splitLinea(linea) {
+// Excel en español exporta con ';' (la coma es el decimal). Se elige el
+// separador más frecuente de la cabecera (fuera de comillas): ';', tab o ','.
+function detectarSeparador(cabecera) {
+  const sinComillas = cabecera.replace(/"[^"]*"/g, '')
+  const cuenta = (c) => sinComillas.split(c).length - 1
+  const candidatos = [';', '\t', ',']
+  let mejor = ','
+  let max = 0
+  for (const c of candidatos) {
+    if (cuenta(c) > max) {
+      max = cuenta(c)
+      mejor = c
+    }
+  }
+  return mejor
+}
+
+function splitLinea(linea, sep = ',') {
   const campos = []
   let actual = ''
   let comillas = false
@@ -27,7 +46,7 @@ function splitLinea(linea) {
         actual += '"'
         i += 1
       } else comillas = !comillas
-    } else if (ch === ',' && !comillas) {
+    } else if (ch === sep && !comillas) {
       campos.push(actual)
       actual = ''
     } else actual += ch
@@ -87,33 +106,68 @@ export function parseFecha(valor) {
   return iso
 }
 
-// Importe (acepta "1.234,56", "1234.56", "1,50") → número positivo o null.
-export function parseImporte(valor) {
-  let s = String(valor || '').trim().replace(/[€\s]/g, '')
+// Importe CON signo (acepta "1.234,56", "1234.56", "1,50", "1.234", "-45,30",
+// "(45,30)") → número o null. El formato por defecto es el español.
+export function parseImporteConSigno(valor) {
+  let s = String(valor || '').trim().replace(/[€\s\u00a0]/g, '')
   if (!s) return null
-  if (s.includes(',') && s.includes('.')) {
+  let negativo = false
+  if (/^\(.*\)$/.test(s)) {
+    negativo = true
+    s = s.slice(1, -1)
+  }
+  if (s.startsWith('-') || s.startsWith('−')) {
+    negativo = !negativo
+    s = s.slice(1)
+  } else if (s.startsWith('+')) s = s.slice(1)
+  if (s.endsWith('-')) {
+    negativo = !negativo
+    s = s.slice(0, -1)
+  }
+  if (!/^[\d.,]+$/.test(s)) return null
+  const puntos = (s.match(/\./g) || []).length
+  const comas = (s.match(/,/g) || []).length
+  if (puntos && comas) {
     // El último separador es el decimal.
     if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.')
     else s = s.replace(/,/g, '')
-  } else if (s.includes(',')) {
-    s = s.replace(',', '.')
+  } else if (comas) {
+    // Varias comas → miles ("1,234,567"); una sola → decimal español ("1,50").
+    s = comas > 1 ? s.replace(/,/g, '') : s.replace(',', '.')
+  } else if (puntos) {
+    // Varios puntos, o uno seguido de exactamente 3 cifras → miles español
+    // ("1.234" = mil doscientos). Si no, decimal ("12.5", "1234.56").
+    if (puntos > 1 || /^\d{1,3}\.\d{3}$/.test(s)) s = s.replace(/\./g, '')
   }
   const n = Number(s)
-  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null
+  if (!Number.isFinite(n)) return null
+  const r = Math.round(n * 100) / 100
+  return negativo ? -r : r
+}
+
+// Importe en valor absoluto (> 0) o null. El signo lo interpreta validarFila.
+export function parseImporte(valor) {
+  const n = parseImporteConSigno(valor)
+  return n === null || n === 0 ? null : Math.abs(n)
 }
 
 // Valida una fila (array de campos) según el mapeo. Devuelve
 // {ok, mov?, motivo?}. `mov` es canónico: {fecha, tipo, categoria, nota, importe, plataforma, esInversion}.
-export function validarFila(campos, mapeo) {
+export function validarFila(campos, mapeo, { signoDecideTipo = false } = {}) {
   const get = (col) => (mapeo[col] >= 0 ? campos[mapeo[col]] : undefined)
 
   const fecha = parseFecha(get('fecha'))
   if (!fecha) return { ok: false, motivo: 'fecha inválida' }
 
-  const importe = parseImporte(get('importe'))
-  if (importe === null) return { ok: false, motivo: 'importe no válido' }
+  const conSigno = parseImporteConSigno(get('importe'))
+  if (conSigno === null || conSigno === 0) return { ok: false, motivo: 'importe no válido' }
+  const importe = Math.abs(conSigno)
 
-  const tipoRaw = normaliza(get('tipo'))
+  let tipoRaw = normaliza(get('tipo'))
+  // Extractos bancarios: sin tipo, un importe negativo es un gasto. Uno positivo
+  // solo se toma como ingreso si el fichero usa signos (`signoDecideTipo`, lo
+  // decide procesarCsv); si no, se mantiene el comportamiento clásico (gasto).
+  if (tipoRaw === '') tipoRaw = conSigno < 0 || !signoDecideTipo ? 'gasto' : 'ingreso'
   let tipo
   let esInversion = false
   if (tipoRaw === 'ingreso' || tipoRaw === 'income') tipo = 'ingreso'
@@ -149,9 +203,13 @@ export function procesarCsv(texto, mapeo, clavesExistentes) {
   const errores = []
   const duplicados = []
   const clavesLote = new Set()
+  // ¿El fichero expresa los gastos con signo negativo? Entonces, en filas sin
+  // tipo, los positivos son ingresos (formato típico de extracto bancario).
+  const signoDecideTipo =
+    mapeo.importe >= 0 && filas.some((c) => (parseImporteConSigno(c[mapeo.importe]) ?? 0) < 0)
 
   filas.forEach((campos, i) => {
-    const res = validarFila(campos, mapeo)
+    const res = validarFila(campos, mapeo, { signoDecideTipo })
     if (!res.ok) {
       errores.push({ fila: i + 2, motivo: res.motivo, campos })
       return

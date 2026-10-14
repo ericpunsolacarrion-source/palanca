@@ -6,6 +6,8 @@ import {
   claveMesActual,
   estimacionGastoMensual,
   filtrarMesActual,
+  filtrarPorMes,
+  gastoPorCategoria,
   resumenMensualMedio,
   totalesDe,
   ultimaReconciliacion,
@@ -29,13 +31,7 @@ function mesesDesde(fechaIso) {
 
 // Suma de gasto de consumo por categoría en un mes concreto (clave 'YYYY-MM').
 function gastoPorCategoriaMes(movimientos, clave) {
-  const mapa = {}
-  for (const m of movimientos) {
-    if (m.tipo !== 'gasto' || esInversion(m) || claveMes(m.fecha) !== clave) continue
-    const nombre = m.categoria?.nombre ?? 'Sin categoría'
-    mapa[nombre] = (mapa[nombre] ?? 0) + Number(m.importe)
-  }
-  return mapa
+  return Object.fromEntries(gastoPorCategoria(filtrarPorMes(movimientos, clave)))
 }
 
 // Categoría de consumo que más SUBE respecto al mes anterior (para insights).

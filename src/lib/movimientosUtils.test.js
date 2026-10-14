@@ -88,3 +88,39 @@ describe('lectura desde importe_centimos', () => {
     expect(bolsas(conCentimos).bolsaLiquidez).toBe(1000)
   })
 })
+
+// ── Correcciones del motor (auditoría 2026-10) ──────────────────────────────
+import { gastoPorCategoria, netoAjustes, sumarImportes, esConsumo } from './movimientosUtils'
+
+describe('gastoPorCategoria (desglose de consumo)', () => {
+  it('excluye inversión y AJUSTES: la suma cuadra con totalesDe().gastos', () => {
+    const mapa = gastoPorCategoria(MES)
+    expect([...mapa.keys()]).toEqual(['Comida']) // ni Inversion ni Ajuste
+    const suma = [...mapa.values()].reduce((a, b) => a + b, 0)
+    expect(suma).toBe(totalesDe(MES).gastos)
+  })
+
+  it('suma exacta en céntimos', () => {
+    const lista = [m('gasto', 0.1, 'Ocio', '2026-02-01'), m('gasto', 0.2, 'Ocio', '2026-02-02')]
+    expect(gastoPorCategoria(lista).get('Ocio')).toBe(0.3)
+    expect(sumarImportes(lista)).toBe(0.3)
+  })
+
+  it('esConsumo: solo gasto que no es inversión ni ajuste', () => {
+    expect(MES.map(esConsumo)).toEqual([false, true, false, false, false])
+  })
+})
+
+describe('netoAjustes', () => {
+  it('los ajustes negativos restan (no se suman en valor absoluto)', () => {
+    expect(netoAjustes(MES)).toBe(30) // +50 − 20
+  })
+})
+
+describe('bolsas a una fecha (contrato T2)', () => {
+  it('ignora movimientos con fecha posterior a `hasta`', () => {
+    const lista = [...MES, m('gasto', 100, 'Comida', '2026-12-31')]
+    expect(bolsas(lista, '2026-06-30').bolsaLiquidez).toBe(530)
+    expect(bolsas(lista).bolsaLiquidez).toBe(430)
+  })
+})

@@ -4,7 +4,7 @@
 > sesión: qué está vivo, dónde mirar, qué sigue. Mantenerlo al día tras cada
 > cambio relevante o despliegue.
 >
-> **Última actualización:** 2026-08-03 · **Último deploy:** `a549a33`
+> **Última actualización:** 2026-10-14 · **Último deploy:** `a549a33`
 
 ---
 
@@ -46,6 +46,19 @@ Frontera euros↔céntimos: `src/lib/importe.js` (`aCentimos`/`aEuros`).
    pierde (append-only).
 4. **Fase 4 — Reconciliación por atestación + residuo.** ⬜ El ajuste deja de
    ser un tapón; residuo derivado reabsorbible.
+
+## Auditoría del motor (2026-10-14, rama `claude/capabilities-overview-m3ry1u`)
+Corregido (con tests): carga paginada (>1000 movimientos ya no trunca el
+histórico ni el patrimonio); los **ajustes de saldo ya no cuentan como gasto**
+en desgloses por categoría (gráfico, presupuesto, píldoras, IA) — nueva fuente
+única `gastoPorCategoria`/`esConsumo`; patrimonio de la tarjeta **a hoy**
+(`bolsas(movs, hasta)`, T2); total del filtro "Ajuste" neto con signo;
+recurrentes no crean movimientos con fecha futura ni duplicados por doble
+toque; sumas exactas en céntimos en Inversiones; CSV: separador `;`, `1.234`
+como miles, importes negativos y columna `tipo` opcional (el signo decide).
+
+**Pendiente de decidir (contrato):** la categoría inicial de gasto `Ahorro`
+cuenta como consumo y resta patrimonio (contradice E4, traspaso neutro).
 
 ## Deuda técnica / cosas a vigilar
 - Housekeeping de Fase 1 (arriba).
