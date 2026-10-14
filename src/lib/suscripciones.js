@@ -45,19 +45,22 @@ function mediana(nums) {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2
 }
 
-function sumarDias(fechaIso, dias) {
-  const d = new Date(`${fechaIso}T00:00:00`)
-  d.setDate(d.getDate() + dias)
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${dd}`
+// Siguiente cobro sumando meses de calendario (el día se acota al último del mes).
+function proximaPorMeses(fechaIso, meses) {
+  const [y, m, d] = fechaIso.split('-').map(Number)
+  const destino = new Date(y, m - 1 + meses, 1)
+  const ultimo = new Date(destino.getFullYear(), destino.getMonth() + 1, 0).getDate()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${destino.getFullYear()}-${pad(destino.getMonth() + 1)}-${pad(Math.min(d, ultimo))}`
 }
 
 // Periodicidades reconocidas: [nombre, días típicos, rango aceptado, cargos/año].
 const PERIODOS = [
-  { id: 'mensual', dias: 30, min: 26, max: 35, porAnio: 12, minCargos: 3 },
-  { id: 'anual', dias: 365, min: 330, max: 400, porAnio: 1, minCargos: 2 },
+  { id: 'mensual', meses: 1, dias: 30, min: 26, max: 35, porAnio: 12, minCargos: 3 },
+  { id: 'bimestral', meses: 2, dias: 61, min: 55, max: 67, porAnio: 6, minCargos: 3 },
+  { id: 'trimestral', meses: 3, dias: 91, min: 84, max: 100, porAnio: 4, minCargos: 2 },
+  { id: 'semestral', meses: 6, dias: 182, min: 170, max: 196, porAnio: 2, minCargos: 2 },
+  { id: 'anual', meses: 12, dias: 365, min: 330, max: 400, porAnio: 1, minCargos: 2 },
 ]
 
 // Clave del comercio de un movimiento: la fuente/concepto si existe; si no, la nota.
@@ -144,11 +147,14 @@ export function detectarSuscripciones(movimientos, recurrentes = [], opciones = 
       clave,
       nombre: ultimo.fuente?.nombre?.trim() || nombreBonito(clave),
       periodicidad: periodo.id,
+      periodoMeses: periodo.meses,
+      // Un mes en que se cobra (para los no mensuales): el del último cargo.
+      mesInicio: Number(ultimo.fecha.slice(5, 7)),
       importe: importeCent / 100,
       costeAnual: (importeCent * periodo.porAnio) / 100,
       diaMes: Number(ultimo.fecha.slice(8, 10)),
       ultimaFecha: ultimo.fecha,
-      proximaFecha: sumarDias(ultimo.fecha, periodo.dias),
+      proximaFecha: proximaPorMeses(ultimo.fecha, periodo.meses),
       nCargos: porDia.length,
       subida,
       categoriaId: ultimo.categoria_id ?? ultimo.categoria?.id ?? null,

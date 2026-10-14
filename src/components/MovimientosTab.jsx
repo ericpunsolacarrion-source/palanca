@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import RegistroMovimiento from './RegistroMovimiento'
 import ListaMovimientos from './ListaMovimientos'
-import Recurrentes from './Recurrentes'
 import ImportadorCsv from './ImportadorCsv'
 import { esAjuste, esInversion, esTraspaso, formatearEuros } from '../lib/categorias'
 import { esConsumo, netoAjustes, sumarImportes, totalesDe } from '../lib/movimientosUtils'
-import { useRecurrentes } from '../lib/useRecurrentes'
 
 const ETIQUETA_FILTRO = { ingreso: 'Ingresos', gasto: 'Gastos', inversion: 'Inversión', ajuste: 'Ajustes' }
 
@@ -53,7 +51,6 @@ export default function MovimientosTab({
 }) {
   const [sub, setSub] = useState('nuevo')
   const [filtroHist, setFiltroHist] = useState('todos')
-  const { pendientes } = useRecurrentes(usuarioId)
 
   const movsHistorial = useMemo(
     () => (filtroHist === 'todos' ? movimientos : movimientos.filter((m) => coincideFiltro(m, filtroHist))),
@@ -109,14 +106,6 @@ export default function MovimientosTab({
         </button>
         <button
           type="button"
-          className={sub === 'recurrentes' ? 'activo' : ''}
-          onClick={() => cambiarSub('recurrentes')}
-        >
-          Base
-          {pendientes.length > 0 && <span className="sub-tab-badge">{pendientes.length}</span>}
-        </button>
-        <button
-          type="button"
           className={sub === 'historial' ? 'activo' : ''}
           onClick={() => cambiarSub('historial')}
         >
@@ -140,7 +129,6 @@ export default function MovimientosTab({
         />
       )}
 
-      {sub === 'recurrentes' && <Recurrentes usuarioId={usuarioId} movimientos={movimientos} onRegistrado={onGuardado} />}
 
       {sub === 'importar' && (
         <ImportadorCsv usuarioId={usuarioId} movimientos={movimientos} onImportado={onGuardado} />

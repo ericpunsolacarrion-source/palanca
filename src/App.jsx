@@ -28,6 +28,7 @@ import Pildora from './components/Pildora'
 import ProyeccionFuturo from './components/ProyeccionFuturo'
 import { pildorasDashboard, elegirPildora, firmaDatos, limpiarPildoras } from './lib/pildoras'
 import { usePresupuesto } from './lib/usePresupuesto'
+import { useRecurrentes } from './lib/useRecurrentes'
 import { useObjetivosAhorro } from './lib/useObjetivosAhorro'
 import { DatosCompartidosProvider } from './lib/DatosCompartidos'
 import RecordatorioBanner from './components/RecordatorioBanner'
@@ -41,6 +42,7 @@ import Confirmador from './components/Confirmador'
 import Hitos from './components/Hitos'
 import Logros from './components/Logros'
 import Patrimonio from './components/Patrimonio'
+import AvisosCobros from './components/AvisosCobros'
 import './App.css'
 
 // Pestañas no iniciales cargadas bajo demanda (code-splitting): aligeran el
@@ -50,6 +52,7 @@ const Presupuesto = lazy(() => import('./components/Presupuesto'))
 const PlanificacionFutura = lazy(() => import('./components/PlanificacionFutura'))
 const Inversiones = lazy(() => import('./components/Inversiones'))
 const Simulador = lazy(() => import('./components/Simulador'))
+const Recurrentes = lazy(() => import('./components/Recurrentes'))
 const Consultor = lazy(() => import('./components/Consultor'))
 
 const CargandoVista = () => (
@@ -216,6 +219,9 @@ function App() {
   // los reparte por contexto (DatosCompartidosProvider). Evita que 3+3
   // componentes los pidan por su cuenta y mantiene una sola fuente fresca.
   const presupuestoData = usePresupuesto(usuarioId)
+  // Compromisos de Base (suscripciones, recibos): globo de pendientes en la
+  // navegación y avisos de próximos cobros en el dashboard.
+  const { items: recurrentes, pendientes: recurrentesPendientes, cargando: cargandoRecurrentes } = useRecurrentes(usuarioId)
   const objetivosData = useObjetivosAhorro(usuarioId)
   const { objetivoInversionMensual } = presupuestoData
   const [descartesPildora, setDescartesPildora] = useState(0)
@@ -339,6 +345,13 @@ function App() {
                     (métricas + tasa de ahorro), luego lo conseguido (bolsas y
                     patrimonio) y el resto de gráficos del periodo. La proyección de
                     futuro baja: es valiosa pero no prioritaria. */}
+                <AvisosCobros
+                  cargando={cargandoRecurrentes}
+                  usuarioId={usuarioId}
+                  recurrentes={recurrentes}
+                  movimientos={movimientos}
+                  onVerSuscripciones={() => irAPestana('suscripciones')}
+                />
                 <PeriodoSelector meses={mesesRango} valor={mesActivoDash} onCambiar={setMesDashboard} />
                 <MetricasPrincipales
                   usuarioId={usuarioId}
@@ -403,6 +416,15 @@ function App() {
           />
         )}
 
+        {pestana === 'suscripciones' && (
+          <Recurrentes
+            key="suscripciones"
+            usuarioId={usuarioId}
+            movimientos={movimientos}
+            onRegistrado={onGuardado}
+          />
+        )}
+
         {pestana === 'presupuesto' && (
           <div key="presupuesto" className="vista">
             <Presupuesto usuarioId={usuarioId} movimientos={movimientosMes} gastoEstimado={gastoEstimado} />
@@ -433,7 +455,7 @@ function App() {
         </Suspense>
       </main>
 
-      <BottomNav activa={pestana} onCambiar={irAPestana} />
+      <BottomNav activa={pestana} onCambiar={irAPestana} avisos={{ suscripciones: recurrentesPendientes.length }} />
       <Toaster />
       <Confirmador />
       {verCuenta && (

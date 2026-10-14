@@ -50,6 +50,8 @@ export default function SuscripcionesDetectadas({ usuarioId, movimientos, recurr
       fuenteId: d.fuenteId,
       diaMes: d.diaMes,
       confirmar: false,
+      periodoMeses: d.periodoMeses,
+      mesInicio: d.mesInicio,
     })
     setAnadiendo(null)
   }
@@ -75,8 +77,9 @@ export default function SuscripcionesDetectadas({ usuarioId, movimientos, recurr
               <div className="tb-row-main">
                 <span className="tb-row-nombre">{d.nombre}</span>
                 <span className="tb-row-bio">
-                  {mensual ? `${formatearEuros(d.importe)}/mes · día ${d.diaMes}` : `${formatearEuros(d.importe)}/año · renueva ${formatearFecha(d.proximaFecha)}`}
-                  {mensual && ` · ${d.nCargos} cargos`}
+                  {mensual
+                    ? `${formatearEuros(d.importe)}/mes · día ${d.diaMes} · ${d.nCargos} cargos`
+                    : `${formatearEuros(d.importe)} ${d.periodicidad} · próximo ${formatearFecha(d.proximaFecha)}`}
                 </span>
                 {d.subida && (
                   <span className="tb-detectada-subida">
@@ -85,18 +88,14 @@ export default function SuscripcionesDetectadas({ usuarioId, movimientos, recurr
                 )}
               </div>
               <div className="tb-detectada-acciones">
-                {mensual ? (
-                  <button
-                    type="button"
-                    className="tb-detectada-anadir"
-                    disabled={anadiendo === d.clave}
-                    onClick={() => anadir(d)}
-                  >
-                    {anadiendo === d.clave ? '…' : 'Añadir'}
-                  </button>
-                ) : (
-                  <span className="tb-detectada-anual">anual</span>
-                )}
+                <button
+                  type="button"
+                  className="tb-detectada-anadir"
+                  disabled={anadiendo === d.clave}
+                  onClick={() => anadir(d)}
+                >
+                  {anadiendo === d.clave ? '…' : 'Añadir'}
+                </button>
                 <button
                   type="button"
                   className="tb-detectada-descartar"

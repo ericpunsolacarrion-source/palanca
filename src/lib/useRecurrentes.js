@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import { claveMesActual } from './movimientosUtils'
+import { tocaEnMes } from './periodicidad'
 import { aCentimos } from './importe'
 import { toast } from './toast'
 
@@ -47,6 +48,9 @@ function aItem(row, infoPorRec) {
     categoriaNombre: row.categoria_nombre,
     fuenteId: row.fuente_id,
     diaMes: row.dia_mes,
+    // Periodicidad (columnas opcionales: sin el SQL de periodicidad, mensual).
+    periodoMeses: row.periodo_meses ?? 1,
+    mesInicio: row.mes_inicio ?? null,
     confirmar: row.confirmar,
     activo: row.activo,
     desde: row.created_at,
@@ -91,6 +95,31 @@ async function migrarDesdeLS(usuarioId, legacy) {
         )
     }
   }
+}
+
+// Columnas de periodicidad normalizadas: mensual → mes_inicio null.
+function camposPeriodo(datos) {
+  const periodo = [1, 2, 3, 6, 12].includes(Number(datos.periodoMeses)) ? Number(datos.periodoMeses) : 1
+  return {
+    periodo_meses: periodo,
+    mes_inicio: periodo === 1 ? null : Math.min(12, Math.max(1, Number(datos.mesInicio) || 1)),
+  }
+}
+
+// Guarda intentando incluir la periodicidad. Si la BD aún no tiene esas
+// columnas (SQL de supabase-schema-periodicidad.sql sin ejecutar), reintenta
+// sin ellas: un compromiso mensual se guarda igual; uno no mensual se guarda
+// como mensual y se avisa. Devuelve el error final o null.
+async function guardarConPeriodo(fila, operacion) {
+  const { error } = await operacion(fila)
+  if (!error) return null
+  if (!/periodo_meses|mes_inicio/.test(error.message || '')) return error
+  const { periodo_meses: periodo, mes_inicio: _mi, ...sinPeriodo } = fila
+  const { error: error2 } = await operacion(sinPeriodo)
+  if (!error2 && periodo !== 1) {
+    toast('Guardado como mensual: falta activar las periodicidades en la base de datos.', 'error')
+  }
+  return error2
 }
 
 // Pub/sub para que todas las instancias (badge de la pestaña y vista de gestión)
@@ -163,7 +192,7 @@ export function useRecurrentes(usuarioId) {
   const crear = useCallback(
     async (datos) => {
       if (!usuarioId) return
-      const { error } = await supabase.from('recurrentes').insert({
+      const fila = {
         usuario_id: usuarioId,
         tipo: datos.tipo,
         nombre: datos.nombre,
@@ -175,7 +204,9 @@ export function useRecurrentes(usuarioId) {
         dia_mes: datos.diaMes ?? null,
         confirmar: !!datos.confirmar,
         activo: true,
-      })
+        ...camposPeriodo(datos),
+      }
+      const error = await guardarConPeriodo(fila, (f) => supabase.from('recurrentes').insert(f))
       if (!error) {
         await cargar()
         notificar()
@@ -196,6 +227,8 @@ export function useRecurrentes(usuarioId) {
         diaMes: 'dia_mes',
         confirmar: 'confirmar',
         activo: 'activo',
+        periodoMeses: 'periodo_meses',
+        mesInicio: 'mes_inicio',
       }
       const fila = {}
       for (const [k, col] of Object.entries(mapa)) {
@@ -203,7 +236,8 @@ export function useRecurrentes(usuarioId) {
       }
       if (Object.keys(fila).length === 0) return
       if ('importe' in campos) fila.importe_centimos = aCentimos(campos.importe)
-      const { error } = await supabase.from('recurrentes').update(fila).eq('id', id)
+      if ('periodoMeses' in campos) Object.assign(fila, camposPeriodo(campos))
+      const error = await guardarConPeriodo(fila, (f) => supabase.from('recurrentes').update(f).eq('id', id))
       if (!error) {
         await cargar()
         notificar()
@@ -269,8 +303,10 @@ export function useRecurrentes(usuarioId) {
   )
 
   const claveActual = claveMesActual()
+  // Pendientes = activos a los que TOCA cobrar este mes y aún sin confirmar
+  // (una suscripción anual no está "pendiente" los otros 11 meses).
   const pendientes = items.filter(
-    (it) => it.activo && !it.mesesAplicados.includes(claveActual),
+    (it) => it.activo && tocaEnMes(it, claveActual) && !it.mesesAplicados.includes(claveActual),
   )
 
   return { items, pendientes, cargando, modoLegacy, crear, actualizar, eliminar, marcarAplicado, desmarcar }

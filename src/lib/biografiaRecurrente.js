@@ -2,6 +2,8 @@
 // Todo derivado de lo que Palanca ya sabe (created_at + meses confirmados). Puro
 // y testeable; sin dependencias de React ni de la BD.
 
+import { proximoCobro } from './periodicidad'
+
 // Meses transcurridos desde que el compromiso existe: el más antiguo entre su
 // alta (created_at) y su confirmación más vieja.
 function mesesDesdeInicio(desdeIso, mesesAplicados, hoy) {
@@ -25,29 +27,6 @@ export function textoAntiguedad(meses) {
   return `${anios} ${anios === 1 ? 'año' : 'años'}`
 }
 
-// Próximo cobro a partir del día del mes: días restantes y texto.
-export function proximoCobro(diaMes, hoy = new Date()) {
-  if (!diaMes) return null
-  const y = hoy.getFullYear()
-  const m = hoy.getMonth()
-  const d = hoy.getDate()
-  const ultimoEste = new Date(y, m + 1, 0).getDate()
-  const diaEste = Math.min(diaMes, ultimoEste)
-  let objetivo
-  if (d <= diaEste) {
-    objetivo = new Date(y, m, diaEste)
-  } else {
-    const ultimoProx = new Date(y, m + 2, 0).getDate()
-    objetivo = new Date(y, m + 1, Math.min(diaMes, ultimoProx))
-  }
-  const dias = Math.round((objetivo - new Date(y, m, d)) / 86400000)
-  let texto
-  if (dias <= 0) texto = 'hoy'
-  else if (dias === 1) texto = 'mañana'
-  else texto = `en ${dias} días`
-  return { dias, texto }
-}
-
 // Biografía completa de un compromiso. `total` es una estimación honesta:
 // nº de meses confirmados × importe actual (exacto en los fijos; aproximado si
 // el importe varía, pero suficiente para transmitir el peso en el tiempo).
@@ -59,6 +38,8 @@ export function biografiaRecurrente(rec, hoy = new Date()) {
     meses,
     antiguedad: textoAntiguedad(meses),
     total: rec.totalCentimos != null ? rec.totalCentimos / 100 : nPagos * Number(rec.importe),
-    proximo: proximoCobro(rec.diaMes, hoy),
+    // Consciente de la periodicidad (mensual, trimestral, anual…). Sin día
+    // fijado en un mensual no hay fecha concreta que anunciar.
+    proximo: rec.diaMes || (rec.periodoMeses ?? 1) > 1 ? proximoCobro(rec, hoy) : null,
   }
 }

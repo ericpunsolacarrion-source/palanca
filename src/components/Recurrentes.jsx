@@ -6,6 +6,8 @@ import { useRecurrentes } from '../lib/useRecurrentes'
 import { formatearEuros } from '../lib/categorias'
 import { SELECT_MOVIMIENTO, claveMesActual, hoyIso } from '../lib/movimientosUtils'
 import { biografiaRecurrente } from '../lib/biografiaRecurrente'
+import { PERIODOS, costeAnual, costeMensual, periodoDe, textoCalendario, tocaEnMes } from '../lib/periodicidad'
+import CalendarioCobros from './CalendarioCobros'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
@@ -33,16 +35,22 @@ function fechaDelMes(rec) {
 
 const signo = (tipo) => (tipo === 'ingreso' ? '+' : '−')
 
+const MESES_LARGOS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
 // ── Héroe: el peso de tu dinero fijo ────────────────────────────────────────
-function Hero({ gastoMes, estado }) {
+function Hero({ gastoMes, gastoAnual, nActivos, estado }) {
   return (
     <header className="tb-hero">
-      <span className="tb-hero-label">Gastos fijos</span>
+      <span className="tb-hero-label">Suscripciones y gastos fijos</span>
       <div className="tb-hero-cifra">
         {formatearEuros(gastoMes)}
         <span className="tb-hero-mes">/mes</span>
       </div>
-      {gastoMes > 0 && <span className="tb-hero-anual">≈ {formatearEuros(Math.round(gastoMes * 12))} al año</span>}
+      {gastoAnual > 0 && (
+        <span className="tb-hero-anual">
+          {formatearEuros(Math.round(gastoAnual))} al año · {nActivos} {nActivos === 1 ? 'compromiso' : 'compromisos'}
+        </span>
+      )}
       {estado && (
         <div className={`tb-hero-estado ${estado.tono}`}>
           {estado.tono === 'ok' && <span className="tb-estado-punto" aria-hidden="true" />}
@@ -58,20 +66,24 @@ function CompromisoRow({ rec, mesActual, registrando, recien, onAbrir, onConfirm
   const bio = useMemo(() => biografiaRecurrente(rec), [rec])
   const esIngreso = rec.tipo === 'ingreso'
   const hecho = rec.aplicadoEn === mesActual
-  const toca = !hecho && bio.proximo && bio.proximo.dias <= 0
+  // No mensual y no le toca este mes: no hay nada que confirmar (sereno).
+  const fueraDeMes = !hecho && !tocaEnMes(rec, mesActual)
+  const toca = !hecho && !fueraDeMes && bio.proximo && bio.proximo.dias <= 0
+  const periodo = periodoDe(rec)
 
   // Biografía compacta: "2 años · 360 € · en 4 días". Si está hecho, el anillo
   // ya lo comunica, así que no repetimos el estado en texto.
   const partes = []
+  if (periodo.meses > 1) partes.push(periodo.etiqueta.toLowerCase())
   if (bio.meses >= 1) partes.push(bio.antiguedad)
   if (bio.total > 0) partes.push(formatearEuros(bio.total))
   if (!hecho && bio.proximo) partes.push(bio.proximo.texto)
 
-  const estadoAnillo = hecho ? 'hecho' : toca ? 'toca' : 'pendiente'
+  const estadoAnillo = hecho ? 'hecho' : toca ? 'toca' : fueraDeMes ? 'futuro' : 'pendiente'
 
   return (
     <div
-      className={`tb-row ${hecho ? 'is-hecho' : ''} ${!rec.activo ? 'is-pausado' : ''}`}
+      className={`tb-row ${hecho ? 'is-hecho' : ''} ${fueraDeMes ? 'is-futuro' : ''} ${!rec.activo ? 'is-pausado' : ''}`}
       role="button"
       tabIndex={0}
       onClick={() => onAbrir(rec)}
@@ -81,10 +93,11 @@ function CompromisoRow({ rec, mesActual, registrando, recien, onAbrir, onConfirm
         type="button"
         className={`tb-ring ${estadoAnillo} ${recien ? 'recien' : ''}`}
         disabled={registrando}
-        aria-label={hecho ? `Deshacer ${rec.nombre}` : `Confirmar ${rec.nombre}`}
+        aria-label={hecho ? `Deshacer ${rec.nombre}` : fueraDeMes ? `Ver ${rec.nombre}` : `Confirmar ${rec.nombre}`}
         onClick={(e) => {
           e.stopPropagation()
           if (hecho) return onDesmarcar(rec)
+          if (fueraDeMes) return onAbrir(rec)
           onConfirmarRapido(rec)
         }}
       >
@@ -101,6 +114,7 @@ function CompromisoRow({ rec, mesActual, registrando, recien, onAbrir, onConfirm
       <span className={`tb-row-importe ${esIngreso ? 'ingreso' : 'gasto'}`}>
         {signo(rec.tipo)}
         {formatearEuros(Number(rec.importe))}
+        {periodo.meses > 1 && <span className="tb-row-periodo">{periodo.corta}</span>}
       </span>
     </div>
   )
@@ -111,6 +125,7 @@ function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEd
   const bio = useMemo(() => biografiaRecurrente(rec), [rec])
   const esIngreso = rec.tipo === 'ingreso'
   const hecho = rec.aplicadoEn === mesActual
+  const fueraDeMes = !hecho && !tocaEnMes(rec, mesActual)
   const [importe, setImporte] = useState(Number(rec.importe))
   const [fecha, setFecha] = useState(() => fechaDelMes(rec))
 
@@ -119,6 +134,8 @@ function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEd
     { k: 'Pagado en total', v: bio.total > 0 ? formatearEuros(bio.total) : '—' },
     { k: 'Veces registrado', v: bio.nPagos > 0 ? `${bio.nPagos} ${bio.nPagos === 1 ? 'vez' : 'veces'}` : '—' },
     { k: 'Próximo', v: hecho ? 'hecho este mes' : bio.proximo?.texto ?? '—' },
+    { k: 'Cuándo', v: textoCalendario(rec) },
+    { k: rec.tipo === 'ingreso' ? 'Al año' : 'Te cuesta al año', v: formatearEuros(costeAnual(rec)) },
   ]
 
   return createPortal(
@@ -146,7 +163,11 @@ function DetalleSheet({ rec, mesActual, registrando, onCerrar, onRegistrar, onEd
           ))}
         </div>
 
-        {rec.activo && !hecho && (
+        {rec.activo && fueraDeMes && (
+          <p className="tb-hecho-nota tb-fuera-nota">Este mes no toca · próximo cobro {bio.proximo?.texto ?? '—'}</p>
+        )}
+
+        {rec.activo && !hecho && !fueraDeMes && (
           <div className="tb-confirmar">
             {rec.confirmar ? (
               <div className="tb-confirmar-campos">
@@ -198,6 +219,8 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
   const [importe, setImporte] = useState(inicial ? Number(inicial.importe) : null)
   const [categoriaId, setCategoriaId] = useState(inicial?.categoriaId ?? '')
   const [diaMes, setDiaMes] = useState(inicial?.diaMes ? String(inicial.diaMes) : '')
+  const [periodoMeses, setPeriodoMeses] = useState(inicial?.periodoMeses ?? 1)
+  const [mesInicio, setMesInicio] = useState(inicial?.mesInicio ?? new Date().getMonth() + 1)
   const [confirmarImporte, setConfirmarImporte] = useState(
     inicial ? Boolean(inicial.confirmar) : (inicial?.tipo ?? 'gasto') === 'ingreso',
   )
@@ -218,6 +241,8 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
       categoriaNombre: cat?.nombre ?? null,
       diaMes: diaNum,
       confirmar: confirmarImporte,
+      periodoMeses,
+      mesInicio: periodoMeses === 1 ? null : mesInicio,
     })
   }
 
@@ -238,6 +263,23 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
             <button key={c.id} type="button" className={`chip chip-sm ${categoriaId === c.id ? 'activo' : ''}`} onClick={() => setCategoriaId(c.id)}>{c.nombre}</button>
           ))}
         </div>
+
+        <div className="chips-fila chips-fila-compacta tb-periodos" role="group" aria-label="Cada cuánto se cobra">
+          {PERIODOS.map((p) => (
+            <button key={p.id} type="button" className={`chip chip-sm ${periodoMeses === p.meses ? 'activo' : ''}`} onClick={() => setPeriodoMeses(p.meses)}>{p.etiqueta}</button>
+          ))}
+        </div>
+
+        {periodoMeses > 1 && (
+          <label className="tb-mes-cobro">
+            <span>{periodoMeses === 12 ? 'Mes en que se cobra' : 'Un mes en que se cobra'}</span>
+            <select value={mesInicio} onChange={(e) => setMesInicio(Number(e.target.value))}>
+              {MESES_LARGOS.map((m, i) => (
+                <option key={m} value={i + 1}>{m}</option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <div className="tb-form-fila">
           <label className="tb-dia">
@@ -304,7 +346,7 @@ export default function Recurrentes({ usuarioId, movimientos, onRegistrado }) {
   }
 
   function confirmarRapido(rec) {
-    if (rec.confirmar) return setDetalle(rec) // variable → ajusta en la hoja
+    if (rec.confirmar || !tocaEnMes(rec, mesActual)) return setDetalle(rec) // variable → ajusta en la hoja
     registrar(rec, Number(rec.importe), fechaDelMes(rec))
   }
 
@@ -330,18 +372,28 @@ export default function Recurrentes({ usuarioId, movimientos, onRegistrado }) {
   const ordenados = useMemo(() => {
     const activos = items.filter((r) => r.activo)
     const pausados = items.filter((r) => !r.activo)
-    const pend = activos.filter((r) => r.aplicadoEn !== mesActual).sort((a, b) => (a.diaMes ?? 99) - (b.diaMes ?? 99))
+    // Por proximidad real del cobro (consciente de la periodicidad); los que no
+    // tocan este mes van después de los que sí.
+    const diasA = (r) => biografiaRecurrente(r).proximo?.dias ?? 999
+    const porToca = activos.filter((r) => r.aplicadoEn !== mesActual)
+    const pend = porToca.filter((r) => tocaEnMes(r, mesActual)).sort((a, b) => diasA(a) - diasA(b))
+    const futuros = porToca.filter((r) => !tocaEnMes(r, mesActual)).sort((a, b) => diasA(a) - diasA(b))
     const hechos = activos.filter((r) => r.aplicadoEn === mesActual)
-    return [...pend, ...hechos, ...pausados]
+    return [...pend, ...futuros, ...hechos, ...pausados]
   }, [items, mesActual])
 
-  const gastoMes = useMemo(
-    () => items.filter((r) => r.activo && r.tipo === 'gasto').reduce((s, r) => s + Number(r.importe), 0),
-    [items],
-  )
+  // Coste prorrateado: una anual de 120 € cuenta 10 €/mes (cifra mensual única).
+  const { gastoMes, gastoAnual, nActivos } = useMemo(() => {
+    const gastos = items.filter((r) => r.activo && r.tipo === 'gasto')
+    return {
+      gastoMes: gastos.reduce((s, r) => s + Math.round(costeMensual(r) * 100), 0) / 100,
+      gastoAnual: gastos.reduce((s, r) => s + Math.round(costeAnual(r) * 100), 0) / 100,
+      nActivos: gastos.length,
+    }
+  }, [items])
 
   const estado = useMemo(() => {
-    const pend = items.filter((r) => r.activo && r.aplicadoEn !== mesActual)
+    const pend = items.filter((r) => r.activo && r.aplicadoEn !== mesActual && tocaEnMes(r, mesActual))
     if (items.filter((r) => r.activo).length === 0) return null
     if (pend.length === 0) return { tono: 'ok', texto: 'Todo al día este mes' }
     const prox = pend
@@ -354,7 +406,9 @@ export default function Recurrentes({ usuarioId, movimientos, onRegistrado }) {
 
   return (
     <div className="tubase vista fade-in-up">
-      <Hero gastoMes={gastoMes} estado={estado} />
+      <Hero gastoMes={gastoMes} gastoAnual={gastoAnual} nActivos={nActivos} estado={estado} />
+
+      {items.some((r) => r.activo) && <CalendarioCobros items={items} onAbrir={setDetalle} />}
 
       {!cargando && (
         <SuscripcionesDetectadas
