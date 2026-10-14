@@ -25,6 +25,7 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [] }) {
   const [mensajes, setMensajes] = useState([])
   const [entrada, setEntrada] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [restantes, setRestantes] = useState(null) // preguntas que quedan hoy (null = sin dato)
   const { objetivos } = useObjetivosCompartidos()
   const finRef = useRef(null)
 
@@ -82,10 +83,14 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [] }) {
             ? 'Tu sesión ha caducado. Vuelve a iniciar sesión.'
             : datos.code === 'sin_configurar'
             ? 'El consultor todavía no está activado. Vuelve pronto.'
+            : datos.code === 'limite_diario'
+            ? datos.error
             : datos.error || 'Ahora mismo no puedo responder. Inténtalo en un momento.'
         setMensajes((prev) => [...prev, { rol: 'consultor', texto: aviso, error: true }])
+        if (datos.code === 'limite_diario') setRestantes(0)
       } else {
         setMensajes((prev) => [...prev, { rol: 'consultor', texto: datos.respuesta }])
+        if (typeof datos.restantes === 'number') setRestantes(datos.restantes)
       }
     } catch {
       setMensajes((prev) => [
@@ -223,14 +228,21 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [] }) {
                 placeholder="Escribe tu pregunta…"
                 aria-label="Tu pregunta"
                 maxLength={2000}
-                disabled={enviando}
+                disabled={enviando || restantes === 0}
               />
-              <button type="submit" disabled={enviando || !entrada.trim()}>
+              <button type="submit" disabled={enviando || !entrada.trim() || restantes === 0}>
                 Enviar
               </button>
             </form>
 
             <p className="consultor-disclaimer">
+              {restantes !== null && restantes <= 5 && (
+                <span className="consultor-restantes">
+                  {restantes === 0
+                    ? 'Sin preguntas por hoy · '
+                    : `Te ${restantes === 1 ? 'queda 1 pregunta' : `quedan ${restantes} preguntas`} hoy · `}
+                </span>
+              )}
               Orientación educativa, no asesoramiento financiero. No sustituye a un profesional.
             </p>
               </>

@@ -7133,3 +7133,9 @@ input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* Fulcro: contador de preguntas del día (discreto) */
+.consultor-restantes {
+  font-family: var(--fuente-mono);
+  color: var(--accent-2);
+}

@@ -9,18 +9,24 @@
 // promesas de rentabilidad.
 
 import Anthropic from '@anthropic-ai/sdk'
-import { usuarioDeLaPeticion } from './_auth.js'
+import { clienteDelUsuario, usuarioDeLaPeticion } from './_auth.js'
 
-// Modelo: el actual por defecto; se puede cambiar sin tocar código con la
-// variable de entorno CONSULTOR_MODELO (p. ej. 'claude-haiku-5-5', más barato).
-const MODELO = process.env.CONSULTOR_MODELO || 'claude-opus-5-5'
-// Esfuerzo de razonamiento: 'low' es el adecuado para un chat (rápido y
-// económico). Ajustable con CONSULTOR_ESFUERZO (low | medium | high).
+// ── Coste (fase inicial: gastar lo mínimo) ──────────────────────────────────
+// Modelo por defecto: Claude Haiku 5.5, el más económico ($0,10 / $0,50 por
+// millón de tokens de entrada / salida; ~0,1 céntimos por pregunta). Se puede
+// subir de modelo sin tocar código con CONSULTOR_MODELO (p. ej.
+// 'claude-opus-5-5' para respuestas más elaboradas, ~40× más caro).
+const MODELO = process.env.CONSULTOR_MODELO || 'claude-haiku-5-5'
+// Esfuerzo de razonamiento: 'low' (piensa poco o nada en preguntas sencillas).
 const ESFUERZO = process.env.CONSULTOR_ESFUERZO || 'low'
-// Techo de la respuesta (incluye el razonamiento interno). La brevedad la marca
-// el system prompt; esto solo evita cortes a mitad de frase.
-const MAX_TOKENS = 16000
+// Techo de la respuesta (incluye el razonamiento interno). Las respuestas son
+// de 2–4 párrafos; esto deja margen sin pagar de más (solo se paga lo usado).
+const MAX_TOKENS = 2000
 const MAX_RESUMEN = 30000 // caracteres del resumen (corta payloads abusivos)
+// Preguntas por usuario y día (se cuenta en la tabla fulcro_uso). 0 = sin límite.
+const LIMITE_DIARIO = Number(process.env.FULCRO_LIMITE_DIARIO ?? 10)
+// Respaldo automático ante rechazos: solo existe en los modelos grandes.
+const CON_RESPALDO = /^claude-(opus-5|opus-5-5|fable-5|fable-5-1|sonnet-5-5)$/.test(MODELO)
 
 // Tiempo máximo de la función en Vercel (s): una respuesta razonada puede
 // tardar más que el valor por defecto.
@@ -143,10 +149,33 @@ export default async function handler(req, res) {
     : ''
   mensajes.push({ role: 'user', content: `${contexto}Mi pregunta: ${pregunta.trim()}` })
 
+  // Límite diario por usuario (en el servidor: no se puede saltar desde la app).
+  // Si la tabla aún no existe (SQL sin ejecutar), no se bloquea: se responde
+  // igualmente y queda el tope de gasto de la cuenta de Anthropic.
+  const sb = clienteDelUsuario(req)
+  let usadasHoy = null
+  if (sb && LIMITE_DIARIO > 0) {
+    const inicioDia = new Date()
+    inicioDia.setUTCHours(0, 0, 0, 0)
+    const { count, error } = await sb
+      .from('fulcro_uso')
+      .select('id', { count: 'exact', head: true })
+      .eq('usuario_id', usuario.id)
+      .gte('created_at', inicioDia.toISOString())
+    if (!error) usadasHoy = count ?? 0
+    if (usadasHoy !== null && usadasHoy >= LIMITE_DIARIO) {
+      return res.status(429).json({
+        error: `Has usado tus ${LIMITE_DIARIO} preguntas de hoy. Mañana puedes seguir.`,
+        code: 'limite_diario',
+        restantes: 0,
+      })
+    }
+  }
+
   const client = new Anthropic() // lee ANTHROPIC_API_KEY del entorno
 
   try {
-    const respuesta = await client.beta.messages.create({
+    const peticion = {
       model: MODELO,
       max_tokens: MAX_TOKENS,
       // El system prompt es idéntico en todas las peticiones: se cachea y las
@@ -154,16 +183,31 @@ export default async function handler(req, res) {
       system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
       messages: mensajes,
       output_config: { effort: ESFUERZO },
-      // Si los filtros de seguridad del modelo declinan una pregunta legítima,
-      // la API la reintenta en el modelo alternativo recomendado.
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-    })
+    }
+    const respuesta = CON_RESPALDO
+      ? // Si los filtros de seguridad declinan una pregunta legítima, la API la
+        // reintenta en el modelo alternativo recomendado.
+        await client.beta.messages.create({ ...peticion, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' })
+      : await client.messages.create(peticion)
+
+    // Registro de uso (para el límite diario y para ver el coste real).
+    if (sb) {
+      const u = respuesta.usage || {}
+      await sb.from('fulcro_uso').insert({
+        usuario_id: usuario.id,
+        modelo: respuesta.model || MODELO,
+        tokens_entrada: (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0),
+        tokens_salida: u.output_tokens ?? 0,
+        tokens_cache: u.cache_read_input_tokens ?? 0,
+      })
+    }
+    const restantes = usadasHoy !== null ? Math.max(0, LIMITE_DIARIO - usadasHoy - 1) : null
 
     if (respuesta.stop_reason === 'refusal') {
       return res.status(200).json({
         respuesta:
           'Esa pregunta no la puedo responder. Si es sobre tus finanzas, prueba a formularla de otra manera.',
+        restantes,
       })
     }
 
@@ -173,7 +217,7 @@ export default async function handler(req, res) {
       .join('')
       .trim()
 
-    return res.status(200).json({ respuesta: texto || 'No he sabido qué responder. Prueba a reformular.' })
+    return res.status(200).json({ respuesta: texto || 'No he sabido qué responder. Prueba a reformular.', restantes })
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError) {
       console.error('Consultor: API key inválida')

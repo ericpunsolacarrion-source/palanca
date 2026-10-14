@@ -24,3 +24,18 @@ export async function usuarioDeLaPeticion(req) {
     return null
   }
 }
+
+// Cliente de Supabase que actúa COMO el usuario de la petición (su JWT): las
+// consultas pasan por RLS igual que desde la app. Para registrar el uso de Fulcro
+// y contar sus preguntas del día. null si falta configuración o token.
+export function clienteDelUsuario(req) {
+  const cabecera = req.headers?.authorization || req.headers?.Authorization || ''
+  const token = cabecera.startsWith('Bearer ') ? cabecera.slice(7).trim() : ''
+  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
+  const key = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+  if (!token || !url || !key) return null
+  return createClient(url, key, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+}
