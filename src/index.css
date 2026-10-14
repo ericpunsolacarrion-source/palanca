@@ -1,63 +1,67 @@
 :root {
-  /* Color */
-  --text: #a8adc0;
-  --text-h: #f5f6fa;
-  --bg: #0a0b10;
-  --card-bg: rgba(20, 22, 31, 0.86);
-  --card-bg-2: rgba(26, 29, 41, 0.86);
-  --card-solida: #14161f;
-  --border: #262939;
-  --borde-brillo: linear-gradient(
-    160deg,
-    rgba(139, 92, 246, 0.4),
-    rgba(38, 41, 57, 0.9) 35%,
-    rgba(38, 41, 57, 0.9) 70%,
-    rgba(34, 211, 238, 0.25)
-  );
-  --accent: #8b5cf6;
-  --accent-2: #22d3ee;
-  --accent-glow: rgba(139, 92, 246, 0.35);
-  --ingreso: #34e89e;
-  --gasto: #ff5d7e;
-  --inversion: #f5b93d;
-  --inversion-glow: rgba(245, 185, 61, 0.35);
+  /* ── Sistema visual v2 (ver docs/DISENO.md) ─────────────────────────────
+     Sobrio y preciso como un banco moderno; futurista por la precisión
+     (tipografía técnica, líneas finas, cifras tabulares), NO por el neón.
+     Un solo acento. Sin degradados de marca ni resplandores. */
 
-  /* Paleta categórica para gráficos (colores distinguibles, NO semánticos:
-     una categoría de gasto no es "ingreso" ni "gasto"). Se usa en el donut de
-     gasto por categoría; centralizada aquí para theming coherente. */
-  --cat-1: #8b5cf6;
-  --cat-2: #22d3ee;
-  --cat-3: #34e89e;
-  --cat-4: #ff5d7e;
-  --cat-5: #f59e0b;
-  --cat-6: #64748b;
+  /* Superficies (de abajo arriba) y líneas */
+  --bg: #0a0b0e;
+  --card-bg: #111318;
+  --card-bg-2: #171a21;
+  --card-solida: #111318;
+  --border: #1f232b;
+  --borde-fuerte: #2c313c;
+  --borde-brillo: linear-gradient(var(--border), var(--border));
 
-  /* Tinta oscura: texto/iconos legibles SOBRE rellenos de color (botones,
-     chips, checks, píldoras). Cada una afinada a su familia de color; el blanco
-     es para rellenos oscuros de marca. */
-  --tinta-accent: #0a0b10;
-  --tinta-cian: #06121a;
-  --tinta-pildora: #04222a;
-  --tinta-ingreso: #05281a;
-  --tinta-gasto: #33060f;
-  --tinta-inversion: #2a1c00;
+  /* Texto */
+  --text: #9aa0ad; /* secundario: etiquetas, ayudas (7:1 sobre --card-bg) */
+  --text-h: #eceef2; /* principal: cifras y títulos */
+  --text-3: #6b7280; /* terciario: metadatos */
+
+  /* Acento único (índigo). --accent rellena (texto blanco 4,6:1);
+     --accent-2 es su versión clara para texto, enlaces y estados activos. */
+  --accent: #5b67e8;
+  --accent-2: #8e98ff;
+  --accent-glow: rgba(142, 152, 255, 0.16); /* solo anillos de foco y selección */
+
+  /* Semánticos, calmados (legibles sin gritar) */
+  --ingreso: #3ccb8a;
+  --gasto: #f06a7e;
+  --inversion: #e3b04b;
+  --inversion-glow: rgba(227, 176, 75, 0.14);
+
+  /* Paleta categórica para gráficos (distinguible, no semántica) */
+  --cat-1: #7b8cff;
+  --cat-2: #4cc3d9;
+  --cat-3: #3ccb8a;
+  --cat-4: #f06a7e;
+  --cat-5: #e3b04b;
+  --cat-6: #8a93a3;
+
+  /* Tinta sobre rellenos de color */
+  --tinta-accent: #ffffff;
+  --tinta-cian: #0a0b0e;
+  --tinta-pildora: #0a0b0e;
+  --tinta-ingreso: #04140d;
+  --tinta-gasto: #1f070b;
+  --tinta-inversion: #1c1303;
   --tinta-inversion-palida: #1a1206;
   --blanco: #fff;
 
-  /* Tonos acompañantes de degradado (extienden los colores de marca; no se usan
-     como color con significado propio, solo como paradas de gradiente). */
-  --accent-oscuro: #6d43d8;
-  --gasto-claro: #ff9d5c;
-  --inversion-claro: #ffd77a;
-  --inversion-palido: #ffe4a8;
-  --inversion-oscuro: #b8860b;
+  /* Paradas antiguas de degradado: igualadas al color base (sin degradado) */
+  --accent-oscuro: var(--accent);
+  --gasto-claro: #f4949f;
+  --inversion-claro: var(--inversion);
+  --inversion-palido: var(--inversion);
+  --inversion-oscuro: var(--inversion);
 
-  /* Espaciado */
+  /* Espaciado (rejilla de 4) */
   --sp-1: 4px;
   --sp-2: 8px;
   --sp-3: 12px;
   --sp-4: 16px;
   --sp-5: 24px;
+  --sp-6: 32px;
 
   /* Radios */
   --radio-s: 8px;
@@ -65,22 +69,26 @@
   --radio-l: 16px;
   --radio-pastilla: 999px;
 
-  /* Sombras y brillos */
-  --sombra-card: 0 8px 24px -12px rgba(0, 0, 0, 0.55);
-  --glow-accent: 0 0 16px -4px var(--accent-glow);
-  --glow-inversion: 0 0 14px -4px var(--inversion-glow);
+  /* Elevación: plana; la jerarquía la dan superficie y línea, no sombras */
+  --sombra-card: 0 0 #0000;
+  --glow-accent: 0 0 #0000;
+  --glow-inversion: 0 0 #0000;
 
   /* Tipografía */
-  --fs-micro: 10px;
+  --fuente: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fuente-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --fs-micro: 11px;
   --fs-xs: 12px;
   --fs-s: 13px;
   --fs-base: 15px;
-  --fs-m: 18px;
-  --fs-l: 24px;
-  --fs-xl: 34px;
-  --fs-hero: 42px;
+  --fs-m: 17px;
+  --fs-l: 22px;
+  --fs-xl: 32px;
+  --fs-hero: 40px;
 
-  font: 16px/145% system-ui, 'Segoe UI', Roboto, sans-serif;
+  font: 16px/1.45 var(--fuente);
+  font-feature-settings: 'ss01' on;
+  letter-spacing: -0.006em;
   color-scheme: dark;
   color: var(--text);
   background: var(--bg);
@@ -111,11 +119,7 @@ body,
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at 20% 0%, rgba(139, 92, 246, 0.14), transparent 45%),
-    radial-gradient(circle at 85% 15%, rgba(34, 211, 238, 0.09), transparent 40%),
-    radial-gradient(circle at 60% 95%, rgba(139, 92, 246, 0.07), transparent 45%),
-    var(--bg);
+  background: var(--bg);
   overflow: hidden;
 }
 
@@ -124,7 +128,7 @@ h2 {
   color: var(--text-h);
   font-weight: 600;
   margin: 0 0 var(--sp-3);
-  letter-spacing: -0.3px;
+  letter-spacing: -0.02em;
 }
 
 h1 {
@@ -152,11 +156,11 @@ button {
 }
 
 button:hover {
-  filter: brightness(1.12);
+  filter: brightness(1.08);
 }
 
 button:active {
-  transform: scale(0.96);
+  transform: scale(0.98);
 }
 
 button:focus-visible,
@@ -164,6 +168,7 @@ input:focus-visible,
 select:focus-visible {
   outline: 2px solid var(--accent-2);
   outline-offset: 2px;
+  border-radius: 6px;
 }
 
 input,

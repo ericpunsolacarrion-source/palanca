@@ -43,6 +43,7 @@ import Hitos from './components/Hitos'
 import Logros from './components/Logros'
 import Patrimonio from './components/Patrimonio'
 import AvisosCobros from './components/AvisosCobros'
+import Icono, { Marca } from './components/Icono'
 import './App.css'
 
 // Pestañas no iniciales cargadas bajo demanda (code-splitting): aligeran el
@@ -74,6 +75,8 @@ const DashboardSkeleton = () => (
 )
 
 const MS_POR_DIA = 1000 * 60 * 60 * 24
+const FMT_HOY = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+const capitalizar = (s) => s.charAt(0).toUpperCase() + s.slice(1)
 
 function App() {
   // Acceso SOLO con Supabase Auth (el ID antiguo en localStorage se retiró tras
@@ -288,18 +291,17 @@ function App() {
     <DatosCompartidosProvider presupuesto={presupuestoData} objetivos={objetivosData}>
     <div className="app">
       <header className="app-header">
-        <h1>Palanca</h1>
+        <h1 className="app-logo">
+          <Marca tam={24} />
+          Palanca
+        </h1>
         <button
           className="app-cuenta"
           onClick={() => setVerCuenta(true)}
           aria-label={`Tu cuenta${session?.user?.email ? ` (${session.user.email})` : ''}`}
           title={session?.user?.email ?? 'Tu cuenta'}
         >
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <circle cx="12" cy="8" r="4" />
-            <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
-          </svg>
-          Cuenta
+          <Icono nombre="cuenta" tam={18} />
         </button>
       </header>
 
@@ -315,7 +317,10 @@ function App() {
 
         {pestana === 'dashboard' && (
           <div key="dashboard" className="vista">
-            {perfil.nombre && <p className="saludo-usuario">Hola, {perfil.nombre} 👋</p>}
+            <div className="saludo">
+              <p className="saludo-usuario">{perfil.nombre ? `Hola, ${perfil.nombre}` : 'Hola'}</p>
+              <p className="saludo-fecha">{capitalizar(FMT_HOY.format(new Date()))}</p>
+            </div>
             {/* Primera carga (sin datos aún): skeleton en vez de dashboard vacío.
                 En refetch (ya hay movimientos) NO se muestra, para no parpadear. */}
             {cargando && movimientos.length === 0 && <DashboardSkeleton />}

@@ -1,10 +1,12 @@
+import Icono from './Icono'
+
 const PESTANAS = [
-  { id: 'dashboard', etiqueta: 'Inicio', icono: '◆' },
-  { id: 'movimientos', etiqueta: 'Movimientos', icono: '≡' },
-  { id: 'suscripciones', etiqueta: 'Fijos', icono: '↻' },
-  { id: 'presupuesto', etiqueta: 'Presupuesto', icono: '◐' },
-  { id: 'inversiones', etiqueta: 'Inversión', icono: '▲' },
-  { id: 'simulador', etiqueta: 'Simulador', icono: '◎' },
+  { id: 'dashboard', etiqueta: 'Inicio', icono: 'inicio' },
+  { id: 'movimientos', etiqueta: 'Movimientos', icono: 'movimientos' },
+  { id: 'suscripciones', etiqueta: 'Fijos', icono: 'fijos' },
+  { id: 'presupuesto', etiqueta: 'Presupuesto', icono: 'presupuesto' },
+  { id: 'inversiones', etiqueta: 'Inversión', icono: 'inversion' },
+  { id: 'simulador', etiqueta: 'Simulador', icono: 'simulador' },
 ]
 
 // `avisos`: { [idPestaña]: número } → globo de pendientes (p. ej. cobros por
@@ -21,7 +23,7 @@ export default function BottomNav({ activa, onCambiar, avisos = {} }) {
           aria-current={activa === p.id ? 'page' : undefined}
         >
           <span className="nav-icono">
-            {p.icono}
+            <Icono nombre={p.icono} tam={22} />
             {avisos[p.id] > 0 && <span className="nav-badge">{avisos[p.id]}</span>}
           </span>
           <span className="nav-etiqueta">{p.etiqueta}</span>

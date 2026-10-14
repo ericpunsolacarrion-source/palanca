@@ -25,7 +25,7 @@ A futuro (Fase 2): familias, login real con Supabase Auth.
 
 ## Navegación
 
-Barra inferior **siempre visible** (solo el contenido central hace scroll), con blur y 6 pestañas: Inicio · Movimientos · **Fijos** (suscripciones y gastos fijos, con globo de pendientes del mes) · Presupuesto · Inversión · Simulador. En escritorio (≥860 px) se convierte en píldoras horizontales.
+Cabecera con la **marca** (palanca + "Palanca") y el acceso a la cuenta (icono). Barra inferior **siempre visible** (solo el contenido central hace scroll), con **iconos SVG propios** (`Icono.jsx`), indicador del activo y 6 pestañas: Inicio · Movimientos · **Fijos** (suscripciones y gastos fijos, con globo de pendientes del mes) · Presupuesto · Inversión · Simulador. En escritorio (≥860 px) se convierte en píldoras horizontales.
 
 ### 3. Dashboard
 Escaparate del **periodo elegido**, ordenado por importancia (métricas y tasa de ahorro arriba; la proyección de futuro, al final):

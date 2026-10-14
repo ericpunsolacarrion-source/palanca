@@ -19,7 +19,7 @@
 
 .app-header h1 {
   margin: 0;
-  background: linear-gradient(90deg, var(--text-h), var(--accent-2));
+  background: linear-gradient(var(--text-h), var(--text-h));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -109,7 +109,6 @@ main {
 
 .nav-item.activo {
   color: var(--accent-2);
-  text-shadow: 0 0 12px var(--accent-glow);
 }
 
 /* Pantalla ID */
@@ -122,7 +121,7 @@ main {
 }
 
 .pantalla-id h1 {
-  background: linear-gradient(90deg, var(--text-h), var(--accent-2));
+  background: linear-gradient(var(--text-h), var(--text-h));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -161,7 +160,7 @@ main {
   padding: 28px 24px;
   border-radius: var(--radio-l);
   background:
-    linear-gradient(160deg, var(--card-bg-2), var(--card-bg)) padding-box,
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
     var(--borde-brillo) border-box;
   border: 1px solid transparent;
   box-shadow: var(--sombra-card);
@@ -171,7 +170,7 @@ main {
 .acceso-logo {
   margin: 0;
   font-size: 30px;
-  background: linear-gradient(90deg, var(--text-h), var(--accent-2));
+  background: linear-gradient(var(--text-h), var(--text-h));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -206,7 +205,7 @@ main {
 }
 
 .acceso-tabs button.activo {
-  background: rgba(139, 92, 246, 0.18);
+  background: rgba(142, 152, 255, 0.18);
   color: var(--text-h);
 }
 
@@ -244,7 +243,7 @@ main {
 }
 
 .acceso-form input.campo-ok {
-  border-color: rgba(52, 232, 158, 0.5);
+  border-color: rgba(60, 203, 138, 0.5);
 }
 
 /* Campo de contraseña con botón de ojo (mostrar/ocultar) */
@@ -287,7 +286,7 @@ main {
   padding: 13px;
   border: none;
   border-radius: var(--radio-m);
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   color: var(--tinta-accent);
   font-weight: 700;
   font-size: var(--fs-base);
@@ -311,8 +310,8 @@ main {
 .acceso-aviso {
   font-size: var(--fs-s);
   color: var(--ingreso);
-  background: rgba(52, 232, 158, 0.08);
-  border: 1px solid rgba(52, 232, 158, 0.25);
+  background: rgba(60, 203, 138, 0.08);
+  border: 1px solid rgba(60, 203, 138, 0.25);
   border-radius: var(--radio-s);
   padding: 8px 10px;
   margin: 4px 0 0;
@@ -526,9 +525,9 @@ main {
   width: 100%;
   margin-top: 10px;
   padding: 11px;
-  border: 1px solid rgba(255, 93, 126, 0.4);
+  border: 1px solid rgba(240, 106, 126, 0.4);
   border-radius: var(--radio-m);
-  background: rgba(255, 93, 126, 0.1);
+  background: rgba(240, 106, 126, 0.1);
   color: var(--gasto);
   font-weight: 600;
   cursor: pointer;
@@ -536,7 +535,7 @@ main {
 }
 
 .cuenta-borrar:hover:not(:disabled) {
-  background: rgba(255, 93, 126, 0.18);
+  background: rgba(240, 106, 126, 0.18);
 }
 
 .cuenta-borrar:disabled {
@@ -593,7 +592,7 @@ main {
 .opciones-objetivo .opcion.activo {
   border-color: var(--accent);
   background: var(--accent-glow);
-  box-shadow: 0 0 20px -6px var(--accent-glow);
+  box-shadow: none;
 }
 
 .onboarding-email {
@@ -632,7 +631,7 @@ main {
   padding: 18px;
   border-radius: var(--radio-l);
   background:
-    linear-gradient(160deg, rgba(139, 92, 246, 0.16), rgba(34, 211, 238, 0.06)) padding-box,
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
     var(--borde-brillo) border-box;
   border: 1px solid transparent;
   box-shadow: var(--sombra-card);
@@ -645,7 +644,7 @@ main {
   letter-spacing: 0.6px;
   font-weight: 700;
   color: var(--accent-2);
-  background: rgba(34, 211, 238, 0.12);
+  background: rgba(142, 152, 255, 0.12);
   padding: 3px 9px;
   border-radius: var(--radio-pastilla);
 }
@@ -700,7 +699,7 @@ main {
 
 .pp-paso.hecho .pp-check {
   border-color: transparent;
-  background: linear-gradient(135deg, var(--ingreso), var(--accent-2));
+  background: var(--ingreso);
   color: var(--tinta-cian);
 }
 
@@ -723,7 +722,7 @@ main {
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--tinta-accent);
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   cursor: pointer;
   transition: opacity 0.15s ease, transform 0.1s ease;
 }
@@ -756,7 +755,7 @@ main {
 
 /* Pista visual: email válido */
 .onboarding-email input.campo-ok {
-  border-color: rgba(52, 232, 158, 0.5);
+  border-color: rgba(60, 203, 138, 0.5);
 }
 
 .ayuda-mini {
@@ -766,7 +765,7 @@ main {
 
 .captura-email {
   background:
-    linear-gradient(160deg, var(--card-bg-2), var(--card-bg)) padding-box,
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
     var(--borde-brillo) border-box;
   border: 1px solid transparent;
   border-radius: var(--radio-l);
@@ -802,7 +801,7 @@ main {
   padding: 0 18px;
   border: none;
   border-radius: var(--radio-s);
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   color: white;
   font-weight: 600;
 }
@@ -817,7 +816,7 @@ main {
   padding: 12px;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   color: white;
   font-weight: 600;
 }
@@ -837,7 +836,7 @@ main {
   /* Cristal ligero sin backdrop-filter (demasiado costoso en móvil):
      translucidez sobre el degradado del fondo + borde con brillo */
   background:
-    linear-gradient(160deg, var(--card-bg-2), var(--card-bg)) padding-box,
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
     var(--borde-brillo) border-box;
   border: 1px solid transparent;
   border-radius: var(--radio-l);
@@ -872,7 +871,7 @@ button[type='submit'] {
   padding: 12px;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   color: white;
   font-weight: 600;
 }
@@ -900,7 +899,7 @@ button[type='submit']:disabled {
   background: var(--accent);
   color: white;
   border-color: var(--accent);
-  box-shadow: 0 0 16px -4px var(--accent-glow);
+  box-shadow: none;
 }
 
 /* Selector de 3 opciones (Gasto / Ingreso / Inversión) */
@@ -923,7 +922,7 @@ button[type='submit']:disabled {
 }
 
 .registro-movimiento.modo-inversion .btn-guardar-movimiento {
-  background: linear-gradient(90deg, var(--inversion), var(--inversion-claro));
+  background: var(--inversion);
   color: var(--tinta-inversion);
 }
 
@@ -985,7 +984,7 @@ button[type='submit']:disabled {
   background: var(--accent);
   color: white;
   border-color: var(--accent);
-  box-shadow: 0 0 14px -4px var(--accent-glow);
+  box-shadow: none;
 }
 
 .chip-nuevo {
@@ -1124,7 +1123,7 @@ button[type='submit']:disabled {
   border: 1px solid transparent;
   background:
     linear-gradient(var(--card-solida), var(--card-solida)) padding-box,
-    linear-gradient(135deg, var(--accent), var(--accent-2)) border-box;
+    linear-gradient(var(--accent), var(--accent)) border-box;
   color: var(--text-h);
   font-size: var(--fs-s);
   white-space: nowrap;
@@ -1161,7 +1160,7 @@ button[type='submit']:disabled {
 .chip-importe.activo {
   border-color: var(--accent);
   color: var(--text-h);
-  box-shadow: 0 0 12px -4px var(--accent-glow);
+  box-shadow: none;
 }
 
 /* Patrimonio: dos bolsas + reconciliación */
@@ -1169,7 +1168,7 @@ button[type='submit']:disabled {
   border: 1px solid var(--border);
   border-radius: var(--radio-l);
   padding: var(--sp-4);
-  background: linear-gradient(150deg, var(--card-bg-2), var(--card-bg));
+  background: linear-gradient(var(--card-bg), var(--card-bg));
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
@@ -1214,7 +1213,7 @@ button[type='submit']:disabled {
 }
 
 .bolsa-boton:hover {
-  border-color: rgba(245, 185, 61, 0.45);
+  border-color: rgba(227, 176, 75, 0.45);
 }
 
 .bolsa-boton:active {
@@ -1238,12 +1237,12 @@ button[type='submit']:disabled {
 
 .bolsa-dot.inversion {
   background: var(--inversion);
-  box-shadow: 0 0 8px -1px var(--inversion-glow);
+  box-shadow: none;
 }
 
 .bolsa-dot.liquidez {
   background: var(--accent-2);
-  box-shadow: 0 0 8px -1px var(--accent-glow);
+  box-shadow: none;
 }
 
 .bolsa-valor {
@@ -1540,7 +1539,7 @@ button[type='submit']:disabled {
   border-radius: var(--radio-m);
   background:
     linear-gradient(var(--card-bg-2), var(--card-bg-2)) padding-box,
-    linear-gradient(135deg, var(--accent), var(--accent-2)) border-box;
+    linear-gradient(var(--accent), var(--accent)) border-box;
 }
 
 .rec-pendiente-info {
@@ -1570,11 +1569,11 @@ button[type='submit']:disabled {
 }
 
 .rec-pendiente.gasto .rec-pendiente-boton {
-  background: linear-gradient(135deg, var(--gasto), var(--gasto-claro));
+  background: var(--gasto);
 }
 
 .rec-pendiente.ingreso .rec-pendiente-boton {
-  background: linear-gradient(135deg, var(--ingreso), var(--accent-2));
+  background: var(--ingreso);
 }
 
 .rec-pendiente-confirmar {
@@ -1658,12 +1657,12 @@ button[type='submit']:disabled {
 /* Estado mensual del recurrente: ya registrado vs pendiente */
 .rec-badge.registrado {
   color: var(--ingreso);
-  background: rgba(52, 232, 158, 0.12);
+  background: rgba(60, 203, 138, 0.12);
 }
 
 .rec-badge.pendiente {
   color: var(--inversion);
-  background: rgba(245, 185, 61, 0.12);
+  background: rgba(227, 176, 75, 0.12);
 }
 
 .rec-form {
@@ -1737,7 +1736,7 @@ button[type='submit']:disabled {
 }
 
 .rec-cl-fila.abierto {
-  border-color: rgba(139, 92, 246, 0.4);
+  border-color: rgba(142, 152, 255, 0.4);
 }
 
 .rec-cl-linea {
@@ -1788,7 +1787,7 @@ button[type='submit']:disabled {
 /* Marcada (hecha): relleno verde con check */
 .rec-cl-check.hecha .rec-cl-tick {
   border-color: transparent;
-  background: linear-gradient(135deg, var(--ingreso), var(--accent-2));
+  background: var(--ingreso);
   color: var(--tinta-cian);
 }
 
@@ -2113,7 +2112,7 @@ button[type='submit']:disabled {
 }
 
 .if-tabla tr.mejor td {
-  background: rgba(52, 232, 158, 0.08);
+  background: rgba(60, 203, 138, 0.08);
 }
 
 .if-tabla tr.mejor .if-tiempo {
@@ -2223,7 +2222,7 @@ button[type='submit']:disabled {
 }
 
 .plan-referencia {
-  background: rgba(139, 92, 246, 0.06);
+  background: rgba(142, 152, 255, 0.06);
   border: 1px solid var(--border);
   border-radius: var(--radio-s);
   padding: 8px 10px;
@@ -2289,7 +2288,7 @@ button[type='submit']:disabled {
   border-radius: var(--radio-l);
   background:
     linear-gradient(var(--card-bg-2), var(--card-bg-2)) padding-box,
-    linear-gradient(135deg, var(--accent), var(--accent-2)) border-box;
+    linear-gradient(var(--accent), var(--accent)) border-box;
 }
 
 .plan-proyeccion-titulo {
@@ -2480,7 +2479,7 @@ button[type='submit']:disabled {
   border: none;
   border-radius: 8px;
   padding: 8px 14px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   color: white;
   font-weight: 600;
   font-size: 13px;
@@ -2509,7 +2508,7 @@ button[type='submit']:disabled {
   background: var(--accent);
   color: white;
   border-color: var(--accent);
-  box-shadow: 0 0 16px -4px var(--accent-glow);
+  box-shadow: none;
 }
 
 /* Inversiones */
@@ -2544,7 +2543,7 @@ button[type='submit']:disabled {
 }
 
 .inv-media-toggle button.activo {
-  background: rgba(245, 185, 61, 0.16);
+  background: rgba(227, 176, 75, 0.16);
   color: var(--inversion);
 }
 
@@ -2573,7 +2572,7 @@ button[type='submit']:disabled {
 .inversion-mes {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(150deg, rgba(245, 185, 61, 0.06), var(--card-bg));
+  background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 14px 12px 18px;
@@ -2590,13 +2589,13 @@ button[type='submit']:disabled {
   top: 0;
   bottom: 0;
   width: 3px;
-  background: linear-gradient(180deg, var(--inversion-palido), var(--inversion));
-  box-shadow: 0 0 12px -2px var(--inversion-glow);
+  background: var(--inversion);
+  box-shadow: none;
 }
 
 .inversion-mes:hover {
   transform: translateY(-2px);
-  border-color: rgba(245, 185, 61, 0.35);
+  border-color: rgba(227, 176, 75, 0.35);
   box-shadow: 0 10px 26px -16px rgba(0, 0, 0, 0.7), var(--glow-inversion);
 }
 
@@ -2706,12 +2705,12 @@ button[type='submit']:disabled {
 .ratio-barra-relleno {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ratio-barra-relleno.sobrepasado {
-  background: linear-gradient(90deg, var(--gasto), var(--gasto-claro));
+  background: var(--gasto);
 }
 
 /* Presupuesto */
@@ -2838,17 +2837,17 @@ button[type='submit']:disabled {
 
 .objetivo-tipo-badge.liquidez {
   color: var(--accent-2);
-  border-color: rgba(34, 211, 238, 0.4);
+  border-color: rgba(142, 152, 255, 0.4);
 }
 
 .objetivo-tipo-badge.inversion {
   color: var(--inversion);
-  border-color: rgba(245, 185, 61, 0.4);
+  border-color: rgba(227, 176, 75, 0.4);
 }
 
 .objetivo-tipo-badge.patrimonio {
   color: var(--accent);
-  border-color: rgba(139, 92, 246, 0.4);
+  border-color: rgba(142, 152, 255, 0.4);
 }
 
 .objetivo-cifras {
@@ -2980,7 +2979,7 @@ button[type='submit']:disabled {
 
 .mini-barra-relleno {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   border-radius: 999px;
 }
 
@@ -3033,7 +3032,7 @@ button[type='submit']:disabled {
 }
 
 .presupuesto .balance-item:hover {
-  border-color: rgba(139, 92, 246, 0.35);
+  border-color: rgba(142, 152, 255, 0.35);
 }
 
 .presupuesto .balance-item .etiqueta {
@@ -3052,8 +3051,8 @@ button[type='submit']:disabled {
   text-align: center;
   padding: 10px;
   border-radius: var(--radio-m);
-  background: rgba(34, 211, 238, 0.06);
-  border: 1px solid rgba(34, 211, 238, 0.16);
+  background: rgba(142, 152, 255, 0.06);
+  border: 1px solid rgba(142, 152, 255, 0.16);
   opacity: 1;
 }
 
@@ -3079,7 +3078,7 @@ button[type='submit']:disabled {
 .lista-movimientos li {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(150deg, var(--card-bg-2), var(--card-bg));
+  background: linear-gradient(var(--card-bg), var(--card-bg));
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 8px 12px 8px 14px;
@@ -3102,22 +3101,22 @@ button[type='submit']:disabled {
 }
 
 .lista-movimientos li.gasto::before {
-  background: linear-gradient(180deg, var(--gasto), var(--gasto-claro));
+  background: var(--gasto);
 }
 
 .lista-movimientos li.ingreso::before {
-  background: linear-gradient(180deg, var(--ingreso), var(--accent-2));
+  background: var(--ingreso);
 }
 
 .lista-movimientos li.inversion::before {
-  background: linear-gradient(180deg, var(--inversion-palido), var(--inversion));
-  box-shadow: 0 0 12px -2px var(--inversion-glow);
+  background: var(--inversion);
+  box-shadow: none;
 }
 
 /* Microinteracción al pasar/tocar */
 .lista-movimientos li:hover {
   transform: translateY(-2px);
-  border-color: rgba(139, 92, 246, 0.4);
+  border-color: rgba(142, 152, 255, 0.4);
   box-shadow: 0 10px 26px -16px rgba(0, 0, 0, 0.7), var(--glow-accent);
 }
 
@@ -3259,7 +3258,7 @@ button[type='submit']:disabled {
 }
 
 .grafico-columna.activa {
-  background: rgba(34, 211, 238, 0.07);
+  background: rgba(142, 152, 255, 0.07);
 }
 
 .grafico-columna.activa .grafico-etiqueta {
@@ -3676,12 +3675,12 @@ button[type='submit']:disabled {
 
 .gd-delta.ingreso {
   color: var(--ingreso);
-  background: rgba(52, 232, 158, 0.12);
+  background: rgba(60, 203, 138, 0.12);
 }
 
 .gd-delta.gasto {
   color: var(--gasto);
-  background: rgba(255, 93, 126, 0.12);
+  background: rgba(240, 106, 126, 0.12);
 }
 
 .gd-euros {
@@ -3719,7 +3718,7 @@ button[type='submit']:disabled {
 .leyenda-mes-btn.activo {
   opacity: 1;
   color: var(--text-h);
-  background: rgba(34, 211, 238, 0.08);
+  background: rgba(142, 152, 255, 0.08);
 }
 
 /* Año bajo el mes en enero (igual que en el gráfico de inversión) */
@@ -3840,12 +3839,10 @@ button[type='submit']:disabled {
 
 .metrica-hero-cifra.ingreso {
   color: var(--ingreso);
-  text-shadow: 0 0 24px rgba(52, 232, 158, 0.25);
 }
 
 .metrica-hero-cifra.gasto {
   color: var(--gasto);
-  text-shadow: 0 0 24px rgba(255, 93, 126, 0.25);
 }
 
 .metrica-hero-sub {
@@ -3860,8 +3857,8 @@ button[type='submit']:disabled {
   align-items: flex-start;
   padding: 12px 14px;
   border-radius: var(--radio-m);
-  border: 1px solid rgba(34, 211, 238, 0.25);
-  background: rgba(34, 211, 238, 0.05);
+  border: 1px solid rgba(142, 152, 255, 0.25);
+  background: rgba(142, 152, 255, 0.05);
 }
 
 .pildora-icono {
@@ -3941,10 +3938,10 @@ button[type='submit']:disabled {
   padding: 32px 24px 24px;
   border-radius: var(--radio-l);
   background:
-    linear-gradient(160deg, var(--card-bg-2), var(--card-bg)) padding-box,
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
     var(--borde-brillo) border-box;
   border: 1px solid transparent;
-  box-shadow: var(--sombra-card), 0 0 40px -8px var(--accent-glow);
+  box-shadow: var(--sombra-card);
   overflow: hidden;
   animation: celebracion-entrada 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -3956,7 +3953,7 @@ button[type='submit']:disabled {
   width: 200px;
   height: 200px;
   transform: translateX(-50%);
-  background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+  background: none;
   pointer-events: none;
 }
 
@@ -3970,8 +3967,8 @@ button[type='submit']:disabled {
   border-radius: 50%;
   font-size: 26px;
   color: white;
-  background: linear-gradient(160deg, var(--accent), var(--accent-2));
-  box-shadow: 0 0 28px -4px var(--accent-glow);
+  background: linear-gradient(var(--accent), var(--accent));
+  box-shadow: none;
   margin: 0 auto var(--sp-4);
   animation: celebracion-pulso 2s ease-in-out infinite;
 }
@@ -4004,7 +4001,7 @@ button[type='submit']:disabled {
   padding: 12px;
   border: none;
   border-radius: var(--radio-s);
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   color: white;
   font-weight: 600;
 }
@@ -4022,10 +4019,10 @@ button[type='submit']:disabled {
 
 @keyframes celebracion-pulso {
   0%, 100% {
-    box-shadow: 0 0 28px -4px var(--accent-glow);
+    box-shadow: none;
   }
   50% {
-    box-shadow: 0 0 40px 0 var(--accent-glow);
+    box-shadow: none;
   }
 }
 
@@ -4058,7 +4055,7 @@ button[type='submit']:disabled {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 0%, var(--accent-glow), transparent 60%);
+  background: none;
   opacity: 0.5;
   pointer-events: none;
   animation: celebracion-fulgor 2.4s ease-in-out infinite;
@@ -4082,7 +4079,7 @@ button[type='submit']:disabled {
   padding: var(--sp-3) var(--sp-4);
   background:
     linear-gradient(var(--card-solida), var(--card-solida)) padding-box,
-    linear-gradient(135deg, var(--accent), var(--accent-2)) border-box;
+    linear-gradient(var(--accent), var(--accent)) border-box;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -4115,7 +4112,7 @@ button[type='submit']:disabled {
 .logros-card-relleno {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -4202,7 +4199,7 @@ button[type='submit']:disabled {
 /* El próximo por desbloquear: visible y con acento (es la meta inmediata) */
 .logro-fila.proximo {
   opacity: 1;
-  border-color: rgba(139, 92, 246, 0.4);
+  border-color: rgba(142, 152, 255, 0.4);
 }
 
 /* Los lejanos: difuminado PROGRESIVO (opacidad y blur por distancia, vía estilo
@@ -4217,7 +4214,7 @@ button[type='submit']:disabled {
   border-color: transparent;
   background:
     linear-gradient(var(--card-bg-2), var(--card-bg-2)) padding-box,
-    linear-gradient(135deg, var(--accent), var(--accent-2)) border-box;
+    linear-gradient(var(--accent), var(--accent)) border-box;
 }
 
 .logro-icono {
@@ -4234,8 +4231,8 @@ button[type='submit']:disabled {
 
 .logro-fila.conseguido .logro-icono {
   color: var(--blanco);
-  background: linear-gradient(160deg, var(--accent), var(--accent-2));
-  box-shadow: 0 0 16px -4px var(--accent-glow);
+  background: linear-gradient(var(--accent), var(--accent));
+  box-shadow: none;
 }
 
 .logro-cuerpo {
@@ -4274,7 +4271,7 @@ button[type='submit']:disabled {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
 }
 
 .logro-meta {
@@ -4306,7 +4303,7 @@ button[type='submit']:disabled {
 }
 
 .comparativa-bien {
-  border-color: rgba(52, 232, 158, 0.35);
+  border-color: rgba(60, 203, 138, 0.35);
 }
 
 .comparativa-bien .comparativa-flecha {
@@ -4314,7 +4311,7 @@ button[type='submit']:disabled {
 }
 
 .comparativa-mal {
-  border-color: rgba(255, 93, 126, 0.3);
+  border-color: rgba(240, 106, 126, 0.3);
 }
 
 .comparativa-mal .comparativa-flecha {
@@ -4324,7 +4321,7 @@ button[type='submit']:disabled {
 /* Proyección de futuro (el momento "ajá") */
 .proyeccion {
   background:
-    linear-gradient(160deg, var(--card-bg-2), var(--card-bg)) padding-box,
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
     var(--borde-brillo) border-box;
   border: 1px solid transparent;
   border-radius: var(--radio-l);
@@ -4395,7 +4392,7 @@ button[type='submit']:disabled {
 
 .proyeccion-escenario.invertido {
   border-color: var(--inversion);
-  background: rgba(245, 185, 61, 0.06);
+  background: rgba(227, 176, 75, 0.06);
   box-shadow: var(--glow-inversion);
 }
 
@@ -4439,7 +4436,7 @@ button[type='submit']:disabled {
 }
 
 .proyeccion-barra-extra {
-  background: linear-gradient(90deg, var(--inversion), var(--inversion-claro));
+  background: var(--inversion);
 }
 
 .proyeccion-remate {
@@ -4468,7 +4465,7 @@ button[type='submit']:disabled {
   border: none;
   border-radius: var(--radio-s);
   padding: 10px 18px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   color: white;
   font-weight: 600;
 }
@@ -4499,7 +4496,7 @@ button[type='submit']:disabled {
   padding: 12px 12px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radio-m);
-  background: linear-gradient(150deg, var(--card-bg-2), var(--card-bg));
+  background: linear-gradient(var(--card-bg), var(--card-bg));
   text-align: left;
   overflow: hidden;
   transition:
@@ -4518,13 +4515,13 @@ button[type='submit']:disabled {
 }
 
 .metrica-card.ingreso::before {
-  background: linear-gradient(180deg, var(--ingreso), var(--accent-2));
+  background: var(--ingreso);
 }
 .metrica-card.gasto::before {
-  background: linear-gradient(180deg, var(--gasto), var(--gasto-claro));
+  background: var(--gasto);
 }
 .metrica-card.inversion::before {
-  background: linear-gradient(180deg, var(--inversion-palido), var(--inversion));
+  background: var(--inversion);
 }
 
 .metrica-card:active {
@@ -4532,7 +4529,7 @@ button[type='submit']:disabled {
 }
 
 .metrica-card:hover {
-  border-color: rgba(139, 92, 246, 0.35);
+  border-color: rgba(142, 152, 255, 0.35);
   box-shadow: var(--glow-accent);
 }
 
@@ -4661,14 +4658,14 @@ button[type='submit']:disabled {
 }
 
 .ratio-barra-relleno.inversion {
-  background: linear-gradient(90deg, var(--inversion), var(--inversion-claro));
+  background: var(--inversion);
 }
 
 /* Objetivo superado (>100 %): la barra se llena y se resalta como logro,
    no se desborda. El número muestra el porcentaje real (150 %, 200 %…). */
 .ratio-barra.objetivo-superado {
-  box-shadow: 0 0 12px -1px var(--inversion-glow);
-  outline: 1px solid rgba(245, 185, 61, 0.55);
+  box-shadow: none;
+  outline: 1px solid rgba(227, 176, 75, 0.55);
 }
 
 .ratio-barra.objetivo-superado .ratio-barra-relleno {
@@ -4740,7 +4737,7 @@ button[type='submit']:disabled {
   padding: 0 16px;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   color: white;
   font-weight: 600;
 }
@@ -4794,7 +4791,7 @@ button[type='submit']:disabled {
 .grafico-barras-simple-barra {
   width: 100%;
   max-width: 14px;
-  background: linear-gradient(180deg, var(--accent-2), var(--accent));
+  background: linear-gradient(var(--accent), var(--accent));
   border-radius: 3px 3px 0 0;
   min-height: 2px;
   transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
@@ -4874,8 +4871,8 @@ button[type='submit']:disabled {
 }
 
 .inv-barra.activa {
-  background: linear-gradient(180deg, var(--inversion-palido), var(--inversion) 60%, var(--inversion-oscuro));
-  box-shadow: 0 0 14px -4px var(--inversion-glow);
+  background: var(--inversion);
+  box-shadow: none;
 }
 
 @keyframes crecer-barra {
@@ -4962,7 +4959,7 @@ button[type='submit']:disabled {
   border: none;
   border-radius: 8px;
   padding: 10px 18px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   color: white;
   font-weight: 600;
 }
@@ -5008,7 +5005,7 @@ button[type='submit']:disabled {
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.5px;
-  background: linear-gradient(90deg, var(--text-h), var(--accent-2));
+  background: linear-gradient(var(--text-h), var(--text-h));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -5028,7 +5025,7 @@ button[type='submit']:disabled {
   width: 40%;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   animation: barra-indeterminada 1.2s ease-in-out infinite;
 }
 
@@ -5059,7 +5056,7 @@ button[type='submit']:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: rgba(255, 93, 126, 0.08);
+  background: rgba(240, 106, 126, 0.08);
   border: 1px solid var(--gasto);
   border-radius: 12px;
   padding: 12px 14px;
@@ -5233,9 +5230,9 @@ button[type='submit']:disabled {
 .btn-guardar-sim {
   width: 100%;
   padding: 11px;
-  border: 1px solid rgba(139, 92, 246, 0.45);
+  border: 1px solid rgba(142, 152, 255, 0.45);
   border-radius: var(--radio-m);
-  background: rgba(139, 92, 246, 0.12);
+  background: rgba(142, 152, 255, 0.12);
   color: var(--text-h);
   font-weight: 600;
   font-size: var(--fs-s);
@@ -5244,7 +5241,7 @@ button[type='submit']:disabled {
 }
 
 .btn-guardar-sim:hover {
-  background: rgba(139, 92, 246, 0.2);
+  background: rgba(142, 152, 255, 0.2);
   border-color: var(--accent);
 }
 
@@ -5306,7 +5303,7 @@ button[type='submit']:disabled {
   align-items: center;
   gap: var(--sp-2);
   background:
-    linear-gradient(160deg, var(--card-bg-2), var(--card-bg)) padding-box,
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
     var(--borde-brillo) border-box;
   border: 1px solid transparent;
   backdrop-filter: blur(12px);
@@ -5358,7 +5355,7 @@ button[type='submit']:disabled {
 }
 
 .toast-error {
-  box-shadow: var(--sombra-card), 0 0 16px -4px rgba(255, 93, 126, 0.4);
+  box-shadow: var(--sombra-card);
 }
 
 .toast-icono.error {
@@ -5385,7 +5382,7 @@ button[type='submit']:disabled {
   width: 100%;
   max-width: 340px;
   background:
-    linear-gradient(160deg, var(--card-bg-2), var(--card-bg)) padding-box,
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
     var(--borde-brillo) border-box;
   border: 1px solid transparent;
   border-radius: var(--radio-l);
@@ -5442,7 +5439,7 @@ button[type='submit']:disabled {
   border-radius: var(--radio-pastilla);
   background:
     linear-gradient(var(--card-solida), var(--card-solida)) padding-box,
-    linear-gradient(135deg, var(--accent), var(--accent-2)) border-box;
+    linear-gradient(var(--accent), var(--accent)) border-box;
   color: var(--text-h);
   font-size: var(--fs-s);
   font-weight: 600;
@@ -5454,7 +5451,6 @@ button[type='submit']:disabled {
   color: var(--accent-2);
   font-size: var(--fs-m);
   line-height: 1;
-  text-shadow: 0 0 10px var(--accent-glow);
 }
 
 .consultor-overlay {
@@ -5573,7 +5569,7 @@ button[type='submit']:disabled {
   width: 220px;
   height: 220px;
   transform: translateX(-50%);
-  background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+  background: none;
   filter: blur(8px);
   pointer-events: none;
   animation: pulso-carga 3s ease-in-out infinite;
@@ -5583,7 +5579,7 @@ button[type='submit']:disabled {
   position: relative;
   font-size: 44px;
   line-height: 1;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -5605,7 +5601,7 @@ button[type='submit']:disabled {
   position: relative;
   margin: 0;
   font-size: var(--fs-l);
-  background: linear-gradient(90deg, var(--text-h), var(--accent-2));
+  background: linear-gradient(var(--text-h), var(--text-h));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -5691,7 +5687,7 @@ button[type='submit']:disabled {
 
 .consultor-burbuja.usuario {
   align-self: flex-end;
-  background: linear-gradient(135deg, var(--accent), var(--accent-oscuro));
+  background: linear-gradient(var(--accent), var(--accent));
   color: var(--blanco);
   border-bottom-right-radius: 4px;
 }
@@ -5772,7 +5768,7 @@ button[type='submit']:disabled {
   padding: 0 18px;
   border: none;
   border-radius: var(--radio-pastilla);
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: linear-gradient(var(--accent), var(--accent));
   color: var(--blanco);
   font-weight: 600;
   font-size: var(--fs-s);
@@ -5918,7 +5914,7 @@ button[type='submit']:disabled {
   text-transform: uppercase;
   color: var(--accent-2);
   background: none;
-  border: 1px solid rgba(34, 211, 238, 0.3);
+  border: 1px solid rgba(142, 152, 255, 0.3);
   border-radius: var(--radio-pastilla);
   padding: 2px 8px;
   cursor: pointer;
@@ -5926,7 +5922,7 @@ button[type='submit']:disabled {
 }
 
 .periodo-hoy:hover {
-  background: rgba(34, 211, 238, 0.14);
+  background: rgba(142, 152, 255, 0.14);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -5995,7 +5991,7 @@ button[type='submit']:disabled {
   height: 7px;
   border-radius: 50%;
   background: var(--ingreso);
-  box-shadow: 0 0 8px -1px var(--ingreso);
+  box-shadow: none;
 }
 
 /* Lista de compromisos */
@@ -6092,14 +6088,14 @@ button[type='submit']:disabled {
 @keyframes tb-asentar {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(52, 232, 158, 0.55);
+    box-shadow: 0 0 0 0 rgba(60, 203, 138, 0.55);
   }
   35% {
     transform: scale(1.22);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 11px rgba(52, 232, 158, 0);
+    box-shadow: 0 0 0 11px rgba(60, 203, 138, 0);
   }
 }
 
@@ -6598,9 +6594,7 @@ button[type='submit']:disabled {
   border-radius: var(--radio-m);
   border: 1px solid var(--border);
   background:
-    radial-gradient(120% 90% at 0% 0%, rgba(139, 92, 246, 0.12), transparent 60%),
-    radial-gradient(90% 80% at 100% 100%, rgba(34, 211, 238, 0.08), transparent 60%),
-    var(--card-bg);
+var(--card-bg);
 }
 .cc-cab {
   display: flex;
@@ -6633,7 +6627,7 @@ button[type='submit']:disabled {
   bottom: 14px;
   height: 2px;
   border-radius: 2px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2) 60%, var(--border));
+  background: linear-gradient(var(--accent), var(--accent));
 }
 .cc-marca {
   position: absolute;
@@ -6667,7 +6661,7 @@ button[type='submit']:disabled {
   place-items: center;
   padding: 0;
   cursor: pointer;
-  box-shadow: 0 0 14px -4px var(--c);
+  box-shadow: none;
   transition: transform 0.18s ease;
   animation: cc-aparece 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
 }
@@ -6677,7 +6671,7 @@ button[type='submit']:disabled {
   z-index: 2;
 }
 .cc-burbuja.toca {
-  box-shadow: 0 0 0 3px rgba(255, 93, 126, 0.35), 0 0 16px -2px var(--gasto);
+  box-shadow: 0 0 0 2px rgba(240, 106, 126, 0.35);
 }
 @keyframes cc-aparece {
   from {
@@ -6854,7 +6848,7 @@ button[type='submit']:disabled {
 }
 .av-item.urgente .av-icono {
   color: var(--gasto);
-  box-shadow: 0 0 0 1px var(--gasto), 0 0 14px -4px var(--gasto);
+  box-shadow: inset 0 0 0 1px var(--gasto);
 }
 .av-item.renovacion .av-icono {
   color: var(--inversion);
@@ -6920,8 +6914,7 @@ button[type='submit']:disabled {
   border-radius: var(--radio-m);
   border: 1px solid var(--accent);
   background:
-    radial-gradient(120% 120% at 0% 0%, rgba(139, 92, 246, 0.22), transparent 60%),
-    var(--card-bg);
+var(--card-bg);
   color: var(--text);
   text-align: left;
   cursor: pointer;
@@ -6951,4 +6944,192 @@ button[type='submit']:disabled {
 .av-flecha {
   font-size: var(--fs-l);
   color: var(--accent);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SISTEMA VISUAL v2 — capa final (ver docs/DISENO.md)
+   Reglas que unifican el lenguaje en toda la app. Va al final a propósito:
+   sobrescribe estilos antiguos sin reescribir 7.000 líneas de golpe.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Cifras: dígitos tabulares y un pelín más compactas en todo el producto */
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Etiquetas de sección (overline): una sola voz, técnica y discreta ────── */
+.tb-hero-label,
+.cc-titulo,
+.cc-subtitulo,
+.av-titulo,
+.tb-bio-clave,
+.logros-grupo-titulo,
+.consultor-insights-titulo,
+.presu-cards .etiqueta,
+.presupuesto .balance-item .etiqueta,
+.cuenta-peligro-titulo {
+  font-family: var(--fuente-mono);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  opacity: 1;
+}
+
+/* ── Cabecera: marca + cuenta ─────────────────────────────────────────────── */
+.app-header {
+  padding: 14px 16px;
+  background: rgba(10, 11, 14, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.app-header h1.app-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  background: none;
+  color: var(--text-h);
+}
+.marca {
+  color: var(--text-h);
+  flex: none;
+}
+.app-cuenta {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  justify-content: center;
+  color: var(--text);
+}
+.app-cuenta svg {
+  opacity: 1;
+}
+
+/* ── Saludo ───────────────────────────────────────────────────────────────── */
+.saludo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 0 2px;
+}
+.saludo .saludo-usuario {
+  margin: 0;
+  font-size: var(--fs-l);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.saludo-fecha {
+  font-family: var(--fuente-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+/* ── Navegación inferior: iconos de línea + indicador superior ───────────── */
+.bottom-nav {
+  background: rgba(10, 11, 14, 0.9);
+  padding-top: 6px;
+}
+.nav-item {
+  position: relative;
+  color: var(--text-3);
+  gap: 4px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.nav-item .icono {
+  display: block;
+}
+.nav-item.activo {
+  color: var(--text-h);
+  text-shadow: none;
+}
+.nav-item.activo .icono {
+  color: var(--accent-2);
+}
+.nav-item.activo::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 22px;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: var(--accent-2);
+  transform: translateX(-50%);
+}
+.nav-icono {
+  font-size: 0;
+  line-height: 0;
+}
+.nav-badge {
+  top: -4px;
+  right: -9px;
+  font-family: var(--fuente-mono);
+  box-shadow: 0 0 0 2px var(--bg);
+}
+
+/* ── Fulcro: botón compacto que no tapa el contenido ─────────────────────── */
+.consultor-fab {
+  padding: 9px 14px 9px 11px;
+  background: var(--card-bg-2);
+  border: 1px solid var(--borde-fuerte);
+  box-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.8);
+  font-weight: 550;
+}
+.consultor-fab-icono {
+  color: var(--accent-2);
+}
+main {
+  padding-bottom: 88px; /* espacio para que el botón de Fulcro no tape lo último */
+}
+
+/* ── Tarjetas de métrica: punto de color en vez de barra lateral ─────────── */
+.metrica-card::before {
+  display: none;
+}
+.metrica-card .etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 1;
+  color: var(--text);
+}
+.metrica-card .etiqueta::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.metrica-card.ingreso .etiqueta::before {
+  background: var(--ingreso);
+}
+.metrica-card.gasto .etiqueta::before {
+  background: var(--gasto);
+}
+.metrica-card.inversion .etiqueta::before {
+  background: var(--inversion);
+}
+.metrica-card:hover {
+  border-color: var(--borde-fuerte);
+}
+
+/* ── Botones de acción principal: sólidos, sin brillo ─────────────────────── */
+button:hover {
+  filter: none;
+}
+
+/* Campos numéricos sin flechas del sistema (se escribe; no se "gira") */
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }

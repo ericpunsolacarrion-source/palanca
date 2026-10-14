@@ -12,6 +12,7 @@ import { aCentimos } from '../lib/importe'
 import Pildora from './Pildora'
 import { firmaDatos, PILDORA_INVERSION } from '../lib/pildoras'
 import InputImporte from './InputImporte'
+import InputFecha from './InputFecha'
 
 // Altura del área de dibujo de las barras. HEADROOM reserva un hueco arriba
 // para que la CIFRA de la barra más alta nunca quede fuera (antes se cortaba
@@ -360,13 +361,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
         <InputImporte id="importe-inversion" value={importe} onValueChange={setImporte} />
 
         <label htmlFor="fecha-inversion">Fecha</label>
-        <input
-          id="fecha-inversion"
-          type="date"
-          value={fecha}
-          max={hoyIso()}
-          onChange={(e) => setFecha(e.target.value)}
-        />
+        <InputFecha id="fecha-inversion" value={fecha} onChange={setFecha} max={hoyIso()} />
 
         {error && <p className="error">{error}</p>}
 
@@ -416,7 +411,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
                   editando === d.id ? (
                     <div key={d.id} className="edicion-movimiento">
                       <InputImporte value={importeEdit} onValueChange={setImporteEdit} />
-                      <input type="date" value={fechaEdit} max={hoyIso()} onChange={(e) => setFechaEdit(e.target.value)} />
+                      <InputFecha value={fechaEdit} onChange={setFechaEdit} max={hoyIso()} />
                       <div className="edicion-acciones">
                         <button type="button" className="btn-eliminar" onClick={() => setEditando(null)}>
                           Cancelar

@@ -28,6 +28,7 @@ premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](EST
 |---|---|
 | **Contrato del motor** (invariantes, inamovible) | **[MOTOR.md](MOTOR.md)** |
 | Guía pantalla a pantalla | [PANTALLAS.md](PANTALLAS.md) |
+| **Sistema visual** (colores, tipografía, iconos, qué NO hacer) | **[DISENO.md](DISENO.md)** |
 | Estado de plataforma / negocio (dossier largo) | [ESTADO-PLATAFORMA.md](ESTADO-PLATAFORMA.md) |
 | Reglas de cálculo y disciplina | [../CLAUDE.md](../CLAUDE.md) |
 
@@ -59,6 +60,20 @@ como miles, importes negativos y columna `tipo` opcional (el signo decide).
 
 **Decidido:** la categoría `Ahorro` (tipo gasto) es un **traspaso neutro**
 (`esTraspaso`): ni gasto ni cambio de patrimonio. Ya no se crea de serie.
+
+## ⏳ Pendiente de lanzar (en `develop`, NO en `main`)
+Decisión del usuario (2026-10-14): **no lanzar aún**; se publica cuando él lo
+diga ("lánzalo" → fast-forward de `develop` a `main`). Incluye: Ahorro como
+traspaso, detector de suscripciones, pestaña Fijos (periodicidades,
+calendario, avisos) y el **rediseño visual v2** (ver DISENO.md).
+
+## Rediseño visual v2 (2026-10-14, en `develop`)
+Fuera la estética "de IA": sin degradados morado→cian, sin glows ni manchas
+de fondo, sin emojis/✦. Tipografía Geist + Geist Mono (autoalojadas), un solo
+acento índigo, semánticos calmados, iconos SVG propios (`Icono.jsx`), marca
+de palanca, etiquetas de sección unificadas, Fulcro compacto que no tapa
+contenido. Pendiente de pulir en siguientes pasadas: pantallas secundarias
+(simuladores, cuenta, onboarding, logros) con el mismo criterio.
 
 ## Foco de producto (2026-10-14): suscripciones + seguimiento financiero
 Base ahora es la pestaña **Fijos** (puerta de entrada). Hecho en `develop`:

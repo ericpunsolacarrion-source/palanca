@@ -12,6 +12,9 @@ empezar a trabajar en la app; mantenerla al día cuando cambien pantallas).
 
 **Contrato del motor financiero (invariantes, inamovible): `docs/MOTOR.md`.**
 
+**Sistema visual (leer antes de tocar estilos): `docs/DISENO.md`** — un solo
+acento, sin degradados de marca ni resplandores, iconos de `Icono.jsx`.
+
 ## Reglas de cálculo (única definición, aplicar en TODA la app)
 
 Implementadas en `src/lib/movimientosUtils.js` (`totalesDe`, `agregarPorMes`).
