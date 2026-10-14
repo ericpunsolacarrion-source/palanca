@@ -42,6 +42,7 @@ import Logros from './components/Logros'
 import Inicio from './components/Inicio'
 import Icono, { Marca } from './components/Icono'
 import { fijarImportesOcultos, importesOcultos } from './lib/privacidad'
+import { toast } from './lib/toast'
 import './App.css'
 
 // Pestañas no iniciales cargadas bajo demanda (code-splitting): aligeran el
@@ -231,7 +232,41 @@ function App() {
   const presupuestoData = usePresupuesto(usuarioId)
   // Compromisos de Base (suscripciones, recibos): globo de pendientes en la
   // navegación y avisos de próximos cobros en el dashboard.
-  const { items: recurrentes, pendientes: recurrentesPendientes, cargando: cargandoRecurrentes } = useRecurrentes(usuarioId)
+  const {
+    items: recurrentes,
+    pendientes: recurrentesPendientes,
+    cargando: cargandoRecurrentes,
+    confirmarCobro,
+    desmarcar: desmarcarCobro,
+  } = useRecurrentes(usuarioId)
+  // Compromiso a abrir al llegar a Fijos (confirmar uno de importe variable).
+  const [abrirFijoId, setAbrirFijoId] = useState(null)
+
+  // Confirmar un cobro desde los avisos del inicio, en su día y a un toque.
+  // Los de importe variable se abren en Fijos para poner el importe real.
+  const confirmarDesdeInicio = useCallback(
+    async (recId) => {
+      const rec = recurrentes.find((r) => r.id === recId)
+      if (!rec) return
+      if (rec.confirmar) {
+        setFiltroMov(null)
+        setAbrirFijoId(recId)
+        setPestana('suscripciones')
+        return
+      }
+      const fila = await confirmarCobro(rec)
+      if (!fila) return
+      onGuardado({ accion: 'crear', filas: [fila] })
+      toast(`${rec.nombre} confirmado`, 'ok', {
+        texto: 'Deshacer',
+        onAccion: async () => {
+          const movId = await desmarcarCobro(rec.id)
+          if (movId) onGuardado({ accion: 'borrar', ids: [movId] })
+        },
+      })
+    },
+    [recurrentes, confirmarCobro, desmarcarCobro, onGuardado],
+  )
   const objetivosData = useObjetivosAhorro(usuarioId)
   const { objetivoInversionMensual } = presupuestoData
   const [descartesPildora, setDescartesPildora] = useState(0)
@@ -378,6 +413,7 @@ function App() {
                     diasSinRegistrar={diasDesdeUltimoMovimiento}
                     onGuardado={onGuardado}
                     onRegistrar={irARegistrar}
+                    onConfirmarCobro={confirmarDesdeInicio}
                     onIrA={irAPestana}
                     onVerAnalisis={() => {
                       setVistaInicio('analisis')
@@ -448,6 +484,8 @@ function App() {
             usuarioId={usuarioId}
             movimientos={movimientos}
             onRegistrado={onGuardado}
+            abrirId={abrirFijoId}
+            onAbierto={() => setAbrirFijoId(null)}
           />
         )}
 

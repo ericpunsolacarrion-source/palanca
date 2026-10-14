@@ -7864,3 +7864,129 @@ input[type='number']::-webkit-outer-spin-button {
 .ini-mov-importe.inversion {
   color: var(--inversion);
 }
+
+/* ══ FIJOS: confirmar cada cobro en su día ════════════════════════════════ */
+.tb-dia-cobro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-xs);
+  color: var(--text);
+}
+.tb-dia-cobro-campo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 150px;
+  padding: 0 12px;
+  border-radius: var(--radio-s);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  font-size: var(--fs-s);
+}
+.tb-dia-cobro-campo:focus-within {
+  border-color: var(--accent-2);
+}
+.tb-dia-cobro-campo input {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 0;
+  border: 0;
+  background: none;
+  color: var(--text-h);
+  font: inherit;
+  font-size: var(--fs-base);
+  font-weight: 600;
+  outline: none;
+}
+.tb-dia-cobro small {
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+}
+.tb-form-fila {
+  align-items: flex-end;
+}
+.tb-row-bio.atencion {
+  color: var(--accent-2);
+  opacity: 1;
+}
+.tb-confirmar-fecha,
+.tb-pedir-texto {
+  margin: 0;
+  font-size: var(--fs-s);
+  color: var(--text);
+}
+.tb-pedir-dia,
+.tb-esperando {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 4px 0 14px;
+  padding: 14px;
+  border-radius: var(--radio-m);
+  border: 1px solid var(--border);
+  background: var(--card-bg-2);
+}
+.tb-pedir-dia p,
+.tb-esperando p {
+  margin: 0;
+  font-size: var(--fs-s);
+  color: var(--text);
+}
+.tb-esperando strong {
+  color: var(--text-h);
+}
+.tb-esperando .link {
+  align-self: flex-start;
+}
+.tb-confirmar {
+  margin-bottom: 14px;
+}
+
+/* Avisos del inicio: confirmar un cobro en su día, a un toque */
+.av {
+  padding: 14px 16px 12px;
+  border-radius: var(--radio-l);
+}
+.av-activar {
+  width: auto;
+  margin-top: 8px;
+  padding: 4px 0 0;
+  border: 0;
+  background: none;
+  color: var(--accent-2);
+  font-size: var(--fs-xs);
+  font-weight: 550;
+}
+.av-confirmar {
+  flex: none;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radio-pastilla);
+  border: 0;
+  background: var(--accent);
+  color: var(--tinta-accent);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+.av-item.ingreso .av-icono {
+  color: var(--ingreso);
+}
+.av-cerrar {
+  display: grid;
+  place-items: center;
+}
+.tb-dia-cobro .tb-dia-cobro-campo input,
+.tb-dia-cobro .tb-dia-cobro-campo input:focus {
+  padding: 12px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}

@@ -13,8 +13,6 @@ const DIAS_COBRO = 3 // cobros mensuales: avisar con 3 días
 const DIAS_RENOVACION = 14 // anuales/semestrales…: avisar con 2 semanas
 const DIAS_SUBIDA = 45 // una subida de precio es noticia ~1,5 meses
 
-const cuando = (c) => (c.dias < 0 ? `pendiente desde ${c.texto}` : c.texto)
-
 /**
  * @param recurrentes items de useRecurrentes (Base)
  * @param movimientos histórico completo
@@ -29,11 +27,15 @@ export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Dat
     // Renovación = periodos largos (semestral/anual: seguros, Prime, dominios…).
     // Bimestrales/trimestrales (agua, luz) se avisan como un cobro más.
     const renovacion = periodoDe(c.rec).meses >= 6
+    // Su día ya ha llegado: se pide confirmarlo (con su fecha de cobro).
+    const porConfirmar = c.dias <= 0
     if (renovacion) {
       avisos.push({
         id: `renovacion:${c.rec.id}:${c.mes}`,
         tipo: 'renovacion',
-        titulo: `${c.rec.nombre} se renueva ${c.texto === 'hoy' ? 'hoy' : c.texto}`,
+        recId: c.rec.id,
+        porConfirmar,
+        titulo: porConfirmar ? `${c.rec.nombre} se renueva ${c.dias === 0 ? 'hoy' : c.texto}` : `${c.rec.nombre} se renueva ${c.texto}`,
         detalle: `${formatearEuros(c.importe)} · ${periodoDe(c.rec).etiqueta.toLowerCase()}. Buen momento para ver si te compensa.`,
         importe: c.importe,
         dias: c.dias,
@@ -43,13 +45,35 @@ export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Dat
       avisos.push({
         id: `cobro:${c.rec.id}:${c.mes}`,
         tipo: 'cobro',
-        titulo: `${c.rec.nombre} · ${cuando(c)}`,
-        detalle: formatearEuros(c.importe),
+        recId: c.rec.id,
+        porConfirmar,
+        titulo:
+          c.dias === 0
+            ? `Hoy se cobra ${c.rec.nombre}`
+            : c.dias < 0
+              ? `${c.rec.nombre} · se cobró ${c.texto}`
+              : `${c.rec.nombre} · ${c.texto}`,
+        detalle: porConfirmar ? `${formatearEuros(c.importe)} · ¿te lo han cobrado?` : formatearEuros(c.importe),
         importe: c.importe,
         dias: c.dias,
         urgente: c.dias <= 1,
       })
     }
+  }
+
+  // Ingresos fijos (nómina…): solo cuando ya toca, para confirmar que han llegado.
+  for (const c of cobrosProximos(recurrentes.filter((r) => r.tipo === 'ingreso'), 0, hoy)) {
+    avisos.push({
+      id: `ingreso:${c.rec.id}:${c.mes}`,
+      tipo: 'ingreso',
+      recId: c.rec.id,
+      porConfirmar: true,
+      titulo: c.dias === 0 ? `Hoy entra ${c.rec.nombre}` : `${c.rec.nombre} · debía entrar ${c.texto}`,
+      detalle: `${formatearEuros(c.importe)} · ¿lo has recibido?`,
+      importe: c.importe,
+      dias: c.dias,
+      urgente: false,
+    })
   }
 
   const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`
@@ -73,7 +97,7 @@ export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Dat
     })
   }
 
-  const orden = { cobro: 0, renovacion: 1, subida: 2 }
+  const orden = { cobro: 0, renovacion: 1, ingreso: 2, subida: 3 }
   return avisos.sort((a, b) => Number(b.urgente) - Number(a.urgente) || a.dias - b.dias || orden[a.tipo] - orden[b.tipo])
 }
 

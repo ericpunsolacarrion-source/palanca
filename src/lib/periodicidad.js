@@ -119,3 +119,32 @@ export function textoCalendario(rec) {
   const nombres = meses.map((m) => MESES_NOMBRE[m - 1]).join(', ')
   return `${p.etiqueta.toLowerCase()} · ${nombres}${dia ? ` · ${dia}` : ''}`
 }
+
+// ── Confirmación de cobros ──────────────────────────────────────────────────
+// Un cobro se CONFIRMA en su día (o después), no se "marca como pagado" por
+// adelantado: así Palanca puede avisar ese día y el movimiento queda con la
+// fecha real del cargo.
+
+// Fecha del cobro de un compromiso en el mes `clave` ('YYYY-MM'), con el día
+// habitual acotado al último día del mes. null si no tiene día fijado.
+export function fechaCobroEnMes(rec, clave) {
+  if (!Number(rec?.diaMes)) return null
+  const [y, m] = clave.split('-').map(Number)
+  return isoLocal(fechaEnMes(rec, y, m))
+}
+
+// Estado del cobro de ESTE mes de un compromiso:
+//  'hecho'     confirmado este mes
+//  'no-toca'   no le toca este mes (periodicidad), o está pausado
+//  'sin-dia'   toca, pero no tiene día de cobro fijado (hay que pedirlo)
+//  'esperando' toca, aún no ha llegado su día (se avisará ese día)
+//  'confirmar' ha llegado (o pasado) su día y falta confirmarlo
+export function estadoCobro(rec, hoy = new Date()) {
+  const clave = claveDe(hoy.getFullYear(), hoy.getMonth() + 1)
+  const confirmados = rec.mesesAplicados ?? (rec.aplicadoEn ? [rec.aplicadoEn] : [])
+  if (confirmados.includes(clave)) return 'hecho'
+  if (!rec.activo || !tocaEnMes(rec, clave)) return 'no-toca'
+  const fecha = fechaCobroEnMes(rec, clave)
+  if (!fecha) return 'sin-dia'
+  return fecha <= isoLocal(hoy) ? 'confirmar' : 'esperando'
+}

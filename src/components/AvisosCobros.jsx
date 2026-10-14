@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { avisosNotificables, calcularAvisos } from '../lib/avisos'
 import { EVENTO_DESCARTES, leerDescartadas } from '../lib/suscripciones'
+import Icono from './Icono'
 
 // Tarjeta del dashboard: lo que está a punto de salir de tu cuenta (cobros de
 // los próximos días, renovaciones y subidas de precio). Además, si el usuario
@@ -44,9 +45,9 @@ async function notificar(titulo, cuerpo, tag) {
   }
 }
 
-const ICONO = { cobro: '↻', renovacion: '◷', subida: '↑' }
+const ICONO = { cobro: 'fijos', renovacion: 'calendario', subida: 'sube', ingreso: 'baja' }
 
-export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimientos, onVerSuscripciones }) {
+export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimientos, onVerSuscripciones, onConfirmar }) {
   const [cerrados, setCerrados] = useState(() => leerSet(claveCerrados(usuarioId)))
   const [permiso, setPermiso] = useState(() => (soportaNotificaciones() ? Notification.permission : 'unsupported'))
 
@@ -92,12 +93,12 @@ export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimie
   if (recurrentes.length === 0) {
     return (
       <button type="button" className="av-invitacion fade-in-up" onClick={onVerSuscripciones}>
-        <span className="av-invitacion-icono" aria-hidden="true">↻</span>
+        <span className="av-invitacion-icono" aria-hidden="true"><Icono nombre="fijos" tam={18} /></span>
         <span className="av-invitacion-texto">
           <strong>¿Cuánto pagas al año en suscripciones?</strong>
           <span>Importa tu extracto y lo detectamos por ti en un minuto.</span>
         </span>
-        <span className="av-flecha" aria-hidden="true">›</span>
+        <span className="av-flecha" aria-hidden="true"><Icono nombre="chevron" tam={16} /></span>
       </button>
     )
   }
@@ -109,20 +110,26 @@ export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimie
       <header className="av-cab">
         <span className="av-titulo">Avisos</span>
         <button type="button" className="link" onClick={onVerSuscripciones}>
-          Ver suscripciones ›
+          Ver fijos
         </button>
       </header>
       <ul className="av-lista">
         {avisos.slice(0, 3).map((a) => (
           <li key={a.id} className={`av-item ${a.tipo} ${a.urgente ? 'urgente' : ''}`}>
-            <span className="av-icono" aria-hidden="true">{ICONO[a.tipo]}</span>
+            <span className="av-icono" aria-hidden="true"><Icono nombre={ICONO[a.tipo]} tam={16} /></span>
             <span className="av-texto">
               <span className="av-item-titulo">{a.titulo}</span>
               <span className="av-item-detalle">{a.detalle}</span>
             </span>
-            <button type="button" className="av-cerrar" aria-label="Descartar aviso" onClick={() => cerrar(a.id)}>
-              ×
-            </button>
+            {a.porConfirmar && onConfirmar ? (
+              <button type="button" className="av-confirmar" onClick={() => onConfirmar(a.recId)}>
+                Confirmar
+              </button>
+            ) : (
+              <button type="button" className="av-cerrar" aria-label="Descartar aviso" onClick={() => cerrar(a.id)}>
+                <Icono nombre="cerrar" tam={14} />
+              </button>
+            )}
           </li>
         ))}
       </ul>
@@ -131,7 +138,7 @@ export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimie
       )}
       {permiso === 'default' && (
         <button type="button" className="av-activar" onClick={activarAvisos}>
-          Avisarme también en el móvil
+          Activar avisos en este móvil
         </button>
       )}
     </section>

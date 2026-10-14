@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
-import { claveMesActual } from './movimientosUtils'
-import { tocaEnMes } from './periodicidad'
+import { SELECT_MOVIMIENTO, claveMesActual, hoyIso } from './movimientosUtils'
+import { estadoCobro, fechaCobroEnMes } from './periodicidad'
 import { aCentimos } from './importe'
 import { toast } from './toast'
 
@@ -297,6 +297,42 @@ export function useRecurrentes(usuarioId) {
     [usuarioId, cargar],
   )
 
+  // CONFIRMA el cobro de este mes: crea el movimiento (con la fecha del DÍA DE
+  // COBRO fijado, no la de hoy: confirmar el 16 un cargo del 14 lo apunta el 14)
+  // y lo marca como hecho. `fecha` solo se pasa para adelantos ("ya me lo han
+  // cobrado") o importes variables. Devuelve la fila creada o null si falla.
+  const confirmarCobro = useCallback(
+    async (rec, { importe = Number(rec.importe), fecha = null } = {}) => {
+      if (!usuarioId || !(Number(importe) > 0)) return null
+      const hoy = hoyIso()
+      const delDia = fechaCobroEnMes(rec, claveMesActual())
+      // Nunca una fecha futura (inflaría el patrimonio de hoy).
+      const fechaFinal = [fecha, delDia, hoy].find((f) => f && f <= hoy) ?? hoy
+      const { data: fila, error } = await supabase
+        .from('movimientos')
+        .insert({
+          usuario_id: usuarioId,
+          tipo: rec.tipo,
+          categoria_id: rec.categoriaId,
+          fuente_id: rec.fuenteId ?? null,
+          importe: Number(importe),
+          importe_centimos: aCentimos(importe),
+          fecha: fechaFinal,
+          nota: rec.nombre,
+          es_fijo: true,
+        })
+        .select(SELECT_MOVIMIENTO)
+        .single()
+      if (error) {
+        toast('No se ha podido registrar. Inténtalo de nuevo.', 'error')
+        return null
+      }
+      await marcarAplicado(rec.id, { movimientoId: fila?.id ?? null, importeCentimos: aCentimos(importe) })
+      return fila
+    },
+    [usuarioId, marcarAplicado],
+  )
+
   // Deshace la confirmación del mes en curso: borra el movimiento creado (si se
   // conoce su id) y la confirmación. Devuelve el id del movimiento borrado o null.
   const desmarcar = useCallback(
@@ -324,12 +360,10 @@ export function useRecurrentes(usuarioId) {
     [usuarioId, cargar],
   )
 
-  const claveActual = claveMesActual()
-  // Pendientes = activos a los que TOCA cobrar este mes y aún sin confirmar
-  // (una suscripción anual no está "pendiente" los otros 11 meses).
-  const pendientes = items.filter(
-    (it) => it.activo && tocaEnMes(it, claveActual) && !it.mesesAplicados.includes(claveActual),
-  )
+  // Pendientes = cobros de este mes cuyo DÍA ya ha llegado y falta confirmar
+  // (antes de su día no hay nada que hacer: se avisa ese día), más los que no
+  // tienen día de cobro (hay que pedírselo al usuario).
+  const pendientes = items.filter((it) => ['confirmar', 'sin-dia'].includes(estadoCobro(it)))
 
-  return { items, pendientes, cargando, modoLegacy, crear, actualizar, eliminar, marcarAplicado, desmarcar }
+  return { items, pendientes, cargando, modoLegacy, crear, actualizar, eliminar, marcarAplicado, confirmarCobro, desmarcar }
 }

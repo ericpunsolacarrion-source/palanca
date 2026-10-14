@@ -1,8 +1,7 @@
 import { useMemo } from 'react'
-import { formatearEuros } from '../lib/categorias'
+import { esInversion, formatearEuros } from '../lib/categorias'
 import { etiquetaMes, formatearPorcentaje, limiteGastoPresupuesto } from '../lib/movimientosUtils'
 import { conceptoDe, fechaRelativa, resumenDelMes } from '../lib/inicio'
-import { esInversion } from '../lib/categorias'
 import { usePresupuestoCompartido } from '../lib/DatosCompartidos'
 import Patrimonio from './Patrimonio'
 import AvisosCobros from './AvisosCobros'
@@ -194,6 +193,7 @@ export default function Inicio({
   soloLectura = false,
   onGuardado,
   onRegistrar,
+  onConfirmarCobro,
   onIrA,
   onVerAnalisis,
 }) {
@@ -213,6 +213,7 @@ export default function Inicio({
         recurrentes={recurrentes}
         movimientos={movimientos}
         onVerSuscripciones={() => onIrA('suscripciones')}
+        onConfirmar={soloLectura ? null : onConfirmarCobro}
       />
       <MesEnCurso movimientos={movimientos} onVerAnalisis={onVerAnalisis} onVerPresupuesto={() => onIrA('presupuesto')} />
       <UltimosMovimientos movimientos={movimientos} onVerTodos={() => onRegistrar('historial')} />
