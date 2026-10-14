@@ -129,6 +129,9 @@ ESTILO:
 // Orden pensado para la caché (prefijo estable → se lee a ~10 % del precio):
 //   1. system prompt (igual para todos)                       ← caché
 //   2. resumen de SUS finanzas (igual en toda la conversación) ← caché
+//      (escribir la caché cuesta 1,25× una sola vez —~0,002 céntimos para un
+//      resumen de ~900 tokens— y cada pregunta siguiente lo lee a 0,1×: en
+//      cuanto hay una segunda pregunta en la conversación, compensa)
 //   3. historial de la conversación
 //   4. detalle de la pregunta + la pregunta (lo único nuevo)
 export function construirMensajes({ resumen, detalle, pregunta, historial }) {

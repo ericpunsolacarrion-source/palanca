@@ -160,9 +160,15 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [] }) {
       const pregunta = texto.trim()
       if (!pregunta || enviando || !resumen) return
 
-      const cortesia = respuestaDeCortesia(pregunta)
+      const ultimaDeFulcro = [...mensajes].reverse().find((m) => m.rol === 'consultor' && !m.local)?.texto ?? ''
+      const cortesia = respuestaDeCortesia(pregunta, ultimaDeFulcro)
       if (cortesia) {
-        setMensajes((prev) => [...prev, { rol: 'usuario', texto: pregunta }, { rol: 'consultor', texto: cortesia, local: true }])
+        // Ambos marcados `local`: no se reenvían a la IA ni ocupan su historial.
+        setMensajes((prev) => [
+          ...prev,
+          { rol: 'usuario', texto: pregunta, local: true },
+          { rol: 'consultor', texto: cortesia, local: true },
+        ])
         setEntrada('')
         return
       }

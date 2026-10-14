@@ -126,14 +126,28 @@ Dos capas: **flujo mensual** (no cambia) y **stock acumulado** (dos bolsas).
 
 ## Consultor IA — "Fulcro" (`Consultor.jsx`)
 
-Botón flotante **"Fulcro"** (el punto de apoyo sobre el que pivota una palanca;
-encima de la barra inferior) que abre un panel de chat. Orienta con los datos
-reales del usuario: envía un **resumen estructurado**
-(`lib/resumenParaIA.js`, agregados —no movimientos en bruto) al endpoint
-serverless `api/consultor.js`, que es la única pieza que conoce la API key. El
-encuadre es educativo (no asesoramiento regulado): sin recomendaciones de compra
-concretas ni promesas de rentabilidad. Degrada con elegancia si no está
-configurado. Puesta en marcha y variables de entorno en `docs/CONSULTOR-IA.md`.
+Botón flotante **"Fulcro"** (icono de conversación, encima de la barra inferior)
+que abre un panel de chat. Guía completa (qué ve, alcance, coste, seguridad y
+pruebas) en **`docs/FULCRO.md`**.
+- **Solo en dev por ahora**: al abrir, pregunta a `GET /api/consultor` si está
+  activo; si no (sin clave o en producción), muestra "Próximamente".
+- **Bienvenida**: saludo breve, hasta 3 *insights* de sus números, 4
+  **sugerencias según sus datos** (p. ej. "¿Me compensa seguir con Netflix?" si
+  subió de precio) y el desplegable **"Qué ve Fulcro"** (privacidad).
+- **Conversación**: el usuario en burbuja; Fulcro como texto limpio con línea
+  índigo, negritas y listas (render seguro, sin HTML). La respuesta llega **en
+  streaming**. Botón **"Nueva"** para empezar de cero; la conversación se
+  conserva en la sesión del navegador.
+- **Datos**: envía el resumen del motor (`lib/resumenParaIA.js`) y, si la
+  pregunta nombra una categoría, comercio o mes, solo ese desglose
+  (`lib/contextoFulcro.js`). Nunca movimientos uno a uno.
+- **Gratis y local**: saludos, "gracias" y "vale/ok" se responden en la app sin
+  IA ni gastar cupo (salvo que "vale" responda a una pregunta de Fulcro: eso va
+  a la IA). No se reenvían en el historial.
+- **Cupo**: 10 preguntas/día (servidor, atómico); el pie muestra "Te quedan N
+  preguntas hoy" cuando quedan 5 o menos y bloquea el campo al llegar a 0.
+- Se puede abrir con una pregunta desde cualquier pantalla con el evento
+  `palanca-fulcro`.
 
 ## Reporte semanal por email
 
@@ -142,7 +156,7 @@ activar el envío). Detalle y plantilla de Edge Function en `docs/REPORTE_SEMANA
 
 ## Pendiente conocido (próximos pasos naturales)
 
-1. **Supabase Auth** (login real con email/contraseña): imprescindible antes de abrir al público; hoy cualquiera con el ID de otro accede a sus datos. Plan completo y no destructivo en `docs/AUTH_MIGRACION.md` (requiere sesión conjunta: toca el panel de Supabase y migra datos).
+1. ~~Supabase Auth~~ ✅ hecho (login con email/contraseña + RLS por usuario; ver `docs/ESTADO.md`).
 2. Activar el envío del reporte semanal (infraestructura: proveedor de email + Edge Function + cron; ver `docs/REPORTE_SEMANAL.md`).
-3. Notificaciones push reales (el recordatorio actual solo se ve al abrir la app).
+3. Notificaciones push reales con la app cerrada (hoy los avisos de Fijos lanzan una notificación local solo al abrir la app).
 4. Splash screens específicos de iOS.

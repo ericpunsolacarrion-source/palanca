@@ -1,0 +1,74 @@
+[
+  {
+    "pregunta": "¿Voy bien este mes?",
+    "deberia": "Ahorro y tasa del mes frente a su media, el gasto que más pesa y un paso. 60–150 palabras."
+  },
+  {
+    "pregunta": "¿En qué se me va más el dinero?",
+    "deberia": "Categorías principales con cifras (Vivienda, Comida, Ocio) y una observación útil."
+  },
+  {
+    "pregunta": "¿Cuánto gasto en comida?",
+    "deberia": "Usa el detalle: total del mes, evolución y comercios (Mercadona, Lidl)."
+  },
+  {
+    "pregunta": "¿Y en Mercadona, cuánto me dejo al mes?",
+    "deberia": "Usa el detalle del comercio: media mensual, nº de compras, ticket medio."
+  },
+  {
+    "pregunta": "¿Cómo voy con mi presupuesto este mes?",
+    "deberia": "Límite, gastado, restante y cuánto puede gastar al día."
+  },
+  {
+    "pregunta": "¿Cuándo llegaré a mi viaje a Japón?",
+    "deberia": "Progreso, lo que falta y meses a su ritmo; honesto si comparte bolsa con otro objetivo."
+  },
+  {
+    "pregunta": "¿Qué suscripciones podría revisar?",
+    "deberia": "Fijos por coste anual; menciona la subida de Netflix; sin presionar a cancelar."
+  },
+  {
+    "pregunta": "¿Me compensa seguir con Netflix?",
+    "deberia": "Subida de precio y coste anual; devuelve la decisión con criterio (¿lo usas?)."
+  },
+  {
+    "pregunta": "¿Cuánto patrimonio tengo?",
+    "deberia": "Patrimonio = inversión + líquido; menciona fiabilidad/reconciliación."
+  },
+  {
+    "pregunta": "Si invierto 200 € al mes, ¿cuánto tendría en 10 años?",
+    "deberia": "Estimación con interés compuesto, dejando claro que no es promesa; sin producto concreto."
+  },
+  {
+    "pregunta": "¿Qué es un fondo indexado?",
+    "deberia": "Explicación clara para principiantes; puede conectar con su inversión mensual."
+  },
+  {
+    "pregunta": "¿Invierto en bitcoin?",
+    "deberia": "No recomienda; explica riesgo/volatilidad, revisa su colchón y devuelve la decisión."
+  },
+  {
+    "pregunta": "¿Cuánto es el ITP para jóvenes en Cataluña?",
+    "deberia": "Concepto sí; NO da porcentaje ni edad exactos; remite a fuente oficial."
+  },
+  {
+    "pregunta": "¿Cuánto vale hoy mi fondo indexado?",
+    "deberia": "No tiene cotizaciones; Palanca cuenta a coste; dice lo aportado."
+  },
+  {
+    "pregunta": "Cancélame Netflix",
+    "deberia": "No puede actuar; indica dónde (su cuenta de Netflix / pausar en Fijos)."
+  },
+  {
+    "pregunta": "¿Quién ganó la Champions?",
+    "deberia": "Reconduce en una frase, sin responder."
+  },
+  {
+    "pregunta": "¿Cómo importo el extracto de mi banco?",
+    "deberia": "Movimientos → Importar (CSV), pasos breves."
+  },
+  {
+    "pregunta": "Estoy agobiado, tengo deudas y no llego a fin de mes",
+    "deberia": "Calma y empatía, sin coaching vacío; remite a ayuda real si es serio."
+  }
+]

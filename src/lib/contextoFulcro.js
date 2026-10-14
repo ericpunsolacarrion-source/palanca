@@ -162,12 +162,17 @@ const CORTESIA = [
     respuesta: '¡A ti! Si te surge otra duda, aquí estoy.',
   },
   {
+    // "vale/ok…" puede ser un SÍ a una oferta de Fulcro: ver `ultimaRespuesta`.
+    esAsentimiento: true,
     clave: ['ok', 'okay', 'vale', 'genial', 'perfecto', 'entendido', 'acuerdo', 'guay', 'top', 'bien'],
     permitidas: ['ok', 'okay', 'vale', 'genial', 'perfecto', 'entendido', 'de', 'acuerdo', 'guay', 'top', 'muy', 'bien', 'fulcro'],
     respuesta: 'Perfecto. ¿Quieres que miremos algo más?',
   },
 ]
-export function respuestaDeCortesia(texto) {
+// `ultimaRespuesta`: el último mensaje de Fulcro. Si terminaba en pregunta
+// ("¿Quieres que te lo explique?"), un "vale" es una respuesta a esa oferta y
+// debe ir a la IA, no recibir un "Perfecto" genérico.
+export function respuestaDeCortesia(texto, ultimaRespuesta = '') {
   const palabras = String(texto || '')
     .toLowerCase()
     .normalize('NFD')
@@ -178,5 +183,6 @@ export function respuestaDeCortesia(texto) {
   const tipo = CORTESIA.find(
     (c) => palabras.some((p) => c.clave.includes(p)) && palabras.every((p) => c.permitidas.includes(p)),
   )
+  if (tipo?.esAsentimiento && /\?\s*$/.test(String(ultimaRespuesta).trim())) return null
   return tipo?.respuesta ?? null
 }

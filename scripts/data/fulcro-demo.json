@@ -196,8 +196,7 @@
       ],
       "avisos": [
         "Spotify · pendiente desde hace 9 días: 10,99 €",
-        "Gimnasio · pendiente desde hace 7 días: 39,90 €",
-        "Netflix ha subido de precio: De 12,99 € a 13,99 € (+12 € al año)"
+        "Gimnasio · pendiente desde hace 7 días: 39,90 €"
       ]
     },
     "insights": []
@@ -283,6 +282,42 @@
       ]
     },
     "¿Me compensa seguir con Netflix?": {
+      "comercios": [
+        {
+          "comercio": "netflix",
+          "ultimos6Meses": [
+            {
+              "mes": "2026-05",
+              "total": 12.99
+            },
+            {
+              "mes": "2026-06",
+              "total": 12.99
+            },
+            {
+              "mes": "2026-07",
+              "total": 12.99
+            },
+            {
+              "mes": "2026-08",
+              "total": 13.99
+            },
+            {
+              "mes": "2026-09",
+              "total": 13.99
+            },
+            {
+              "mes": "2026-10",
+              "total": 13.99
+            }
+          ],
+          "compras12Meses": 7,
+          "total12Meses": 93.93,
+          "ticketMedio": 13.42
+        }
+      ]
+    },
+    "Cancélame Netflix": {
       "comercios": [
         {
           "comercio": "netflix",

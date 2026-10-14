@@ -9,3 +9,14 @@ describe('respuestaDeCortesia (sin gastar IA)', () => {
     expect(respuestaDeCortesia(t)).toBeNull()
   })
 })
+
+describe('cortesía en contexto (segunda revisión)', () => {
+  it.each(['Hola, ¿cuánto ahorro?', 'buenas, ¿y mi patrimonio?', 'gracias pero no entiendo', 'gracias, ¿y en ocio?'])('"%s" va a la IA', (t) => {
+    expect(respuestaDeCortesia(t)).toBeNull()
+  })
+  it('"vale" tras una oferta de Fulcro va a la IA; tras una afirmación, local', () => {
+    expect(respuestaDeCortesia('vale', '¿Quieres que te explique cómo funciona un fondo indexado?')).toBeNull()
+    expect(respuestaDeCortesia('vale', 'Vas bien este mes.')).toBeTruthy()
+    expect(respuestaDeCortesia('gracias', '¿Algo más?')).toBeTruthy() // las gracias no son un "sí"
+  })
+})
