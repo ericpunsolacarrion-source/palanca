@@ -173,7 +173,7 @@ export default function MetricasPrincipales({
                 <span className={progreso.superado ? 'texto-superado' : ''}>
                   {formatearPorcentaje(progreso.pct, 0)}
                 </span>
-                {progreso.superado && ' · ¡objetivo superado! 🎉'})
+                {progreso.superado && ' · ¡objetivo superado!'})
               </span>
             </>
           )}

@@ -1,3 +1,4 @@
+import Icono from './Icono'
 import { etiquetaCategoria } from '../lib/categorias'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
@@ -442,7 +443,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
         onClick={() => setMostrarDetalles((v) => !v)}
         aria-expanded={mostrarDetalles}
       >
-        <span>{mostrarDetalles ? '▾' : '▸'} Más detalles</span>
+        <span className="mas-detalles"><Icono nombre="chevron" tam={14} style={{ transform: mostrarDetalles ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s ease' }} /> Más detalles</span>
         {!mostrarDetalles && <span className="mas-detalles-resumen">{resumenDetalles}</span>}
       </button>
 

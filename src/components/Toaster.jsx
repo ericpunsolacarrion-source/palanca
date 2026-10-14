@@ -1,3 +1,4 @@
+import Icono from './Icono'
 import { useEffect, useRef, useState } from 'react'
 
 const DURACION_MS = 2200
@@ -32,7 +33,7 @@ export default function Toaster() {
 
   return (
     <div className={`toast ${esError ? 'toast-error' : ''}`} role="status" aria-live="polite">
-      <span className={`toast-icono ${esError ? 'error' : ''}`}>{esError ? '!' : '✓'}</span>
+      <span className={`toast-icono ${esError ? 'error' : ''}`}>{esError ? '!' : <Icono nombre="check" tam={14} />}</span>
       <span className="toast-texto">{aviso.mensaje}</span>
       {aviso.accion && (
         <button type="button" className="toast-accion" onClick={ejecutarAccion}>

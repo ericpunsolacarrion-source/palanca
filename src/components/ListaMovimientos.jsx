@@ -1,3 +1,4 @@
+import Icono from './Icono'
 import { etiquetaCategoria } from '../lib/categorias'
 import { conceptoDe, fechaRelativa } from '../lib/inicio'
 import { AVISO_DEMO, esDemo } from '../lib/datosDemo'
@@ -255,7 +256,7 @@ export default function ListaMovimientos({
               aria-expanded={abierto}
             >
               <span className="mes-cabecera-nombre">
-                <span className="mes-flecha">{abierto ? '▾' : '▸'}</span>
+                <span className="mes-flecha"><Icono nombre="chevron" tam={14} style={{ transform: abierto ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s ease' }} /></span>
                 {etiquetaMes(clave)}
               </span>
               <span className="mes-cabecera-resumen">

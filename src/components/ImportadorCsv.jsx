@@ -281,7 +281,7 @@ export default function ImportadorCsv({ usuarioId, movimientos, onImportado }) {
                 onClick={deducirIA}
                 disabled={mapeandoIA}
               >
-                {mapeandoIA ? 'Deduciendo…' : '✨ Deducir columnas con IA'}
+                {mapeandoIA ? 'Deduciendo…' : 'Deducir columnas con IA'}
               </button>
               <span className="importador-ia-nota">
                 Solo se envían las cabeceras y 2-3 filas de ejemplo a nuestro servidor.

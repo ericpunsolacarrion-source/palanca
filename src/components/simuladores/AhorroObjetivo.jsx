@@ -64,7 +64,7 @@ function TarjetaObjetivo({ objetivo, actual, tipo, ahorroMensual, onEditar, onEl
       <span className="objetivo-pct">{pct.toFixed(0)}%</span>
 
       {completado ? (
-        <p className="objetivo-nota objetivo-logrado">¡Objetivo alcanzado! 🎉</p>
+        <p className="objetivo-nota objetivo-logrado">¡Objetivo alcanzado!</p>
       ) : (
         <p className="objetivo-nota">
           Te faltan <strong>{formatearEuros(restante)}</strong>.

@@ -30,7 +30,7 @@ export default function Simulador({ usuarioId, movimientos, ahorroMensual, gasto
       </div>
 
       {sub === 'ahorro' && <AhorroObjetivo usuarioId={usuarioId} movimientos={movimientos} />}
-      {sub === 'interes' && <InteresCompuesto usuarioId={usuarioId} />}
+      {sub === 'interes' && <InteresCompuesto usuarioId={usuarioId} ahorroMensual={ahorroMensual} />}
       {sub === 'hipoteca' && <Hipoteca usuarioId={usuarioId} />}
       {sub === 'fire' && (
         <IndependenciaFinanciera

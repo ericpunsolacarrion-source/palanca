@@ -18,11 +18,18 @@ function valorFinal(inicial, mensual, tasaMensual, meses, alPrincipio) {
   return inicialFV + mensualesFV * (1 + tasaMensual)
 }
 
-export default function InteresCompuesto({ usuarioId }) {
+// Abre con un caso realista ya calculado (su ahorro mensual real, redondeado,
+// a 10 años al 6 %): se ve el resultado al instante y se ajusta tocando.
+function aportacionSugerida(ahorroMensual) {
+  const a = Math.round((Number(ahorroMensual) || 0) / 10) * 10
+  return a >= 20 ? Math.min(a, 5000) : 100
+}
+
+export default function InteresCompuesto({ usuarioId, ahorroMensual = 0 }) {
   const [inicial, setInicial] = useState(null)
-  const [mensual, setMensual] = useState(null)
-  const [anios, setAnios] = useState('')
-  const [rentabilidad, setRentabilidad] = useState('')
+  const [mensual, setMensual] = useState(() => aportacionSugerida(ahorroMensual))
+  const [anios, setAnios] = useState('10')
+  const [rentabilidad, setRentabilidad] = useState('6')
   const [momentoDeposito, setMomentoDeposito] = useState('final')
 
   const aportacionInicial = Number(inicial) || 0

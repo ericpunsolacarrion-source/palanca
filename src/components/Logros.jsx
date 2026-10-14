@@ -1,7 +1,8 @@
+import Icono from './Icono'
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { formatearEuros } from '../lib/categorias'
-import { CATEGORIAS_HITOS, estadoLogros } from '../lib/hitos'
+import { ICONO_FAMILIA, CATEGORIAS_HITOS, estadoLogros } from '../lib/hitos'
 import { usePresupuestoCompartido, useObjetivosCompartidos } from '../lib/DatosCompartidos'
 
 // Formatea el valor/meta de un hito según su métrica (euros, %, días, cuenta).
@@ -114,7 +115,9 @@ export default function Logros({ movimientos, movimientosMes }) {
                       }
                       return (
                       <div key={l.id} className={`logro-fila ${estado}`} style={estiloLejano}>
-                        <span className="logro-icono">{l.alcanzado ? l.icono : '🔒'}</span>
+                        <span className="logro-icono">
+                          <Icono nombre={l.alcanzado ? (ICONO_FAMILIA[l.categoria] ?? 'check') : 'candado'} tam={16} />
+                        </span>
                         <span className="logro-cuerpo">
                           <span className="logro-titulo">{l.titulo}</span>
                           {l.alcanzado ? (

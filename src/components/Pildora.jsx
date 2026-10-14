@@ -30,7 +30,7 @@ export default function Pildora({ usuarioId, pildora, firma = '', onCta, onDesca
         <p className="pildora-texto">{pildora.texto}</p>
         {pildora.cta && (
           <button type="button" className="pildora-cta" onClick={() => onCta?.(pildora.cta.pestana)}>
-            {pildora.cta.texto} →
+            {pildora.cta.texto}
           </button>
         )}
       </div>

@@ -74,6 +74,15 @@ export const HITOS = [
     titulo: '3 objetivos cumplidos', mensaje: 'Tres objetivos de ahorro completados. Eres constante de verdad.' },
 ]
 
+// Icono (de Icono.jsx) de cada familia de logros.
+export const ICONO_FAMILIA = {
+  'Ahorro líquido': 'sube',
+  Inversión: 'inversion',
+  Patrimonio: 'inicio',
+  Constancia: 'calendario',
+  Objetivos: 'check',
+}
+
 export const CATEGORIAS_HITOS = ['Ahorro líquido', 'Inversión', 'Patrimonio', 'Constancia', 'Objetivos']
 
 // Días distintos (por fecha de registro) en los que el usuario registró algo.

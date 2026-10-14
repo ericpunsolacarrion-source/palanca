@@ -62,9 +62,10 @@ export default function Hipoteca({ usuarioId }) {
   const [modo, setModo] = useState('cuota')
 
   // Modo: calcular cuota
-  const [importe, setImporte] = useState(null)
-  const [interes, setInteres] = useState('')
-  const [anios, setAnios] = useState('')
+  // Caso típico ya calculado al abrir (se cambia tocando cualquier campo).
+  const [importe, setImporte] = useState(150000)
+  const [interes, setInteres] = useState('3')
+  const [anios, setAnios] = useState('30')
 
   // Modo: amortización anticipada
   const [capitalPendiente, setCapitalPendiente] = useState(null)

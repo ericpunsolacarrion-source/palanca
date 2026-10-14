@@ -16,7 +16,7 @@ export default function SimulacionesGuardadas({ usuarioId, tipo, datosActuales, 
     setGuardando(false)
     setNombre('')
     setMostrarForm(false)
-    toast('Simulación guardada ✓')
+    toast('Simulación guardada')
   }
 
   return (

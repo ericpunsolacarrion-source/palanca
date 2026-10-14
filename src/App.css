@@ -8491,3 +8491,19 @@ input[type='number']::-webkit-outer-spin-button {
 .ini-mes-cifra:not(.positivo):not(.negativo) {
   color: var(--text-h);
 }
+
+/* Textos de ayuda: siempre secundarios (antes heredaban 16 px y competían
+   con los títulos). Las variantes con más especificidad mandan. */
+.ayuda {
+  font-size: var(--fs-s);
+  line-height: 1.5;
+  color: var(--text);
+}
+.mas-detalles {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.mes-flecha {
+  display: inline-flex;
+}

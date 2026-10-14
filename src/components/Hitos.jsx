@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { usePresupuestoCompartido, useObjetivosCompartidos } from '../lib/DatosCompartidos'
-import { detectarNuevoHito, marcarHitoVisto } from '../lib/hitos'
+import { ICONO_FAMILIA, detectarNuevoHito, marcarHitoVisto } from '../lib/hitos'
+import Icono from './Icono'
 
 // Detecta hitos recién alcanzados y muestra una celebración elegante.
 // El hito se marca como visto al cerrar (no al detectar), para que sea estable.
@@ -31,7 +32,9 @@ export default function Hitos({ usuarioId, movimientos, movimientosMes }) {
     <div className="celebracion-fondo" role="dialog" aria-modal="true" onClick={cerrar}>
       <div className="celebracion-caja" onClick={(e) => e.stopPropagation()}>
         <span className="celebracion-halo" aria-hidden="true" />
-        <span className="celebracion-icono">{hito.icono}</span>
+        <span className="celebracion-icono">
+          <Icono nombre={ICONO_FAMILIA[hito.categoria] ?? 'check'} tam={30} />
+        </span>
         <span className="celebracion-badge">Logro desbloqueado</span>
         <h3 className="celebracion-titulo">{hito.titulo}</h3>
         <p className="celebracion-mensaje">{hito.mensaje}</p>
