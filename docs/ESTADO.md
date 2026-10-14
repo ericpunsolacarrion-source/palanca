@@ -67,17 +67,25 @@ diga ("lánzalo" → fast-forward de `develop` a `main`). Incluye: Ahorro como
 traspaso, detector de suscripciones, pestaña Fijos (periodicidades,
 calendario, avisos) y el **rediseño visual v2** (ver DISENO.md).
 
-## Fulcro (consultor IA) — listo para activar, en modo ahorro (en `develop`)
-`api/consultor.js` con el SDK oficial `@anthropic-ai/sdk`. **Fase inicial =
-gasto mínimo:** modelo `claude-haiku-5-5` (~0,04 céntimos por pregunta;
-cambiable con `CONSULTOR_MODELO`), esfuerzo `low`, respuesta ≤2000 tokens,
-system prompt cacheado. **Límite de 10 preguntas/usuario/día** en el servidor
-(`FULCRO_LIMITE_DIARIO`) y **registro de tokens por pregunta** en la tabla
-`fulcro_uso` (SQL: `supabase-schema-fulcro.sql`; sin ella no se bloquea pero no
-hay límite). Respaldo ante rechazos solo en modelos grandes. Lee un resumen
-agregado (sin movimientos en bruto) que incluye **fijos**.
-**Activación:** `ANTHROPIC_API_KEY` en Vercel + redesplegar. **Tope duro**:
-límite de gasto mensual en console.anthropic.com (Settings → Limits).
+## Fulcro (consultor IA) — en pruebas SOLO en dev (en `develop`)
+- **Solo en dev**: el servidor lo enciende fuera de producción (`VERCEL_ENV`);
+  en la app pública sigue "Próximamente" hasta `FULCRO_PUBLICO=true`.
+- **Modo ahorro**: `claude-haiku-5-5` (~0,04 céntimos/pregunta; cambiable con
+  `CONSULTOR_MODELO`), esfuerzo `low`, ≤2000 tokens, system prompt cacheado,
+  **10 preguntas/usuario/día** en el servidor (`FULCRO_LIMITE_DIARIO`) y
+  registro de tokens en `fulcro_uso` (`supabase-schema-fulcro.sql`).
+- **Datos del motor**: resumen agregado (mes, tasa de ahorro, evolución,
+  bolsas con fiabilidad, presupuesto con ritmo diario, objetivos con meses a su
+  ritmo, proyección 10 años, fijos, insights) + **detalle según la pregunta**
+  (`lib/contextoFulcro.js`: categoría, comercio o mes mencionados). Nunca
+  movimientos uno a uno ni datos personales.
+- **Conoce Palanca**: el system prompt describe cada pantalla para guiar.
+- **Chat**: respuesta en streaming (NDJSON), formato seguro (negritas y
+  listas), sugerencias según sus datos, "Qué ve Fulcro", conversación de la
+  sesión, contador de preguntas. Abrible con pregunta desde cualquier pantalla
+  (evento `palanca-fulcro`).
+- **Para probar en dev**: `ANTHROPIC_API_KEY` en Vercel solo para "Preview" +
+  SQL de `fulcro_uso` + límite de gasto en console.anthropic.com.
 
 ## Rediseño visual v2 (2026-10-14, en `develop`)
 Fuera la estética "de IA": sin degradados morado→cian, sin glows ni manchas

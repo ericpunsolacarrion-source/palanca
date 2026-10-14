@@ -16,3 +16,20 @@ describe('construirResumenIA · fijos', () => {
     expect(JSON.stringify(r).length).toBeLessThan(30000) // cabe en el límite del endpoint
   })
 })
+
+describe('construirResumenIA · presupuesto, objetivos y proyección', () => {
+  it('presupuesto por gasto fijo: límite, gastado y ritmo diario', () => {
+    const r = construirResumenIA([], { presupuesto: { metodo: 'fijo', gastoMaximoFijo: 900 } })
+    expect(r.presupuesto).toMatchObject({ configurado: true, limiteGastoMes: 900, gastadoMes: 0, restante: 900 })
+    expect(r.presupuesto.puedeGastarAlDia).toBeGreaterThan(0)
+  })
+  it('sin presupuesto → configurado: false; sin ahorro → sin proyección', () => {
+    const r = construirResumenIA([])
+    expect(r.presupuesto).toEqual({ configurado: false })
+    expect(r.proyeccion10Anios).toBeNull()
+  })
+  it('objetivo: cuánto falta y meses a su ritmo', () => {
+    const r = construirResumenIA([], { objetivos: [{ nombre: 'Colchón', importe_objetivo: 3000, tipo: 'liquidez' }] })
+    expect(r.objetivosAhorro[0]).toMatchObject({ faltan: 3000, ritmoMensual: 0, mesesParaAlcanzarloASuRitmo: null })
+  })
+})

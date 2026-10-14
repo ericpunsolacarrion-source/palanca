@@ -10,7 +10,9 @@ import {
   filtrarMesActual,
   filtrarPorMes,
   gastoPorCategoria,
+  proyectarInteresCompuesto,
   resumenMensualMedio,
+  ritmoMensualPorTipo,
   totalesDe,
   ultimaReconciliacion,
   valorBolsaPorTipo,
@@ -100,6 +102,28 @@ function construirInsights({ tasaEste, tasaMedia, tendencia, subidaCat, haceMese
   return insights.slice(0, 4)
 }
 
+// Presupuesto del mes (pestaña Presupuesto): límite de gasto según el método
+// elegido, cuánto lleva gastado, cuánto le queda y a qué ritmo diario.
+function resumenPresupuesto(p, tMes) {
+  if (!p || (p.tasaAhorroObjetivo == null && p.gastoMaximoFijo == null)) return { configurado: false }
+  const limite =
+    p.metodo === 'fijo' ? Number(p.gastoMaximoFijo) : tMes.ingresos * (1 - Number(p.tasaAhorroObjetivo) / 100)
+  const hoy = new Date()
+  const diasMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate()
+  const diasRestantes = diasMes - hoy.getDate() + 1
+  const restante = limite - tMes.gastos
+  return {
+    configurado: true,
+    metodo: p.metodo === 'fijo' ? 'gasto máximo fijo' : `tasa de ahorro objetivo del ${p.tasaAhorroObjetivo} %`,
+    limiteGastoMes: Math.round(limite),
+    gastadoMes: Math.round(tMes.gastos),
+    restante: Math.round(restante),
+    diasRestantesMes: diasRestantes,
+    puedeGastarAlDia: restante > 0 ? Math.round(restante / diasRestantes) : 0,
+    objetivoInversionMensual: p.objetivoInversionMensual ?? null,
+  }
+}
+
 function resumenFijos(recurrentes, movimientos) {
   const activos = recurrentes.filter((r) => r.activo && r.tipo === 'gasto')
   const cent = (x) => Math.round(x * 100)
@@ -118,7 +142,7 @@ function resumenFijos(recurrentes, movimientos) {
   }
 }
 
-export function construirResumenIA(movimientos, { objetivos = [], objetivo, recurrentes = [] } = {}) {
+export function construirResumenIA(movimientos, { objetivos = [], objetivo, recurrentes = [], presupuesto = null } = {}) {
   const mes = filtrarMesActual(movimientos)
   const tMes = totalesDe(mes)
   const { ahorroMedio, invertidoMedio } = resumenMensualMedio(movimientos)
@@ -167,17 +191,24 @@ export function construirResumenIA(movimientos, { objetivos = [], objetivo, recu
   // Objetivos: progreso REAL según la bolsa que sigue cada objetivo (por tipo),
   // no el campo importe_actual (vestigial). fiabilidadEstimada = el progreso
   // depende de la liquidez y el saldo no está reconciliado (dato a matizar).
+  const ritmos = ritmoMensualPorTipo(movimientos)
   const objetivosAhorro = objetivos.map((o) => {
     const tipo = o.tipo || 'liquidez'
     const actual = Math.round(valorBolsaPorTipo(bolsasCalc, tipo))
     const meta = Math.round(Number(o.importe_objetivo))
     const progresoPct = meta > 0 ? Math.round((actual / meta) * 100) : 0
+    // A su ritmo real (media mensual de la bolsa que sigue), ¿cuándo llega?
+    const ritmo = Math.round(ritmos[tipo] ?? 0)
+    const falta = Math.max(0, meta - actual)
     return {
       nombre: o.nombre,
       tipo,
       objetivo: meta,
       actual,
       progresoPct,
+      faltan: falta,
+      ritmoMensual: ritmo,
+      mesesParaAlcanzarloASuRitmo: falta === 0 ? 0 : ritmo > 0 ? Math.ceil(falta / ritmo) : null,
       cercaDeCumplir: progresoPct >= 80 && progresoPct < 100,
       fiabilidadEstimada: tipo !== 'inversion' && !reconciliada,
       fecha: o.fecha_objetivo ?? null,
@@ -242,6 +273,17 @@ export function construirResumenIA(movimientos, { objetivos = [], objetivo, recu
     invertidoTotalAcumulado: Math.round(bolsasCalc.bolsaInversion),
     evolucion6Meses: evolucion,
     objetivosAhorro,
+    presupuesto: resumenPresupuesto(presupuesto, tMes),
+    // Lo que muestra la "Proyección de futuro" del dashboard: el ahorro medio
+    // mensual sostenido 10 años, parado (0 %) o invertido (7 % anual, supuesto
+    // ilustrativo, no una promesa).
+    proyeccion10Anios: ahorroMedio > 0
+      ? {
+          ahorroMensualSupuesto: Math.round(ahorroMedio),
+          dineroParado: Math.round(proyectarInteresCompuesto({ mensual: ahorroMedio, anios: 10 }).valorFinal),
+          invertidoAl7: Math.round(proyectarInteresCompuesto({ mensual: ahorroMedio, anios: 10, rentabilidadAnual: 7 }).valorFinal),
+        }
+      : null,
     // Suscripciones y gastos fijos (pestaña Fijos): coste prorrateado, próximos
     // cobros y avisos (renovaciones, subidas de precio).
     fijos: resumenFijos(recurrentes, movimientos),

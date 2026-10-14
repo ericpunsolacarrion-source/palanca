@@ -25,6 +25,12 @@ const MAX_TOKENS = 2000
 const MAX_RESUMEN = 30000 // caracteres del resumen (corta payloads abusivos)
 // Preguntas por usuario y día (se cuenta en la tabla fulcro_uso). 0 = sin límite.
 const LIMITE_DIARIO = Number(process.env.FULCRO_LIMITE_DIARIO ?? 10)
+// Fase de pruebas: Fulcro solo se enciende en los despliegues de prueba de
+// Vercel (rama develop → "Preview") y en local. En producción (la app pública)
+// sigue en "Próximamente" aunque exista la API key, hasta poner FULCRO_PUBLICO=true.
+const ENTORNO = process.env.VERCEL_ENV || 'development'
+const PERMITIDO_AQUI = ENTORNO !== 'production' || process.env.FULCRO_PUBLICO === 'true'
+const ACTIVO = Boolean(process.env.ANTHROPIC_API_KEY) && PERMITIDO_AQUI
 // Respaldo automático ante rechazos: solo existe en los modelos grandes.
 const CON_RESPALDO = /^claude-(opus-5|opus-5-5|fable-5|fable-5-1|sonnet-5-5)$/.test(MODELO)
 
@@ -56,12 +62,24 @@ TU CARÁCTER (esto define cómo respondes SIEMPRE):
 Eres un orientador financiero educativo. Tu tono equilibra dos cosas: cercano y motivador, pero serio y riguroso cuando se habla de dinero. Tu regla de oro: eres BRILLANTE explicando conceptos y mecanismos, y SABIO reconociendo los límites de lo que puedes afirmar. Como un buen asesor humano, sabes decir "esto confírmalo con un profesional". No es un descargo de responsabilidad pegado al final: es cómo razonas en cada mensaje.
 
 LOS DATOS DEL USUARIO:
-Recibes un resumen ESTRUCTURADO y anónimo de sus finanzas (agregados mensuales, medias, evolución, dos bolsas, patrimonio, objetivos, insights). Úsalo para personalizar con SUS cifras reales y dar matices, no generalidades. Ej: "tu tasa de ahorro ha bajado respecto a tu media, sobre todo por el gasto en Ocio".
+Recibes un resumen ESTRUCTURADO y anónimo de sus finanzas, calculado por el motor de Palanca (las cifras son exactas; no las recalcules a ojo). Úsalo para personalizar con SUS cifras reales y dar matices, no generalidades. Ej: "tu tasa de ahorro ha bajado respecto a tu media, sobre todo por el gasto en Ocio".
+Campos principales: "mesActual" (ingresos, gastos, ahorro, invertido, gasto por categoría), "tasaAhorro" (este mes, media, tendencia), "evolucion6Meses", "medias", "bolsas" (liquidez, inversión, patrimonio) con su "fiabilidad", "inversion", "presupuesto" (límite del mes, gastado, restante, cuánto puede gastar al día), "objetivosAhorro" (progreso, lo que falta y meses para lograrlo a su ritmo real), "proyeccion10Anios", "fijos" e "insights".
+- Si llega un bloque "detalle" (categorías, comercios o meses que el usuario ha mencionado), es lo más relevante para su pregunta: apóyate en él primero.
 - Reglas de cálculo de la app: el "ahorro" = ingresos − gastos de consumo (la inversión ES parte del ahorro, no lo penaliza); el "gasto" es solo consumo; la inversión se cuenta aparte, en positivo.
 - HONESTIDAD SOBRE LA FIABILIDAD: mira "fiabilidad". Si "liquidezReconciliada" es false, la liquidez y el patrimonio son ESTIMACIONES de lo registrado, no hechos. No afirmes esas cifras como firmes: di algo como "según tus datos registrados, que conviene reconciliar…". Las cifras de inversión sí son firmes (cada aportación es un hecho).
 - El resumen incluye "insights": obsérvalos y, si vienen al caso y de forma natural y no alarmista, coméntalos. Nunca sueltes todos de golpe ni asustes.
 - "fijos" resume sus suscripciones y gastos fijos (coste prorrateado al mes y al año, próximos cobros, renovaciones y subidas de precio). Úsalo para ayudarle a revisar qué le compensa mantener, sin presionar a cancelar nada.
-- No inventes datos que no estén en el resumen; si falta contexto, dilo.
+- No inventes datos que no estén en el resumen; si falta contexto, dilo y, si puede obtenerse en Palanca, dile dónde (p. ej. "si registras tus gastos de este mes, te lo digo con precisión").
+- Si un dato no existe porque el usuario aún no ha usado esa parte de la app (sin presupuesto, sin objetivos, sin fijos), invítale a hacerlo con naturalidad, explicando en una frase para qué le serviría.
+
+CONOCES PALANCA (guía al usuario por la app cuando ayude; nombra las pantallas tal cual):
+- Inicio: resumen del mes, ahorro y tasa de ahorro, patrimonio (inversión + ahorro líquido) con el botón "Ajustar saldo" para reconciliar con su saldo real del banco, avisos de cobros, gráficos, logros y proyección de futuro.
+- Movimientos: "Nuevo" para apuntar gastos, ingresos o aportaciones a inversión (con atajos de gastos rápidos); "Historial" con filtros; "Importar" para cargar el extracto del banco en CSV (detecta columnas, duplicados y se puede deshacer).
+- Fijos: suscripciones y gastos fijos con su periodicidad (mensual, trimestral, anual…), calendario de próximos cobros, reparto anual y detector automático de suscripciones en sus movimientos; marcar un cobro como pagado lo registra.
+- Presupuesto: límite de gasto por tasa de ahorro objetivo o por cantidad fija, objetivo de inversión mensual y planificación de meses futuros.
+- Inversión: aportaciones por plataforma y su evolución (el patrimonio se cuenta a coste, sin valor de mercado).
+- Simulador: objetivos de ahorro, interés compuesto, hipoteca e independencia financiera (esta última se desbloquea con 30 días de historial).
+No prometas funciones que no están en esta lista.
 
 ━━━ TRES LÍNEAS QUE NUNCA CRUZAS ━━━
 
@@ -83,8 +101,9 @@ EDUCACIÓN (tu mayor valor):
 Explica conceptos financieros con claridad y ejemplos para alguien joven que empieza: interés compuesto, diversificación, fondos indexados vs acciones, ETF, inflación, tipos de interés, ahorro vs inversión, colchón de emergencia, etc. Apóyate en SUS datos para ilustrar cuando ayude ("con lo que inviertes al mes, el interés compuesto significa que…"). Cuando encaje, sugiere usar las herramientas de la propia Palanca: el simulador de interés compuesto, el de independencia financiera, los objetivos de ahorro. Integración natural, sin forzarla.
 
 ESTILO:
-- Español cercano, claro y breve (2–4 párrafos cortos o una lista corta). Habla de "tú".
-- Usa sus cifras (en euros, formato español) cuando aporten.
+- Español cercano, claro y breve (2–4 párrafos cortos o una lista corta). Habla de "tú". Empieza por la respuesta, sin preámbulos ni repetir la pregunta.
+- Usa sus cifras (en euros, formato español: 1.234,56 €) cuando aporten.
+- Formato: solo texto, **negrita** para la cifra o idea clave (con moderación) y listas con "- " cuando haya varios puntos. Nada de títulos, tablas ni emojis.
 - Termina, si encaja, con un paso pequeño y concreto que pueda dar.
 - Eres orientación EDUCATIVA, no asesoramiento financiero regulado: que se note en cómo hablas, no solo en un aviso.`
 
@@ -93,7 +112,7 @@ export default async function handler(req, res) {
   // Solo depende de que exista la API key en el servidor: activarlo es poner
   // ANTHROPIC_API_KEY en Vercel y redesplegar.
   if (req.method === 'GET') {
-    return res.status(200).json({ activo: Boolean(process.env.ANTHROPIC_API_KEY) })
+    return res.status(200).json({ activo: ACTIVO })
   }
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'GET, POST')
@@ -107,7 +126,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Sesión no válida. Vuelve a iniciar sesión.', code: 'no_autorizado' })
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!ACTIVO) {
     // Degradación elegante: el frontend muestra un aviso, no se rompe.
     return res.status(503).json({
       error: 'El consultor no está configurado todavía.',
@@ -117,7 +136,7 @@ export default async function handler(req, res) {
 
   // En Vercel (runtime Node) req.body ya viene parseado si el content-type es JSON.
   const body = typeof req.body === 'string' ? safeParse(req.body) : req.body || {}
-  const { resumen, pregunta, historial } = body
+  const { resumen, pregunta, historial, detalle, stream: enStreaming } = body
 
   if (!pregunta || typeof pregunta !== 'string' || !pregunta.trim()) {
     return res.status(400).json({ error: 'Falta la pregunta.' })
@@ -125,7 +144,7 @@ export default async function handler(req, res) {
   if (pregunta.length > 2000) {
     return res.status(400).json({ error: 'La pregunta es demasiado larga.' })
   }
-  if (resumen && JSON.stringify(resumen).length > MAX_RESUMEN) {
+  if ((resumen && JSON.stringify(resumen).length > MAX_RESUMEN) || (detalle && JSON.stringify(detalle).length > 8000)) {
     return res.status(400).json({ error: 'El contexto es demasiado grande.' })
   }
 
@@ -144,9 +163,9 @@ export default async function handler(req, res) {
   while (mensajes.length && mensajes[0].role !== 'user') mensajes.shift()
 
   // El turno actual lleva el resumen estructurado como contexto + la pregunta.
-  const contexto = resumen
-    ? `Contexto (resumen estructurado de mis finanzas, en JSON):\n${JSON.stringify(resumen)}\n\n`
-    : ''
+  const contexto =
+    (resumen ? `Contexto (resumen estructurado de mis finanzas, en JSON):\n${JSON.stringify(resumen)}\n\n` : '') +
+    (detalle ? `Detalle de lo que menciono en mi pregunta (JSON):\n${JSON.stringify(detalle)}\n\n` : '')
   mensajes.push({ role: 'user', content: `${contexto}Mi pregunta: ${pregunta.trim()}` })
 
   // Límite diario por usuario (en el servidor: no se puede saltar desde la app).
@@ -173,66 +192,99 @@ export default async function handler(req, res) {
   }
 
   const client = new Anthropic() // lee ANTHROPIC_API_KEY del entorno
+  const peticion = {
+    model: MODELO,
+    max_tokens: MAX_TOKENS,
+    // El system prompt es idéntico en todas las peticiones: se cachea y las
+    // siguientes preguntas lo leen a ~10 % del precio.
+    system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+    messages: mensajes,
+    output_config: { effort: ESFUERZO },
+  }
+  // Si los filtros de seguridad declinan una pregunta legítima, la API la
+  // reintenta en el modelo alternativo recomendado (solo modelos grandes).
+  const conRespaldo = CON_RESPALDO ? { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' } : null
 
-  try {
-    const peticion = {
-      model: MODELO,
-      max_tokens: MAX_TOKENS,
-      // El system prompt es idéntico en todas las peticiones: se cachea y las
-      // siguientes preguntas lo leen a ~10 % del precio.
-      system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-      messages: mensajes,
-      output_config: { effort: ESFUERZO },
-    }
-    const respuesta = CON_RESPALDO
-      ? // Si los filtros de seguridad declinan una pregunta legítima, la API la
-        // reintenta en el modelo alternativo recomendado.
-        await client.beta.messages.create({ ...peticion, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' })
-      : await client.messages.create(peticion)
-
-    // Registro de uso (para el límite diario y para ver el coste real).
-    if (sb) {
-      const u = respuesta.usage || {}
-      await sb.from('fulcro_uso').insert({
-        usuario_id: usuario.id,
-        modelo: respuesta.model || MODELO,
-        tokens_entrada: (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0),
-        tokens_salida: u.output_tokens ?? 0,
-        tokens_cache: u.cache_read_input_tokens ?? 0,
-      })
-    }
-    const restantes = usadasHoy !== null ? Math.max(0, LIMITE_DIARIO - usadasHoy - 1) : null
-
-    if (respuesta.stop_reason === 'refusal') {
-      return res.status(200).json({
-        respuesta:
-          'Esa pregunta no la puedo responder. Si es sobre tus finanzas, prueba a formularla de otra manera.',
-        restantes,
-      })
-    }
-
-    const texto = (respuesta.content || [])
+  // Registro de uso (para el límite diario y para ver el coste real).
+  async function registrarUso(respuesta) {
+    if (!sb) return
+    const u = respuesta.usage || {}
+    await sb.from('fulcro_uso').insert({
+      usuario_id: usuario.id,
+      modelo: respuesta.model || MODELO,
+      tokens_entrada: (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0),
+      tokens_salida: u.output_tokens ?? 0,
+      tokens_cache: u.cache_read_input_tokens ?? 0,
+    })
+  }
+  const restantes = usadasHoy !== null ? Math.max(0, LIMITE_DIARIO - usadasHoy - 1) : null
+  const textoDe = (respuesta) =>
+    (respuesta.content || [])
       .filter((b) => b.type === 'text')
       .map((b) => b.text)
       .join('')
       .trim()
 
+  // ── Modo streaming: la respuesta aparece mientras se escribe ──────────────
+  // Protocolo: líneas JSON (NDJSON): {t:'texto',d} … {t:'fin',restantes} o
+  // {t:'rechazo',d} / {t:'error',d}. Mismo coste que sin streaming.
+  if (enStreaming) {
+    res.statusCode = 200
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8')
+    res.setHeader('Cache-Control', 'no-cache, no-transform')
+    const enviar = (obj) => res.write(`${JSON.stringify(obj)}\n`)
+    try {
+      const flujo = conRespaldo
+        ? client.beta.messages.stream({ ...peticion, ...conRespaldo })
+        : client.messages.stream(peticion)
+      flujo.on('text', (delta) => enviar({ t: 'texto', d: delta }))
+      const final = await flujo.finalMessage()
+      await registrarUso(final)
+      if (final.stop_reason === 'refusal') enviar({ t: 'rechazo', d: MENSAJE_RECHAZO })
+      enviar({ t: 'fin', restantes })
+    } catch (e) {
+      registrarError(e)
+      enviar({ t: 'error', d: mensajeDeError(e) })
+    }
+    return res.end()
+  }
+
+  try {
+    const respuesta = conRespaldo
+      ? await client.beta.messages.create({ ...peticion, ...conRespaldo })
+      : await client.messages.create(peticion)
+    await registrarUso(respuesta)
+
+    if (respuesta.stop_reason === 'refusal') {
+      return res.status(200).json({ respuesta: MENSAJE_RECHAZO, restantes })
+    }
+    const texto = textoDe(respuesta)
     return res.status(200).json({ respuesta: texto || 'No he sabido qué responder. Prueba a reformular.', restantes })
   } catch (e) {
+    registrarError(e)
     if (e instanceof Anthropic.AuthenticationError) {
-      console.error('Consultor: API key inválida')
-      return res.status(503).json({ error: 'El consultor no está bien configurado.', code: 'sin_configurar' })
+      return res.status(503).json({ error: mensajeDeError(e), code: 'sin_configurar' })
     }
     if (e instanceof Anthropic.RateLimitError) {
-      return res.status(429).json({ error: 'Hay mucha demanda ahora mismo. Inténtalo en un minuto.' })
+      return res.status(429).json({ error: mensajeDeError(e) })
     }
-    if (e instanceof Anthropic.APIError) {
-      console.error('Error de Anthropic:', e.status, e.message)
-    } else {
-      console.error('Fallo llamando al consultor:', e)
-    }
-    return res.status(502).json({ error: 'El consultor no está disponible ahora mismo.' })
+    return res.status(502).json({ error: mensajeDeError(e) })
   }
+}
+
+const MENSAJE_RECHAZO =
+  'Esa pregunta no la puedo responder. Si es sobre tus finanzas, prueba a formularla de otra manera.'
+
+function mensajeDeError(e) {
+  if (e instanceof Anthropic.AuthenticationError) return 'El consultor no está bien configurado.'
+  if (e instanceof Anthropic.RateLimitError) return 'Hay mucha demanda ahora mismo. Inténtalo en un minuto.'
+  return 'El consultor no está disponible ahora mismo.'
+}
+
+function registrarError(e) {
+  if (e instanceof Anthropic.AuthenticationError) console.error('Consultor: API key inválida')
+  else if (e instanceof Anthropic.APIError) console.error('Error de Anthropic:', e.status, e.message)
+  else console.error('Fallo llamando al consultor:', e)
 }
 
 function safeParse(s) {

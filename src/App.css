@@ -7139,3 +7139,186 @@ input[type='number']::-webkit-outer-spin-button {
   font-family: var(--fuente-mono);
   color: var(--accent-2);
 }
+
+/* ── Fulcro v2: panel de conversación (ver docs/DISENO.md) ──────────────── */
+.consultor-panel {
+  background: var(--bg);
+  border-color: var(--borde-fuerte);
+}
+.consultor-cabecera {
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.consultor-cabecera-texto {
+  flex: 1;
+  min-width: 0;
+}
+.consultor-cabecera h2 {
+  font-size: var(--fs-base);
+  letter-spacing: -0.01em;
+}
+.consultor-sub {
+  margin: 1px 0 0;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.fulcro-avatar {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--blanco);
+}
+.consultor-nueva {
+  flex: none;
+  padding: 6px 12px;
+  border-radius: var(--radio-pastilla);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-xs);
+}
+.consultor-cerrar {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+}
+.consultor-cerrar:hover {
+  background: var(--card-bg-2);
+}
+.consultor-mensajes {
+  gap: 14px;
+}
+.fulcro-hola {
+  font-size: var(--fs-base);
+  color: var(--text-h);
+  line-height: 1.5;
+}
+.consultor-sugerencias button {
+  text-align: left;
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text-h);
+}
+.consultor-sugerencias button:hover:not(:disabled) {
+  border-color: var(--borde-fuerte);
+  background: var(--card-bg-2);
+}
+.fulcro-privacidad {
+  margin-top: 4px;
+  font-size: var(--fs-xs);
+  color: var(--text);
+}
+.fulcro-privacidad summary {
+  cursor: pointer;
+  font-family: var(--fuente-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  list-style: none;
+}
+.fulcro-privacidad summary::before {
+  content: '+ ';
+}
+.fulcro-privacidad[open] summary::before {
+  content: '− ';
+}
+.fulcro-privacidad p {
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+/* Mensajes: el usuario en burbuja; Fulcro como texto limpio, sin burbuja */
+.fulcro-msg {
+  font-size: var(--fs-base);
+  line-height: 1.55;
+  word-break: break-word;
+  animation: fade-in 0.2s ease both;
+}
+.fulcro-msg.usuario {
+  align-self: flex-end;
+  max-width: 85%;
+  padding: 9px 14px;
+  border-radius: 16px 16px 4px 16px;
+  background: var(--card-bg-2);
+  border: 1px solid var(--border);
+  color: var(--text-h);
+  white-space: pre-wrap;
+}
+.fulcro-msg.consultor {
+  align-self: stretch;
+  color: var(--text-h);
+  padding-left: 12px;
+  border-left: 2px solid var(--accent);
+}
+.fulcro-msg.consultor p {
+  margin: 0 0 8px;
+}
+.fulcro-msg.consultor p:last-child,
+.fulcro-msg.consultor ul:last-child {
+  margin-bottom: 0;
+}
+.fulcro-msg.consultor ul {
+  margin: 0 0 8px;
+  padding-left: 18px;
+}
+.fulcro-msg.consultor li {
+  margin: 2px 0;
+}
+.fulcro-msg.consultor li::marker {
+  color: var(--accent-2);
+}
+.fulcro-msg.consultor strong {
+  color: var(--text-h);
+  font-weight: 650;
+}
+.fulcro-msg.error {
+  color: var(--text);
+  border-left-color: var(--gasto);
+}
+.fulcro-escribiendo {
+  display: inline-flex;
+  gap: 4px;
+  padding: 6px 0;
+}
+
+/* Entrada: campo + botón circular de enviar */
+.consultor-entrada input {
+  background: var(--card-bg);
+  border-color: var(--borde-fuerte);
+}
+.consultor-entrada input:focus {
+  border-color: var(--accent-2);
+}
+.consultor-entrada button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+.consultor-entrada button:disabled {
+  opacity: 0.4;
+}
+.consultor-teaser-icono {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--blanco);
+}
