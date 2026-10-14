@@ -65,8 +65,8 @@ Base ahora es la pestaña **Fijos** (puerta de entrada). Hecho en `develop`:
 - **Detector de cargos periódicos** (`lib/suscripciones.js`) sobre el
   histórico/CSV: mensual, bimestral, trimestral, semestral y anual; coste
   anual y subida de precio; añadir con un toque.
-- **Periodicidades** en los compromisos (`lib/periodicidad.js`). ⚠️ Requiere
-  ejecutar `supabase-schema-periodicidad.sql` (sin él, todo se guarda mensual).
+- **Periodicidades** en los compromisos (`lib/periodicidad.js`). SQL
+  `supabase-schema-periodicidad.sql` ✅ ejecutado en producción (2026-10-14).
 - **Calendario de cobros** (30 días) + **reparto anual** (`CalendarioCobros.jsx`).
 - **Avisos** en el inicio (`lib/avisos.js`): cobros inminentes, renovaciones,
   subidas de precio + notificación local del sistema al abrir la app.
