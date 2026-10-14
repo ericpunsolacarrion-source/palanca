@@ -21,7 +21,6 @@ import {
 } from './lib/movimientosUtils'
 import Onboarding from './components/Onboarding'
 import CapturaEmail from './components/CapturaEmail'
-import ListaMovimientos from './components/ListaMovimientos'
 import MetricasPrincipales from './components/MetricasPrincipales'
 import Comparativas from './components/Comparativas'
 import Pildora from './components/Pildora'
@@ -31,7 +30,6 @@ import { usePresupuesto } from './lib/usePresupuesto'
 import { useRecurrentes } from './lib/useRecurrentes'
 import { useObjetivosAhorro } from './lib/useObjetivosAhorro'
 import { DatosCompartidosProvider } from './lib/DatosCompartidos'
-import RecordatorioBanner from './components/RecordatorioBanner'
 import GraficoEvolucion from './components/GraficoEvolucion'
 import GraficoCategorias from './components/GraficoCategorias'
 import GraficoTasaAhorro from './components/GraficoTasaAhorro'
@@ -41,9 +39,9 @@ import Toaster from './components/Toaster'
 import Confirmador from './components/Confirmador'
 import Hitos from './components/Hitos'
 import Logros from './components/Logros'
-import Patrimonio from './components/Patrimonio'
-import AvisosCobros from './components/AvisosCobros'
+import Inicio from './components/Inicio'
 import Icono, { Marca } from './components/Icono'
+import { fijarImportesOcultos, importesOcultos } from './lib/privacidad'
 import './App.css'
 
 // Pestañas no iniciales cargadas bajo demanda (code-splitting): aligeran el
@@ -95,6 +93,15 @@ function App() {
   // Selector de periodo GLOBAL del dashboard (clave 'YYYY-MM'). Gobierna a la vez
   // métricas, tasa de ahorro, categorías y evolución. Por defecto, el mes actual.
   const [mesDashboard, setMesDashboard] = useState(claveMesActual())
+  // Inicio: "Resumen" (lo esencial) o "Análisis" (gráficos por periodo).
+  const [vistaInicio, setVistaInicio] = useState('resumen')
+  // Modo discreto: oculta todos los importes (alguien al lado). Al cambiar se
+  // vuelve a montar el contenido para que TODO se repinte con o sin cifras.
+  const [ocultos, setOcultos] = useState(importesOcultos)
+  const alternarOcultos = useCallback(() => {
+    fijarImportesOcultos(!importesOcultos())
+    setOcultos(importesOcultos())
+  }, [])
 
   // Navegación central: al cambiar de pestaña se limpia el filtro de movimientos,
   // salvo cuando se llega expresamente con uno (verMovimientos).
@@ -296,6 +303,16 @@ function App() {
           Palanca
         </h1>
         <button
+          type="button"
+          className="app-cuenta app-ojo"
+          onClick={alternarOcultos}
+          aria-pressed={ocultos}
+          aria-label={ocultos ? 'Mostrar importes' : 'Ocultar importes'}
+          title={ocultos ? 'Mostrar importes' : 'Ocultar importes'}
+        >
+          <Icono nombre={ocultos ? 'ojoOculto' : 'ojo'} tam={18} />
+        </button>
+        <button
           className="app-cuenta"
           onClick={() => setVerCuenta(true)}
           aria-label={`Tu cuenta${session?.user?.email ? ` (${session.user.email})` : ''}`}
@@ -305,7 +322,7 @@ function App() {
         </button>
       </header>
 
-      <main>
+      <main key={ocultos ? 'ocultos' : 'visibles'}>
         {errorCarga && (
           <div className="aviso-error">
             <span>No se han podido cargar tus datos. Revisa tu conexión.</span>
@@ -338,69 +355,73 @@ function App() {
                 onGuardado={(email) => setPerfil({ ...perfil, email })}
               />
             )}
-            {/* Sin ningún movimiento, el dashboard solo muestra el arranque
-                guiado (nada de muros de ceros). Con datos, el dashboard completo. */}
+            {/* Sin ningún movimiento, el inicio solo muestra el arranque guiado
+                (nada de muros de ceros). Con datos: Resumen (lo esencial) o
+                Análisis (gráficos y detalle por periodo). */}
             {movimientos.length > 0 && (
               <>
-                <RecordatorioBanner
-                  dias={diasDesdeUltimoMovimiento}
-                  onIrAMovimientos={() => irAPestana('movimientos')}
-                />
-                {/* Orden por importancia: primero el periodo y lo del mes elegido
-                    (métricas + tasa de ahorro), luego lo conseguido (bolsas y
-                    patrimonio) y el resto de gráficos del periodo. La proyección de
-                    futuro baja: es valiosa pero no prioritaria. */}
-                <AvisosCobros
-                  cargando={cargandoRecurrentes}
-                  usuarioId={usuarioId}
-                  recurrentes={recurrentes}
-                  movimientos={movimientos}
-                  onVerSuscripciones={() => irAPestana('suscripciones')}
-                />
-                <PeriodoSelector meses={mesesRango} valor={mesActivoDash} onCambiar={setMesDashboard} />
-                <MetricasPrincipales
-                  usuarioId={usuarioId}
-                  movimientos={movimientosPeriodo}
-                  historico={movimientos}
-                  etiquetaPeriodo={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
-                  esMesActual={esMesActual}
-                  onVerMovimientos={verMovimientos}
-                />
-                <Patrimonio
-                  usuarioId={usuarioId}
-                  movimientos={movimientos}
-                  onGuardado={onGuardado}
-                  onVerInversion={() => irAPestana('inversiones')}
-                />
-                <GraficoTasaAhorro movimientos={movimientos} mesFin={mesActivoDash} />
-                <GraficoCategorias
-                  movimientos={movimientosPeriodo}
-                  etiqueta={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
-                />
-                <GraficoEvolucion movimientos={movimientos} mesFin={mesActivoDash} />
-                <Comparativas movimientos={movimientos} />
-                <Logros usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
-                {pildoraDash && (
-                  <Pildora
-                    key={pildoraDash.id}
+                <div className="sub-tabs ini-vistas" role="tablist" aria-label="Vista del inicio">
+                  <button type="button" role="tab" aria-selected={vistaInicio === 'resumen'} className={vistaInicio === 'resumen' ? 'activo' : ''} onClick={() => setVistaInicio('resumen')}>
+                    Resumen
+                  </button>
+                  <button type="button" role="tab" aria-selected={vistaInicio === 'analisis'} className={vistaInicio === 'analisis' ? 'activo' : ''} onClick={() => setVistaInicio('analisis')}>
+                    Análisis
+                  </button>
+                </div>
+
+                {vistaInicio === 'resumen' && (
+                  <Inicio
                     usuarioId={usuarioId}
-                    pildora={pildoraDash}
-                    firma={firmaPildoras}
-                    onCta={irAPestana}
-                    onDescartar={() => setDescartesPildora((n) => n + 1)}
+                    movimientos={movimientos}
+                    recurrentes={recurrentes}
+                    cargandoRecurrentes={cargandoRecurrentes}
+                    diasSinRegistrar={diasDesdeUltimoMovimiento}
+                    onGuardado={onGuardado}
+                    onRegistrar={irARegistrar}
+                    onIrA={irAPestana}
+                    onVerAnalisis={() => {
+                      setVistaInicio('analisis')
+                      document.querySelector('main')?.scrollTo?.({ top: 0 })
+                      window.scrollTo?.({ top: 0 })
+                    }}
                   />
                 )}
-                <ProyeccionFuturo
-                  movimientos={movimientos}
-                  onIrARegistro={() => irAPestana('movimientos')}
-                />
-                <h2 className="subtitulo-seccion">Últimos movimientos</h2>
-                <ListaMovimientos
-                  movimientos={movimientos.slice(0, 5)}
-                  cargando={cargando}
-                  soloLectura
-                  onIrARegistro={() => irAPestana('movimientos')}
-                />
+
+                {vistaInicio === 'analisis' && (
+                  <>
+                    <PeriodoSelector meses={mesesRango} valor={mesActivoDash} onCambiar={setMesDashboard} />
+                    <MetricasPrincipales
+                      usuarioId={usuarioId}
+                      movimientos={movimientosPeriodo}
+                      historico={movimientos}
+                      etiquetaPeriodo={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
+                      esMesActual={esMesActual}
+                      onVerMovimientos={verMovimientos}
+                    />
+                    <GraficoCategorias
+                      movimientos={movimientosPeriodo}
+                      etiqueta={esMesActual ? 'este mes' : etiquetaMes(mesActivoDash, { month: 'long' })}
+                    />
+                    <GraficoTasaAhorro movimientos={movimientos} mesFin={mesActivoDash} />
+                    <GraficoEvolucion movimientos={movimientos} mesFin={mesActivoDash} />
+                    <Comparativas movimientos={movimientos} />
+                    {pildoraDash && (
+                      <Pildora
+                        key={pildoraDash.id}
+                        usuarioId={usuarioId}
+                        pildora={pildoraDash}
+                        firma={firmaPildoras}
+                        onCta={irAPestana}
+                        onDescartar={() => setDescartesPildora((n) => n + 1)}
+                      />
+                    )}
+                    <ProyeccionFuturo
+                      movimientos={movimientos}
+                      onIrARegistro={() => irAPestana('movimientos')}
+                    />
+                    <Logros usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
+                  </>
+                )}
               </>
             )}
           </div>

@@ -1,5 +1,6 @@
 import { esAjuste, esInversion, esTraspaso } from './categorias'
 import { aCentimos, aEuros } from './importe'
+import { importesOcultos } from './privacidad'
 
 // Importe de un movimiento en céntimos ENTEROS (frontera única de dinero del
 // motor; contrato docs/MOTOR.md P1). Prefiere la columna `importe_centimos` si
@@ -317,6 +318,7 @@ export function formatearPorcentaje(valor, decimales = 1) {
 
 // Formato compacto para etiquetas de gráfico: 1234 -> "1,2k"
 export function formatearCompacto(valor) {
+  if (importesOcultos()) return '••'
   if (valor >= 1000) {
     const k = valor / 1000
     return `${k.toLocaleString('es-ES', { maximumFractionDigits: 1 })}k`

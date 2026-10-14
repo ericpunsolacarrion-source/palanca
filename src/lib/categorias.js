@@ -1,3 +1,5 @@
+import { MASCARA, importesOcultos } from './privacidad'
+
 // Categorías de partida al completar el onboarding (el usuario puede
 // añadir más después, ej. "Dividendos" o "Alquiler" como ingreso).
 export const CATEGORIAS_INICIALES = {
@@ -27,8 +29,10 @@ export const CATEGORIA_TRASPASO = 'Ahorro'
 // Formato español único para importes: punto de miles, coma decimal, € al
 // final. Sin decimales cuando el importe es redondo (100.000 €) y con 2
 // decimales cuando hay céntimos (1.234,56 €).
+// En modo discreto (lib/privacidad) devuelve "•••• €" en vez de la cifra.
 export function formatearEuros(valor) {
   const seguro = Number.isFinite(valor) ? valor : 0
+  if (importesOcultos()) return `${seguro < 0 ? '−' : ''}${MASCARA} €`
   const esEntero = Number.isInteger(seguro)
   return new Intl.NumberFormat('es-ES', {
     style: 'currency',

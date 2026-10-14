@@ -49,7 +49,10 @@ export default function MovimientosTab({
   onLimpiarFiltro,
   modoInicialRegistro,
 }) {
-  const [sub, setSub] = useState('nuevo')
+  // Se puede llegar directo al historial o al importador (accesos del inicio).
+  const [sub, setSub] = useState(() =>
+    modoInicialRegistro === 'historial' || modoInicialRegistro === 'importar' ? modoInicialRegistro : 'nuevo',
+  )
   const [filtroHist, setFiltroHist] = useState('todos')
 
   const movsHistorial = useMemo(
@@ -125,7 +128,7 @@ export default function MovimientosTab({
           usuarioId={usuarioId}
           movimientos={movimientos}
           onGuardado={onGuardado}
-          modoInicial={modoInicialRegistro}
+          modoInicial={modoInicialRegistro === 'gasto' || modoInicialRegistro === 'ingreso' ? modoInicialRegistro : undefined}
         />
       )}
 

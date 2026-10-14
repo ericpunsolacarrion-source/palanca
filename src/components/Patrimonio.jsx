@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { formatearEuros } from '../lib/categorias'
-import { bolsas, hoyIso, ultimaReconciliacion } from '../lib/movimientosUtils'
+import { bolsas, etiquetaMes, hoyIso, ultimaReconciliacion } from '../lib/movimientosUtils'
+import { cambioPatrimonioMes, evolucionPatrimonio } from '../lib/inicio'
+import Icono from './Icono'
 import { crearAjuste } from '../lib/ajustes'
 import { useSaldo } from '../lib/useSaldo'
 import { toast } from '../lib/toast'
@@ -13,7 +15,38 @@ function diasDesde(iso) {
   return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24))
 }
 
-export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerInversion }) {
+// Línea de evolución del patrimonio (últimos meses). Sin ejes: solo la forma
+// de la curva y el punto de hoy; las cifras están arriba.
+function LineaPatrimonio({ serie }) {
+  const W = 320
+  const H = 56
+  const valores = serie.map((p) => p.valor)
+  const min = Math.min(...valores)
+  const max = Math.max(...valores)
+  const rango = max - min || 1
+  const pts = valores.map((v, i) => [(i / (valores.length - 1)) * W, H - 6 - ((v - min) / rango) * (H - 12)])
+  const linea = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ')
+  const [ux, uy] = pts.at(-1)
+  return (
+    <div className="hp-linea">
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+        <path d={`${linea} L${W} ${H} L0 ${H} Z`} className="hp-linea-area" />
+        <path d={linea} className="hp-linea-trazo" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <span className="hp-linea-punto" style={{ left: `${(ux / W) * 100}%`, top: `${(uy / H) * 100}%` }} />
+      <div className="hp-linea-meses" aria-hidden="true">
+        {serie.map((p) => (
+          <span key={p.mes}>{etiquetaMes(p.mes, { month: 'short' }).replace('.', '')}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Héroe del inicio: lo que tienes (patrimonio), cómo ha cambiado este mes,
+// su evolución y el reparto disponible / invertido. Ajustar saldo cuadra la
+// liquidez con el banco (crea un ajuste visible).
+export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerInversion, soloLectura = false }) {
   const [abierto, setAbierto] = useState(false)
   const [saldoReal, setSaldoReal] = useState('')
   const [guardando, setGuardando] = useState(false)
@@ -25,6 +58,8 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerIn
     () => bolsas(movimientos, hoyIso()),
     [movimientos],
   )
+  const serie = useMemo(() => evolucionPatrimonio(movimientos, 6), [movimientos])
+  const cambioMes = useMemo(() => cambioPatrimonioMes(movimientos), [movimientos])
 
   // La reconciliación más reciente: la marca local o el último ajuste registrado.
   const ultimaAjuste = useMemo(() => ultimaReconciliacion(movimientos), [movimientos])
@@ -60,38 +95,51 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerIn
     }
   }
 
+  const pctInvertido = patrimonio > 0 ? Math.min(100, Math.max(0, (bolsaInversion / patrimonio) * 100)) : 0
+  const sube = cambioMes >= 0
+
   return (
-    <div className="patrimonio-card fade-in-up">
-      <div className="patrimonio-total">
-        <span className="etiqueta">Patrimonio total</span>
-        <span className="patrimonio-cifra">{formatearEuros(patrimonio)}</span>
-      </div>
-
-      <div className="patrimonio-bolsas">
-        <button type="button" className="bolsa bolsa-boton" onClick={onVerInversion}>
-          <span className="bolsa-dot inversion" />
-          <span className="etiqueta">Inversión</span>
-          <span className="bolsa-valor inversion">{formatearEuros(bolsaInversion)}</span>
-          <span className="bolsa-ver">Ver ›</span>
-        </button>
-        <div className="bolsa">
-          <span className="bolsa-dot liquidez" />
-          <span className="etiqueta">Ahorro líquido</span>
-          <span className="bolsa-valor">{formatearEuros(bolsaLiquidez)}</span>
-        </div>
-      </div>
-
-      <div className="patrimonio-pie">
-        <span className={`patrimonio-fiabilidad ${!ultima || dias > DIAS_AVISO ? 'aviso' : ''}`}>
-          {!ultima
-            ? 'Sin reconciliar: la liquidez es una estimación'
-            : dias > DIAS_AVISO
-              ? `Reconciliado hace ${dias} días — puede haberse desviado`
-              : `Saldo reconciliado hace ${dias === 0 ? 'hoy' : `${dias} día${dias === 1 ? '' : 's'}`}`}
+    <section className="hp fade-in-up" aria-label="Tu patrimonio">
+      <span className="hp-etiqueta">Tu patrimonio</span>
+      <div className="hp-cifra">{formatearEuros(patrimonio)}</div>
+      {cambioMes !== 0 && (
+        <span className={`hp-cambio ${sube ? 'sube' : 'baja'}`}>
+          <Icono nombre={sube ? 'sube' : 'baja'} tam={14} />
+          {sube ? '+' : '−'}
+          {formatearEuros(Math.abs(cambioMes))} este mes
         </span>
-        <button type="button" className="link" onClick={() => setAbierto(true)}>
-          Ajustar saldo
+      )}
+
+      {serie.length > 1 && <LineaPatrimonio serie={serie} />}
+
+      <div className="hp-reparto" aria-hidden="true">
+        <span className="hp-reparto-liq" style={{ flexGrow: 100 - pctInvertido }} />
+        {pctInvertido > 0 && <span className="hp-reparto-inv" style={{ flexGrow: pctInvertido }} />}
+      </div>
+      <div className="hp-bolsas">
+        <div className="hp-bolsa">
+          <span className="hp-bolsa-etq"><i className="hp-punto liq" />Disponible</span>
+          <span className="hp-bolsa-valor">{formatearEuros(bolsaLiquidez)}</span>
+        </div>
+        <button type="button" className="hp-bolsa hp-bolsa-boton" onClick={onVerInversion}>
+          <span className="hp-bolsa-etq"><i className="hp-punto inv" />Invertido</span>
+          <span className="hp-bolsa-valor">{formatearEuros(bolsaInversion)}</span>
         </button>
+      </div>
+
+      <div className="hp-pie">
+        <span className={`hp-fiabilidad ${!ultima || dias > DIAS_AVISO ? 'aviso' : ''}`}>
+          {!ultima
+            ? 'Saldo sin cuadrar con tu banco'
+            : dias > DIAS_AVISO
+              ? `Cuadrado hace ${dias} días`
+              : `Cuadrado con tu banco ${dias === 0 ? 'hoy' : `hace ${dias} día${dias === 1 ? '' : 's'}`}`}
+        </span>
+        {!soloLectura && (
+          <button type="button" className="link" onClick={() => setAbierto(true)}>
+            Ajustar saldo
+          </button>
+        )}
       </div>
 
       {abierto &&
@@ -145,6 +193,6 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerIn
           </div>,
           document.body,
         )}
-    </div>
+    </section>
   )
 }
