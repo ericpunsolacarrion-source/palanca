@@ -49,7 +49,8 @@ El color **siempre significa algo**. Si no significa nada, es gris.
 ## Iconos y marca
 - `Icono.jsx`: rejilla 24, trazo 1,6, puntas redondeadas, `currentColor`.
   Si falta un icono, se dibuja en ese mismo estilo y se añade ahí.
-- **Marca**: "La P que crece" (dos barras ascendentes + la "P" en índigo).
+- **Marca**: "La P que crece": índigo sobre oscuro dentro de la app; blanca
+  sobre índigo como icono de la app y favicon.
   Detalle y mascota aparcada en `docs/marca/README.md`. El consultor "Fulcro"
   usa un icono de conversación (claridad antes que guiño).
 

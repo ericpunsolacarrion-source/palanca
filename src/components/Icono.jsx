@@ -35,26 +35,29 @@ export default function Icono({ nombre, tam = 22, className = '', ...resto }) {
 }
 
 // Marca "La P que crece": dos barras ascendentes y la tercera ya es la "P" de
-// Palanca (tu dinero creciendo). Las barras van en el color del texto con
-// opacidad; la "P" en el acento. Mismo dibujo en favicon e iconos de la PWA.
+// Palanca (tu dinero creciendo). Geometría sobria (esquinas casi rectas,
+// proporciones exactas) y ritmo de color: las barras ganan intensidad hacia la
+// "P". Dentro de la app va en índigo sobre oscuro; el icono de la app es la
+// misma figura en blanco sobre índigo (public/favicon.svg, pwa-*.png).
+// Detalle en docs/marca/README.md.
 const MARCA_SVG = {
   barras: [
-    { x: 2.5, y: 14, h: 6, opacidad: 0.4 },
-    { x: 7.6, y: 10, h: 10, opacidad: 0.7 },
+    { x: 3, y: 13.5, h: 7, opacidad: 0.45 },
+    { x: 8, y: 9.5, h: 11, opacidad: 0.72 },
   ],
-  pAsta: { x: 12.7, y: 4, w: 3.4, h: 16 },
-  pBucle: 'M14.5 4h3.3a4.3 4.3 0 0 1 0 8.6h-3.3v-2.8h3.3a1.5 1.5 0 0 0 0-3h-3.3Z',
+  pAsta: { x: 13, y: 3.5, w: 3.2, h: 17 },
+  pBucle: 'M14.6 3.5h2.6a4.5 4.5 0 0 1 0 9h-2.6v-3.2h2.6a1.3 1.3 0 0 0 0-2.6h-2.6Z',
 }
 
-export function Marca({ tam = 22, className = '' }) {
+export function Marca({ tam = 22, color = 'var(--accent-2)', className = '' }) {
   const { barras, pAsta, pBucle } = MARCA_SVG
   return (
     <svg viewBox="0 0 24 24" width={tam} height={tam} className={`marca ${className}`} aria-hidden="true">
       {barras.map((b) => (
-        <rect key={b.x} x={b.x} y={b.y} width="3.4" height={b.h} rx="1.1" fill="currentColor" opacity={b.opacidad} />
+        <rect key={b.x} x={b.x} y={b.y} width="3.2" height={b.h} rx="0.6" fill={color} opacity={b.opacidad} />
       ))}
-      <rect x={pAsta.x} y={pAsta.y} width={pAsta.w} height={pAsta.h} rx="1.1" fill="var(--accent-2)" />
-      <path d={pBucle} fill="var(--accent-2)" />
+      <rect x={pAsta.x} y={pAsta.y} width={pAsta.w} height={pAsta.h} rx="0.6" fill={color} />
+      <path d={pBucle} fill={color} />
     </svg>
   )
 }

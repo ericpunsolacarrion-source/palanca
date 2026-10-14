@@ -1,12 +1,19 @@
 # Marca de Palanca
 
-## Logo: "La P que crece" (elegido el 2026-10-14)
+## Logo: "La P que crece" (elegido y afinado el 2026-10-14)
 Dos barras ascendentes y la tercera ya es la "P" de Palanca: tu dinero
-creciendo. Barras en el color del texto (40 % y 70 % de opacidad), "P" en el
-acento índigo (`--accent-2`, `#8e98ff`), sobre fondo `#0a0b0e`.
+creciendo. **Una figura, dos trajes:**
 
-- Componente: `Marca` en `src/components/Icono.jsx` (fuente única del dibujo).
-- Favicon: `public/favicon.svg`. Iconos PWA: `public/pwa-192.png`, `pwa-512.png`.
+- **Icono de la app y favicon ("Bloque")**: fondo índigo `#5b67e8`, marca en
+  blanco. Destaca en la pantalla del móvil. `public/favicon.svg`,
+  `public/pwa-192.png`, `public/pwa-512.png`.
+- **Dentro de la app (combinación "Sobria" + "Escalera")**: geometría exacta y
+  esquinas casi rectas (seriedad) + barras que ganan intensidad hacia la "P"
+  (45 % → 72 % → 100 %), en índigo `--accent-2` sobre oscuro. Componente
+  `Marca` en `src/components/Icono.jsx` (fuente única del dibujo).
+
+Regla: la marca no se deforma, no lleva degradados ni sombras, y siempre tiene
+aire alrededor (al menos el ancho de una barra).
 
 ## Mascota "Fulcro" (aparcada para más adelante)
 Concepto aprobado en idea, **pendiente de implementar**: un triángulo amable
