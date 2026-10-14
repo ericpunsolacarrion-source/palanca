@@ -1,3 +1,4 @@
+import { etiquetaCategoria } from '../lib/categorias'
 import { useMemo, useState } from 'react'
 import { formatearEuros } from '../lib/categorias'
 import { esConsumo, formatearFecha, gastoPorCategoria } from '../lib/movimientosUtils'
@@ -93,7 +94,7 @@ export default function GraficoCategorias({ movimientos, etiqueta = 'este mes' }
             onClick={() => setAbierta(item.nombre)}
           >
             <i className="punto" style={{ background: item.color }} />
-            <span className="leyenda-nombre">{item.nombre}</span>
+            <span className="leyenda-nombre">{etiquetaCategoria(item.nombre)}</span>
             <span className="leyenda-valor">
               {formatearEuros(item.valor)} · {item.porcentaje.toFixed(0)}%
             </span>

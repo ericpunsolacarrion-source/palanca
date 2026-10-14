@@ -1,8 +1,10 @@
+import { etiquetaCategoria } from '../lib/categorias'
+import { conceptoDe, fechaRelativa } from '../lib/inicio'
 import { AVISO_DEMO, esDemo } from '../lib/datosDemo'
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { esInversion, esTraspaso, formatearEuros } from '../lib/categorias'
-import { SELECT_MOVIMIENTO, claveMes, claveMesActual, formatearFecha, hoyIso, totalesDe } from '../lib/movimientosUtils'
+import { SELECT_MOVIMIENTO, claveMes, claveMesActual, hoyIso, totalesDe } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import { aCentimos } from '../lib/importe'
@@ -170,20 +172,18 @@ export default function ListaMovimientos({
     return (
       <li key={m.id} className={inversion ? 'inversion' : m.tipo}>
         <div className="linea-principal">
-          <span className="categoria">
-            {m.categoria?.nombre ?? 'Sin categoría'}
-            {m.fuente && <span className="fuente"> · {m.fuente.nombre}</span>}
-          </span>
+          <span className="categoria">{conceptoDe(m)}</span>
           <span className="importe">
-            {inversion ? '↗ ' : esTraspaso(m) ? '⇄ ' : m.tipo === 'gasto' ? '-' : '+'}
+            {inversion || esTraspaso(m) ? '' : m.tipo === 'gasto' ? '−' : '+'}
             {formatearEuros(m.importe)}
           </span>
         </div>
         <div className="linea-secundaria">
           <span className="ls-meta">
-            {formatearFecha(m.fecha)}
+            {/* El título ya es el concepto: aquí la categoría (si no es lo mismo) y la fecha. */}
+            {conceptoDe(m) !== etiquetaCategoria(m.categoria?.nombre) && <span>{etiquetaCategoria(m.categoria?.nombre)} · </span>}
+            {fechaRelativa(m.fecha)}
             {m.es_fijo && <span className="badge-fijo">Fijo</span>}
-            {m.nota && <span className="nota">· {m.nota}</span>}
           </span>
           {!soloLectura && (
             <span className="grupo-botones">

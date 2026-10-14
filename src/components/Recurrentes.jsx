@@ -1,3 +1,4 @@
+import { etiquetaCategoria } from '../lib/categorias'
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useEtiquetas } from '../lib/useEtiquetas'
@@ -357,7 +358,7 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
 
         <div className="chips-fila chips-fila-compacta" role="group" aria-label="Categoría">
           {categorias.map((c) => (
-            <button key={c.id} type="button" className={`chip chip-sm ${categoriaId === c.id ? 'activo' : ''}`} onClick={() => setCategoriaId(c.id)}>{c.nombre}</button>
+            <button key={c.id} type="button" className={`chip chip-sm ${categoriaId === c.id ? 'activo' : ''}`} onClick={() => setCategoriaId(c.id)}>{etiquetaCategoria(c.nombre)}</button>
           ))}
         </div>
 

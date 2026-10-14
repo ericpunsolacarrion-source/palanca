@@ -25,7 +25,7 @@ A futuro (Fase 2): familias, login real con Supabase Auth.
 
 ## Navegación
 
-Cabecera con la **marca** (palanca + "Palanca") y el acceso a la cuenta (icono). Barra inferior **siempre visible** (solo el contenido central hace scroll), con **iconos SVG propios** (`Icono.jsx`), indicador del activo y 6 pestañas: Inicio · Movimientos · **Fijos** (suscripciones y gastos fijos, con globo de pendientes del mes) · Presupuesto · Inversión · Simulador. En escritorio (≥860 px) se convierte en píldoras horizontales.
+Cabecera con la **marca**, el **ojo** (modo discreto) y el acceso a la cuenta. Barra inferior **siempre visible** (solo el contenido central hace scroll), con **iconos SVG propios** (`Icono.jsx`), indicador del activo y **5 pestañas**: Inicio · Movimientos · **Fijos** (con globo de cobros por confirmar) · **Plan** (segmentado Presupuesto | Simuladores; internamente pestañas `presupuesto` y `simulador`) · Inversión. En escritorio (≥860 px) se convierte en píldoras horizontales.
 
 ### 3. Inicio (`Inicio.jsx` + `lib/inicio.js`)
 Dos vistas con un segmentado arriba: **Resumen** (por defecto, lo esencial en 5 segundos) y **Análisis** (los gráficos por periodo).
@@ -70,7 +70,7 @@ Puerta de entrada del producto (foco: suscripciones + seguimiento financiero).
   - **Pausar** es directo; **Reactivar** vuelve a preguntar el día de cobro (y el mes, si no es mensual), porque tras una pausa suele cambiar.
   - **Cargos periódicos detectados** (`SuscripcionesDetectadas.jsx` + `lib/suscripciones.js`): encima de la lista, si en tus movimientos (p. ej. un extracto importado) hay un mismo comercio cobrando un importe estable cada ≈mes (≥3 cargos) o ≈año (≥2), se muestra una tarjeta "Hemos detectado N cargos periódicos · X € al año" con cada uno (importe, día, nº de cargos y aviso "Ha subido de A a B" si el precio subió). **Añadir** lo crea como compromiso en Base (solo mensuales; las anuales se muestran con su fecha de renovación). **×** lo descarta (localStorage, por dispositivo). No reaparece lo que ya está en Base (por fuente o nombre) ni lo que dejó de cobrarse.
 
-### 5. Presupuesto (`Presupuesto.jsx`)
+### 5. Plan → Presupuesto (`Presupuesto.jsx`)
 Dos modos a elegir:
 - **Por tasa de ahorro**: "quiero ahorrar el 20%" → calcula cuánto puede gastar según sus ingresos reales del mes.
 - **Gasto máximo fijo**: "quiero gastar máximo 500 €/mes".
@@ -86,7 +86,7 @@ Estética premium: bloque **hero centrado** (objetivo + cifra disponible en degr
 - Formulario de nueva aportación (plataforma como chips, importe, fecha).
 - **Historial colapsado por mes** (acordeón): por defecto una línea por mes ("Mes AAAA — N aportaciones — total"); al tocar se despliega el detalle (fecha, plataforma, importe) con animación suave. El mes más reciente arranca abierto. Editar/eliminar por aportación.
 
-### 7. Simulador (`Simulador.jsx`)
+### 7. Plan → Simuladores (`Simulador.jsx`)
 Cuatro sub-pestañas:
 - **Ahorro** (`AhorroObjetivo.jsx`): **múltiples objetivos** (fondo de emergencia, entrada de un piso, un viaje…). Al crear/editar, el usuario **elige explícitamente el tipo de bolsa** que sigue el objetivo: ahorro líquido, inversión o patrimonio total (badge de color en la tarjeta). El **progreso se deriva solo de la bolsa** correspondiente (`bolsas()`), no de un importe manual. El **ritmo mensual depende del tipo** (`ritmoMensualPorTipo` en `movimientosUtils`): ahorro líquido = superávit que NO se invierte; inversión = media de aportaciones; patrimonio = todo el superávit. Con ese ritmo se calculan las frases ("a tu ritmo de ahorro/inversión/crecimiento lo alcanzarías en N meses" / "para la fecha necesitas X/mes"). Crear, editar y borrar. Tabla `objetivos_ahorro` (aditiva; SQL en `supabase-schema-objetivos.sql`). El tipo por objetivo se guarda en localStorage (`lib/useObjetivoTipo.js`).
 - **Interés compuesto** (`InteresCompuesto.jsx`): balance inicial, depósito mensual (inicio/fin de mes), años y rentabilidad → "Puedes ahorrar X", gráfico circular (inicial/depósitos/interés), barras apiladas por año y tabla año a año. **Guardado claro** (`SimulacionesGuardadas.jsx`): botón evidente "Guardar esta simulación" bajo los resultados, confirmación por toast, y sección "Tus simulaciones guardadas (N)" con cada una recuperable ("Cargar ›"). Mismo patrón en Hipoteca.

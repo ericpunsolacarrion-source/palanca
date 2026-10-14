@@ -589,6 +589,17 @@ function App() {
           />
         )}
 
+        {(pestana === 'presupuesto' || pestana === 'simulador') && (
+          <div className="sub-tabs ini-vistas plan-vistas" role="tablist" aria-label="Plan">
+            <button type="button" role="tab" aria-selected={pestana === 'presupuesto'} className={pestana === 'presupuesto' ? 'activo' : ''} onClick={() => setPestana('presupuesto')}>
+              Presupuesto
+            </button>
+            <button type="button" role="tab" aria-selected={pestana === 'simulador'} className={pestana === 'simulador' ? 'activo' : ''} onClick={() => setPestana('simulador')}>
+              Simuladores
+            </button>
+          </div>
+        )}
+
         {pestana === 'presupuesto' && (
           <div key="presupuesto" className="vista">
             <Presupuesto usuarioId={usuarioId} movimientos={movimientosMes} gastoEstimado={gastoEstimado} />

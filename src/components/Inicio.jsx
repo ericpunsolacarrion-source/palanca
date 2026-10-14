@@ -1,3 +1,4 @@
+import { etiquetaCategoria } from '../lib/categorias'
 import { useMemo } from 'react'
 import { esInversion, formatearEuros } from '../lib/categorias'
 import { etiquetaMes, formatearPorcentaje, limiteGastoPresupuesto } from '../lib/movimientosUtils'
@@ -131,7 +132,7 @@ function MesEnCurso({ movimientos, onVerAnalisis, onVerPresupuesto }) {
           <span className="ini-subtitulo">En qué se va</span>
           {r.categorias.map((c, i) => (
             <div key={c.nombre} className="ini-cat">
-              <span className="ini-cat-nombre">{c.nombre}</span>
+              <span className="ini-cat-nombre">{etiquetaCategoria(c.nombre)}</span>
               <span className="ini-cat-barra" aria-hidden="true">
                 <span style={{ width: `${Math.max(2, c.pct)}%`, background: c.resto ? 'var(--cat-6)' : `var(--cat-${i + 1})` }} />
               </span>
@@ -175,7 +176,7 @@ function UltimosMovimientos({ movimientos, onVerTodos }) {
               <span className="ini-mov-texto">
                 <span className="ini-mov-concepto">{concepto}</span>
                 <span className="ini-mov-meta">
-                  {m.categoria?.nombre ?? 'Sin categoría'} · {fechaRelativa(m.fecha)}
+                  {etiquetaCategoria(m.categoria?.nombre)} · {fechaRelativa(m.fecha)}
                 </span>
               </span>
               <span className={`ini-mov-importe ${clase}`}>

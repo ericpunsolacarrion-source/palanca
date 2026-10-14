@@ -2,7 +2,7 @@
 // reglas únicas de movimientosUtils: patrimonio con `bolsas`, flujos del mes
 // con `totalesDe`, consumo con `gastoPorCategoria`. Ningún cálculo a mano.
 
-import { esAjuste } from './categorias'
+import { esAjuste, etiquetaCategoria } from './categorias'
 import { bolsas, gastoPorCategoria, totalesDe } from './movimientosUtils'
 
 const pad = (n) => String(n).padStart(2, '0')
@@ -107,5 +107,5 @@ export function conceptoDe(m) {
   }
   if (texto) return texto.length > 40 ? `${texto.slice(0, 38)}…` : texto
   if (esAjuste(m)) return 'Ajuste de saldo'
-  return m.categoria?.nombre ?? (m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto')
+  return m.categoria?.nombre ? etiquetaCategoria(m.categoria.nombre) : m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'
 }

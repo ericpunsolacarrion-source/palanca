@@ -1,3 +1,4 @@
+import { etiquetaCategoria } from '../lib/categorias'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
@@ -388,7 +389,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
                   setMostrarMasCategorias(false)
                 }}
               >
-                {c.nombre}
+                {etiquetaCategoria(c.nombre)}
               </button>
             ))}
             <button

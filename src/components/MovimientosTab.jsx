@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import RegistroMovimiento from './RegistroMovimiento'
 import ListaMovimientos from './ListaMovimientos'
 import ImportadorCsv from './ImportadorCsv'
+import { coincideBusqueda } from '../lib/busqueda'
 import { esAjuste, esInversion, esTraspaso, formatearEuros } from '../lib/categorias'
 import { esConsumo, netoAjustes, sumarImportes, totalesDe } from '../lib/movimientosUtils'
 
@@ -54,11 +55,13 @@ export default function MovimientosTab({
     modoInicialRegistro === 'historial' || modoInicialRegistro === 'importar' ? modoInicialRegistro : 'nuevo',
   )
   const [filtroHist, setFiltroHist] = useState('todos')
+  const [busqueda, setBusqueda] = useState('')
 
   const movsHistorial = useMemo(
-    () => (filtroHist === 'todos' ? movimientos : movimientos.filter((m) => coincideFiltro(m, filtroHist))),
-    [movimientos, filtroHist],
+    () => movimientos.filter((m) => coincideFiltro(m, filtroHist) && coincideBusqueda(m, busqueda)),
+    [movimientos, filtroHist, busqueda],
   )
+  const buscando = busqueda.trim() !== ''
 
   // Al llegar con un filtro (desde una métrica del dashboard), mostrar la vista
   // filtrada del mes en curso.
@@ -140,6 +143,27 @@ export default function MovimientosTab({
       {sub === 'historial' && (
         <>
           {!cargando && movimientos.length > 0 && <ResumenMes movimientosMes={movimientosMes} />}
+          {movimientos.length > 0 && (
+            <div className="hist-buscar">
+              <input
+                type="search"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Buscar: Mercadona, Netflix, 13,99…"
+                aria-label="Buscar en tus movimientos"
+                enterKeyHint="search"
+              />
+              {buscando && (
+                <span className="hist-buscar-total">
+                  {movsHistorial.length} {movsHistorial.length === 1 ? 'resultado' : 'resultados'}
+                  {/* Total solo si todos son del mismo tipo (sumar ingresos y gastos no dice nada) */}
+                  {movsHistorial.length > 0 && movsHistorial.every((m) => m.tipo === movsHistorial[0].tipo) && (
+                    <> · {formatearEuros(sumarImportes(movsHistorial))}</>
+                  )}
+                </span>
+              )}
+            </div>
+          )}
           <div className="chips-fila chips-fila-compacta" role="group" aria-label="Filtrar historial">
             {FILTROS_HIST.map((f) => (
               <button
@@ -152,13 +176,17 @@ export default function MovimientosTab({
               </button>
             ))}
           </div>
+          {buscando && movsHistorial.length === 0 ? (
+            <p className="ayuda hist-sin-resultados">No hay movimientos que coincidan con «{busqueda.trim()}».</p>
+          ) : (
           <ListaMovimientos
             movimientos={movsHistorial}
             cargando={cargando}
             onEliminado={onGuardado}
             onIrARegistro={() => setSub('nuevo')}
-            agruparPorMes={filtroHist === 'todos'}
+            agruparPorMes={filtroHist === 'todos' && !buscando}
           />
+          )}
         </>
       )}
     </div>

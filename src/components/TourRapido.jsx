@@ -22,8 +22,8 @@ const PASOS = [
   },
   {
     pestana: 'presupuesto',
-    titulo: 'Un límite que se adapta',
-    texto: 'Decide cuánto quieres ahorrar y te decimos cuánto puedes gastar, también al día.',
+    titulo: 'Tu plan',
+    texto: 'Decide cuánto quieres ahorrar y te decimos cuánto puedes gastar al día. En Simuladores: objetivos, hipoteca o cuándo podrías dejar de trabajar.',
   },
   {
     pestana: 'inversiones',

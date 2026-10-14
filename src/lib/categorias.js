@@ -66,3 +66,10 @@ export function colorDeCategoria(nombre) {
   for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) % 6
   return `var(--cat-${h + 1})`
 }
+
+// Nombre para MOSTRAR de una categoría: las de serie se guardan sin tilde
+// ("Nomina", "Inversion": son claves de la lógica); en pantalla, bien escritas.
+const ETIQUETAS_CATEGORIA = { Nomina: 'Nómina', Inversion: 'Inversión' }
+export function etiquetaCategoria(nombre) {
+  return ETIQUETAS_CATEGORIA[nombre] ?? nombre ?? 'Sin categoría'
+}

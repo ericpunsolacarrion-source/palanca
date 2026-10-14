@@ -8424,3 +8424,31 @@ input[type='number']::-webkit-outer-spin-button {
   line-height: 1.35;
   text-align: left;
 }
+.plan-vistas {
+  margin-bottom: 16px;
+}
+
+/* Buscador del historial */
+.hist-buscar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hist-buscar input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radio-m);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-h);
+  font-size: var(--fs-base);
+}
+.hist-buscar-total {
+  font-size: var(--fs-xs);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.hist-sin-resultados {
+  text-align: center;
+  padding: 24px 0;
+}

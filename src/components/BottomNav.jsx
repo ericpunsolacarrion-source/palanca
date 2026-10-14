@@ -4,9 +4,9 @@ const PESTANAS = [
   { id: 'dashboard', etiqueta: 'Inicio', icono: 'inicio' },
   { id: 'movimientos', etiqueta: 'Movimientos', icono: 'movimientos' },
   { id: 'suscripciones', etiqueta: 'Fijos', icono: 'fijos' },
-  { id: 'presupuesto', etiqueta: 'Presupuesto', icono: 'presupuesto' },
+  // "Plan" agrupa Presupuesto y Simuladores (5 pestañas caben bien en un móvil).
+  { id: 'presupuesto', etiqueta: 'Plan', icono: 'presupuesto', tambien: ['simulador'] },
   { id: 'inversiones', etiqueta: 'Inversión', icono: 'inversion' },
-  { id: 'simulador', etiqueta: 'Simulador', icono: 'simulador' },
 ]
 
 // `avisos`: { [idPestaña]: número } → globo de pendientes (p. ej. cobros por
@@ -14,14 +14,16 @@ const PESTANAS = [
 export default function BottomNav({ activa, onCambiar, avisos = {} }) {
   return (
     <nav className="bottom-nav">
-      {PESTANAS.map((p) => (
+      {PESTANAS.map((p) => {
+        const esActiva = activa === p.id || p.tambien?.includes(activa)
+        return (
         <button
           key={p.id}
           type="button"
           data-pestana={p.id}
-          className={activa === p.id ? 'nav-item activo' : 'nav-item'}
+          className={esActiva ? 'nav-item activo' : 'nav-item'}
           onClick={() => onCambiar(p.id)}
-          aria-current={activa === p.id ? 'page' : undefined}
+          aria-current={esActiva ? 'page' : undefined}
         >
           <span className="nav-icono">
             <Icono nombre={p.icono} tam={22} />
@@ -29,7 +31,8 @@ export default function BottomNav({ activa, onCambiar, avisos = {} }) {
           </span>
           <span className="nav-etiqueta">{p.etiqueta}</span>
         </button>
-      ))}
+        )
+      })}
     </nav>
   )
 }
