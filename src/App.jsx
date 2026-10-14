@@ -231,7 +231,9 @@ function App() {
   // Sin nada propio todavía (el saldo inicial no cuenta), la app se enseña
   // llena con datos de ejemplo en memoria (lib/datosDemo.js) hasta que el
   // usuario apunta lo primero o pulsa "Empezar con mis datos".
-  const [demoDescartada, setDemoDescartada] = useState(false)
+  const [demoDescartada, setDemoDescartada] = useState(() =>
+    usuarioId ? leerMarca(`palanca_demo_fuera_${usuarioId}`) : false,
+  )
   useEffect(() => {
     setDemoDescartada(leerMarca(`palanca_demo_fuera_${usuarioId}`))
   }, [usuarioId])
