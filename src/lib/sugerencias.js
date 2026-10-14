@@ -1,4 +1,4 @@
-import { esInversion } from './categorias'
+import { esAjuste, esInversion } from './categorias'
 
 // Sugerencias para el alta rápida de movimientos, derivadas del histórico del
 // usuario. Objetivo: registrar en el mínimo de toques posible.
@@ -8,7 +8,7 @@ function paraModo(movimientos, modo) {
   return movimientos.filter((m) => {
     if (modo === 'inversion') return m.tipo === 'gasto' && esInversion(m)
     if (modo === 'ingreso') return m.tipo === 'ingreso'
-    return m.tipo === 'gasto' && !esInversion(m) // gasto de consumo
+    return m.tipo === 'gasto' && !esInversion(m) && !esAjuste(m) // gasto (incluye traspasos a ahorro, para repetirlos)
   })
 }
 

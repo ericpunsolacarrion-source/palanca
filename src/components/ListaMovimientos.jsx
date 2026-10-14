@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { esInversion, formatearEuros } from '../lib/categorias'
+import { esInversion, esTraspaso, formatearEuros } from '../lib/categorias'
 import { SELECT_MOVIMIENTO, claveMes, claveMesActual, formatearFecha, hoyIso, totalesDe } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
@@ -173,7 +173,7 @@ export default function ListaMovimientos({
             {m.fuente && <span className="fuente"> · {m.fuente.nombre}</span>}
           </span>
           <span className="importe">
-            {inversion ? '↗ ' : m.tipo === 'gasto' ? '-' : '+'}
+            {inversion ? '↗ ' : esTraspaso(m) ? '⇄ ' : m.tipo === 'gasto' ? '-' : '+'}
             {formatearEuros(m.importe)}
           </span>
         </div>

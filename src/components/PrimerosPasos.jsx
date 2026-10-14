@@ -1,4 +1,5 @@
-import { esAjuste, esInversion } from '../lib/categorias'
+import { esAjuste } from '../lib/categorias'
+import { esConsumo } from '../lib/movimientosUtils'
 
 // Primer arranque guiado: aparece en el dashboard hasta que el usuario nuevo
 // registra su primer ingreso y su primer gasto. Poco texto, muy accionable.
@@ -6,7 +7,7 @@ import { esAjuste, esInversion } from '../lib/categorias'
 // se llena: tasa de ahorro, proyección…).
 export default function PrimerosPasos({ nombre, movimientos, onRegistrar }) {
   const tieneIngreso = movimientos.some((m) => m.tipo === 'ingreso' && !esAjuste(m))
-  const tieneGasto = movimientos.some((m) => m.tipo === 'gasto' && !esInversion(m) && !esAjuste(m))
+  const tieneGasto = movimientos.some((m) => esConsumo(m))
 
   if (tieneIngreso && tieneGasto) return null
 

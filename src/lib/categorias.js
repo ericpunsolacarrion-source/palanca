@@ -2,7 +2,9 @@
 // añadir más después, ej. "Dividendos" o "Alquiler" como ingreso).
 export const CATEGORIAS_INICIALES = {
   ingreso: ['Nomina'],
-  gasto: ['Vivienda', 'Comida', 'Ocio', 'Transporte', 'Ahorro', 'Inversion'],
+  // 'Ahorro' ya no viene de serie: apartar dinero no es un gasto (ver
+  // CATEGORIA_TRASPASO). Quien la tenga de antes la conserva.
+  gasto: ['Vivienda', 'Comida', 'Ocio', 'Transporte', 'Inversion'],
 }
 
 // Nombre reservado: los movimientos con esta categoría se tratan como
@@ -15,6 +17,12 @@ export const CATEGORIA_INVERSION = 'Inversion'
 // ahorro, superávit) pero SÍ afectan a la bolsa de liquidez. El signo lo da el
 // tipo del movimiento (ingreso = suma liquidez, gasto = resta liquidez).
 export const CATEGORIA_AJUSTE = 'Ajuste'
+
+// Nombre reservado para TRASPASOS a tu propio ahorro (p. ej. pasar dinero a la
+// cuenta de ahorro). El dinero sigue siendo tuyo: no es consumo, no penaliza el
+// ratio de ahorro y NO cambia el patrimonio (contrato MOTOR.md E4, traspaso
+// neutro). Solución provisional por nombre hasta la Fase 2 (nodos/cuentas).
+export const CATEGORIA_TRASPASO = 'Ahorro'
 
 // Formato español único para importes: punto de miles, coma decimal, € al
 // final. Sin decimales cuando el importe es redondo (100.000 €) y con 2
@@ -37,6 +45,12 @@ export function esInversion(movimiento) {
 
 export function esAjuste(movimiento) {
   return movimiento.categoria?.nombre === CATEGORIA_AJUSTE
+}
+
+// Solo los de tipo gasto: un INGRESO llamado "Ahorro" (p. ej. intereses) sigue
+// siendo un ingreso normal.
+export function esTraspaso(movimiento) {
+  return movimiento.tipo === 'gasto' && movimiento.categoria?.nombre === CATEGORIA_TRASPASO
 }
 
 // Color ESTABLE para una categoría (paleta --cat-1..6 de index.css), para un

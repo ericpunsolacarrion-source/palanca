@@ -3,8 +3,8 @@ import RegistroMovimiento from './RegistroMovimiento'
 import ListaMovimientos from './ListaMovimientos'
 import Recurrentes from './Recurrentes'
 import ImportadorCsv from './ImportadorCsv'
-import { esAjuste, esInversion, formatearEuros } from '../lib/categorias'
-import { netoAjustes, sumarImportes, totalesDe } from '../lib/movimientosUtils'
+import { esAjuste, esInversion, esTraspaso, formatearEuros } from '../lib/categorias'
+import { esConsumo, netoAjustes, sumarImportes, totalesDe } from '../lib/movimientosUtils'
 import { useRecurrentes } from '../lib/useRecurrentes'
 
 const ETIQUETA_FILTRO = { ingreso: 'Ingresos', gasto: 'Gastos', inversion: 'Inversión', ajuste: 'Ajustes' }
@@ -19,10 +19,10 @@ const FILTROS_HIST = [
 ]
 
 function coincideFiltro(m, filtro) {
-  if (filtro === 'ajuste') return esAjuste(m)
+  if (filtro === 'ajuste') return esAjuste(m) || esTraspaso(m)
   if (filtro === 'inversion') return esInversion(m)
   if (filtro === 'ingreso') return m.tipo === 'ingreso' && !esAjuste(m)
-  if (filtro === 'gasto') return m.tipo === 'gasto' && !esInversion(m) && !esAjuste(m)
+  if (filtro === 'gasto') return esConsumo(m)
   return true // 'todos'
 }
 

@@ -17,8 +17,12 @@ empezar a trabajar en la app; mantenerla al día cuando cambien pantallas).
 Implementadas en `src/lib/movimientosUtils.js` (`totalesDe`, `agregarPorMes`).
 No recalcular a mano en componentes: usar siempre estas utilidades.
 
-- **Gasto** = movimientos de tipo `gasto` EXCLUYENDO la categoría `Inversion`.
-  El gasto es solo consumo.
+- **Gasto** = movimientos de tipo `gasto` EXCLUYENDO las categorías `Inversion`,
+  `Ajuste` y `Ahorro` (`esConsumo()` en `movimientosUtils.js`). El gasto es solo
+  consumo.
+- **Traspaso a ahorro** = tipo `gasto` con categoría `Ahorro` (`esTraspaso()`):
+  apartar dinero a tu cuenta de ahorro. Neutro: ni gasto, ni ingreso, no cambia
+  el patrimonio (MOTOR.md E4). Ya no se crea de serie en el onboarding.
 - **Inversión** = movimientos de tipo `gasto` con categoría `Inversion`
   (`esInversion()` en `src/lib/categorias.js`). Se muestra en dorado, nunca
   como gasto negativo.

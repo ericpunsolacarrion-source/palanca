@@ -1,4 +1,4 @@
-import { esAjuste, esInversion } from './categorias'
+import { esAjuste, esInversion, esTraspaso } from './categorias'
 import { aCentimos, aEuros } from './importe'
 
 // Importe de un movimiento en céntimos ENTEROS (frontera única de dinero del
@@ -12,11 +12,11 @@ function centimosDe(m) {
   return aCentimos(m.importe) ?? 0
 }
 
-// Gasto de CONSUMO: tipo gasto que no es inversión ni ajuste de saldo. Misma
-// regla que totalesDe(); usarla en todo desglose por categoría para que la suma
-// de categorías cuadre siempre con la métrica de "gastos".
+// Gasto de CONSUMO: tipo gasto que no es inversión, ni ajuste de saldo, ni
+// traspaso a tu ahorro. Misma regla que totalesDe(); usarla en todo desglose por
+// categoría para que la suma de categorías cuadre con la métrica de "gastos".
 export function esConsumo(m) {
-  return m.tipo === 'gasto' && !esInversion(m) && !esAjuste(m)
+  return m.tipo === 'gasto' && !esInversion(m) && !esAjuste(m) && !esTraspaso(m)
 }
 
 // Suma EXACTA (en céntimos) de los importes de una lista; devuelve euros.
@@ -184,7 +184,8 @@ export function totalesDe(movimientos) {
   let invertido = 0
   for (const m of movimientos) {
     // Los ajustes de saldo no son flujo mensual: no cuentan como ingreso ni gasto.
-    if (esAjuste(m)) continue
+    // Los traspasos a tu ahorro tampoco: el dinero sigue siendo tuyo.
+    if (esAjuste(m) || esTraspaso(m)) continue
     const importe = centimosDe(m)
     if (m.tipo === 'ingreso') ingresos += importe
     else if (esInversion(m)) invertido += importe
@@ -218,6 +219,9 @@ export function bolsas(movimientos, hasta = null) {
   let ajusteTotal = 0
   for (const m of movimientos) {
     if (hasta && m.fecha > hasta) continue
+    // Traspaso a tu ahorro: sale de una cuenta tuya y entra en otra tuya, el
+    // patrimonio no cambia (E4). Sigue siendo liquidez.
+    if (esTraspaso(m)) continue
     const importe = centimosDe(m)
     if (esAjuste(m)) {
       const signo = m.tipo === 'ingreso' ? 1 : -1

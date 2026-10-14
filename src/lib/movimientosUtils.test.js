@@ -124,3 +124,19 @@ describe('bolsas a una fecha (contrato T2)', () => {
     expect(bolsas(lista).bolsaLiquidez).toBe(430)
   })
 })
+
+describe('traspaso a tu ahorro (categoría Ahorro, contrato E4)', () => {
+  const CON_AHORRO = [...MES, m('gasto', 300, 'Ahorro', '2026-01-20')]
+  it('no es gasto ni penaliza el ratio de ahorro', () => {
+    expect(totalesDe(CON_AHORRO)).toEqual(totalesDe(MES))
+  })
+  it('no cambia el patrimonio ni las bolsas', () => {
+    expect(bolsas(CON_AHORRO)).toEqual(bolsas(MES))
+  })
+  it('no aparece en el desglose de consumo', () => {
+    expect(gastoPorCategoria(CON_AHORRO).has('Ahorro')).toBe(false)
+  })
+  it('un INGRESO llamado Ahorro (p. ej. intereses) sigue siendo ingreso', () => {
+    expect(totalesDe([m('ingreso', 10, 'Ahorro', '2026-01-05')]).ingresos).toBe(10)
+  })
+})
