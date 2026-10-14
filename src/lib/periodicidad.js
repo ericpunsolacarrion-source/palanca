@@ -102,7 +102,7 @@ export function cobrosProximos(recs, dias = 30, hoy = new Date()) {
     if (!rec.activo) continue
     const p = proximoCobro(rec, hoy)
     // Sin día fijado no se puede situar en el calendario ni avisar "mañana".
-    if (p && !p.sinDia && p.dias <= dias) lista.push({ rec, ...p, importe: Number(rec.importe) })
+    if (p && !p.sinDia && p.dias <= dias) lista.push({ rec, ...p, importe: Number(rec.importe) || 0 })
   }
   return lista.sort((a, b) => a.dias - b.dias || b.importe - a.importe)
 }

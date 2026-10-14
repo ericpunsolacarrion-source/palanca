@@ -132,7 +132,7 @@ function resumenFijos(recurrentes, movimientos, descartadas) {
     costeAnual: Math.round(activos.reduce((s, r) => s + cent(costeAnual(r)), 0) / 100),
     compromisos: activos.slice(0, 25).map((r) => ({
       nombre: r.nombre,
-      importe: Number(r.importe),
+      importe: Number(r.importe) || 0,
       periodicidad: periodoDe(r).id,
       costeAnual: Math.round(costeAnual(r)),
     })),
