@@ -67,6 +67,15 @@ diga ("lánzalo" → fast-forward de `develop` a `main`). Incluye: Ahorro como
 traspaso, detector de suscripciones, pestaña Fijos (periodicidades,
 calendario, avisos) y el **rediseño visual v2** (ver DISENO.md).
 
+## Fulcro (consultor IA) — listo para activar (en `develop`)
+`api/consultor.js` con el SDK oficial `@anthropic-ai/sdk`: modelo `claude-opus-5-5`
+(cambiable con `CONSULTOR_MODELO`), esfuerzo `low` (`CONSULTOR_ESFUERZO`),
+system prompt cacheado, respaldo automático ante rechazos (`fallbacks: "default"`).
+Lee un resumen agregado (sin movimientos en bruto) que ahora incluye **fijos**
+(suscripciones, próximos cobros, avisos). **Activación: solo poner
+`ANTHROPIC_API_KEY` en Vercel y redesplegar** (el panel consulta `GET
+/api/consultor`; ya no hace falta `VITE_FULCRO_ACTIVO`).
+
 ## Rediseño visual v2 (2026-10-14, en `develop`)
 Fuera la estética "de IA": sin degradados morado→cian, sin glows ni manchas
 de fondo, sin emojis/✦. Tipografía Geist + Geist Mono (autoalojadas), un solo

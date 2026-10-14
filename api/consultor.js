@@ -8,11 +8,23 @@
 // El system prompt prohíbe recomendaciones categóricas de "compra esto" y
 // promesas de rentabilidad.
 
+import Anthropic from '@anthropic-ai/sdk'
 import { usuarioDeLaPeticion } from './_auth.js'
 
-const MODELO = process.env.CONSULTOR_MODELO || 'claude-haiku-4-5'
-const MAX_TOKENS = 900
-const MAX_RESUMEN = 20000 // caracteres del resumen (corta payloads abusivos)
+// Modelo: el actual por defecto; se puede cambiar sin tocar código con la
+// variable de entorno CONSULTOR_MODELO (p. ej. 'claude-haiku-5-5', más barato).
+const MODELO = process.env.CONSULTOR_MODELO || 'claude-opus-5-5'
+// Esfuerzo de razonamiento: 'low' es el adecuado para un chat (rápido y
+// económico). Ajustable con CONSULTOR_ESFUERZO (low | medium | high).
+const ESFUERZO = process.env.CONSULTOR_ESFUERZO || 'low'
+// Techo de la respuesta (incluye el razonamiento interno). La brevedad la marca
+// el system prompt; esto solo evita cortes a mitad de frase.
+const MAX_TOKENS = 16000
+const MAX_RESUMEN = 30000 // caracteres del resumen (corta payloads abusivos)
+
+// Tiempo máximo de la función en Vercel (s): una respuesta razonada puede
+// tardar más que el valor por defecto.
+export const config = { maxDuration: 60 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NOTA TÉCNICA — evolución futura del conocimiento experto (NO implementado):
@@ -42,6 +54,7 @@ Recibes un resumen ESTRUCTURADO y anónimo de sus finanzas (agregados mensuales,
 - Reglas de cálculo de la app: el "ahorro" = ingresos − gastos de consumo (la inversión ES parte del ahorro, no lo penaliza); el "gasto" es solo consumo; la inversión se cuenta aparte, en positivo.
 - HONESTIDAD SOBRE LA FIABILIDAD: mira "fiabilidad". Si "liquidezReconciliada" es false, la liquidez y el patrimonio son ESTIMACIONES de lo registrado, no hechos. No afirmes esas cifras como firmes: di algo como "según tus datos registrados, que conviene reconciliar…". Las cifras de inversión sí son firmes (cada aportación es un hecho).
 - El resumen incluye "insights": obsérvalos y, si vienen al caso y de forma natural y no alarmista, coméntalos. Nunca sueltes todos de golpe ni asustes.
+- "fijos" resume sus suscripciones y gastos fijos (coste prorrateado al mes y al año, próximos cobros, renovaciones y subidas de precio). Úsalo para ayudarle a revisar qué le compensa mantener, sin presionar a cancelar nada.
 - No inventes datos que no estén en el resumen; si falta contexto, dilo.
 
 ━━━ TRES LÍNEAS QUE NUNCA CRUZAS ━━━
@@ -70,8 +83,14 @@ ESTILO:
 - Eres orientación EDUCATIVA, no asesoramiento financiero regulado: que se note en cómo hablas, no solo en un aviso.`
 
 export default async function handler(req, res) {
+  // GET = ¿está activo Fulcro? (el frontend lo consulta al abrir el panel).
+  // Solo depende de que exista la API key en el servidor: activarlo es poner
+  // ANTHROPIC_API_KEY en Vercel y redesplegar.
+  if (req.method === 'GET') {
+    return res.status(200).json({ activo: Boolean(process.env.ANTHROPIC_API_KEY) })
+  }
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST')
+    res.setHeader('Allow', 'GET, POST')
     return res.status(405).json({ error: 'Método no permitido' })
   }
 
@@ -82,8 +101,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Sesión no válida. Vuelve a iniciar sesión.', code: 'no_autorizado' })
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) {
+  if (!process.env.ANTHROPIC_API_KEY) {
     // Degradación elegante: el frontend muestra un aviso, no se rompe.
     return res.status(503).json({
       error: 'El consultor no está configurado todavía.',
@@ -105,16 +123,19 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'El contexto es demasiado grande.' })
   }
 
-  // Historial previo (para dar continuidad a la conversación), acotado.
+  // Historial previo (para dar continuidad a la conversación), acotado. Solo
+  // texto: nunca se reenvían bloques de razonamiento.
   const mensajes = []
   if (Array.isArray(historial)) {
     for (const m of historial.slice(-8)) {
-      if (!m || (m.rol !== 'usuario' && m.rol !== 'consultor')) continue
+      if (!m || (m.rol !== 'usuario' && m.rol !== 'consultor') || m.error) continue
       const texto = String(m.texto ?? '').slice(0, 4000)
       if (!texto) continue
       mensajes.push({ role: m.rol === 'usuario' ? 'user' : 'assistant', content: texto })
     }
   }
+  // La conversación debe empezar por el usuario.
+  while (mensajes.length && mensajes[0].role !== 'user') mensajes.shift()
 
   // El turno actual lleva el resumen estructurado como contexto + la pregunta.
   const contexto = resumen
@@ -122,30 +143,31 @@ export default async function handler(req, res) {
     : ''
   mensajes.push({ role: 'user', content: `${contexto}Mi pregunta: ${pregunta.trim()}` })
 
+  const client = new Anthropic() // lee ANTHROPIC_API_KEY del entorno
+
   try {
-    const respuesta = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: MODELO,
-        max_tokens: MAX_TOKENS,
-        system: SYSTEM_PROMPT,
-        messages: mensajes,
-      }),
+    const respuesta = await client.beta.messages.create({
+      model: MODELO,
+      max_tokens: MAX_TOKENS,
+      // El system prompt es idéntico en todas las peticiones: se cachea y las
+      // siguientes preguntas lo leen a ~10 % del precio.
+      system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+      messages: mensajes,
+      output_config: { effort: ESFUERZO },
+      // Si los filtros de seguridad del modelo declinan una pregunta legítima,
+      // la API la reintenta en el modelo alternativo recomendado.
+      betas: ['server-side-fallback-2026-07-01'],
+      fallbacks: 'default',
     })
 
-    if (!respuesta.ok) {
-      const detalle = await respuesta.text().catch(() => '')
-      console.error('Error de Anthropic:', respuesta.status, detalle)
-      return res.status(502).json({ error: 'El consultor no está disponible ahora mismo.' })
+    if (respuesta.stop_reason === 'refusal') {
+      return res.status(200).json({
+        respuesta:
+          'Esa pregunta no la puedo responder. Si es sobre tus finanzas, prueba a formularla de otra manera.',
+      })
     }
 
-    const datos = await respuesta.json()
-    const texto = (datos.content || [])
+    const texto = (respuesta.content || [])
       .filter((b) => b.type === 'text')
       .map((b) => b.text)
       .join('')
@@ -153,7 +175,18 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ respuesta: texto || 'No he sabido qué responder. Prueba a reformular.' })
   } catch (e) {
-    console.error('Fallo llamando al consultor:', e)
+    if (e instanceof Anthropic.AuthenticationError) {
+      console.error('Consultor: API key inválida')
+      return res.status(503).json({ error: 'El consultor no está bien configurado.', code: 'sin_configurar' })
+    }
+    if (e instanceof Anthropic.RateLimitError) {
+      return res.status(429).json({ error: 'Hay mucha demanda ahora mismo. Inténtalo en un minuto.' })
+    }
+    if (e instanceof Anthropic.APIError) {
+      console.error('Error de Anthropic:', e.status, e.message)
+    } else {
+      console.error('Fallo llamando al consultor:', e)
+    }
     return res.status(502).json({ error: 'El consultor no está disponible ahora mismo.' })
   }
 }

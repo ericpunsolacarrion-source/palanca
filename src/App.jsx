@@ -478,7 +478,7 @@ function App() {
       )}
       <Hitos usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />
       <Suspense fallback={null}>
-        <Consultor movimientos={movimientos} objetivo={{ texto: perfil.objetivo, usuarioId }} />
+        <Consultor movimientos={movimientos} recurrentes={recurrentes} objetivo={{ texto: perfil.objetivo, usuarioId }} />
       </Suspense>
     </div>
     </DatosCompartidosProvider>

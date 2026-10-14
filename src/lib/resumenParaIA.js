@@ -1,3 +1,5 @@
+import { cobrosProximos, costeAnual, costeMensual, periodoDe } from './periodicidad'
+import { calcularAvisos } from './avisos'
 import { esInversion } from './categorias'
 import {
   agregarPorMes,
@@ -98,7 +100,25 @@ function construirInsights({ tasaEste, tasaMedia, tendencia, subidaCat, haceMese
   return insights.slice(0, 4)
 }
 
-export function construirResumenIA(movimientos, { objetivos = [], objetivo } = {}) {
+function resumenFijos(recurrentes, movimientos) {
+  const activos = recurrentes.filter((r) => r.activo && r.tipo === 'gasto')
+  const cent = (x) => Math.round(x * 100)
+  return {
+    nCompromisos: activos.length,
+    costeMensualProrrateado: Math.round(activos.reduce((s, r) => s + cent(costeMensual(r)), 0) / 100),
+    costeAnual: Math.round(activos.reduce((s, r) => s + cent(costeAnual(r)), 0) / 100),
+    compromisos: activos.slice(0, 25).map((r) => ({
+      nombre: r.nombre,
+      importe: Number(r.importe),
+      periodicidad: periodoDe(r).id,
+      costeAnual: Math.round(costeAnual(r)),
+    })),
+    proximos30Dias: cobrosProximos(activos, 30).map((c) => ({ nombre: c.rec.nombre, importe: c.importe, cuando: c.texto })),
+    avisos: calcularAvisos(recurrentes, movimientos).map((a) => `${a.titulo}: ${a.detalle}`),
+  }
+}
+
+export function construirResumenIA(movimientos, { objetivos = [], objetivo, recurrentes = [] } = {}) {
   const mes = filtrarMesActual(movimientos)
   const tMes = totalesDe(mes)
   const { ahorroMedio, invertidoMedio } = resumenMensualMedio(movimientos)
@@ -222,6 +242,9 @@ export function construirResumenIA(movimientos, { objetivos = [], objetivo } = {
     invertidoTotalAcumulado: Math.round(bolsasCalc.bolsaInversion),
     evolucion6Meses: evolucion,
     objetivosAhorro,
+    // Suscripciones y gastos fijos (pestaña Fijos): coste prorrateado, próximos
+    // cobros y avisos (renovaciones, subidas de precio).
+    fijos: resumenFijos(recurrentes, movimientos),
     // Observaciones no alarmistas ya calculadas (base de proactividad, Fase 3).
     // Las que tocan liquidez/patrimonio no reconciliado ya llevan su reserva.
     insights,

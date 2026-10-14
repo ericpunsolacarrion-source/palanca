@@ -12,16 +12,15 @@ const SUGERENCIAS = [
 ]
 
 // ─── ACTIVAR FULCRO ──────────────────────────────────────────────────────────
-// Fulcro está en STANDBY ("próximamente") hasta que se active. Para activarlo:
-//   1) Pon ANTHROPIC_API_KEY en Vercel (Settings → Environment Variables).
-//   2) Añade también VITE_FULCRO_ACTIVO = true (en Vercel, para Production).
-//   3) Redeploy.
-// Con eso, el botón deja de mostrar el teaser y pasa al chat real. Nada más que
-// cambiar: el endpoint, el encuadre de seguridad y el resumen anónimo ya están
-// listos. En local, se activa con VITE_FULCRO_ACTIVO=true en .env.
-const FULCRO_ACTIVO = import.meta.env.VITE_FULCRO_ACTIVO === 'true'
+// Fulcro se activa SOLO cuando el servidor tiene la clave: poner
+// ANTHROPIC_API_KEY en Vercel (Settings → Environment Variables) y redesplegar.
+// Al abrir el panel se pregunta a /api/consultor (GET) si está activo; si no,
+// se muestra el "próximamente". En local sin servidor de /api, se puede forzar
+// con VITE_FULCRO_ACTIVO=true en .env.
+const FORZAR_ACTIVO = import.meta.env.VITE_FULCRO_ACTIVO === 'true'
 
-export default function Consultor({ movimientos, objetivo }) {
+export default function Consultor({ movimientos, objetivo, recurrentes = [] }) {
+  const [activo, setActivo] = useState(FORZAR_ACTIVO ? true : null) // null = sin comprobar
   const [abierto, setAbierto] = useState(false)
   const [mensajes, setMensajes] = useState([])
   const [entrada, setEntrada] = useState('')
@@ -34,10 +33,23 @@ export default function Consultor({ movimientos, objetivo }) {
   // insights al abrir Fulcro. Los insights ya vienen redactados con cautela
   // (los que tocan liquidez/patrimonio no reconciliado llevan su reserva).
   const resumen = useMemo(
-    () => construirResumenIA(movimientos, { objetivos, objetivo: objetivo?.texto ?? null }),
-    [movimientos, objetivos, objetivo],
+    () => construirResumenIA(movimientos, { objetivos, objetivo: objetivo?.texto ?? null, recurrentes }),
+    [movimientos, objetivos, objetivo, recurrentes],
   )
   const insights = resumen.insights ?? []
+
+  // ¿Está Fulcro activo en el servidor? Se comprueba la primera vez que se abre.
+  useEffect(() => {
+    if (!abierto || activo !== null) return
+    let vigente = true
+    fetch('/api/consultor')
+      .then((r) => (r.ok ? r.json() : { activo: false }))
+      .then((d) => vigente && setActivo(Boolean(d.activo)))
+      .catch(() => vigente && setActivo(false))
+    return () => {
+      vigente = false
+    }
+  }, [abierto, activo])
 
   useEffect(() => {
     if (abierto) finRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -120,7 +132,11 @@ export default function Consultor({ movimientos, objetivo }) {
               </button>
             </header>
 
-            {!FULCRO_ACTIVO ? (
+            {activo === null ? (
+              <div className="consultor-teaser" aria-busy="true">
+                <span className="consultor-punto" />
+              </div>
+            ) : !activo ? (
               <div className="consultor-teaser">
                 <span className="consultor-teaser-halo" aria-hidden="true" />
                 <span className="consultor-teaser-icono" aria-hidden="true">
@@ -138,7 +154,7 @@ export default function Consultor({ movimientos, objetivo }) {
                   en claro y a tu ritmo.
                 </p>
                 <p className="consultor-teaser-nota">
-                  Lo estamos afinando. Muy pronto podrás hablar con él. ✨
+                  Lo estamos afinando. Muy pronto podrás hablar con él.
                 </p>
               </div>
             ) : (
