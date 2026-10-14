@@ -233,7 +233,9 @@ export default async function handler(req, res) {
   }
   const usadasHoy = reserva.usadas ?? null
 
-  const client = new Anthropic() // lee ANTHROPIC_API_KEY del entorno
+  // Lee ANTHROPIC_API_KEY del entorno. Tiempo máximo por debajo del límite de la
+  // función en Vercel (60 s) y un solo reintento: siempre se responde algo.
+  const client = new Anthropic({ timeout: 50_000, maxRetries: 1 })
   const peticion = peticionPara(mensajes)
   const conRespaldo = CON_RESPALDO ? RESPALDO : null
 

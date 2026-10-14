@@ -7,10 +7,15 @@
 // de forma determinista (lib/importarCsv.js) sin enviar el grueso de los datos
 // financieros a ningún modelo. La API key vive solo en el servidor.
 
+import Anthropic from '@anthropic-ai/sdk'
 import { usuarioDeLaPeticion } from './_auth.js'
 
-const MODELO = process.env.IMPORTADOR_MODELO || process.env.CONSULTOR_MODELO || 'claude-haiku-4-5'
-const MAX_TOKENS = 300
+// Tarea pequeña y mecánica: el modelo más económico basta (Claude Haiku 5.5).
+const MODELO = process.env.IMPORTADOR_MODELO || 'claude-haiku-5-5'
+// El razonamiento interno cuenta dentro de max_tokens: margen suficiente para
+// que nunca corte el JSON (solo se paga lo que se usa).
+const MAX_TOKENS = 1024
+export const config = { maxDuration: 30 }
 const MAX_CABECERAS = 100 // nº máximo de columnas (corta payloads abusivos)
 
 // Columnas canónicas que la app entiende (ver lib/importarCsv.js).
@@ -44,8 +49,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Sesión no válida. Vuelve a iniciar sesión.', code: 'no_autorizado' })
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) {
+  if (!process.env.ANTHROPIC_API_KEY) {
     return res.status(503).json({
       error: 'El asistente de columnas no está configurado todavía.',
       code: 'sin_configurar',
@@ -75,29 +79,15 @@ export default async function handler(req, res) {
     .join('\n')}`
 
   try {
-    const respuesta = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: MODELO,
-        max_tokens: MAX_TOKENS,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: contenido }],
-      }),
+    const client = new Anthropic({ timeout: 25_000, maxRetries: 1 })
+    const respuesta = await client.messages.create({
+      model: MODELO,
+      max_tokens: MAX_TOKENS,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: contenido }],
+      output_config: { effort: 'low' },
     })
-
-    if (!respuesta.ok) {
-      const detalle = await respuesta.text().catch(() => '')
-      console.error('Error de Anthropic (mapear-columnas):', respuesta.status, detalle)
-      return res.status(502).json({ error: 'El asistente no está disponible ahora mismo.' })
-    }
-
-    const datos = await respuesta.json()
-    const texto = (datos.content || [])
+    const texto = (respuesta.content || [])
       .filter((b) => b.type === 'text')
       .map((b) => b.text)
       .join('')
@@ -109,7 +99,8 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ mapeo })
   } catch (e) {
-    console.error('Fallo mapeando columnas:', e)
+    if (e instanceof Anthropic.APIError) console.error('Error de Anthropic (mapear-columnas):', e.status, e.message)
+    else console.error('Fallo mapeando columnas:', e)
     return res.status(502).json({ error: 'El asistente no está disponible ahora mismo.' })
   }
 }

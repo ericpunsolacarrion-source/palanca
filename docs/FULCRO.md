@@ -56,6 +56,20 @@ select date(created_at) as dia, count(*) as preguntas,
 from fulcro_uso group by 1 order by 1 desc;
 ```
 
+## El otro servicio de IA: asistente de columnas del importador
+`api/mapear-columnas.js` deduce qué columna es cada cosa en un CSV raro. Usa la
+misma `ANTHROPIC_API_KEY`, el modelo `claude-haiku-5-5` (`IMPORTADOR_MODELO`) y
+solo recibe cabeceras + 2–3 filas recortadas. Coste por uso: una fracción de
+céntimo.
+
+## Seguridad (probado)
+Sin sesión → 401; método no permitido → 405; cuerpos malformados, preguntas,
+resúmenes o detalles gigantes → 400, todo **sin llamar a la IA**. Desde fuera
+no se puede cambiar el modelo, `max_tokens` ni el system prompt, ni colar
+roles `system` en el historial (acotado a 8 mensajes × 4.000 caracteres). Los
+errores de la API no filtran detalles internos. El cupo diario es atómico
+(probado con 25 peticiones simultáneas: pasa exactamente una).
+
 ## Banco de pruebas
 `scripts/probar-fulcro.mjs` hace 18 preguntas típicas (datos, conceptos,
 límites, bienestar) + una conversación de dos turnos sobre un usuario de ejemplo
