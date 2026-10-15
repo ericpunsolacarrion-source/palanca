@@ -30,6 +30,7 @@ const sinAcentos = (s) =>
     .replace(/[̀-ͯ]/g, '')
 
 const euros = (cent) => Math.round(cent) / 100
+const GENERICOS = /^(gastos?|pagos?|compras?|varios|otros?|sin concepto|ingresos?|cosas|recibos?|transferencias?)$/
 
 // Palabras de la pregunta (sin acentos), para buscar coincidencias exactas de
 // palabra y no falsos positivos dentro de otras palabras.
@@ -136,7 +137,9 @@ export function contextoParaPregunta(pregunta, movimientos = []) {
     const c = comercioDe(m)
     if (c) comercios.add(c)
   }
-  const comMencionados = [...comercios].filter((c) => aparece(c, palabras)).slice(0, 2)
+  // Un "comercio" que es una palabra genérica ("gastos", "compra") no cuenta:
+  // la pregunta "gasto en gasolina" no habla de un comercio llamado "Gastos".
+  const comMencionados = [...comercios].filter((c) => !GENERICOS.test(sinAcentos(c).trim()) && aparece(c, palabras)).slice(0, 2)
 
   // Meses mencionados por nombre.
   const mesesMencionados = MESES.map((n, i) => (palabras.has(n) ? i : -1)).filter((i) => i >= 0).slice(0, 2)

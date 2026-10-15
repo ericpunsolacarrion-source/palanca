@@ -151,12 +151,16 @@ pruebas) en **`docs/FULCRO.md`**.
   **sugerencias según sus datos** (p. ej. "¿Me compensa seguir con Netflix?" si
   subió de precio) y el desplegable **"Qué ve Fulcro"** (privacidad).
 - **Conversación**: el usuario en burbuja; Fulcro como texto limpio con línea
-  índigo, negritas y listas (render seguro, sin HTML). La respuesta llega **en
+  índigo, negritas y listas (render seguro, sin HTML). Cada respuesta lleva su
+  origen en mono ("Motor · calculado al momento" / "Fulcro · análisis"); las
+  del motor muestran una **ficha** (etiqueta, cifra grande, detalle y desglose
+  con barra fina proporcional) y el texto no repite el desglose. La respuesta llega **en
   streaming**. Botón **"Nueva"** para empezar de cero; la conversación se
   conserva en la sesión del navegador.
-- **Datos**: envía el resumen del motor (`lib/resumenParaIA.js`) y, si la
-  pregunta nombra una categoría, comercio o mes, solo ese desglose
-  (`lib/contextoFulcro.js`). Nunca movimientos uno a uno.
+- **Datos**: envía el resumen del motor (`lib/resumenParaIA.js`) con el
+  `panorama` de toda su historia, y, si la pregunta nombra una categoría,
+  comercio o mes, solo ese desglose (`lib/contextoFulcro.js`) más los
+  `hechosDelMotor` de esa pregunta (`hechosParaIA`). Nunca movimientos uno a uno.
 - **Gratis y local**: saludos, "gracias" y "vale/ok" se responden en la app sin
   IA ni gastar cupo (salvo que "vale" responda a una pregunta de Fulcro: eso va
   a la IA). No se reenvían en el historial.

@@ -79,6 +79,8 @@ calendario, avisos) y el **rediseño visual v2** (ver DISENO.md). Además
 inicio) y **datos de ejemplo + demo rápida** para usuarios nuevos. Detalle en
 PANTALLAS.md §3 y §4b.
 
+**2026-10-15 (última hora) — Fulcro como nuevo (en `develop`):** el motor calcula y la IA solo redacta. "Gasolina" junta gasolina moto/coche/furgoneta y gasolineras y responde con **desglose por concepto + total**; entiende "el último año", trimestres y "desde que uso la app"; 64 de las 73 preguntas de Laura van al momento (sin IA, gratis). Lo que va a la IA lleva las cifras ya calculadas (`hechosDelMotor`, `panorama`) y un prompt que prohíbe inventar o contradecir. Panel con origen de cada respuesta y ficha de cifra + desglose. Ver [FULCRO.md](FULCRO.md).
+
 **2026-10-15 (noche) — Activado en la versión de prueba:** Fulcro con IA (clave `ANTHROPIC_API_KEY` solo en Preview), SQL de métricas aplicado en el proyecto de Supabase **palanca** (el que usan Production y Preview; "palanca dev" no lo usa la app) y panel de Métricas visible. Prueba: https://palanca-git-develop-palanca-mac.vercel.app
 
 **2026-10-15 (noche) — Motor rematado con clientes simulados (en `develop`):** 5 clientes con un año real de su banco (BBVA, Santander, CaixaBank, ING, Revolut) y 2 recorridos completos en el navegador (52 comprobaciones). Corregido:

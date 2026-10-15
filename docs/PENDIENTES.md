@@ -2,7 +2,7 @@
 
 **Todo lo que se ha dejado para más adelante, en un solo sitio**, para poder rematarlo algún día.
 Se mantiene al día en cada sesión: lo terminado se marca ✔ con la fecha, lo nuevo se añade en su bloque.
-Última revisión: 15-10-2026 (noche, tras activar Fulcro).
+Última revisión: 15-10-2026 (Fulcro como nuevo).
 
 Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejora.
 
@@ -50,8 +50,8 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 ### Importación y Fulcro
 - 🟩 Ampliar las **respuestas al momento** con lo que pregunte la gente: mirar en el panel qué va a la IA y debería ir local.
-- 🟧 **Batería de preguntas a Fulcro con Laura** (`docs/FULCRO-PREGUNTAS.md`, 73 preguntas con su respuesta correcta; CSV en `docs/pruebas/`): Eric las prueba en una cuenta de prueba y reporta por número. Las 35 de datos ya se responden al momento con la cifra exacta (test `clienteFulcro.test.js`); falta afinar las de IA con sus reportes.
-- 🟧 **Calidad de las respuestas de Fulcro con IA** (Eric, 15-10: "ya responde, pero le falta mucho para dar respuestas buenas"). Recoger ejemplos concretos de preguntas y respuestas flojas y afinar el contexto y las instrucciones (`api/consultor.js`, `src/lib/contextoFulcro.js`).
+- 🟧 **Batería de preguntas a Fulcro con Laura** (`docs/FULCRO-PREGUNTAS.md`, 73 preguntas con su respuesta correcta; CSV en `docs/pruebas/`): Eric las prueba en una cuenta de prueba y reporta por número. 64 de las 73 ya se responden al momento con la cifra exacta (test `clienteFulcro.test.js`); quedan en la IA las de consejo (viaje, cómo ahorrar, límites). Eric: volver a probarlas, y su propia cuenta con "gasolina".
+- 🟧 **Calidad de las respuestas de Fulcro con IA**: rehecho el 15-10 (la IA recibe las cifras del motor y no puede inventarlas). Falta comprobarlo con la IA real en la versión de prueba y recoger ejemplos flojos que queden.
 - 🟩 Estudiar Cloudflare Pages en lugar de Vercel Pro (ahorro ≈ 20 $/mes; obliga a adaptar `/api`).
 - 🟧 Probar la **lectura de capturas con la API real**: hasta ahora solo se ha probado con datos simulados.
 - 🟧 Ejecutar `scripts/probar-fulcro.mjs` con la clave real.
@@ -97,6 +97,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 ---
 
 ## Histórico de cosas terminadas que estaban aquí
+- ✔ 15-10-2026 (última hora): Fulcro como nuevo: desglose por concepto + total (gasolina moto/coche/furgoneta), "último año" y más periodos, 64/73 preguntas de Laura al momento, la IA recibe las cifras hechas del motor, panel con ficha de cifra y origen.
 - ✔ 15-10-2026 (noche): demo avanzada (18 pasos, 7 capítulos, Fulcro en directo) desde Tu cuenta y desde el final de la demo rápida.
 - ✔ 15-10-2026 (noche): Fulcro activado en la versión de prueba (clave solo en Preview), SQL de métricas aplicado en el proyecto palanca y panel de Métricas visible para el admin.
 - ✔ 15-10-2026 (noche): motor probado con 5 clientes simulados de 5 bancos y recorridos completos en el navegador; corregidos importación de Santander/Revolut/ING, retiradas de inversión, vuelta del ahorro, fijos genéricos, suscripciones falsas y respuestas de Fulcro.

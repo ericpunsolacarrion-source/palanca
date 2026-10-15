@@ -6,8 +6,9 @@ import { useObjetivosCompartidos, usePresupuestoCompartido } from '../lib/DatosC
 import { supabase } from '../lib/supabaseClient'
 import { leerDescartadas } from '../lib/suscripciones'
 import { EVENTO_FULCRO, EVENTO_FULCRO_CERRAR } from '../lib/fulcro'
-import { respuestaLocal } from '../lib/respuestasLocales'
+import { consultaLocal, hechosParaIA, panoramaParaIA } from '../lib/respuestasLocales'
 import { registrarEvento } from '../lib/analitica'
+import { formatearEuros } from '../lib/categorias'
 
 // ─── ACTIVAR FULCRO ──────────────────────────────────────────────────────────
 // Fulcro se activa cuando el servidor tiene la clave (ANTHROPIC_API_KEY en
@@ -57,6 +58,51 @@ function enLinea(texto) {
     t.startsWith('**') && t.endsWith('**') ? <strong key={i}>{t.slice(2, -2)}</strong> : t,
   )
 }
+// Ficha de una respuesta calculada por el motor: la cifra manda, el desglose
+// alineado y con una línea fina proporcional (precisión de instrumento).
+const conSignoEur = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${formatearEuros(Math.abs(v))}`
+function FichaMotor({ t }) {
+  const filas = (t.filas ?? []).slice(0, 8)
+  const max = Math.max(...filas.map((f) => Math.abs(f.valor ?? 0)), 0)
+  const cifra = t.cifraTexto ?? (typeof t.cifra === 'number' ? (t.conSigno ? conSignoEur(t.cifra) : formatearEuros(t.cifra)) : null)
+  return (
+    <div className="fulcro-ficha">
+      {t.etiqueta && <span className="fulcro-ficha-etiqueta">{t.etiqueta}</span>}
+      {cifra && <span className="fulcro-ficha-cifra">{cifra}</span>}
+      {t.detalle && <span className="fulcro-ficha-detalle">{t.detalle}</span>}
+      {filas.length > 0 && (
+        <ul className="fulcro-ficha-filas">
+          {filas.map((f, i) => (
+            <li key={i}>
+              <span className="fulcro-ficha-nombre">{f.nombre}</span>
+              <span className="fulcro-ficha-valor">
+                {typeof f.valor === 'number' ? (f.conSigno ? conSignoEur(f.valor) : formatearEuros(f.valor)) : f.valor}
+              </span>
+              {(f.extra || f.pct != null) && (
+                <span className="fulcro-ficha-extra">{f.extra ?? `${Math.round(f.pct)} %`}</span>
+              )}
+              {max > 0 && typeof f.valor === 'number' && (
+                <span className="fulcro-ficha-barra" aria-hidden="true">
+                  <span style={{ width: `${Math.max(2, (Math.abs(f.valor) / max) * 100)}%` }} />
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+// Con ficha, el texto no repite el desglose ni el total (ya están en la ficha).
+function textoSinDesglose(texto, tarjeta) {
+  if (!tarjeta?.filas?.length) return texto
+  return texto
+    .split('\n')
+    .filter((l) => !/^\s*[-•*]\s+/.test(l) && !/^\s*\*\*Total:/.test(l))
+    .join('\n')
+}
+
 function TextoFulcro({ texto }) {
   const bloques = []
   for (const linea of texto.split('\n')) {
@@ -86,6 +132,15 @@ function TextoFulcro({ texto }) {
         <p key={i}>{enLinea(b.texto)}</p>
       ),
     )
+}
+
+// Lo que la IA necesita para ESTA pregunta: cifras calculadas por el motor
+// (hechosDelMotor) y, si menciona meses o categorías, su desglose.
+function detalleDe(pregunta, movimientos, datosMotor) {
+  const base = contextoParaPregunta(pregunta, movimientos) ?? {}
+  const hechos = hechosParaIA(pregunta, datosMotor)
+  const d = { ...base, ...(hechos ? { hechosDelMotor: hechos } : {}) }
+  return Object.keys(d).length ? d : null
 }
 
 // Conversación de la sesión (comodidad: sobrevive a cerrar el panel o recargar,
@@ -129,6 +184,8 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
               presupuesto: { metodo, tasaAhorroObjetivo, gastoMaximoFijo, objetivoInversionMensual, configurado },
               descartadas: leerDescartadas(usuarioId),
             }),
+            // El panorama (años, medias, colchón, sueldo, subidas…) ya calculado por el motor.
+            panorama: panoramaParaIA(movimientos),
             // Con los datos de ejemplo (usuario nuevo), Fulcro lo sabe y lo dice.
             ...(ejemplo ? { datosDeEjemplo: true } : {}),
           }
@@ -194,12 +251,15 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
 
       // Preguntas de DATOS ("¿cuánto he gastado en gasolina…?"): se calculan
       // aquí, al momento y sin IA (gratis, no gastan preguntas del día).
-      const local = forzarIA ? null : respuestaLocal(pregunta, { movimientos, recurrentes })
+      const datosMotor = { movimientos, recurrentes, presupuesto: resumen.presupuesto }
+      const local = forzarIA ? null : consultaLocal(pregunta, datosMotor)
       if (local) {
+        // Las respuestas al momento SÍ van al historial de la IA (son hechos):
+        // así nunca contradice lo que el motor acaba de decir.
         setMensajes((prev) => [
           ...prev,
-          { rol: 'usuario', texto: pregunta, local: true },
-          { rol: 'consultor', texto: local, local: true, alMomento: true, pregunta },
+          { rol: 'usuario', texto: pregunta, alMomento: true },
+          { rol: 'consultor', texto: local.texto, tarjeta: local.tarjeta ?? null, alMomento: true, pregunta },
         ])
         setEntrada('')
         registrarEvento('fulcro_local')
@@ -241,7 +301,7 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
           },
           body: JSON.stringify({
             resumen,
-            detalle: contextoParaPregunta(pregunta, movimientos),
+            detalle: detalleDe(pregunta, movimientos, datosMotor),
             pregunta,
             historial: historialPrevio,
             stream: true,
@@ -458,11 +518,17 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
                             <span className="consultor-punto" />
                           </span>
                         ) : (
-                          <TextoFulcro texto={m.texto} />
+                          <>
+                            <span className={`fulcro-origen ${m.alMomento ? 'motor' : ''}`}>
+                              {m.alMomento ? 'Motor · calculado al momento' : 'Fulcro · análisis'}
+                            </span>
+                            {m.tarjeta && <FichaMotor t={m.tarjeta} />}
+                            <TextoFulcro texto={textoSinDesglose(m.texto, m.tarjeta)} />
+                          </>
                         )}
                         {m.alMomento && (
                           <div className="fulcro-al-momento">
-                            <span>Calculado al momento con tus datos</span>
+                            <span>Sumado de tus movimientos, al céntimo</span>
                             {!sinPreguntas && (
                               <button type="button" className="link" onClick={() => preguntar(m.pregunta, { forzarIA: true })} disabled={enviando}>
                                 Que lo analice Fulcro

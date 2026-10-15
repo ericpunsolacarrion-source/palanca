@@ -7,6 +7,14 @@
 ## Respuestas al momento (sin IA)
 Las preguntas de DATOS se responden en el móvil con `src/lib/respuestasLocales.js`: gratis, al instante y sin gastar preguntas del día. Ejemplos: cuánto en gasolina o en un comercio, lo pagado hasta ahora de Spotify, el próximo cobro de un fijo, el total de fijos, en qué se gasta más, e ingresos, ahorro o inversión de un periodo. Lo de CRITERIO va a la IA, y ante la duda también. Cada respuesta al momento ofrece "Que lo analice Fulcro". Tests en `respuestasLocales.test.js`, incluidas 2.000 preguntas aleatorias.
 
+## El motor calcula, la IA solo redacta (15-10-2026)
+- **Un solo buscador** (`resolverObjetivo`): categoría, palabras de lo apuntado ("gasolina moto") o tema ("gasolina" = todo lo apuntado como gasolina + gasolineras como Repsol), con erratas. Nunca toma un concepto genérico ("gastos", "compras") por un comercio.
+- **Desglose por concepto + total**: "¿cuánto he gastado en gasolina el último año?" → gasolina coche X, furgoneta Y, Repsol Z, moto W y **Total**. Periodos: este mes, el pasado, "último año", trimestres, semana pasada, años, "desde que uso la app"… Si en el periodo no hay nada, dice el último pago y el total del último año (nunca un "no veo nada" a secas).
+- **64 de las 73 preguntas de Laura** se responden al momento (antes 35): presupuesto, tasa de ahorro, comparativas, mes récord, sueldo, subidas de precio, cuenta de ahorro, patrimonio, fin de mes y de año, "¿cuándo llegaré a…?".
+- **Lo que va a la IA lleva las cifras hechas**: `hechosDelMotor` (`hechosParaIA`: qué se buscó, periodo, total, pagos, media, desglose, por año, último pago, respuesta exacta del motor) y `panorama` en el resumen (`panoramaParaIA`: años, últimos 12 meses, medias, colchón, sueldo, subidas, cuenta de ahorro, récords). El prompt le prohíbe estimar, inventar o contradecir cifras ya dadas, y le pide 40–120 palabras, la cifra primero.
+- Las respuestas al momento **entran en el historial** que ve la IA: si luego preguntas "¿y por qué?", parte de esas cifras.
+- **Panel**: cada respuesta dice su origen ("Motor · calculado al momento" o "Fulcro · análisis") y las del motor traen una **ficha**: la cifra grande, el detalle y el desglose alineado con una línea fina proporcional. Tests: `fulcroGasolina.test.js`, `clienteFulcro.test.js`.
+
 ## Estado
 En pruebas **solo en dev**: se enciende en los despliegues de prueba de Vercel
 (rama `develop` → "Preview"). En la app pública sigue en "Próximamente" hasta

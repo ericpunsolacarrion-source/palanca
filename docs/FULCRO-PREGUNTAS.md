@@ -42,7 +42,7 @@ Para cada pregunta, copia la respuesta de Fulcro (o haz captura) y dime el **nú
 | 16 | ¿Cuánto pago de suministros este año? | **1.122,16 €** | Al momento |
 | 17 | ¿Cuánto me he gastado en viajes en 2025? | **619,74 €** | Al momento |
 | 18 | ¿En qué gasto más? | Este mes, por categorías: Vivienda (alquiler 900 €) muy por delante; después Comida y Restaurantes. Debe dar cifras y % del total. | Al momento |
-| 19 | ¿En qué se me fue el dinero el mes pasado? | Desglose de 2026-09: gasto total 1.779,60 €; Vivienda primero, después Comida, Seguros (hogar en septiembre) y Restaurantes. | IA |
+| 19 | ¿En qué se me fue el dinero el mes pasado? | Desglose de 2026-09: gasto total 1.779,60 €; Vivienda primero, después Comida, Seguros (hogar en septiembre) y Restaurantes. | Al momento |
 
 ## Por comercio
 
@@ -70,20 +70,20 @@ Para cada pregunta, copia la respuesta de Fulcro (o haz captura) y dime el **nú
 | 34 | ¿Cuánto he ahorrado este año? | **6.779,18 €** | Al momento |
 | 35 | ¿Cuánto ahorré el año pasado? | **10.938,51 €** | Al momento |
 | 36 | ¿Cuánto he ahorrado este mes? | La nómina llega el día 28: a día de hoy no ha entrado. Debe decirlo y dar el mes pasado: ahorro 668,90 € (27 %). | Al momento |
-| 37 | ¿Cuál es mi tasa de ahorro? | Últimos 12 meses: 36 % de lo que ingresa (12.082,77 € de 33.167 €). | IA |
-| 38 | ¿Qué mes ahorré más? | El mes con más ahorro: 2026-06 (3.265,94 €), por la paga extra. | IA |
-| 39 | ¿Cuánto me han subido el sueldo? | Nómina: 2.100 € (2024) → 2.250 € (2025, +7,1 %) → 2.400 € (2026, +6,7 %). Más pagas extra en junio y diciembre. | IA |
-| 40 | ¿Cuánto tengo en la cuenta de ahorro? | Traspasos de 300 €/mes menos los 800 € que sacó en agosto de 2025, más intereses. Palanca los cuenta dentro de tu disponible: debería explicarlo, sin inventar un saldo. | IA |
+| 37 | ¿Cuál es mi tasa de ahorro? | Últimos 12 meses: 36 % de lo que ingresa (12.082,77 € de 33.167 €). | Al momento |
+| 38 | ¿Qué mes ahorré más? | El mes con más ahorro: 2026-06 (3.265,94 €), por la paga extra. | Al momento |
+| 39 | ¿Cuánto me han subido el sueldo? | Nómina: 2.100 € (2024) → 2.250 € (2025, +7,1 %) → 2.400 € (2026, +6,7 %). Más pagas extra en junio y diciembre. | Al momento |
+| 40 | ¿Cuánto tengo en la cuenta de ahorro? | Traspasos de 300 €/mes menos los 800 € que sacó en agosto de 2025, más intereses. Palanca los cuenta dentro de tu disponible: debería explicarlo, sin inventar un saldo. | Al momento |
 
 ## Comparativas
 
 | # | Pregunta | Respuesta correcta | Hoy |
 |---|---|---|---|
-| 41 | ¿Gasto más que el año pasado? | Enero–10 de este año 17.352,82 € frente al mismo periodo del año pasado. Sube sobre todo por el alquiler (875 → 900 €) y los seguros. Debe comparar periodos iguales. | IA |
-| 42 | ¿En qué categoría he aumentado más el gasto? | Vivienda (alquiler 850 → 875 → 900 €) y Seguros (Mapfre 410 → 432 → 455 €). Suscripciones también sube (Netflix y Spotify). | IA |
-| 43 | ¿Este mes voy mejor o peor que el anterior? | Debe comparar a la misma altura del mes (hasta el día 15) y no el mes completo contra medio mes. | IA |
-| 44 | ¿Qué suscripciones me han subido de precio? | Netflix 12,99 → 13,99 € (feb 2025), Spotify 10,99 → 11,99 € (jul 2025), Movistar 55 → 59 € (mar 2025). Y los seguros anuales. | IA |
-| 45 | ¿Cuál ha sido mi mes más caro? | Un agosto (viaje: Booking 520 €) o un diciembre (regalos 280 € + Nochebuena 60 €), según el año. Debe dar la cifra. | IA |
+| 41 | ¿Gasto más que el año pasado? | Enero–10 de este año 17.352,82 € frente al mismo periodo del año pasado. Sube sobre todo por el alquiler (875 → 900 €) y los seguros. Debe comparar periodos iguales. | Al momento |
+| 42 | ¿En qué categoría he aumentado más el gasto? | Vivienda (alquiler 850 → 875 → 900 €) y Seguros (Mapfre 410 → 432 → 455 €). Suscripciones también sube (Netflix y Spotify). | Al momento |
+| 43 | ¿Este mes voy mejor o peor que el anterior? | Debe comparar a la misma altura del mes (hasta el día 15) y no el mes completo contra medio mes. | Al momento |
+| 44 | ¿Qué suscripciones me han subido de precio? | Netflix 12,99 → 13,99 € (feb 2025), Spotify 10,99 → 11,99 € (jul 2025), Movistar 55 → 59 € (mar 2025). Y los seguros anuales. | Al momento |
+| 45 | ¿Cuál ha sido mi mes más caro? | Un agosto (viaje: Booking 520 €) o un diciembre (regalos 280 € + Nochebuena 60 €), según el año. Debe dar la cifra. | Al momento |
 
 ## Fijos y suscripciones
 
@@ -101,17 +101,17 @@ Para cada pregunta, copia la respuesta de Fulcro (o haz captura) y dime el **nú
 | 50 | ¿Cuánto he invertido este año? | **2.000 €**. Y debe decir que ha retirado 1.000 € (neto: aportado − 1.000 €). | Al momento |
 | 51 | ¿Cuánto tengo invertido en total? | Aportado neto (a coste): 5.500 €. Sin rentabilidad: Palanca no conoce el valor de mercado. | Al momento |
 | 52 | ¿Cuánto dinero tengo? | Patrimonio: 33.879,45 € (disponible + invertido, a coste). | Al momento |
-| 53 | ¿Cuánto ha crecido mi patrimonio este año? | Lo ahorrado en 2026: 6.779,18 € (más intereses, ya incluidos). La retirada del fondo no suma. | IA |
+| 53 | ¿Cuánto ha crecido mi patrimonio este año? | Lo ahorrado en 2026: 6.779,18 € (más intereses, ya incluidos). La retirada del fondo no suma. | Al momento |
 
 ## Previsión
 
 | # | Pregunta | Respuesta correcta | Hoy |
 |---|---|---|---|
-| 54 | ¿Llegaré a fin de mes? | Sí: la nómina llega el 28 y lo gastado a mitad de mes está en su media. Debe tener en cuenta que el ingreso aún no ha llegado. | IA |
-| 55 | ¿Cuánto puedo gastar al día hasta fin de mes? | Depende del presupuesto. Si no tiene, debe proponer uno o usar su ahorro objetivo; cifra por día clara. | IA |
-| 56 | ¿Cuándo llegaré a 20.000 € para la entrada del piso? | Con lo que tiene (33.879,45 €) y su ahorro medio de 1.006,90 €/mes: fecha aproximada. Debe decir el supuesto. | IA |
+| 54 | ¿Llegaré a fin de mes? | Sí: la nómina llega el 28 y lo gastado a mitad de mes está en su media. Debe tener en cuenta que el ingreso aún no ha llegado. | Al momento |
+| 55 | ¿Cuánto puedo gastar al día hasta fin de mes? | Depende del presupuesto. Si no tiene, debe proponer uno o usar su ahorro objetivo; cifra por día clara. | Al momento |
+| 56 | ¿Cuándo llegaré a 20.000 € para la entrada del piso? | Con lo que tiene (33.879,45 €) y su ahorro medio de 1.006,90 €/mes: fecha aproximada. Debe decir el supuesto. | Al momento |
 | 57 | ¿Me puedo permitir un viaje de 1.500 € en diciembre? | Sí, con números: su ahorro mensual y su colchón lo cubren; recordar que diciembre ya trae regalos y la paga extra. | IA |
-| 58 | ¿Cuánto tendré ahorrado a final de año? | Lo de ahora + ahorro medio × meses que quedan + paga extra de diciembre − gastos de diciembre habituales. | IA |
+| 58 | ¿Cuánto tendré ahorrado a final de año? | Lo de ahora + ahorro medio × meses que quedan + paga extra de diciembre − gastos de diciembre habituales. | Al momento |
 
 ## Consejo
 
@@ -122,7 +122,7 @@ Para cada pregunta, copia la respuesta de Fulcro (o haz captura) y dime el **nú
 | 61 | ¿Debería invertir más? | Educativo, sin recomendar productos: fondo de emergencia primero (3–6 meses de gasto), horizonte del piso (corto plazo → menos riesgo). | IA |
 | 62 | ¿Tengo un buen fondo de emergencia? | Gasto medio ~1.757,02 €/mes → 3–6 meses = 5.271,06 €–10.542,12 €. Comparar con su disponible. | IA |
 | 63 | ¿Me compensa renegociar el seguro del coche? | Sí: ha subido de 410 a 455 € en dos años (+11 %). Mejor momento: 30–45 días antes de la renovación (febrero). Remitir al plan de ahorro de Fijos. | IA |
-| 64 | ¿Gasto mucho en restaurantes? | ≈ 78,45 €/mes, 4 % de su gasto: moderado. No juzgar; dar contexto. | IA |
+| 64 | ¿Gasto mucho en restaurantes? | ≈ 78,45 €/mes, 4 % de su gasto: moderado. No juzgar; dar contexto. | Al momento |
 
 ## Escritura real
 

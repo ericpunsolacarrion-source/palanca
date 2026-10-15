@@ -96,13 +96,16 @@ describe('otras preguntas de datos', () => {
   })
 })
 
+describe('el estado del mes y el presupuesto se responden al momento', () => {
+  it('¿Cómo voy este mes? → gasto hasta hoy y frente a lo habitual', () => expect(r('¿Cómo voy este mes?')).toMatch(/^Llevas \*\*/))
+  it('¿Cuánto puedo gastar hoy? → sin presupuesto, invita a crearlo y da el estado del mes', () => expect(r('¿Cuánto puedo gastar hoy?')).toMatch(/Plan → Presupuesto/))
+})
+
 describe('lo que va a la IA (null)', () => {
   for (const q of [
-    '¿Cómo voy este mes?',
     '¿Me conviene cambiar de compañía de luz?',
     '¿Cómo puedo ahorrar más?',
     '¿Cuánto debería ahorrar al mes?',
-    '¿Cuánto puedo gastar hoy?',
     '¿Qué es un fondo indexado?',
     '¿Por qué he gastado tanto en agosto?',
     'Hazme un plan para llegar a mi objetivo',
