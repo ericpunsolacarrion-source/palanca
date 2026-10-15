@@ -1,4 +1,6 @@
-// FRASES para recordatorios (app y email). SOLO citas con fuente comprobable:
+// FRASES para recordatorios (app y email). ESTADO: NO SE USAN. A Eric no le
+// convencen: pendiente diseñar o elegir otras (docs/PENDIENTES.md). Se activan
+// con CON_FRASE en recordatorios.js. Regla: SOLO citas con fuente comprobable:
 // nada de atribuciones dudosas de internet ("Einstein dijo…"). Si se añade
 // una, con su obra. Módulo puro: lo usan la app y las funciones de /api.
 

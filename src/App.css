@@ -9884,25 +9884,6 @@ input[type='number']::-webkit-outer-spin-button {
 .ini-vuelta-texto strong {
   color: var(--text-h);
 }
-.ini-vuelta-frase {
-  margin: 0;
-  padding-left: 10px;
-  border-left: 2px solid var(--borde-fuerte);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.ini-vuelta-frase p {
-  font-size: var(--fs-s);
-  font-style: italic;
-  color: var(--text-h);
-  text-wrap: pretty;
-}
-.ini-vuelta-frase cite {
-  font-style: normal;
-  font-size: var(--fs-micro);
-  color: var(--text-3);
-}
 .ini-vuelta-boton {
   align-self: flex-start;
   display: inline-flex;

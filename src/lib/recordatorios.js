@@ -6,8 +6,12 @@
 // - Pocos y útiles: como máximo 1 email cada 3 días, y como mucho 2 por cada
 //   racha sin entrar (a los 3-6 días y a los 14-21). Después, silencio.
 // - Sin importes ni datos financieros en el email (puede leerlo cualquiera).
-// - Cada email lleva la frase del día, el remitente identificado y la baja en un clic.
+// - Cada email lleva el remitente identificado y la baja en un clic.
+// - Frases motivadoras: APAGADAS (CON_FRASE) hasta rediseñarlas (docs/PENDIENTES.md).
+// - Frecuencia y reglas: PROVISIONALES, pendientes de decidir con Eric.
 import { fraseDelDia, firmaDe } from './frases.js'
+
+export const CON_FRASE = false
 
 export const TIPOS = ['prueba_termina', 'sin_empezar', 'inactivo', 'te_echamos', 'invitacion_premium']
 
@@ -142,15 +146,14 @@ function contenido(tipo, f, hoy) {
  */
 export function componerEmail(tipo, f, hoy, { app, baja }, remitente) {
   const c = contenido(tipo, f, hoy)
-  const frase = fraseDelDia(f.uid ?? '', hoy)
+  const frase = CON_FRASE ? fraseDelDia(f.uid ?? '', hoy) : null
   const url = `${app}${app.includes('?') ? '&' : '?'}desde=email_${tipo}`
 
   const texto = [
     ...c.parrafos,
     ...(c.lista ? c.lista.map((l) => `- ${l}`) : []),
     '',
-    `«${frase.texto}» (${firmaDe(frase)})`,
-    '',
+    ...(frase ? [`«${frase.texto}» (${firmaDe(frase)})`, ''] : []),
     `${c.boton}: ${url}`,
     '',
     '--',
@@ -168,10 +171,10 @@ export function componerEmail(tipo, f, hoy, { app, baja }, remitente) {
 <div style="font-weight:700;font-size:18px;color:#151823;margin-bottom:20px">Palanca</div>
 ${c.parrafos.map(p).join('\n')}
 ${c.lista ? `<ul style="margin:0 0 14px;padding-left:20px;color:#1f2330;font-size:16px;line-height:1.55">${c.lista.map((l) => `<li>${escapar(l)}</li>`).join('')}</ul>` : ''}
-<div style="margin:20px 0;padding:2px 0 2px 14px;border-left:3px solid #c9cdf6">
+${frase ? `<div style="margin:20px 0;padding:2px 0 2px 14px;border-left:3px solid #c9cdf6">
 <p style="margin:0;font-size:15px;line-height:1.5;font-style:italic;color:#3a4050">«${escapar(frase.texto)}»</p>
 <p style="margin:4px 0 0;font-size:12px;color:#7a8193">${escapar(firmaDe(frase))}</p>
-</div>
+</div>` : '<div style="height:6px"></div>'}
 <a href="${escapar(url)}" style="display:inline-block;background:#5b67e8;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;padding:12px 20px;border-radius:10px">${escapar(c.boton)}</a>
 </td></tr></table>
 <p style="max-width:520px;margin:16px auto 0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:#7a8193">

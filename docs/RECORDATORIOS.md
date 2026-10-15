@@ -1,7 +1,9 @@
 # Recordatorios (app y email)
 
 ## Qué hay
-- **En la app (ya funciona):** tras 3 o más días sin apuntar, Inicio muestra "Llevas X días sin apuntar nada" con la **frase del día** y el botón "Ponerme al día". La frase sale de `src/lib/frases.js`: solo citas con fuente comprobable. Es la misma frase que llevaría el email ese día.
+- **En la app (ya funciona):** tras 3 o más días sin apuntar, Inicio muestra "Llevas X días sin apuntar nada" y el botón "Ponerme al día".
+- **Frases motivadoras: RETIRADAS** (15-10-2026, no convencieron). Están pendientes de rediseñar; se reactivan con `CON_FRASE` (ver PENDIENTES.md).
+- **Frecuencia: PROVISIONAL**, pendiente de decidir con Eric.
 - **Por email (preparado, APAGADO):** la función `api/recordatorios.js` se ejecuta una vez al día a las 17:00 UTC (`vercel.json`), es decir, a las 18:00 o 19:00 en España. Las reglas están en `src/lib/recordatorios.js`, con tests.
 
 | Email | Cuándo | Asunto |

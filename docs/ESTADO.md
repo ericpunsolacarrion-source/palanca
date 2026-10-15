@@ -31,6 +31,8 @@ premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](EST
 | **Sistema visual** (colores, tipografía, iconos, qué NO hacer) | **[DISENO.md](DISENO.md)** |
 | **Fulcro** (qué ve, hasta dónde llega, coste, pruebas) | **[FULCRO.md](FULCRO.md)** |
 | **Métricas de uso** (panel admin, qué se guarda, definiciones) | **[METRICAS.md](METRICAS.md)** |
+| **PENDIENTES (lista maestra de todo lo aplazado)** | **[PENDIENTES.md](PENDIENTES.md)** |
+| **Costes y margen** (IA, servicios, Premium) | **[COSTES.md](COSTES.md)** |
 | **Recordatorios** (app y email: reglas, activación) | **[RECORDATORIOS.md](RECORDATORIOS.md)** |
 | **Premium** (propuesta de precio y beneficios, para decidir) | **[PREMIUM.md](PREMIUM.md)** |
 | **Competencia y conexión con el banco** (PSD2, agregadores, licencia, ISO) | **[VISION_BANCO.md](VISION_BANCO.md)** |
@@ -84,7 +86,7 @@ PANTALLAS.md §3 y §4b.
 - **Política de privacidad actualizada**: uso, capturas a Anthropic y portabilidad.
 - **Arreglo del borrado de cuenta**: antes se dejaba los fijos, los gastos rápidos, los escenarios y el uso de Fulcro.
 - **Planes Premium/Gratis** en el panel: dar o quitar Premium, ingresos al mes y comparativa de uso.
-- **Recordatorios**: tarjeta con la frase del día en Inicio tras 3+ días sin apuntar. Los emails están preparados y APAGADOS ([RECORDATORIOS.md](RECORDATORIOS.md)).
+- **Recordatorios**: tarjeta en Inicio tras 3+ días sin apuntar (frases motivadoras retiradas, pendientes de rediseño). Los emails están preparados y APAGADOS ([RECORDATORIOS.md](RECORDATORIOS.md)).
 - **Propuesta de Premium**: [PREMIUM.md](PREMIUM.md).
 - **Requiere ejecutar `supabase-schema-metricas.sql`** (un solo bloque, probado en Postgres 16). Sin él, todo sigue funcionando como antes.
 

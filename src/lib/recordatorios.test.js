@@ -56,7 +56,7 @@ describe('componerEmail', () => {
     expect(e.texto).toContain('Hace 4 días')
     expect(e.html).toContain('https://palanca.app?desde=email_inactivo')
     expect(e.html).toContain(enlaces.baja.replace('&', '&amp;'))
-    expect(e.texto).toContain(fraseDelDia('u1', HOY).texto)
+    expect(e.texto).not.toContain(fraseDelDia('u1', HOY).texto) // frases apagadas
     expect(e.html).toContain('hola@palanca.app')
     expect(e.texto).not.toMatch(/€/)
   })

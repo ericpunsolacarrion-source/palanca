@@ -8,7 +8,6 @@ import Patrimonio from './Patrimonio'
 import AvisosCobros from './AvisosCobros'
 import Icono from './Icono'
 import { preguntarAFulcro } from '../lib/fulcro'
-import { fraseDelDia, firmaDe } from '../lib/frases'
 
 // INICIO: lo esencial de un vistazo, en orden de importancia.
 //   1. Lo que tienes (patrimonio, cómo ha cambiado, evolución).
@@ -52,25 +51,20 @@ function AccionesRapidas({ usuarioId, onRegistrar, diasSinRegistrar }) {
           <Icono nombre="chevron" tam={14} />
         </button>
       ) : diasSinRegistrar >= 3 && (
-        <Vuelta dias={diasSinRegistrar} usuarioId={usuarioId} onApuntar={() => onRegistrar('gasto')} />
+        <Vuelta dias={diasSinRegistrar} onApuntar={() => onRegistrar('gasto')} />
       )}
     </div>
   )
 }
 
-// Tras 3+ días sin apuntar: un empujón amable con la frase del día (la misma
-// que llevaría el email de recordatorio). Sin culpa: el hábito se retoma hoy.
-function Vuelta({ dias, usuarioId, onApuntar }) {
-  const frase = fraseDelDia(usuarioId ?? '')
+// Tras 3+ días sin apuntar: un empujón amable, sin culpa. (Las frases
+// motivadoras quedan pendientes de rediseñar: docs/PENDIENTES.md.)
+function Vuelta({ dias, onApuntar }) {
   return (
     <div className="ini-vuelta">
       <p className="ini-vuelta-texto">
         Llevas <strong>{dias} días</strong> sin apuntar nada. ¿Ha entrado o salido dinero?
       </p>
-      <blockquote className="ini-vuelta-frase">
-        <p>«{frase.texto}»</p>
-        <cite>{firmaDe(frase)}</cite>
-      </blockquote>
       <button type="button" className="ini-vuelta-boton" onClick={onApuntar}>
         Ponerme al día <Icono nombre="chevron" tam={14} />
       </button>

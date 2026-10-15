@@ -7,6 +7,10 @@ Deploy: push a `main` → Vercel (https://palanca-zeta.vercel.app).
 una pantalla (qué está vivo, roadmap, deuda técnica). Mantenerlo al día tras
 cada cambio relevante o despliegue.
 
+**Todo lo pendiente (decisiones, pasos de Eric, por construir): `docs/PENDIENTES.md`**
+— lista maestra. Revisarla al empezar y actualizarla al terminar cada sesión:
+lo que se deja para más adelante SIEMPRE se apunta ahí.
+
 **Guía detallada pantalla a pantalla: `docs/PANTALLAS.md`** (leerla al
 empezar a trabajar en la app; mantenerla al día cuando cambien pantallas).
 
