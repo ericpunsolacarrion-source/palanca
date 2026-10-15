@@ -30,6 +30,7 @@ premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](EST
 | Guía pantalla a pantalla | [PANTALLAS.md](PANTALLAS.md) |
 | **Sistema visual** (colores, tipografía, iconos, qué NO hacer) | **[DISENO.md](DISENO.md)** |
 | **Fulcro** (qué ve, hasta dónde llega, coste, pruebas) | **[FULCRO.md](FULCRO.md)** |
+| **Competencia y conexión con el banco** (PSD2, agregadores, licencia, ISO) | **[VISION_BANCO.md](VISION_BANCO.md)** |
 | Estado de plataforma / negocio (dossier largo) | [ESTADO-PLATAFORMA.md](ESTADO-PLATAFORMA.md) |
 | Reglas de cálculo y disciplina | [../CLAUDE.md](../CLAUDE.md) |
 
