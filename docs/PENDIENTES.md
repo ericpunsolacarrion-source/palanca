@@ -50,6 +50,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 ### Importación y Fulcro
 - 🟩 Ampliar las **respuestas al momento** con lo que pregunte la gente: mirar en el panel qué va a la IA y debería ir local.
+- 🟧 **Batería de preguntas a Fulcro con Laura** (`docs/FULCRO-PREGUNTAS.md`, 73 preguntas con su respuesta correcta; CSV en `docs/pruebas/`): Eric las prueba en una cuenta de prueba y reporta por número. Las 35 de datos ya se responden al momento con la cifra exacta (test `clienteFulcro.test.js`); falta afinar las de IA con sus reportes.
 - 🟧 **Calidad de las respuestas de Fulcro con IA** (Eric, 15-10: "ya responde, pero le falta mucho para dar respuestas buenas"). Recoger ejemplos concretos de preguntas y respuestas flojas y afinar el contexto y las instrucciones (`api/consultor.js`, `src/lib/contextoFulcro.js`).
 - 🟩 Estudiar Cloudflare Pages en lugar de Vercel Pro (ahorro ≈ 20 $/mes; obliga a adaptar `/api`).
 - 🟧 Probar la **lectura de capturas con la API real**: hasta ahora solo se ha probado con datos simulados.

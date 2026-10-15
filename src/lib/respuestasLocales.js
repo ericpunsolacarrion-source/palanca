@@ -7,10 +7,11 @@
 // Regla de oro: ante la duda, null → la pregunta va a Fulcro (IA). Mejor
 // gastar 0,05 céntimos que contestar mal.
 
-import { categoriaDeDevolucion, centimosDe, esConsumo, etiquetaMes, formatearFecha, gastoPorCategoria, totalesDe } from './movimientosUtils'
+import { bolsas, categoriaDeDevolucion, centimosDe, esConsumo, etiquetaMes, formatearFecha, gastoPorCategoria, totalesDe } from './movimientosUtils'
 import { esDevolucion, esInversion, etiquetaCategoria, formatearEuros } from './categorias'
 import { periodoDe, proximoCobro } from './periodicidad'
-import { nombreComercio } from './comercios'
+import { buscarParecido, nombreComercio } from './comercios'
+import { detectarSuscripciones } from './suscripciones'
 
 const sinAcentos = (s) =>
   String(s ?? '')
@@ -25,7 +26,7 @@ const capital = (s) => s.charAt(0).toUpperCase() + s.slice(1)
 
 // Preguntas que piden criterio, consejo o previsión → IA.
 const COMPLEJA =
-  /\b(por que|porque|deberia|deberiamos|tendria|me conviene|conviene|compensa|merece|consejo|recomiend|aconsej|como (puedo|podria|hago|consigo|reduzco|ahorro|mejoro|llego)|que (hago|me recomiendas|opinas|harias)|ayudame|estrategia|plan para|mejor|peor|invertir en|explica|que es|que significa|llegare|prevision|predic|futuro|puedo|podria|necesito|voy bien|es mucho|es poco|normal)\b/
+  /\b(por que|porque|deberia|deberiamos|tendria|me conviene|conviene|compensa|merece|consejo|recomiend|aconsej|como (puedo|podria|hago|consigo|reduzco|ahorro|mejoro|llego)|que (hago|me recomiendas|opinas|harias)|ayudame|estrategia|plan para|mejor|peor|invertir en|explica|que es|que significa|llegare|prevision|predic|futuro|puedo|podria|necesito|voy bien|es mucho|es poco|normal|aumentad\w*|subid\w*|crecid\w*|comparad\w*|diferencia|respecto|evolucion\w*)\b/
 
 const NUMEROS = { un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12 }
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
@@ -41,6 +42,7 @@ const TEMAS = [
   { palabras: ['parking', 'aparcamiento', 'peaje', 'peajes'], nombre: 'parking y peajes', patron: /parking|aparcamiento|peaje|autopista|via ?t/ },
   { palabras: ['gimnasio', 'gym'], nombre: 'gimnasio', patron: /basic ?fit|mcfit|altafit|viva ?gym|dreamfit|anytime fitness|synergym|go fit|gimnasio|\bgym\b|crossfit|fitness/ },
   { palabras: ['farmacia'], nombre: 'farmacia', patron: /farmacia/ },
+  { palabras: ['ropa', 'moda'], nombre: 'ropa', patron: /zara|primark|h&m|\bhm\b|mango|pull ?(&|and)? ?bear|bershka|stradivarius|massimo dutti|uniqlo|shein|vinted|lefties|oysho|springfield|cortefiel|decathlon/ },
 ]
 
 // Palabras que NO son el "qué" de la pregunta (verbos, periodo, relleno).
@@ -56,7 +58,8 @@ const VACIAS = new Set(
   uno dos tres cuatro cinco seis siete ocho nueve diez once doce
   enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre
   mas menos todo toda todos todas fijo fijos suscripcion suscripciones recibo recibos compromisos cargo cargan cobran pasan toca vez
-  proximo proxima siguiente le les`.split(/\s+/),
+  proximo proxima siguiente le les
+  media promedio normalmente habitualmente suele suelo suelen tengo tienes tiene tenemos uso usar usando app aplicacion palanca empece`.split(/\s+/),
 )
 
 // ── Periodo ──────────────────────────────────────────────────────────────────
@@ -68,7 +71,7 @@ function periodo(t, hoy) {
   const ultimoDe = (yy, mm) => iso(new Date(yy, mm + 1, 0))
   const restarDias = (n) => iso(new Date(y, m, hoy.getDate() - n + 1))
 
-  if (/\b(hasta ahora|en total|desde siempre|desde el principio|historico|desde que empece)\b/.test(t)) return { tipo: 'todo', etiqueta: 'desde el principio' }
+  if (/\b(hasta ahora|en total|desde siempre|desde el principio|desde el inicio|historico|desde que (empece|uso|tengo|use|estoy))\b/.test(t)) return { tipo: 'todo', etiqueta: 'desde el principio' }
   const n = t.match(/\b(?:ultim[oa]s?\s+(\d+|[a-z]+)\s+(dias|semanas|meses|anos)|(\d+|[a-z]+)\s+ultim[oa]s\s+(dias|semanas|meses|anos))\b/)
   if (n) {
     const cantidad = Number(n[1] ?? n[3]) || NUMEROS[n[1] ?? n[3]]
@@ -118,31 +121,41 @@ function sinIngresoAun(per, tot, movimientos, hoy, hoyIso) {
 
 // ── El "qué": tema, categoría o comercio ──────────────────────────────────────
 // Texto en el que buscar: el comercio REAL (memoria/marca) + lo del banco + categoría.
-const textoMov = (m) => sinAcentos(`${nombreComercio(m)} ${m.nota ?? ''} ${m.fuente?.nombre ?? ''} ${m.categoria?.nombre ?? ''}`)
+const textoMov = (m) => sinAcentos(`${nombreComercio(m)} ${m.nota ?? ''} ${m.fuente?.nombre ?? ''} ${m.categoria?.nombre ?? ''}`).replace(/[-_*.]+/g, ' ')
 const tieneToken = (texto, tok) => new RegExp(`\\b${tok.replace(/s$/, '')}s?\\b`).test(texto)
 
 function resolverObjetivo(t, movimientos) {
   const tokens = t.split(/[^a-z0-9ñ]+/).filter((w) => w.length >= 2 && !VACIAS.has(w) && !/^\d+$/.test(w))
   if (tokens.length === 0) return { sin: true }
 
-  // 1. Categoría del usuario con ese nombre ("comida", "ocio", "transporte").
+  // Categorías del usuario ("comida", "ocio", "transporte").
   const cats = new Map()
   for (const m of movimientos) {
     const c = m.categoria?.nombre
     if (c) cats.set(sinAcentos(c), c)
   }
-  if (tokens.length === 1) {
-    const cat = cats.get(tokens[0]) ?? cats.get(tokens[0].replace(/s$/, '')) ?? cats.get(`${tokens[0]}s`)
-    if (cat)
-      return {
-        nombre: etiquetaCategoria(cat),
-        filtro: (m) => m.categoria?.nombre === cat,
-        // Las devoluciones van a la categoría del comercio que devuelve.
-        filtroDevolucion: (d) => categoriaDeDevolucion(d, movimientos) === cat,
-      }
+  const deCategoria = (tok) => {
+    const cat = cats.get(tok) ?? cats.get(tok.replace(/s$/, '')) ?? cats.get(`${tok}s`)
+    if (!cat) return null
+    return {
+      nombre: etiquetaCategoria(cat),
+      filtro: (m) => m.categoria?.nombre === cat,
+      // Las devoluciones van a la categoría del comercio que devuelve.
+      filtroDevolucion: (d) => categoriaDeDevolucion(d, movimientos) === cat,
+    }
+  }
+  const deTema = (tok) => {
+    const tema = TEMAS.find((x) => x.palabras.includes(tok))
+    return tema ? { nombre: tema.nombre, filtro: (m) => tema.patron.test(textoMov(m)) } : null
   }
 
-  // 2. Varias palabras ("seguro de moto"): todas en el concepto.
+  // 1. Una palabra que es una categoría tuya.
+  if (tokens.length === 1) {
+    const cat = deCategoria(tokens[0])
+    if (cat) return cat
+  }
+
+  // 2. Todas las palabras en el concepto ("seguro de moto", "la tagliatella").
   const todas = (m) => tokens.every((tok) => tieneToken(textoMov(m), tok))
   const encontrados = movimientos.filter(todas)
   if (encontrados.length) {
@@ -153,10 +166,30 @@ function resolverObjetivo(t, movimientos) {
 
   // 3. Tema conocido ("gasolina" → Repsol, Cepsa, BP…).
   if (tokens.length === 1) {
-    const tema = TEMAS.find((x) => x.palabras.includes(tokens[0]))
-    if (tema) return { nombre: tema.nombre, filtro: (m) => tema.patron.test(textoMov(m)) }
+    const tema = deTema(tokens[0])
+    if (tema) return tema
   }
-  return { nombre: capital(tokens.join(' ')), filtro: null } // no encontrado
+
+  // 4. Varias cosas a la vez ("ropa y compras"): cada palabra es una categoría
+  //    o un tema; se suman sin contar dos veces el mismo movimiento.
+  if (tokens.length > 1) {
+    const partes = tokens.map((tok) => deCategoria(tok) ?? deTema(tok))
+    if (partes.every(Boolean)) {
+      return {
+        nombre: capital(partes.map((x) => x.nombre.toLowerCase()).join(' y ')),
+        filtro: (m) => partes.some((x) => x.filtro(m)),
+        filtroDevolucion: (d) => partes.some((x) => (x.filtroDevolucion ?? x.filtro)(d)),
+      }
+    }
+  }
+
+  // 5. Un comercio tuyo escrito con errata ("mercadoma" → Mercadona).
+  const texto = tokens.join(' ')
+  const comercios = [...new Set(movimientos.filter(esConsumo).map(nombreComercio).filter(Boolean))]
+  const parecido = buscarParecido(texto, comercios, (x) => x)
+  if (parecido) return { nombre: parecido.item, filtro: (m) => nombreComercio(m) === parecido.item }
+
+  return { nombre: capital(texto), filtro: null } // no encontrado
 }
 
 // ── Piezas de respuesta ──────────────────────────────────────────────────────
@@ -208,6 +241,16 @@ function respuestaGasto({ objetivo, movs, devoluciones = [], p, hoyIso, verboPag
 
 const mensualDe = (rec) => Number(rec.importe) / (periodoDe(rec).meses || 1)
 
+// Cargos que se repiten en los movimientos (cuando aún no hay fijos guardados).
+// Solo lo que es un compromiso de verdad: vivienda, recibos, seguros,
+// suscripciones, gimnasio… Ir a la misma pizzería cada mes no es un fijo.
+const CATEGORIAS_FIJAS = /vivienda|suministro|seguro|suscrip|deporte|educaci|impuesto|comision|prestamo|hipoteca|cuota/i
+function cargosPeriodicos(movimientos, hoyIso) {
+  return detectarSuscripciones(movimientos, [], { hoy: hoyIso })
+    .map((d) => ({ ...d, categoriaNombre: d.categoriaNombre ?? '' }))
+    .filter((d) => CATEGORIAS_FIJAS.test(sinAcentos(d.categoriaNombre)))
+}
+
 /**
  * Respuesta local o null (→ IA).
  * datos: { movimientos, recurrentes, hoy: Date }
@@ -220,15 +263,25 @@ export function respuestaLocal(pregunta, { movimientos = [], recurrentes = [], h
 
   // Fijos y suscripciones: "¿cuánto pago en fijos/suscripciones al mes?"
   if (/\b(cuanto|que)\b/.test(t) && /\b(fijos|suscripciones|recibos|compromisos)\b/.test(t) && resolverObjetivo(t, movimientos).sin) {
-    if (activos.length === 0) return 'Aún no tienes gastos fijos guardados. Añádelos en **Fijos** y te digo cuánto suman.'
+    // Sin fijos guardados: los cargos que se repiten en sus movimientos.
+    const detectados = activos.length ? [] : cargosPeriodicos(movimientos, hoyIso)
+    if (activos.length === 0 && detectados.length === 0) return 'Aún no tienes gastos fijos guardados. Añádelos en **Fijos** y te digo cuánto suman.'
+    const base = activos.length ? activos : detectados
     const soloDigitales = /\bsuscripciones\b/.test(t)
-    const lista = soloDigitales ? activos.filter((r) => /suscrip|ocio|digital/i.test(r.categoriaNombre ?? '') || mensualDe(r) < 25) : activos
-    const usados = lista.length ? lista : activos
+    const lista = soloDigitales
+      ? base.filter((r) => /suscrip|ocio|digital/i.test(r.categoriaNombre ?? '') || (activos.length > 0 && mensualDe(r) < 25))
+      : base
+    const usados = lista.length ? lista : base
     const mensual = usados.reduce((s, r) => s + mensualDe(r), 0)
-    const top = [...usados].sort((a, b) => mensualDe(b) - mensualDe(a)).slice(0, 5)
+    const top = [...usados].sort((a, b) => mensualDe(b) - mensualDe(a)).slice(0, 8)
+    const que = soloDigitales && lista.length ? 'suscripciones' : 'gastos fijos'
+    const cabecera = activos.length
+      ? `Tus ${que} suman **${formatearEuros(Math.round(mensual * 100) / 100)} al mes** (≈ ${formatearEuros(Math.round(mensual * 12))} al año) en ${usados.length} ${usados.length === 1 ? 'compromiso' : 'compromisos'}.`
+      : `No tienes fijos guardados, pero en tus movimientos veo ${usados.length} ${soloDigitales ? 'suscripciones' : 'cargos que se repiten'}: suman **${formatearEuros(Math.round(mensual * 100) / 100)} al mes** (≈ ${formatearEuros(Math.round(mensual * 12))} al año).`
     return [
-      `Tus ${soloDigitales && lista.length ? 'suscripciones' : 'gastos fijos'} suman **${formatearEuros(Math.round(mensual * 100) / 100)} al mes** (≈ ${formatearEuros(Math.round(mensual * 12))} al año) en ${usados.length} ${usados.length === 1 ? 'compromiso' : 'compromisos'}.`,
-      ...top.map((r) => `- ${r.nombre}: ${formatearEuros(Number(r.importe))}${(periodoDe(r).meses || 1) > 1 ? ` cada ${periodoDe(r).meses} meses` : ' al mes'}`),
+      cabecera,
+      ...top.map((r) => `- ${r.nombre}: ${formatearEuros(Number(r.importe))}${(periodoDe(r).meses || 1) === 12 ? ' al año' : (periodoDe(r).meses || 1) > 1 ? ` cada ${periodoDe(r).meses} meses` : ' al mes'}`),
+      ...(activos.length ? [] : ['Añádelos en **Fijos** con un toque y te aviso de cada cobro.']),
     ].join('\n')
   }
 
@@ -238,7 +291,16 @@ export function respuestaLocal(pregunta, { movimientos = [], recurrentes = [], h
     if (obj.sin) return null
     const toks = sinAcentos(obj.nombre).split(' ')
     const rec = activos.find((r) => toks.every((tok) => tieneToken(sinAcentos(r.nombre), tok)))
-    if (!rec) return null
+    if (!rec) {
+      // Sin fijo guardado: se deduce de los pagos anteriores (mismo comercio, cada mes o cada año).
+      const obj = resolverObjetivo(t, movimientos)
+      if (obj.sin || !obj.filtro) return null
+      const suyos = new Set(movimientos.filter((m) => esConsumo(m) && obj.filtro(m)).map(nombreComercio))
+      const d = cargosPeriodicos(movimientos, hoyIso).find((x) => suyos.has(x.nombre))
+      if (!d) return null
+      const cada = d.periodoMeses === 12 ? 'una vez al año' : d.periodoMeses === 1 ? 'cada mes' : `cada ${d.periodoMeses} meses`
+      return `**${d.nombre}** se cobra ${cada}. El último cargo fue el ${formatearFecha(d.ultimaFecha)} (${formatearEuros(d.importe)}), así que el próximo será hacia el **${formatearFecha(d.proximaFecha)}**. Añádelo en **Fijos** y te aviso ese día.`
+    }
     const prox = proximoCobro(rec, hoy)
     if (!prox) return null
     if (prox.sinDia) return `**${rec.nombre}** (${formatearEuros(Number(rec.importe))}) toca ${prox.texto}, pero no sé qué día. Ponle el día de cobro en **Fijos** y te aviso.`
@@ -255,7 +317,19 @@ export function respuestaLocal(pregunta, { movimientos = [], recurrentes = [], h
     return `El último pago de **${obj.nombre}** fue el **${formatearFecha(u.fecha)}**: ${eur(centimosDe(u))}.`
   }
 
-  if (!/\bcuant[oa]s?\b|\ben que\b|\bdonde\b/.test(t)) return null
+  // "¿Cuánto dinero tengo?" → patrimonio de hoy (mismas bolsas que el inicio).
+  if (/\bcuant[oa]\b/.test(t) && /\b(dinero|patrimonio)\b/.test(t) && /\b(tengo|tienes|mi|hay)\b/.test(t) && resolverObjetivo(t, movimientos).sin) {
+    const b = bolsas(movimientos, hoyIso)
+    return `Tu patrimonio hoy es de **${formatearEuros(b.patrimonio)}**: ${formatearEuros(b.bolsaLiquidez)} disponibles y ${formatearEuros(b.bolsaInversion)} invertidos (a lo que aportaste, sin la rentabilidad).`
+  }
+
+  // Sin "cuánto" pero con un comercio, categoría o tema ("gasolina últimos 3
+  // meses", "spotify"): se entiende como "¿cuánto gasto en…?".
+  let implicita = false
+  if (!/\bcuant[oa]s?\b|\ben que\b|\bdonde\b/.test(t)) {
+    if (t.split(' ').length > 6 || !resolverObjetivo(t, movimientos).filtro) return null
+    implicita = true
+  }
   const p = periodo(t, hoy)
 
   // ¿En qué gasto más?
@@ -273,13 +347,15 @@ export function respuestaLocal(pregunta, { movimientos = [], recurrentes = [], h
   const esIngreso = /\b(ingresado|ingrese|ingresos|cobrado|cobre|ganado|gane)\b/.test(t)
   const esAhorro = /\b(ahorrado|ahorre)\b/.test(t)
   const esInv = /\b(invertido|inverti|aportado)\b/.test(t)
-  const esGasto = /\b(gastado|gaste|gastos|pagado|pague|pagos|costado|dejado|gasto|pago|cuesta|cuestan|llevo)\b/.test(t)
+  const esGasto = implicita || /\b(gastado|gaste|gastos|pagado|pague|pagos|costado|dejado|gasto|pago|cuesta|cuestan|llevo|costar|vale)\b/.test(t)
   if (!esIngreso && !esAhorro && !esInv && !esGasto) return null
 
   const objetivo = resolverObjetivo(t, movimientos)
-  const presente = /\b(gasto|pago|cuesta|cuestan)\b/.test(t) && !/\b(he|has|hemos|llevo)\b/.test(t)
+  const presente = implicita || (/\b(gasto|pago|cuesta|cuestan)\b/.test(t) && !/\b(he|has|hemos|llevo)\b/.test(t))
+  // Sin "qué", la media solo si se pide ("¿cuánto gasto al mes de media?").
+  const mediaTotal = objetivo.sin && /\b(media|promedio|al mes|normalmente|suelo|habitualmente)\b/.test(t)
   // Sin periodo: "he pagado de X" → desde el principio; presente → media; si no, este mes.
-  const per = p ?? (presente && !objetivo.sin ? null : /\bpagad/.test(t) && !objetivo.sin ? { tipo: 'todo', etiqueta: 'desde el principio' } : periodo('este mes', hoy))
+  const per = p ?? ((presente && !objetivo.sin) || mediaTotal ? null : /\bpagad/.test(t) && !objetivo.sin ? { tipo: 'todo', etiqueta: 'desde el principio' } : periodo('este mes', hoy))
 
   if (esAhorro || esIngreso || esInv) {
     if (!objetivo.sin && !esInv) return null // "¿cuánto he cobrado de X?" → IA (raro)
@@ -298,6 +374,11 @@ export function respuestaLocal(pregunta, { movimientos = [], recurrentes = [], h
     const retir = inv.filter((m) => m.tipo === 'ingreso')
     const totalAport = aport.reduce((s, m) => s + centimosDe(m), 0)
     const donde = objetivo.sin ? '' : ` en **${objetivo.nombre}**`
+    if (perUsado.tipo === 'todo' && objetivo.sin) {
+      const b = bolsas(movimientos, hoyIso)
+      const totalRetir = retir.reduce((s, m) => s + centimosDe(m), 0)
+      return `Tienes invertidos **${formatearEuros(b.bolsaInversion)}** (lo que aportaste, sin la rentabilidad): ${eur(totalAport)} en ${aport.length} ${aport.length === 1 ? 'aportación' : 'aportaciones'}${totalRetir ? ` menos ${eur(totalRetir)} que retiraste` : ''}.`
+    }
     const base = `${capital(perUsado.etiqueta)} has invertido **${eur(totalAport)}**${donde} (${aport.length} ${aport.length === 1 ? 'aportación' : 'aportaciones'})`
     if (!retir.length) return `${base}.`
     const totalRetir = retir.reduce((s, m) => s + centimosDe(m), 0)
@@ -316,9 +397,18 @@ export function respuestaLocal(pregunta, { movimientos = [], recurrentes = [], h
     const tres = periodo('ultimos 3 meses', hoy)
     const movs = movimientos.filter((m) => esConsumo(m) && filtro(m) && enPeriodo(tres, hoyIso)(m))
     const total = movs.reduce((s, m) => s + centimosDe(m), 0) - devolucionesEn(tres).reduce((s, m) => s + centimosDe(m), 0)
-    if (!movs.length) return `No veo gastos en **${objetivo.nombre}** en los últimos 3 meses.`
+    if (!movs.length) {
+      // Algo que se paga de vez en cuando (un seguro anual): el último pago y el de antes.
+      const anteriores = movimientos.filter((m) => esConsumo(m) && filtro(m) && m.fecha <= hoyIso).sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
+      if (!anteriores.length) return `No veo gastos en **${objetivo.nombre}** en tus movimientos.`
+      const [u, prev] = anteriores
+      const anual = prev && Math.abs(Date.parse(u.fecha) - Date.parse(prev.fecha)) / 86400000 > 300
+      const cambio = prev && centimosDe(prev) !== centimosDe(u) ? ` (antes, ${eur(centimosDe(prev))}: ${centimosDe(u) > centimosDe(prev) ? 'ha subido' : 'ha bajado'} un ${Math.abs(Math.round((centimosDe(u) / centimosDe(prev) - 1) * 100))} %)` : ''
+      return `**${objetivo.nombre}** no es un gasto de cada mes${anual ? ': lo pagas una vez al año' : ''}. El último pago fue el ${formatearFecha(u.fecha)}: **${eur(centimosDe(u))}**${cambio}.`
+    }
     const linea = lineaMeses(movs, tres)
-    return [`En **${objetivo.nombre}** gastas de media **${eur(total / 3)} al mes** (últimos 3 meses: ${eur(total)}).`, ...(linea ? [`- ${linea}`] : [])].join('\n')
+    const sujeto = objetivo.sin ? 'En total' : `En **${objetivo.nombre}**`
+    return [`${sujeto} gastas de media **${eur(total / 3)} al mes** (últimos 3 meses: ${eur(total)}).`, ...(linea ? [`- ${linea}`] : [])].join('\n')
   }
   const movs = movimientos.filter((m) => esConsumo(m) && filtro(m) && enPeriodo(per, hoyIso)(m))
   return respuestaGasto({ objetivo: objetivo.sin ? null : objetivo, movs, devoluciones: devolucionesEn(per), p: per, hoyIso, verboPago: /\bpag/.test(t) })

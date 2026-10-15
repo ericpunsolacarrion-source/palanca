@@ -125,7 +125,8 @@ export function columnaDeCabecera(cabecera) {
   if (/importe|amount|cantidad|monto|^valor$|^euros?$|^eur$/.test(h)) return 'importe'
   if (/^categoria|category|^cat$/.test(h)) return 'categoria'
   if (/^tipo$|^type$|^tipo de movimiento$/.test(h)) return 'tipo'
-  if (/plataforma|broker|^fuente$|^platform$/.test(h)) return 'plataforma'
+  // "cuenta": la columna del CSV de Palanca (Descargar mis datos) con la plataforma.
+  if (/plataforma|broker|^fuente$|^platform$|^cuenta$/.test(h)) return 'plataforma'
   if (/concepto|descripcion|description|detalle|^movimiento|operacion|comercio|beneficiario|observaciones|^nota|^concept|establecimiento/.test(h)) return 'concepto'
   return null
 }
