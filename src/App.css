@@ -440,6 +440,11 @@ main {
   border-radius: var(--radio-l);
   box-shadow: var(--sombra-card);
   padding: 18px;
+  /* En pantallas bajas (portátil, móvil en horizontal) la ventana se desplaza
+     por dentro: si no, "Borrar mi cuenta" y lo de abajo quedaban cortados. */
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .cuenta-cab {
