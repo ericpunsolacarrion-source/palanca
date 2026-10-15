@@ -24,9 +24,20 @@ export default function PrimerosPasos({ nombre, movimientos, onRegistrar }) {
       <h2 className="pp-titulo">
         {nombre ? `¡Vamos, ${nombre}!` : '¡Empecemos!'}
       </h2>
+      {/* Lo más potente primero: traer meses de golpe engancha mucho más que
+          apuntar el primer gasto a mano. */}
+      {hechos === 0 && (
+        <button type="button" className="pp-importar" onClick={() => onRegistrar('importar')}>
+          <span className="pp-importar-texto">
+            <strong>Lo más rápido: trae tu último año del banco</strong>
+            <span>Extracto en Excel o CSV, o capturas de la app. En 2 minutos verás tus suscripciones y cuánto puedes ahorrar.</span>
+          </span>
+          <Icono nombre="chevron" tam={18} />
+        </button>
+      )}
       <p className="pp-sub">
-        Con solo <strong>un ingreso</strong> y <strong>un gasto</strong> ya verás tu tasa de ahorro y
-        tu proyección de futuro. Se tarda un minuto.
+        {hechos === 0 ? 'O empieza a mano: con ' : 'Con '}solo <strong>un ingreso</strong> y <strong>un gasto</strong> ya verás tu tasa de
+        ahorro y tu proyección de futuro.
       </p>
 
       <ul className="pp-lista">

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import RegistroMovimiento from './RegistroMovimiento'
 import ListaMovimientos from './ListaMovimientos'
-import ImportadorCsv from './ImportadorCsv'
+import ImportarHistorial from './ImportarHistorial'
 import { coincideBusqueda } from '../lib/busqueda'
 import { esAjuste, esInversion, esTraspaso, formatearEuros } from '../lib/categorias'
 import { esConsumo, netoAjustes, sumarImportes, totalesDe } from '../lib/movimientosUtils'
@@ -49,6 +49,11 @@ export default function MovimientosTab({
   filtro,
   onLimpiarFiltro,
   modoInicialRegistro,
+  // Para importar: los movimientos REALES (sin los de ejemplo), los fijos y
+  // la navegación (el resumen final lleva a Inicio o a Fijos).
+  movimientosReales,
+  recurrentes = [],
+  onIrA,
 }) {
   // Se puede llegar directo al historial o al importador (accesos del inicio).
   const [sub, setSub] = useState(() =>
@@ -137,7 +142,13 @@ export default function MovimientosTab({
 
 
       {sub === 'importar' && (
-        <ImportadorCsv usuarioId={usuarioId} movimientos={movimientos} onImportado={onGuardado} />
+        <ImportarHistorial
+          usuarioId={usuarioId}
+          movimientos={movimientosReales ?? movimientos}
+          recurrentes={recurrentes}
+          onImportado={onGuardado}
+          onIrA={onIrA}
+        />
       )}
 
       {sub === 'historial' && (

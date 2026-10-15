@@ -576,6 +576,9 @@ function App() {
             filtro={filtroMov}
             onLimpiarFiltro={() => setFiltroMov(null)}
             modoInicialRegistro={modoRegistro}
+            movimientosReales={movimientosReales}
+            recurrentes={recurrentesReales}
+            onIrA={irAPestana}
           />
         )}
 

@@ -13,7 +13,7 @@ const PASOS = [
   {
     pestana: 'movimientos',
     titulo: 'Apunta en dos toques',
-    texto: 'Un gasto o un ingreso en segundos. O importa el extracto de tu banco y lo ordenamos por ti.',
+    texto: 'Un gasto o un ingreso en segundos. O trae tu último año del banco (extracto o capturas) y lo ordenamos por ti.',
   },
   {
     pestana: 'suscripciones',

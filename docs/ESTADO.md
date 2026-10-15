@@ -88,6 +88,17 @@ PANTALLAS.md §3 y §4b.
 - **Pantallas secundarias**: simuladores abren con un caso ya calculado;
   iconos propios en logros y avisos, sin emojis.
 
+**15-10 (mañana): importación y ahorro de recibos (en `develop`):**
+- **Trae tu historial**: extractos reales (Excel, ".xls" HTML, CSV de cualquier
+  banco con cabecera desplazada o Debe/Haber) y **capturas** leídas con IA;
+  categorías por comercio (aprende de tu historial); excluye lo ya apuntado;
+  resumen final con suscripciones y ahorro posible.
+- **Plan de ahorro** en Fijos: recibos negociables, momento ideal, guion de
+  llamada, Fulcro y registro de lo ahorrado; aviso en el inicio antes de
+  renovar seguros.
+- La lectura de capturas usa la misma `ANTHROPIC_API_KEY` que Fulcro (solo
+  Preview mientras tanto; `IA_PUBLICA=true` para abrirla al público).
+
 **Pendiente del usuario (no se puede hacer desde la sesión: sin red a
 Supabase/Vercel):** clave de Anthropic en Vercel (Preview) para Fulcro; el
 SQL v2 de `supabase-schema-fulcro.sql` es opcional (sin él, modo respaldo).
