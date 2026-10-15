@@ -8,7 +8,7 @@ import { supabase } from './supabaseClient'
 //
 // Tipos: visita · movimiento · movimiento_rapido · cobro_confirmado ·
 // fijo_nuevo · importacion · importacion_capturas · ahorro_negociado ·
-// tour · datos_ejemplo · exportacion
+// tour · datos_ejemplo · exportacion · clic_email (entró desde un recordatorio)
 
 export const MINUTOS_VISITA = 30
 const CLAVE_VISITA = 'palanca_ultima_visita'
@@ -46,12 +46,28 @@ function contarVisita() {
   if (debeContarVisita(ultima, ahora)) registrarEvento('visita')
 }
 
+// Los botones de los emails llevan ?desde=email_<tipo>: se cuenta y se limpia la URL.
+function contarClicEmail() {
+  if (typeof window === 'undefined') return
+  try {
+    const url = new URL(window.location.href)
+    const desde = url.searchParams.get('desde') ?? ''
+    if (!desde.startsWith('email_')) return
+    registrarEvento('clic_email')
+    url.searchParams.delete('desde')
+    window.history.replaceState(null, '', url.pathname + url.search + url.hash)
+  } catch {
+    // nada
+  }
+}
+
 let escuchando = false
 // La llama App con el usuario y su preferencia. `permitida === false` la apaga.
 export function iniciarAnalitica({ usuarioId, permitida }) {
   activa = Boolean(usuarioId) && permitida !== false
   if (!activa) return
   contarVisita()
+  contarClicEmail()
   if (!escuchando && typeof document !== 'undefined') {
     escuchando = true
     // PWA: volver a la app desde segundo plano también es una visita.

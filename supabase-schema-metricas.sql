@@ -14,6 +14,8 @@
 --     (la versión anterior se dejaba fijos, gastos rápidos, escenarios y Fulcro).
 --  6) planes: Gratis / Premium por usuario (con origen, importe, caducidad e
 --     historial). SOLO el administrador puede cambiarlos (admin_cambiar_plan).
+--  7) recordatorios por email: preferencia (perfiles.recordatorios), registro
+--     de envíos y la lista de candidatos (solo para el servidor).
 -- ============================================================================
 
 -- 1) Eventos de uso ----------------------------------------------------------
@@ -223,6 +225,89 @@ $$;
 revoke all on function public.admin_cambiar_plan(text, text, text, numeric, date, text) from public, anon;
 grant execute on function public.admin_cambiar_plan(text, text, text, numeric, date, text) to authenticated;
 
+-- 7) Recordatorios por email ------------------------------------------------------
+-- Activados por defecto (clientes con cuenta: LSSI art. 21.2) y con baja en un
+-- clic en cada email y en Tu cuenta. Quien se da de baja no recibe nada más.
+alter table public.perfiles add column if not exists recordatorios boolean not null default true;
+
+create table if not exists public.recordatorios_enviados (
+  id            bigint generated always as identity primary key,
+  usuario_id    text not null,
+  tipo          text not null check (tipo ~ '^[a-z_]{2,40}$'),
+  proveedor_id  text,
+  created_at    timestamptz not null default now()
+);
+create index if not exists recordatorios_enviados_idx on public.recordatorios_enviados (usuario_id, created_at desc);
+alter table public.recordatorios_enviados enable row level security;
+drop policy if exists recordatorios_sel on public.recordatorios_enviados;
+create policy recordatorios_sel on public.recordatorios_enviados
+  for select to authenticated using (usuario_id = auth.uid()::text);
+
+-- Datos mínimos para decidir a quién escribir (la decisión está en
+-- src/lib/recordatorios.js). SOLO la puede llamar el servidor (service_role).
+create or replace function public.recordatorios_candidatos()
+returns setof jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  with
+  hoy as (select (now() at time zone 'Europe/Madrid')::date as d),
+  act as (
+    select usuario_id as uid, (created_at at time zone 'Europe/Madrid')::date as dia from public.eventos
+    union
+    select usuario_id, (created_at at time zone 'Europe/Madrid')::date from public.movimientos
+    union
+    select usuario_id, (created_at at time zone 'Europe/Madrid')::date from public.fulcro_uso
+  ),
+  act_u as (
+    select uid, max(dia) as ultima, count(*) filter (where dia > (select d from hoy) - 30) as dias30
+      from act group by uid
+  ),
+  movs_u as (
+    select m.usuario_id as uid, count(*) as movs
+      from public.movimientos m
+     where not exists (select 1 from public.categorias c where c.id = m.categoria_id and c.nombre = 'Ajuste')
+     group by m.usuario_id
+  ),
+  env_u as (
+    select usuario_id as uid, max(ult) as ultimo, jsonb_object_agg(tipo, ult) as por_tipo
+      from (select usuario_id, tipo, max(created_at) as ult
+              from public.recordatorios_enviados group by usuario_id, tipo) z
+     group by usuario_id
+  )
+  select jsonb_build_object(
+           'uid', u.id::text,
+           'email', u.email,
+           'nombre', p.nombre,
+           'alta', (u.created_at at time zone 'Europe/Madrid')::date,
+           'ultima', a.ultima,
+           'dias30', coalesce(a.dias30, 0),
+           'movs', coalesce(m.movs, 0),
+           'plan', case
+                     when pl.plan = 'premium' and (pl.hasta is null or pl.hasta >= (select d from hoy)) and pl.origen = 'prueba' then 'prueba'
+                     when pl.plan = 'premium' and (pl.hasta is null or pl.hasta >= (select d from hoy)) then 'premium'
+                     else 'gratis'
+                   end,
+           'plan_hasta', pl.hasta,
+           'ultimo_envio', e.ultimo,
+           'envios', coalesce(e.por_tipo, '{}'::jsonb)
+         )
+    from auth.users u
+    join public.perfiles p on p.usuario_id = u.id::text
+    left join act_u a on a.uid = u.id::text
+    left join movs_u m on m.uid = u.id::text
+    left join public.planes pl on pl.usuario_id = u.id::text
+    left join env_u e on e.uid = u.id::text
+   where u.email is not null
+     and u.email_confirmed_at is not null
+     and p.recordatorios
+     and lower(u.email) not like 'test%';
+$$;
+revoke all on function public.recordatorios_candidatos() from public, anon, authenticated;
+grant execute on function public.recordatorios_candidatos() to service_role;
+
 -- Día "activo" = el usuario abrió la app (evento) o apuntó algo o preguntó a
 -- Fulcro ese día (hora de Madrid). Así hay histórico desde el primer día,
 -- antes incluso de existir la tabla de eventos. Se excluyen emails test*.
@@ -425,6 +510,22 @@ begin
                           round(avg(movs30) filter (where dias30 > 0), 1) mv
                      from pu2 group by tipo_plan
                  ) x),
+    'recordatorios', jsonb_build_object(
+      'enviados30', (select count(*) from public.recordatorios_enviados r join usuarios u on u.uid = r.usuario_id
+                      where r.created_at > now() - interval '30 days'),
+      'por_tipo', (select coalesce(jsonb_object_agg(tipo, n), '{}'::jsonb) from (
+                     select r.tipo, count(*) n from public.recordatorios_enviados r join usuarios u on u.uid = r.usuario_id
+                      where r.created_at > now() - interval '30 days' group by r.tipo) z),
+      -- Volvieron: entraron en la app en las 48 h siguientes al email.
+      'volvieron30', (select count(*) from public.recordatorios_enviados r join usuarios u on u.uid = r.usuario_id
+                       where r.created_at > now() - interval '30 days'
+                         and exists (select 1 from act a where a.uid = r.usuario_id
+                                       and a.dia between (r.created_at at time zone 'Europe/Madrid')::date
+                                                     and (r.created_at at time zone 'Europe/Madrid')::date + 2)),
+      'clics30', (select count(*) from public.eventos e join usuarios u on u.uid = e.usuario_id
+                   where e.tipo = 'clic_email' and e.created_at > now() - interval '30 days'),
+      'bajas', (select count(*) from public.perfiles p join usuarios u on u.uid = p.usuario_id where not p.recordatorios)
+    ),
     'cambios_plan', (select coalesce(jsonb_agg(c order by c->>'fecha' desc), '[]'::jsonb) from (
                        select jsonb_build_object(
                                 'email', u.email, 'plan', h.plan, 'origen', h.origen,

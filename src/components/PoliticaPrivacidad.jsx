@@ -67,6 +67,15 @@ export default function PoliticaPrivacidad({ onCerrar }) {
             para transferencias internacionales) solo para leer los movimientos; no las guardamos.
           </p>
 
+          <h3>Recordatorios por email</h3>
+          <p>
+            Como tienes cuenta en Palanca, podemos escribirte de vez en cuando sobre tu uso del servicio (por
+            ejemplo, si llevas unos días sin apuntar nada): como mucho uno cada 3 días y sin datos financieros.
+            Cada email incluye un enlace para darte de baja en un clic, y también puedes desactivarlos en{' '}
+            <em>Tu cuenta → Recordatorios por email</em>. Los envía <strong>Resend</strong> (encargado del
+            tratamiento, con garantías contractuales para transferencias internacionales).
+          </p>
+
           <h3>Cuánto tiempo los conservamos</h3>
           <p>
             Mientras tu cuenta esté activa. Si borras tu cuenta, se eliminan tus datos de forma permanente.

@@ -22,6 +22,7 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
   const [esAdmin, setEsAdmin] = useState(false)
   const [verMetricas, setVerMetricas] = useState(false)
   const [analitica, setAnalitica] = useState(perfil?.analitica !== false)
+  const [recordatorios, setRecordatorios] = useState(perfil?.recordatorios !== false)
 
   useEffect(() => {
     let vivo = true
@@ -44,6 +45,18 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
       toast('No se ha podido descargar. Inténtalo de nuevo.', 'error')
     } finally {
       setExportando(null)
+    }
+  }
+
+  async function handleRecordatorios(valor) {
+    setRecordatorios(valor)
+    const actualizado = await actualizarPerfil(usuarioId, { recordatorios: valor })
+    if (actualizado && 'recordatorios' in actualizado) {
+      onPerfilActualizado?.(actualizado)
+      toast(valor ? 'Recordatorios activados' : 'No te enviaremos más recordatorios')
+    } else {
+      setRecordatorios(!valor)
+      toast('No se ha podido guardar. Inténtalo de nuevo.', 'error')
     }
   }
 
@@ -167,6 +180,15 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
               {exportando === 'json' ? 'Preparando…' : 'Todo (JSON)'}
             </button>
           </div>
+          {perfil && 'recordatorios' in perfil && (
+            <label className="cuenta-interruptor">
+              <input type="checkbox" checked={recordatorios} onChange={(e) => handleRecordatorios(e.target.checked)} />
+              <span>
+                <strong>Recordatorios por email</strong>
+                <span className="ayuda-mini">Un aviso si llevas unos días sin apuntar nada, con una frase para animarte. Pocos: como mucho uno cada 3 días.</span>
+              </span>
+            </label>
+          )}
           {perfil && 'analitica' in perfil && (
             <label className="cuenta-interruptor">
               <input type="checkbox" checked={analitica} onChange={(e) => handleAnalitica(e.target.checked)} />

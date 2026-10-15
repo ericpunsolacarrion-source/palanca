@@ -20,6 +20,7 @@ export const TABLAS_USUARIO = [
   'gastos_rapidos',
   'ahorros_negociados',
   'planes',
+  'recordatorios_enviados',
   'eventos',
 ]
 

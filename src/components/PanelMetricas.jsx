@@ -48,6 +48,7 @@ const EVENTOS = {
   tour: 'Demos vistas',
   datos_ejemplo: 'Vistas con datos de ejemplo',
   exportacion: 'Descargas de datos',
+  clic_email: 'Volvieron desde un email',
 }
 
 const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0)
@@ -188,6 +189,44 @@ function Retencion({ filas }) {
 
 function PildoraPlan({ plan }) {
   return <span className={`pm-plan ${plan}`}>{PLANES[plan]?.texto ?? plan}</span>
+}
+
+const TIPOS_EMAIL = {
+  inactivo: 'A los 3-6 días sin entrar',
+  te_echamos: 'A los 14-21 días sin entrar',
+  sin_empezar: 'Alta sin apuntar nada',
+  prueba_termina: 'Fin de la prueba Premium',
+  invitacion_premium: 'Invitación a Premium',
+}
+
+function SeccionRecordatorios({ r }) {
+  const tipos = Object.entries(r.por_tipo ?? {}).sort((a, b) => b[1] - a[1])
+  return (
+    <section className="pm-bloque" aria-label="Recordatorios por email">
+      <header className="pm-bloque-cab">
+        <h3>Recordatorios por email</h3>
+        <span className="pm-lectura">últimos 30 días</span>
+      </header>
+      <div className="pm-kpis">
+        <Kpi etiqueta="Enviados" valor={r.enviados30} nota="Como mucho 1 cada 3 días por persona" />
+        <Kpi etiqueta="Volvieron" valor={`${pct(r.volvieron30, r.enviados30)} %`} nota={`${r.volvieron30} entraron en las 48 h siguientes`} />
+        <Kpi etiqueta="Clics" valor={r.clics30} nota="Abrieron la app desde el botón del email" />
+        <Kpi etiqueta="Bajas" valor={r.bajas} nota="No quieren recordatorios" />
+      </div>
+      {tipos.length === 0 ? (
+        <p className="ayuda-mini pm-nota">Aún no se ha enviado ninguno. Los emails están apagados hasta configurar el envío (docs/RECORDATORIOS.md).</p>
+      ) : (
+        <ul className="pm-eventos pm-nota">
+          {tipos.map(([t, n]) => (
+            <li key={t}>
+              <span>{TIPOS_EMAIL[t] ?? t}</span>
+              <strong>{n}</strong>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
 }
 
 function SeccionPlanes({ p, porPlan, cambios, total }) {
@@ -625,6 +664,7 @@ export default function PanelMetricas({ onCerrar }) {
               <Kpi etiqueta="Ahorro negociado" valor={formatearEuros(Math.round(d.ahorrado_total))} nota="al año, entre todos" />
             </div>
 
+            {d.recordatorios && <SeccionRecordatorios r={d.recordatorios} />}
             {d.planes && <SeccionPlanes p={d.planes} porPlan={d.por_plan ?? []} cambios={d.cambios_plan ?? []} total={d.usuarios.total} />}
 
             <div className="pm-estados">

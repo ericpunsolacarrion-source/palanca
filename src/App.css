@@ -9865,3 +9865,58 @@ input[type='number']::-webkit-outer-spin-button {
   opacity: 0.45;
   cursor: default;
 }
+
+/* Inicio · vuelta tras días sin apuntar (con la frase del día) */
+.ini-vuelta {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+}
+.ini-vuelta-texto {
+  font-size: var(--fs-s);
+  color: var(--text);
+}
+.ini-vuelta-texto strong {
+  color: var(--text-h);
+}
+.ini-vuelta-frase {
+  margin: 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--borde-fuerte);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ini-vuelta-frase p {
+  font-size: var(--fs-s);
+  font-style: italic;
+  color: var(--text-h);
+  text-wrap: pretty;
+}
+.ini-vuelta-frase cite {
+  font-style: normal;
+  font-size: var(--fs-micro);
+  color: var(--text-3);
+}
+.ini-vuelta-boton {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-2);
+  font: inherit;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  cursor: pointer;
+}
+.pm-nota {
+  margin-top: 12px;
+}

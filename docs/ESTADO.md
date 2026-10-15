@@ -31,6 +31,8 @@ premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](EST
 | **Sistema visual** (colores, tipografía, iconos, qué NO hacer) | **[DISENO.md](DISENO.md)** |
 | **Fulcro** (qué ve, hasta dónde llega, coste, pruebas) | **[FULCRO.md](FULCRO.md)** |
 | **Métricas de uso** (panel admin, qué se guarda, definiciones) | **[METRICAS.md](METRICAS.md)** |
+| **Recordatorios** (app y email: reglas, activación) | **[RECORDATORIOS.md](RECORDATORIOS.md)** |
+| **Premium** (propuesta de precio y beneficios, para decidir) | **[PREMIUM.md](PREMIUM.md)** |
 | **Competencia y conexión con el banco** (PSD2, agregadores, licencia, ISO) | **[VISION_BANCO.md](VISION_BANCO.md)** |
 | Estado de plataforma / negocio (dossier largo) | [ESTADO-PLATAFORMA.md](ESTADO-PLATAFORMA.md) |
 | Reglas de cálculo y disciplina | [../CLAUDE.md](../CLAUDE.md) |
@@ -81,6 +83,9 @@ PANTALLAS.md §3 y §4b.
 - **Ahorros negociados en BD**: con respaldo local.
 - **Política de privacidad actualizada**: uso, capturas a Anthropic y portabilidad.
 - **Arreglo del borrado de cuenta**: antes se dejaba los fijos, los gastos rápidos, los escenarios y el uso de Fulcro.
+- **Planes Premium/Gratis** en el panel: dar o quitar Premium, ingresos al mes y comparativa de uso.
+- **Recordatorios**: tarjeta con la frase del día en Inicio tras 3+ días sin apuntar. Los emails están preparados y APAGADOS ([RECORDATORIOS.md](RECORDATORIOS.md)).
+- **Propuesta de Premium**: [PREMIUM.md](PREMIUM.md).
 - **Requiere ejecutar `supabase-schema-metricas.sql`** (un solo bloque, probado en Postgres 16). Sin él, todo sigue funcionando como antes.
 
 **Noche del 2026-10-14 (rondas de producto, todo en `develop`):**
