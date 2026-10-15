@@ -5,7 +5,7 @@ import { contextoParaPregunta, respuestaDeCortesia } from '../lib/contextoFulcro
 import { useObjetivosCompartidos, usePresupuestoCompartido } from '../lib/DatosCompartidos'
 import { supabase } from '../lib/supabaseClient'
 import { leerDescartadas } from '../lib/suscripciones'
-import { EVENTO_FULCRO } from '../lib/fulcro'
+import { EVENTO_FULCRO, EVENTO_FULCRO_CERRAR } from '../lib/fulcro'
 import { respuestaLocal } from '../lib/respuestasLocales'
 import { registrarEvento } from '../lib/analitica'
 
@@ -304,8 +304,13 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
       setAbierto(true)
       if (e.detail?.pregunta) setPreguntaPendiente(e.detail.pregunta)
     }
+    const cerrar = () => setAbierto(false)
     window.addEventListener(EVENTO_FULCRO, abrirCon)
-    return () => window.removeEventListener(EVENTO_FULCRO, abrirCon)
+    window.addEventListener(EVENTO_FULCRO_CERRAR, cerrar)
+    return () => {
+      window.removeEventListener(EVENTO_FULCRO, abrirCon)
+      window.removeEventListener(EVENTO_FULCRO_CERRAR, cerrar)
+    }
   }, [])
   useEffect(() => {
     if (preguntaPendiente && activo) {

@@ -57,6 +57,9 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 - 🟩 **Guías de descarga del extracto banco por banco** (ahora son genéricas; los menús de cada banco no están verificados).
 - 🟩 Pulir el ciclo mensual de "trae lo nuevo del extracto".
 
+### Demo y primeros pasos
+- 🟧 **Demo avanzada, segunda vuelta** (Eric, 15-10: "después ya trabajaremos con más profundidad"): la versión 1 recorre cada pantalla. Ideas: enseñar acciones en vivo (renombrar un "ALIPAM", confirmar un fijo, retirar de una inversión), un capítulo de importación con un extracto de ejemplo, y medir en el panel en qué paso se sale la gente.
+
 ### Diseño y marca
 - 🟩 **Mascota** de Fulcro (aparcada; ver `docs/marca/`).
 - 🟩 Pulir pantallas secundarias (simuladores, cuenta, onboarding, logros) con el sistema visual v2.
@@ -93,6 +96,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 ---
 
 ## Histórico de cosas terminadas que estaban aquí
+- ✔ 15-10-2026 (noche): demo avanzada (18 pasos, 7 capítulos, Fulcro en directo) desde Tu cuenta y desde el final de la demo rápida.
 - ✔ 15-10-2026 (noche): Fulcro activado en la versión de prueba (clave solo en Preview), SQL de métricas aplicado en el proyecto palanca y panel de Métricas visible para el admin.
 - ✔ 15-10-2026 (noche): motor probado con 5 clientes simulados de 5 bancos y recorridos completos en el navegador; corregidos importación de Santander/Revolut/ING, retiradas de inversión, vuelta del ahorro, fijos genéricos, suscripciones falsas y respuestas de Fulcro.
 - ✔ 15-10-2026 (tarde): motor conectado. Identidad de comercios con memoria, importación por comercio real, editar comercio y categoría con «igualar los demás», fijos sin doble cobro, devoluciones como contra-gasto, sin fechas futuras ([IDENTIDAD.md](IDENTIDAD.md)).

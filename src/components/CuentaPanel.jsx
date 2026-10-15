@@ -14,7 +14,7 @@ const PanelMetricas = lazy(() => import('./PanelMetricas'))
 // Panel de cuenta (usuarios de Auth): editar nombre y año de nacimiento, ver
 // email, descargar tus datos, estadísticas de uso, cerrar sesión y borrar la
 // cuenta con todos sus datos (supresión). Al administrador, sus métricas.
-export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualizado, onCerrar, onCerrarSesion, onVerDemo, verEjemplo = false, onVerEjemplo }) {
+export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualizado, onCerrar, onCerrarSesion, onVerDemo, onVerDemoAvanzada, verEjemplo = false, onVerEjemplo }) {
   const [nombre, setNombre] = useState(perfil?.nombre ?? '')
   const [anio, setAnio] = useState(perfil?.anio_nacimiento ? String(perfil.anio_nacimiento) : '')
   const [guardando, setGuardando] = useState(false)
@@ -163,6 +163,11 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
         {onVerDemo && (
           <button type="button" className="cuenta-boton" onClick={onVerDemo}>
             Ver la demo rápida
+          </button>
+        )}
+        {onVerDemoAvanzada && (
+          <button type="button" className="cuenta-boton" onClick={onVerDemoAvanzada}>
+            Demo avanzada: todo lo que puede hacer Palanca
           </button>
         )}
         {onVerEjemplo && (

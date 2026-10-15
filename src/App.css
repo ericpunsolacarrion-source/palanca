@@ -8181,6 +8181,75 @@ input[type='number']::-webkit-outer-spin-button {
   top: calc(76px + env(safe-area-inset-top));
   bottom: auto;
 }
+
+/* Demo avanzada: capítulos, "hasta dónde llega" y la pieza resaltada en pantalla */
+.tour-capitulos {
+  display: flex;
+  gap: 6px;
+  margin: 10px -16px 0;
+  padding: 0 16px 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tour-capitulos::-webkit-scrollbar {
+  display: none;
+}
+.tour-capitulos button {
+  flex: none;
+  padding: 4px 10px;
+  border: 1px solid var(--borde-fuerte);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-micro);
+  cursor: pointer;
+}
+.tour-capitulos button.hecho {
+  color: var(--text-h);
+}
+.tour-capitulos button.activo {
+  border-color: var(--accent-2);
+  color: var(--text-h);
+  font-weight: 600;
+}
+.tour-mas {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--text-h);
+}
+.tour-mas svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--accent-2);
+}
+.tour-mas-boton {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-2);
+  font: inherit;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  cursor: pointer;
+}
+.tour-resaltado:not(.bottom-nav .tour-resaltado):not(.consultor-fab) {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 4px;
+  border-radius: var(--radio-m);
+  scroll-margin: 90px;
+}
+.tour-avanzado {
+  max-height: calc(100dvh - 120px);
+  overflow-y: auto;
+}
 .hp-pie .link {
   flex: none;
   white-space: nowrap;

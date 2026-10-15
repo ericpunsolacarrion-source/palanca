@@ -275,16 +275,19 @@ function App() {
 
   // Demo rápida (recorrido guiado): se ofrece sola la primera vez que se ven
   // los datos de ejemplo, y siempre desde "Tu cuenta".
+  // false | 'rapido' | 'avanzado'. La avanzada corre siempre con los datos de
+  // ejemplo (todo lleno, sin enseñar tu dinero) y al salir vuelve a los tuyos.
   const [tourAbierto, setTourAbierto] = useState(false)
+  const [ejemploPorTour, setEjemploPorTour] = useState(false)
   useEffect(() => {
     if (!enDemo || !usuarioId) return
     const clave = `palanca_tour_visto_${usuarioId}`
     if (leerMarca(clave)) return
     guardarMarca(clave)
-    setTourAbierto(true)
+    setTourAbierto('rapido')
   }, [enDemo, usuarioId])
   useEffect(() => {
-    if (tourAbierto) registrarEvento('tour')
+    if (tourAbierto) registrarEvento(tourAbierto === 'avanzado' ? 'tour_avanzado' : 'tour')
   }, [tourAbierto])
   useEffect(() => {
     if (enDemo) registrarEvento('datos_ejemplo')
@@ -293,6 +296,7 @@ function App() {
   const empezarConMisDatos = useCallback(() => {
     if (forzarEjemplo) {
       setForzarEjemplo(false)
+      setEjemploPorTour(false)
       setTourAbierto(false)
       setPestana('dashboard')
       toast('De vuelta a tus datos')
@@ -305,6 +309,24 @@ function App() {
     setPestana('dashboard')
     toast('¡Vamos! Empieza apuntando tu primer ingreso y tu primer gasto.')
   }, [usuarioId, forzarEjemplo])
+
+  const abrirDemoAvanzada = useCallback(() => {
+    if (!enDemo) {
+      setForzarEjemplo(true)
+      setEjemploPorTour(true)
+    }
+    setTourAbierto('avanzado')
+  }, [enDemo])
+
+  const cerrarTour = useCallback(() => {
+    setTourAbierto(false)
+    setPestana('dashboard')
+    if (ejemploPorTour) {
+      setEjemploPorTour(false)
+      setForzarEjemplo(false)
+      toast('De vuelta a tus datos')
+    }
+  }, [ejemploPorTour])
 
   const movimientosMes = useMemo(() => filtrarMesActual(movimientos), [movimientos])
   const totalesMes = useMemo(() => totalesDe(movimientosMes), [movimientosMes])
@@ -492,7 +514,7 @@ function App() {
                   </span>
                 </div>
                 <div className="demo-banner-acc">
-                  <button type="button" className="demo-banner-tour" onClick={() => setTourAbierto(true)}>
+                  <button type="button" className="demo-banner-tour" onClick={() => setTourAbierto('rapido')}>
                     Ver demo
                   </button>
                   <button type="button" className="demo-banner-empezar" onClick={empezarConMisDatos}>
@@ -671,7 +693,11 @@ function App() {
           onPerfilActualizado={(p) => setPerfil(p)}
           onVerDemo={() => {
             setVerCuenta(false)
-            setTourAbierto(true)
+            setTourAbierto('rapido')
+          }}
+          onVerDemoAvanzada={() => {
+            setVerCuenta(false)
+            abrirDemoAvanzada()
           }}
           verEjemplo={enDemo}
           onVerEjemplo={() => {
@@ -692,13 +718,14 @@ function App() {
       {!enDemo && !cargando && <Hitos usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />}
       {tourAbierto && (
         <TourRapido
+          key={tourAbierto}
+          nivel={tourAbierto}
           enDemo={enDemo}
+          volverAMisDatos={ejemploPorTour || forzarEjemplo}
           onIrA={irAPestana}
-          onTerminar={() => {
-            setTourAbierto(false)
-            irAPestana('dashboard')
-          }}
+          onTerminar={cerrarTour}
           onEmpezarConMisDatos={empezarConMisDatos}
+          onAvanzada={abrirDemoAvanzada}
         />
       )}
       <Suspense fallback={null}>
