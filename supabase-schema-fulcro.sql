@@ -75,3 +75,10 @@ grant execute on function public.fulcro_reservar(int, text) to authenticated;
 grant execute on function public.fulcro_registrar(uuid, int, int, int, text) to authenticated;
 
 drop policy if exists fulcro_uso_ins on public.fulcro_uso;
+
+-- Lectura de capturas (api/leer-capturas.js): registra su uso con modelo
+-- "capturas:…" para su propio límite diario. Solo esas filas, solo las suyas.
+drop policy if exists fulcro_uso_ins_capturas on public.fulcro_uso;
+create policy fulcro_uso_ins_capturas on public.fulcro_uso
+  for insert to authenticated
+  with check (usuario_id = auth.uid()::text and modelo like 'capturas:%');
