@@ -17,7 +17,23 @@ import { preguntarAFulcro } from '../lib/fulcro'
 //   5. Lo último que ha pasado (últimos movimientos).
 // El detalle (gráficos, comparativas, proyección) vive en "Análisis".
 
-function AccionesRapidas({ onRegistrar, diasSinRegistrar }) {
+// Si ya trajo su historial alguna vez y hace ≥ 25 días de la última vez, se
+// le propone traer lo nuevo del extracto (no se duplica nada): mantener la
+// app al día sin apuntar a mano.
+function diasDesdeUltimaImportacion(usuarioId) {
+  try {
+    const lotes = JSON.parse(localStorage.getItem(`palanca_importaciones_${usuarioId}`) || '[]')
+    if (!Array.isArray(lotes) || lotes.length === 0) return null
+    const ultima = Math.max(...lotes.map((l) => new Date(l.fecha).getTime()).filter(Number.isFinite))
+    return Number.isFinite(ultima) ? Math.floor((Date.now() - ultima) / 86400000) : null
+  } catch {
+    return null
+  }
+}
+
+function AccionesRapidas({ usuarioId, onRegistrar, diasSinRegistrar }) {
+  const diasImport = useMemo(() => diasDesdeUltimaImportacion(usuarioId), [usuarioId])
+  const toca = diasImport !== null && diasImport >= 25
   return (
     <div className="ini-acciones">
       <button type="button" className="ini-accion principal" onClick={() => onRegistrar('gasto')}>
@@ -29,7 +45,12 @@ function AccionesRapidas({ onRegistrar, diasSinRegistrar }) {
       <button type="button" className="ini-accion" onClick={() => onRegistrar('importar')} aria-label="Importar extracto del banco">
         <Icono nombre="importar" tam={18} /> Importar
       </button>
-      {diasSinRegistrar >= 3 && (
+      {toca ? (
+        <button type="button" className="ini-recordatorio ini-recordatorio-boton" onClick={() => onRegistrar('importar')}>
+          Hace {diasImport} días que no traes tu extracto. Súbelo y añadimos solo lo nuevo
+          <Icono nombre="chevron" tam={14} />
+        </button>
+      ) : diasSinRegistrar >= 3 && (
         <p className="ini-recordatorio">
           Llevas {diasSinRegistrar} días sin apuntar nada. ¿Ha entrado o salido dinero?
         </p>
@@ -225,7 +246,7 @@ export default function Inicio({
         onVerInversion={() => onIrA('inversiones')}
         soloLectura={soloLectura}
       />
-      <AccionesRapidas onRegistrar={onRegistrar} diasSinRegistrar={soloLectura ? 0 : diasSinRegistrar} />
+      <AccionesRapidas usuarioId={soloLectura ? null : usuarioId} onRegistrar={onRegistrar} diasSinRegistrar={soloLectura ? 0 : diasSinRegistrar} />
       <AvisosCobros
         cargando={cargandoRecurrentes}
         usuarioId={usuarioId}

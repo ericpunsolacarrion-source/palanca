@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { formatearEuros } from '../lib/categorias'
 import { formatearFecha } from '../lib/movimientosUtils'
+import { toast } from '../lib/toast'
+import Icono from './Icono'
 import { costeAnualTotal, detectarSuscripciones, guardarDescartadas, leerDescartadas } from '../lib/suscripciones'
 
 // Cargos periódicos detectados en tus movimientos (p. ej. tras importar el
@@ -23,9 +25,7 @@ export default function SuscripcionesDetectadas({ usuarioId, movimientos, recurr
     guardarDescartadas(usuarioId, nuevo)
   }
 
-  async function anadir(d) {
-    setAnadiendo(d.clave)
-    await onAnadir({
+  const datosDe = (d) => ({
       tipo: 'gasto',
       nombre: d.nombre,
       importe: d.importe,
@@ -38,8 +38,21 @@ export default function SuscripcionesDetectadas({ usuarioId, movimientos, recurr
       mesInicio: d.mesInicio,
       // El cargo detectado ya está en tus movimientos: su mes cuenta como pagado.
       mesesYaPagados: [d.ultimaFecha.slice(0, 7)],
-    })
+  })
+
+  async function anadir(d) {
+    setAnadiendo(d.clave)
+    await onAnadir(datosDe(d))
     setAnadiendo(null)
+  }
+
+  // Tras importar un año suelen salir varios: todos de una vez.
+  async function anadirTodos() {
+    setAnadiendo('todos')
+    const lista = [...detectadas]
+    for (const d of lista) await onAnadir(datosDe(d))
+    setAnadiendo(null)
+    toast(`${lista.length} pagos añadidos a tus fijos. Te avisaremos el día de cada cobro.`)
   }
 
   const total = costeAnualTotal(detectadas)
@@ -53,6 +66,11 @@ export default function SuscripcionesDetectadas({ usuarioId, movimientos, recurr
         <span className="tb-detectadas-total">
           {formatearEuros(total)} <span>al año</span>
         </span>
+        {detectadas.length > 1 && (
+          <button type="button" className="tb-detectadas-todos" disabled={anadiendo !== null} onClick={anadirTodos}>
+            {anadiendo === 'todos' ? 'Añadiendo…' : `Añadir los ${detectadas.length}`}
+          </button>
+        )}
       </header>
 
       <ul className="tb-detectadas-lista">
@@ -77,7 +95,7 @@ export default function SuscripcionesDetectadas({ usuarioId, movimientos, recurr
                 <button
                   type="button"
                   className="tb-detectada-anadir"
-                  disabled={anadiendo === d.clave}
+                  disabled={anadiendo !== null}
                   onClick={() => anadir(d)}
                 >
                   {anadiendo === d.clave ? '…' : 'Añadir'}
@@ -89,7 +107,7 @@ export default function SuscripcionesDetectadas({ usuarioId, movimientos, recurr
                   title="No es una suscripción"
                   onClick={() => descartar(d.clave)}
                 >
-                  ×
+                  <Icono nombre="cerrar" tam={14} />
                 </button>
               </div>
             </li>
