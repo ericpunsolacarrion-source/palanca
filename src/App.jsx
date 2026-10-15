@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { nombrePropio } from './lib/nombrePropio'
 import { supabase } from './lib/supabaseClient'
 import { useAuth } from './lib/useAuth'
 import { cerrarSesionAuth } from './lib/auth'
@@ -474,7 +475,7 @@ function App() {
         {pestana === 'dashboard' && (
           <div key="dashboard" className="vista">
             <div className="saludo">
-              <p className="saludo-usuario">{perfil.nombre?.trim() ? `Hola, ${perfil.nombre.trim().split(/\s+/)[0]}` : 'Hola'}</p>
+              <p className="saludo-usuario">{perfil.nombre?.trim() ? `Hola, ${nombrePropio(perfil.nombre).split(' ')[0]}` : 'Hola'}</p>
               <p className="saludo-fecha">{capitalizar(FMT_HOY.format(new Date()))}</p>
             </div>
             {/* Primera carga (sin datos aún): skeleton en vez de dashboard vacío.
@@ -502,7 +503,7 @@ function App() {
             )}
             {!cargando && !enDemo && (
               <PrimerosPasos
-                nombre={perfil.nombre}
+                nombre={nombrePropio(perfil.nombre)}
                 movimientos={movimientos}
                 onRegistrar={irARegistrar}
               />

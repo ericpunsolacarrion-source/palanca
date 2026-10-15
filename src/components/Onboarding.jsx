@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { nombrePropio } from '../lib/nombrePropio'
 import { emailValido } from '../lib/perfil'
 import InputImporte from './InputImporte'
 import Icono, { Marca } from './Icono'
@@ -42,7 +43,7 @@ export default function Onboarding({ onCompletar, emailInicial }) {
         email,
         Number.isFinite(saldo) && saldo > 0 ? saldo : 0,
         anio,
-        nombre.trim() || null,
+        nombrePropio(nombre) || null,
       )
       // Si sale bien, este componente se desmonta; si no, se reactiva el botón.
       if (!ok) {
@@ -71,7 +72,7 @@ export default function Onboarding({ onCompletar, emailInicial }) {
     setPaso(paso + 1)
   }
 
-  const saludo = nombre.trim() ? `${nombre.trim().split(' ')[0]}, ` : ''
+  const saludo = nombre.trim() ? `${nombrePropio(nombre).split(' ')[0]}, ` : ''
 
   return (
     <div className="ob">

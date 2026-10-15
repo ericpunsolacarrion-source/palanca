@@ -3,7 +3,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { CATEGORIA_INVERSION, esInversion, formatearEuros } from '../lib/categorias'
-import { SELECT_MOVIMIENTO, agregarPorMes, claveMes, formatearCompacto, formatearFecha, hoyIso, centimosDe, sumarImportes } from '../lib/movimientosUtils'
+import { SELECT_MOVIMIENTO, agregarPorMes, bolsas, claveMes, formatearCompacto, formatearFecha, hoyIso, centimosDe } from '../lib/movimientosUtils'
 import { useCountUp } from '../lib/useCountUp'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
@@ -66,7 +66,7 @@ function GraficoInversionMensual({ meses, media }) {
           style={{ height: ALTO_BARRAS + ZONA_ETIQUETA, width: anchoContenido, minWidth: '100%' }}
         >
           {meses.map((m, i) => {
-            const barPx = alturaDe(m.invertido)
+            const barPx = alturaDe(Math.max(0, m.invertido))
             const esEnero = m.clave.endsWith('-01')
             const anio = m.clave.slice(0, 4)
             return (
@@ -112,6 +112,9 @@ function GraficoInversionMensual({ meses, media }) {
 
 export default function Inversiones({ usuarioId, movimientos, cargando, onGuardado }) {
   const { items: categorias, crear: crearCategoria } = useEtiquetas('categorias', usuarioId, 'gasto')
+  // La retirada (vender o rescatar) es un ingreso con categoría "Inversion".
+  const { items: categoriasIngreso, crear: crearCategoriaIngreso } = useEtiquetas('categorias', usuarioId, 'ingreso')
+  const [retirar, setRetirar] = useState(false)
   const { items: fuentes, crear: crearFuente } = useEtiquetas('fuentes', usuarioId, 'gasto')
 
   const [fuenteId, setFuenteId] = useState('')
@@ -121,24 +124,21 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
 
-  const categoriaInversion = categorias.find((c) => c.nombre === CATEGORIA_INVERSION)
 
   // Las aportaciones SON movimientos con categoría "Inversion": misma fuente
   // de datos que el resto de la app, siempre sincronizado.
   const aportaciones = useMemo(() => movimientos.filter(esInversion), [movimientos])
 
-  const totalInvertido = useMemo(
-    () => sumarImportes(aportaciones),
-    [aportaciones],
-  )
+  // Lo que tienes invertido (a coste): aportaciones − retiradas, nunca negativo.
+  const totalInvertido = useMemo(() => bolsas(aportaciones, hoyIso()).bolsaInversion, [aportaciones])
 
   const porPlataforma = useMemo(() => {
     const mapa = new Map()
     for (const a of aportaciones) {
       const nombre = a.fuente?.nombre ?? 'Sin especificar'
-      mapa.set(nombre, (mapa.get(nombre) ?? 0) + centimosDe(a))
+      mapa.set(nombre, (mapa.get(nombre) ?? 0) + (a.tipo === 'ingreso' ? -1 : 1) * centimosDe(a))
     }
-    return [...mapa.entries()].map(([n, c]) => [n, c / 100]).sort((a, b) => b[1] - a[1])
+    return [...mapa.entries()].filter(([, c]) => c > 0).map(([n, c]) => [n, c / 100]).sort((a, b) => b[1] - a[1])
   }, [aportaciones])
 
   // Meses a mostrar en el gráfico: desde el primer mes con inversión hasta hoy,
@@ -174,12 +174,14 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
       const clave = claveMes(a.fecha)
       if (!mapa.has(clave)) mapa.set(clave, { total: 0, detalle: [] })
       const entrada = mapa.get(clave)
-      entrada.total = Math.round((entrada.total + Number(a.importe)) * 100) / 100
+      const retirada = a.tipo === 'ingreso'
+      entrada.total = Math.round((entrada.total + (retirada ? -1 : 1) * Number(a.importe)) * 100) / 100
       entrada.detalle.push({
         id: a.id,
         nombre: a.fuente?.nombre ?? 'Sin especificar',
         importe: Number(a.importe),
         fecha: a.fecha,
+        retirada,
       })
     }
     return [...mapa.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1))
@@ -205,7 +207,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
 
   async function handleEliminar(id) {
     if (esDemo(id)) return toast(AVISO_DEMO)
-    if (!(await confirmar('¿Eliminar esta aportación?'))) return
+    if (!(await confirmar('¿Eliminar este movimiento de inversión?'))) return
     setEliminandoId(id)
     const { error: errorDelete } = await supabase.from('movimientos').delete().eq('id', id)
     setEliminandoId(null)
@@ -213,7 +215,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
       toast('No se ha podido eliminar. Revisa tu conexión.', 'error')
       return
     }
-    toast('Aportación eliminada')
+    toast('Eliminado')
     onGuardado?.({ accion: 'borrar', ids: [id] })
   }
 
@@ -253,9 +255,10 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
     setGuardando(true)
     setError(null)
 
-    let categoriaId = categoriaInversion?.id
+    const lista = retirar ? categoriasIngreso : categorias
+    let categoriaId = lista.find((c) => c.nombre === CATEGORIA_INVERSION)?.id
     if (!categoriaId) {
-      const creada = await crearCategoria(CATEGORIA_INVERSION)
+      const creada = await (retirar ? crearCategoriaIngreso : crearCategoria)(CATEGORIA_INVERSION)
       if (!creada) {
         setError('No se ha podido preparar la categoría de inversión. Inténtalo de nuevo.')
         setGuardando(false)
@@ -274,7 +277,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
       .from('movimientos')
       .insert({
         usuario_id: usuarioId,
-        tipo: 'gasto',
+        tipo: retirar ? 'ingreso' : 'gasto',
         categoria_id: categoriaId,
         fuente_id: resultFuente.id,
         importe: importeNumero,
@@ -295,7 +298,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
     setImporte(null)
     setFuenteId('')
     setNuevaFuente('')
-    toast('Aportación registrada')
+    toast(retirar ? 'Retirada registrada: vuelve a tu liquidez' : 'Aportación registrada')
     onGuardado?.(fila ? { accion: 'crear', filas: [fila] } : undefined)
   }
 
@@ -347,7 +350,14 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
       )}
 
       <form className="registro-movimiento fade-in-up" onSubmit={handleSubmit}>
-        <h2>Nueva aportación</h2>
+        <h2>{retirar ? 'Nueva retirada' : 'Nueva aportación'}</h2>
+        <div className="tipo-toggle" role="group" aria-label="Aportar o retirar">
+          <button type="button" className={!retirar ? 'activo' : ''} onClick={() => setRetirar(false)}>Aportar</button>
+          <button type="button" className={retirar ? 'activo' : ''} onClick={() => setRetirar(true)}>Retirar</button>
+        </div>
+        {retirar && (
+          <p className="ayuda-mini">Vendes o rescatas: el dinero vuelve a tu liquidez. No es un ingreso y tu patrimonio no cambia.</p>
+        )}
 
         <SelectorEtiqueta
           id="plataforma"
@@ -369,7 +379,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
         {error && <p className="error">{error}</p>}
 
         <button type="submit" disabled={guardando}>
-          {guardando ? 'Guardando…' : 'Registrar aportación'}
+          {guardando ? 'Guardando…' : retirar ? 'Registrar retirada' : 'Registrar aportación'}
         </button>
       </form>
 
@@ -402,7 +412,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
                 <span className="categoria">{etiquetaMesLarga(clave)}</span>
                 <span className="inversion-mes-der">
                   <span className="inversion-mes-cuenta">
-                    {detalle.length} {detalle.length === 1 ? 'aportación' : 'aportaciones'}
+                    {detalle.length} {detalle.length === 1 ? 'movimiento' : 'movimientos'}
                   </span>
                   <span className="importe">{formatearEuros(total)}</span>
                   <span className="inv-chevron" aria-hidden="true">▾</span>
@@ -431,7 +441,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
                   ) : (
                     <div key={d.id} className="inversion-detalle-fila">
                       <span>
-                        {formatearFecha(d.fecha)} · {d.nombre}: {formatearEuros(d.importe)}
+                        {formatearFecha(d.fecha)} · {d.retirada ? 'Retirada de ' : ''}{d.nombre}: {d.retirada ? '−' : ''}{formatearEuros(d.importe)}
                       </span>
                       <span className="grupo-botones">
                         <button type="button" className="btn-editar" onClick={() => empezarEdicion(d)}>

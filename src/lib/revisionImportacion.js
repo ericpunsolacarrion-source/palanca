@@ -8,6 +8,7 @@
 import { centimosDe, esConsumo } from './movimientosUtils'
 import { CATEGORIA_INVERSION, esDevolucion } from './categorias'
 import { claveComercio, directorio } from './comercios'
+import { categoriaDesdeBanco } from './categorizar'
 
 // Movimientos leídos de capturas → forma canónica del importador.
 export function filasDeCapturas(movimientos) {
@@ -27,7 +28,12 @@ export function filasDeCapturas(movimientos) {
 export function categorizarFilas(filas, categorizador) {
   return filas.map((f) => {
     if (f.categoria) return { ...f, sugerida: false }
-    const c = categorizador({ nota: f.nota, tipo: f.tipo })
+    let c = categorizador({ nota: f.nota, tipo: f.tipo })
+    // Lo que nadie reconoce, con la categoría que trae el banco (traducida a la de Palanca).
+    if (c.origen === 'defecto' && f.categoriaBanco) {
+      const delBanco = categoriaDesdeBanco(f.categoriaBanco, f.tipo)
+      if (delBanco) c = { ...c, categoria: delBanco, origen: 'banco' }
+    }
     const esInv = c.categoria === CATEGORIA_INVERSION
     return { ...f, categoria: c.categoria, esInversion: f.esInversion || esInv, sugerida: true, negociable: c.negociable }
   })

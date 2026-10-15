@@ -45,6 +45,14 @@
   `patrimonio = Σ entradas − Σ salidas`.
 - **E4 — Traspaso neutro.** Si los dos extremos de un apunte son bolsas, el
   patrimonio no cambia. Exacto por construcción, no por vigilancia.
+
+  *Implementación actual (Fase 1), en los dos sentidos:* apartar al ahorro
+  (gasto `Ahorro`) y traerlo de vuelta (ingreso `Desde ahorro`) son neutros;
+  aportar a inversión (gasto `Inversion`) y retirar (ingreso `Inversion`)
+  mueven dinero entre liquidez e inversión. La bolsa de inversión va a coste y
+  nunca baja de 0: lo retirado por encima de lo aportado hasta ese día es
+  ganancia y entra en el patrimonio (cruza la frontera, E3). `bolsas()` recorre
+  en orden de fecha cuando hay retiradas.
 - **E5 — La estructura manda, no la semántica.** El efecto de un Hecho sobre el
   **patrimonio** depende solo de entre qué nodos se mueve el valor. La
   categoría/motivo nunca determina ese efecto.

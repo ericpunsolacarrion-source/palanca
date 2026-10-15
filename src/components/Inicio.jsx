@@ -1,6 +1,6 @@
 import { etiquetaCategoria } from '../lib/categorias'
 import { useMemo } from 'react'
-import { esInversion, formatearEuros } from '../lib/categorias'
+import { esInversion, esTraspaso, formatearEuros } from '../lib/categorias'
 import { etiquetaMes, formatearPorcentaje, limiteGastoPresupuesto } from '../lib/movimientosUtils'
 import { conceptoDe, fechaRelativa, resumenDelMes } from '../lib/inicio'
 import { usePresupuestoCompartido } from '../lib/DatosCompartidos'
@@ -212,7 +212,8 @@ function UltimosMovimientos({ movimientos, onVerTodos }) {
       </header>
       <ul className="ini-movs">
         {ultimos.map((m) => {
-          const clase = m.tipo === 'ingreso' ? 'ingreso' : esInversion(m) ? 'inversion' : 'gasto'
+          // Inversión (aportar o retirar) en dorado; traspasos entre tus cuentas, neutros.
+          const clase = esInversion(m) ? 'inversion' : esTraspaso(m) ? 'traspaso' : m.tipo === 'ingreso' ? 'ingreso' : 'gasto'
           const concepto = conceptoDe(m)
           return (
             <li key={m.id} className="ini-mov">
@@ -222,11 +223,11 @@ function UltimosMovimientos({ movimientos, onVerTodos }) {
               <span className="ini-mov-texto">
                 <span className="ini-mov-concepto">{concepto}</span>
                 <span className="ini-mov-meta">
-                  {etiquetaCategoria(m.categoria?.nombre)} · {fechaRelativa(m.fecha)}
+                  {etiquetaCategoria(m.categoria?.nombre, m.tipo)} · {fechaRelativa(m.fecha)}
                 </span>
               </span>
               <span className={`ini-mov-importe ${clase}`}>
-                {m.tipo === 'ingreso' ? '+' : clase === 'inversion' ? '' : '−'}
+                {clase === 'gasto' ? '−' : clase === 'ingreso' || (clase === 'inversion' && m.tipo === 'ingreso') ? '+' : ''}
                 {formatearEuros(Number(m.importe))}
               </span>
             </li>

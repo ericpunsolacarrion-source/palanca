@@ -13,7 +13,7 @@ import InputImporte from './InputImporte'
 import InputFecha from './InputFecha'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { useComerciosCompartidos } from '../lib/DatosCompartidos'
-import { claveComercio, directorio, mismaEtiqueta } from '../lib/comercios'
+import { claveComercio, directorio, mismaEtiqueta, nombreParaComercio } from '../lib/comercios'
 import { esAjuste } from '../lib/categorias'
 
 function FilaEdicion({ movimiento, usuarioId, todos = [], onCancelar, onGuardado }) {
@@ -26,7 +26,7 @@ function FilaEdicion({ movimiento, usuarioId, todos = [], onCancelar, onGuardado
   const [categoriaId, setCategoriaId] = useState(movimiento.categoria_id ?? movimiento.categoria?.id ?? '')
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
-  const { recordar } = useComerciosCompartidos()
+  const { recordar, alias } = useComerciosCompartidos()
   const { items: categorias } = useEtiquetas('categorias', usuarioId, movimiento.tipo)
   // Comercio y categoría se editan en el consumo y los ingresos; no en
   // inversiones (su "comercio" es la plataforma) ni en ajustes de saldo.
@@ -40,7 +40,10 @@ function FilaEdicion({ movimiento, usuarioId, todos = [], onCancelar, onGuardado
       setError('Introduce un importe válido mayor que 0.')
       return
     }
-    const nombreNuevo = comercio.trim().replace(/\s+/g, ' ')
+    // Como en la importación: un comercio que ya tienes (con errata incluida), una marca o con mayúscula.
+    const dirActual = directorio()
+    const conocidos = [...new Set([...alias.map((a) => a.nombre), ...todos.map((x) => dirActual.nombreDe(x)).filter(Boolean)])]
+    const nombreNuevo = comercio.trim() ? nombreParaComercio(comercio, conocidos).nombre : ''
     const cambiaComercio = editable && nombreNuevo && !mismaEtiqueta(nombreNuevo, identidad.nombre)
     const cambiaCategoria = editable && categoriaId && categoriaId !== (movimiento.categoria_id ?? movimiento.categoria?.id)
     // Si el movimiento no tenía texto (gasto rápido), el comercio pasa a ser su nota.
@@ -260,14 +263,14 @@ export default function ListaMovimientos({
         <div className="linea-principal">
           <span className="categoria">{conceptoDe(m)}</span>
           <span className="importe">
-            {inversion || esTraspaso(m) ? '' : m.tipo === 'gasto' ? '−' : '+'}
+            {esTraspaso(m) || (inversion && m.tipo === 'gasto') ? '' : m.tipo === 'gasto' ? '−' : '+'}
             {formatearEuros(m.importe)}
           </span>
         </div>
         <div className="linea-secundaria">
           <span className="ls-meta">
             {/* El título ya es el concepto: aquí la categoría (si no es lo mismo) y la fecha. */}
-            {conceptoDe(m) !== etiquetaCategoria(m.categoria?.nombre) && <span>{etiquetaCategoria(m.categoria?.nombre)} · </span>}
+            {conceptoDe(m) !== etiquetaCategoria(m.categoria?.nombre, m.tipo) && <span>{etiquetaCategoria(m.categoria?.nombre, m.tipo)} · </span>}
             {fechaRelativa(m.fecha)}
             {m.es_fijo && <span className="badge-fijo">Fijo</span>}
           </span>

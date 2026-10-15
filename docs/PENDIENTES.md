@@ -2,7 +2,7 @@
 
 **Todo lo que se ha dejado para más adelante, en un solo sitio**, para poder rematarlo algún día.
 Se mantiene al día en cada sesión: lo terminado se marca ✔ con la fecha, lo nuevo se añade en su bloque.
-Última revisión: 15-10-2026 (tarde).
+Última revisión: 15-10-2026 (noche).
 
 Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejora.
 
@@ -68,7 +68,11 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 ### Motor financiero (de `docs/MOTOR.md`)
 - 🟧 **Pantalla «Mis comercios»**: ver y deshacer lo que Palanca ha aprendido (la función `olvidar` ya existe; falta la pantalla).
-- 🟧 Probar la identidad con **extractos reales de varios bancos** (BBVA, Santander, CaixaBank, ING, Revolut) y ampliar el ruido bancario y `MARCAS` con lo que salga.
+- 🟧 Probar con **extractos reales** de los bancos: los formatos simulados (BBVA, Santander, CaixaBank, ING, Revolut) ya funcionan; falta un extracto real de cada uno para confirmar cabeceras y textos exactos.
+- 🟧 **Decisión: Bizum recibido de amigos** (te devuelven su parte de una cena): ahora cuenta como ingreso. ¿Restarlo del gasto, como una devolución?
+- 🟩 Comisión de Revolut (columna "Fee"): ahora se ignora; sumarla como gasto si no es 0.
+- 🟩 Atajo "Traer de mi ahorro" en Nuevo → Ingreso (ahora sale solo al importar o eligiendo la categoría "Desde ahorro").
+- 🟩 Las retiradas de inversión no guardan la ganancia por separado (se ve en el patrimonio, no como "rentabilidad").
 - 🟩 Al renombrar un comercio en el historial, ofrecer también igualar el **nombre** de los demás (ahora se iguala la categoría, y el nombre llega solo por la memoria).
 - 🟩 Devoluciones parciales: enlazar cada devolución con su compra concreta (ahora resta de la categoría del comercio).
 - 🟩 Pasar `esDevolucion` a `tipo_evento = devolucion` (Fase 2), en vez de reconocerla por nombre.
@@ -88,6 +92,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 ---
 
 ## Histórico de cosas terminadas que estaban aquí
+- ✔ 15-10-2026 (noche): motor probado con 5 clientes simulados de 5 bancos y recorridos completos en el navegador; corregidos importación de Santander/Revolut/ING, retiradas de inversión, vuelta del ahorro, fijos genéricos, suscripciones falsas y respuestas de Fulcro.
 - ✔ 15-10-2026 (tarde): motor conectado. Identidad de comercios con memoria, importación por comercio real, editar comercio y categoría con «igualar los demás», fijos sin doble cobro, devoluciones como contra-gasto, sin fechas futuras ([IDENTIDAD.md](IDENTIDAD.md)).
 - ✔ 15-10-2026: respuestas de Fulcro al momento sin IA (preguntas de datos).
 - ✔ 15-10-2026: panel de métricas solo admin, Premium/Gratis en el panel, descargar mis datos, borrado de cuenta completo, motor de emails (apagado), estudio de costes.

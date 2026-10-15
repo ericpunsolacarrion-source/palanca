@@ -15,6 +15,8 @@
 //   4. El concepto/cuenta que el usuario eligió al apuntarlo.
 //   5. El propio texto, limpio y presentable.
 
+import { nombrePropio } from './nombrePropio'
+
 // ── Texto ────────────────────────────────────────────────────────────────────
 export function normalizarTexto(t) {
   return String(t ?? '')
@@ -88,8 +90,9 @@ const RUIDO = new Set(
   `compra compras pago pagos tarjeta tarj tarjetas tj tjt card visa mastercard debito credito recibo recibos adeudo adeudos
   cargo cargos domiciliacion domiciliado domic transaccion operacion contactless apple google pay en de del la el los las
   con num ref www com es net org sl sa slu sau sl inc ltd eu europe payments payment bv sarl gmbh ab srl llc co
-  paypal sumup zettle izettle stripe sq redsys tpv pos xxxx xxx fecha valor oficina suc
-  devolucion devoluciones reembolso reembolsos abono anulacion anulada refund`.split(/\s+/),
+  paypal sumup zettle izettle stripe sq redsys tpv pos xxxx xxx xxxxxxxx fecha valor oficina suc
+  devolucion devoluciones reembolso reembolsos abono anulacion anulada refund
+  transferencia transf trf favor emitida emitido recibida recibido from to`.split(/\s+/),
 )
 
 /** "COMPRA TARJ. NETFLIX.COM 12/03" → "netflix"; "PAGO TARJETA ALIPAM23" → "alipam". */
@@ -97,18 +100,36 @@ export function claveComercio(texto) {
   const palabras = normalizarTexto(texto)
     .split(' ')
     .map((p) => p.replace(/\d+/g, '')) // "alipam23" → "alipam" (antes se perdía entera)
-    .filter((p) => p.length > 1 && !RUIDO.has(p))
+    .filter((p) => p.length > 1 && !RUIDO.has(p) && !/^x{2,}$/.test(p))
   return palabras.slice(0, 3).join(' ')
 }
 
 // Prefijos del banco que no forman parte del nombre (para presentar).
 const PREFIJOS = new Set(`compra compras pago pagos tarjeta tarj tj tjt recibo adeudo cargo domiciliacion transaccion operacion contactless paypal sumup zettle izettle stripe sq redsys tpv xxxx devolucion devoluciones reembolso reembolsos abono anulacion anulada refund`.split(' '))
 
+// Conectores que el banco pone DELANTE del nombre ("PAGO CON TARJETA EN BAR
+// PACO", "TRANSFERENCIA A FAVOR DE ANTONIO", "Payment from Empresa"). Solo se
+// quitan al principio: "Bar La Esquina" conserva su "La".
+const DELANTE = new Set('con en de del a al favor emitida emitido recibida recibido transferencia transf trf from to payment'.split(' '))
+
+const SOCIEDAD = new Set('sl sa slu sau slne sll sc cb'.split(' '))
+
+// Texto del banco en minúsculas y mayúsculas (ING, Revolut): se respeta tal
+// cual, quitando solo lo que el banco pone delante y la forma societaria.
+const ENTRADILLA = /^(pago (con tarjeta )?en|compra en|transferencia (emitida|recibida)( a| de)?|transferencia a favor de|payment from|card payment to|to|from)\s+/i
+export function sinEntradilla(texto) {
+  let t = String(texto).trim().replace(ENTRADILLA, '')
+  t = t.replace(/^nómina recibida\b/i, 'Nómina').replace(/[\s,]+(s\.?\s?l\.?u?|s\.?\s?a\.?u?)$/i, '')
+  return t.trim() || String(texto).trim()
+}
+
 function presentable(texto) {
   const palabras = normalizarTexto(texto)
     .split(' ')
     .map((p) => p.replace(/\d+/g, ''))
-    .filter((p) => p && !PREFIJOS.has(p))
+    .filter((p) => p && !PREFIJOS.has(p) && !/^x{2,}$/.test(p)) // "5402XXXXXXXX1234" (tarjeta enmascarada)
+  while (palabras.length > 1 && DELANTE.has(palabras[0])) palabras.shift()
+  while (palabras.length > 1 && SOCIEDAD.has(palabras.at(-1))) palabras.pop()
   return bonito(palabras.slice(0, 5).join(' '))
 }
 
@@ -206,12 +227,29 @@ const MARCAS = [
   ['Shopify', /shopify/],
   ['Bizum', /^bizum$/], // solo si no hay nadie más en el concepto
 ]
+const NOMBRES_MARCA = [...new Set(MARCAS.map(([n]) => n))]
 
 export function marcaDe(texto) {
   const t = normalizarTexto(texto)
   const conPuntos = String(texto ?? '').toLowerCase()
   for (const [nombre, patron] of MARCAS) if (patron.test(t) || patron.test(conPuntos)) return nombre
   return null
+}
+
+/**
+ * Nombre que queda cuando el usuario escribe un comercio a mano: uno que ya
+ * tiene (aunque lo escriba con errata), una marca conocida ("mercadoma" →
+ * "Mercadona") o lo escrito con mayúscula inicial ("bar paco" → "Bar Paco").
+ * Devuelve { nombre, de: 'tuyo' | 'marca' | 'escrito', corregido }.
+ */
+export function nombreParaComercio(texto, conocidos = []) {
+  const limpio = String(texto ?? '').trim().replace(/\s+/g, ' ')
+  if (!limpio) return { nombre: '', de: 'escrito', corregido: false }
+  const tuyo = buscarParecido(limpio, conocidos, (x) => x)
+  if (tuyo) return { nombre: tuyo.item, de: 'tuyo', corregido: !tuyo.exacto }
+  const marca = marcaDe(limpio) ?? buscarParecido(limpio, NOMBRES_MARCA, (x) => x)?.item
+  if (marca) return { nombre: marca, de: 'marca', corregido: normalizarTexto(marca) !== normalizarTexto(limpio) }
+  return { nombre: nombrePropio(limpio), de: 'escrito', corregido: false }
 }
 
 // ── Directorio: memoria del usuario + marcas + lo apuntado ───────────────────
@@ -261,7 +299,7 @@ export function crearDirectorio(alias = []) {
     if (!texto) return { nombre: '', clave: '', categoria: null, origen: 'vacio' }
     // Texto libre: si viene EN MAYÚSCULAS del banco, presentable.
     const enMayusculas = /[A-ZÁÉÍÓÚÑ]/.test(texto) && texto === texto.toUpperCase()
-    return { nombre: (enMayusculas && presentable(texto)) || texto, clave, categoria: null, origen: 'texto' }
+    return { nombre: (enMayusculas ? presentable(texto) : sinEntradilla(texto)) || texto, clave, categoria: null, origen: 'texto' }
   }
 
   return {

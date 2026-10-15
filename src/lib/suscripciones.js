@@ -9,6 +9,7 @@
 
 import { centimosDe, esConsumo, hoyIso } from './movimientosUtils'
 import { grupoComercio, nombreComercio } from './comercios'
+import { esDelFijo } from './conciliarFijos'
 
 const DIA_MS = 86400000
 
@@ -55,6 +56,15 @@ function proximaPorMeses(fechaIso, meses) {
 }
 
 // Periodicidades reconocidas: [nombre, días típicos, rango aceptado, cargos/año].
+// ¿La mayoría de los cargos caen a ±4 días del día habitual? (el 30 y el 2 están
+// a 2 días: el mes da la vuelta; y un cargo del 31 en febrero cae el 28).
+function mismoDiaDelMes(cargos) {
+  const dias = cargos.map((m) => Number(m.fecha.slice(8, 10)))
+  const ref = mediana(dias)
+  const cerca = dias.filter((d) => Math.min(Math.abs(d - ref), 30 - Math.abs(d - ref)) <= 4).length
+  return cerca / dias.length >= 0.75
+}
+
 const PERIODOS = [
   { id: 'mensual', meses: 1, dias: 30, min: 26, max: 35, porAnio: 12, minCargos: 3 },
   { id: 'bimestral', meses: 2, dias: 61, min: 55, max: 67, porAnio: 6, minCargos: 3 },
@@ -76,8 +86,15 @@ function yaSeguido(grupo, recurrentes) {
     (r) =>
       (r.fuenteId && grupo.fuenteId && r.fuenteId === grupo.fuenteId) ||
       grupoComercio(r.nombre) === grupo.clave ||
-      normalizarComercio(r.nombre) === grupo.clave,
+      normalizarComercio(r.nombre) === grupo.clave ||
+      // El fijo "Gimnasio" ya es el cargo "BASIC FIT" (mismo sitio e importe parecido).
+      (grupo.ultimo && esDelFijo(r, grupo.ultimo) && importeParecido(r, grupo.ultimo)),
   )
+}
+
+const importeParecido = (r, m) => {
+  const objetivo = Math.round(Number(r.importe) * 100)
+  return objetivo > 0 && Math.abs(centimosDe(m) - objetivo) / objetivo <= 0.5
 }
 
 /**
@@ -121,6 +138,9 @@ export function detectarSuscripciones(movimientos, recurrentes = [], opciones = 
     // mes saltado o un cobro adelantado).
     const regulares = intervalos.filter((d) => d >= periodo.min * 0.75 && d <= periodo.max * 1.25).length
     if (regulares / intervalos.length < 0.75) continue
+    // Un cargo periódico cae (casi) el mismo día del mes. Ir al bar o comprar en
+    // Amazon una vez al mes en días distintos no es una suscripción.
+    if (periodo.meses <= 3 && !mismoDiaDelMes(porDia.slice(-6))) continue
 
     // Importe estable (una suscripción no cambia mucho de un mes a otro). Se
     // miran los últimos cargos para tolerar subidas de precio antiguas.
@@ -135,7 +155,7 @@ export function detectarSuscripciones(movimientos, recurrentes = [], opciones = 
     if (diasEntre(ultimo.fecha, hoy) > periodo.dias * 1.5 + 5) continue
 
     const fuenteId = ultimo.fuente_id ?? ultimo.fuente?.id ?? null
-    const grupo = { clave, fuenteId }
+    const grupo = { clave, fuenteId, ultimo }
     if (yaSeguido(grupo, recurrentes)) continue
 
     const importeCent = cent.at(-1)

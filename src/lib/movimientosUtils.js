@@ -1,4 +1,4 @@
-import { esAjuste, esDevolucion, esInversion, esTraspaso } from './categorias'
+import { esAjuste, esDevolucion, esInversion, esRetiradaInversion, esTraspaso } from './categorias'
 import { directorio } from './comercios'
 import { reglaPara } from './categorizar'
 import { aCentimos, aEuros } from './importe'
@@ -222,8 +222,9 @@ export function totalesDe(movimientos) {
     const importe = centimosDe(m)
     // Una devolución no es un ingreso: es un contra-gasto (MOTOR.md E6).
     if (esDevolucion(m)) gastos -= importe
+    // Inversión neta: aportar suma, retirar (ingreso "Inversion") resta.
+    else if (esInversion(m)) invertido += m.tipo === 'ingreso' ? -importe : importe
     else if (m.tipo === 'ingreso') ingresos += importe
-    else if (esInversion(m)) invertido += importe
     else gastos += importe
   }
   const ahorro = ingresos - gastos
@@ -252,7 +253,11 @@ export function bolsas(movimientos, hasta = null) {
   let liquidez = 0 // ingresos − gastos − invertido (+ ajustes)
   let invertido = 0
   let ajusteTotal = 0
-  for (const m of movimientos) {
+  // Las retiradas dependen de lo invertido HASTA ESE DÍA: entonces se recorre en orden de fecha.
+  const lista = movimientos.some(esRetiradaInversion)
+    ? [...movimientos].sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : (a.tipo === 'ingreso') - (b.tipo === 'ingreso')))
+    : movimientos
+  for (const m of lista) {
     if (hasta && m.fecha > hasta) continue
     // Traspaso a tu ahorro: sale de una cuenta tuya y entra en otra tuya, el
     // patrimonio no cambia (E4). Sigue siendo liquidez.
@@ -262,6 +267,14 @@ export function bolsas(movimientos, hasta = null) {
       const signo = m.tipo === 'ingreso' ? 1 : -1
       ajusteTotal += signo * importe
       liquidez += signo * importe
+      continue
+    }
+    if (esRetiradaInversion(m)) {
+      // Vuelve a liquidez lo que sacas. Sale de la bolsa de inversión a coste;
+      // si sacas más de lo que Palanca sabe que aportaste, el exceso es
+      // ganancia (o inversión anterior a tus datos): entra en el patrimonio (E3).
+      liquidez += importe
+      invertido -= Math.min(importe, invertido)
       continue
     }
     if (m.tipo === 'ingreso') liquidez += importe

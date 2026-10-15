@@ -25,6 +25,8 @@ export const CATEGORIA_AJUSTE = 'Ajuste'
 // ratio de ahorro y NO cambia el patrimonio (contrato MOTOR.md E4, traspaso
 // neutro). Solución provisional por nombre hasta la Fase 2 (nodos/cuentas).
 export const CATEGORIA_TRASPASO = 'Ahorro'
+// Y su vuelta: traer dinero de tu cuenta de ahorro a la corriente (ingreso).
+export const CATEGORIA_DESDE_AHORRO = 'Desde ahorro'
 
 // Categoría de DEVOLUCIONES (reembolsos de compras). Una devolución NO es un
 // ingreso (MOTOR.md E6): es un CONTRA-GASTO. Resta del gasto de consumo (de la
@@ -67,10 +69,20 @@ export function esAjuste(movimiento) {
   return movimiento.categoria?.nombre === CATEGORIA_AJUSTE
 }
 
-// Solo los de tipo gasto: un INGRESO llamado "Ahorro" (p. ej. intereses) sigue
-// siendo un ingreso normal.
+// Un traspaso entre tus cuentas, en cualquier sentido:
+//  - gasto "Ahorro": apartas dinero a tu cuenta de ahorro;
+//  - ingreso "Desde ahorro": lo traes de vuelta.
+// Un INGRESO llamado "Ahorro" (p. ej. intereses) sigue siendo un ingreso normal.
 export function esTraspaso(movimiento) {
-  return movimiento.tipo === 'gasto' && movimiento.categoria?.nombre === CATEGORIA_TRASPASO
+  const n = movimiento.categoria?.nombre
+  return movimiento.tipo === 'gasto' ? n === CATEGORIA_TRASPASO : n === CATEGORIA_DESDE_AHORRO
+}
+
+// Retirada de inversión (vendes o rescatas un fondo): ingreso con categoría
+// "Inversion". Pasa dinero de la bolsa de inversión a la de liquidez (E4): ni
+// ingreso ni gasto, y el patrimonio no cambia (salvo la ganancia, ver bolsas()).
+export function esRetiradaInversion(movimiento) {
+  return movimiento.tipo === 'ingreso' && esInversion(movimiento)
 }
 
 // Color ESTABLE para una categoría (paleta --cat-1..6 de index.css), para un
@@ -86,6 +98,9 @@ export function colorDeCategoria(nombre) {
 // Nombre para MOSTRAR de una categoría: las de serie se guardan sin tilde
 // ("Nomina", "Inversion": son claves de la lógica); en pantalla, bien escritas.
 const ETIQUETAS_CATEGORIA = { Nomina: 'Nómina', Inversion: 'Inversión' }
-export function etiquetaCategoria(nombre) {
+export function etiquetaCategoria(nombre, tipo) {
+  // Con el tipo, los reservados de "vuelta" se explican solos.
+  if (tipo === 'ingreso' && nombre === CATEGORIA_INVERSION) return 'Retirada de inversión'
+  if (nombre === CATEGORIA_DESDE_AHORRO) return 'Desde tu ahorro'
   return ETIQUETAS_CATEGORIA[nombre] ?? nombre ?? 'Sin categoría'
 }

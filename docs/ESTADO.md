@@ -79,6 +79,16 @@ calendario, avisos) y el **rediseño visual v2** (ver DISENO.md). Además
 inicio) y **datos de ejemplo + demo rápida** para usuarios nuevos. Detalle en
 PANTALLAS.md §3 y §4b.
 
+**2026-10-15 (noche) — Motor rematado con clientes simulados (en `develop`):** 5 clientes con un año real de su banco (BBVA, Santander, CaixaBank, ING, Revolut) y 2 recorridos completos en el navegador (52 comprobaciones). Corregido:
+- **Santander y Revolut no importaban nada** (importes `-32,57 EUR`; fechas "Started Date", tipo `CARD_PAYMENT`). Ahora sí, y los pagos revertidos no entran.
+- **ING inflaba el gasto en 10.000 €/año**: sus categorías ("Inversiones", "Movimientos excluidos") contaban como gasto y duplicaban las nuestras. Ahora son solo una pista, traducida.
+- **Traer dinero del ahorro** ya no es ingreso (`Desde ahorro`), y **retirar de una inversión** ya no es ingreso ni duplica el patrimonio (Inversión → "Aportar / Retirar").
+- Fijos genéricos ("Gimnasio") reconocen el cargo de su marca ("BASIC FIT") y dejan de proponerlo como detectado; las suscripciones exigen el mismo día del mes (el bar no es una suscripción).
+- Fulcro: "¿cuánto he invertido?" descuenta retiradas; "¿cuánto he ahorrado este mes?" si la nómina aún no ha llegado, dice también el mes pasado.
+- Revisión de la importación: primero lo no reconocido y lo que más dinero mueve (traspasos, inversiones). Nombres sin "Pago en", "To" ni tarjetas.
+- Nombres con mayúscula ("lucía" → "Lucía", "mercadona" → "Mercadona"). Ajustar saldo admite descubierto y aclara que se suma la cuenta de ahorro.
+- Descargar mis datos (CSV) y reimportarlo da las mismas cifras al céntimo.
+
 **2026-10-15 (tarde) — Motor conectado: identidad de comercios (en `develop`):** detalle en [IDENTIDAD.md](IDENTIDAD.md).
 - **Un comercio, un nombre en toda la app**: «ALIPAM23», «ALIPAM77» y «mercadoma» se reconocen como Mercadona (mayúsculas, acentos, erratas, plurales, números del banco).
 - **Memoria por usuario** (`comercios_alias`): lo que el cliente corrige una vez se aplica solo en el siguiente extracto («Reconocido»).

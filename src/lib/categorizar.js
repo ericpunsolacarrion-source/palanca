@@ -16,10 +16,14 @@ const R = (patron, categoria, extra = {}) => ({ patron, categoria, ...extra })
 
 // El orden importa: lo específico antes que lo genérico ("amazon prime" antes
 // que "amazon", "repsol luz" antes que "repsol").
+// Movimientos entre tus propias cuentas (en cualquier sentido).
+const TRASPASO_PROPIO = /traspaso|transferencia (a|entre) (mi|cuentas propias)|cuenta (de )?ahorro|cuenta naranja|\bsavings\b|\bvault\b|\bhucha\b|entre cuentas|cuentas propias/
+const BROKERS = /myinvestor|indexa|trade republic|degiro|interactive brokers|finizens|inbestme|openbank broker|fondo indexado|aportacion plan|plan de pensiones|bitpanda|coinbase|binance|revolut invest/
+
 const REGLAS_GASTO = [
   // Ahorro e inversión (no son consumo)
-  R(/traspaso|transferencia (a|entre) (mi|cuentas propias)|a cuenta ahorro|hucha/, 'Ahorro'),
-  R(/myinvestor|indexa|trade republic|degiro|interactive brokers|finizens|inbestme|openbank broker|fondo indexado|aportacion plan|plan de pensiones|bitpanda|coinbase|binance|revolut invest/, 'Inversion'),
+  R(TRASPASO_PROPIO, 'Ahorro'),
+  R(BROKERS, 'Inversion'),
   // Energía (negociable)
   R(/repsol (luz|electricidad|gas|vivit)|iberdrola|endesa|naturgy|totalenergies|holaluz|octopus|lucera|som energia|\bedp\b|curenergia|baser|factor energia|energia xxi|\bpodo\b|imagina energia|electricidad|\bluz\b|gas natural|butano/, 'Suministros', { fijo: 'recibo', negociable: 'energia' }),
   // Agua (no se cambia de compañía)
@@ -59,12 +63,17 @@ const REGLAS_GASTO = [
 ]
 
 const REGLAS_INGRESO = [
+  // Intereses y dividendos SÍ son ingreso, aunque vengan de tu cuenta de ahorro o del bróker.
+  R(/intereses|dividendo|remuneracion cuenta|cupon/, 'Intereses'),
+  // Luego lo que NO es ingreso: tu dinero que vuelve de tu ahorro o de una
+  // inversión ("REEMBOLSO FONDO" no es una devolución de compra).
+  R(TRASPASO_PROPIO, 'Desde ahorro'),
+  R(BROKERS, 'Inversion'),
   R(/nomina|salario|\bpaga\b|haberes/, 'Nomina'),
   R(/pension|jubilacion|seguridad social|\binss\b/, 'Pensión'),
   R(/desempleo|\bsepe\b|prestacion/, 'Prestaciones'),
   R(/devolucion|reembolso|abono compra|refund/, 'Devoluciones'),
-  R(/intereses|dividendo|remuneracion cuenta/, 'Intereses'),
-  R(/bizum|transferencia|traspaso/, 'Transferencias'),
+  R(/bizum|transferencia/, 'Transferencias'),
 ]
 
 const sinAcentos = (t) =>
@@ -72,6 +81,41 @@ const sinAcentos = (t) =>
     .toLowerCase()
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
+
+// Categorías que ponen los bancos (ING, BBVA, Revolut…) → las de Palanca. Se
+// usan solo como pista cuando ni la memoria, ni tu historial, ni las reglas
+// reconocen el comercio.
+const CATEGORIAS_BANCO = [
+  [/aliment|supermerc|groceries/, 'Comida'],
+  [/restaura|bares|comida fuera|restaurants/, 'Restaurantes'],
+  [/vehiculo|transporte|gasolin|combustible|transport/, 'Transporte'],
+  [/hogar|vivienda|alquiler|hipoteca/, 'Vivienda'],
+  [/recibos|suministro|utilities|telefon|internet/, 'Suministros'],
+  [/seguro/, 'Seguros'],
+  [/salud|farmacia|health|bienestar/, 'Salud'],
+  [/viaje|travel|hotel/, 'Viajes'],
+  [/ocio|entretenimiento|entertainment|cultura/, 'Ocio'],
+  [/compras|shopping|ropa/, 'Compras'],
+  [/educacion|formacion|education/, 'Educación'],
+  [/impuesto|tasas|taxes/, 'Impuestos'],
+  [/efectivo|cajero|cash/, 'Efectivo'],
+  [/suscripcion|subscription/, 'Suscripciones'],
+  [/inversion|investment/, 'Inversion'],
+  [/excluido|traspaso|transfers? between|entre cuentas/, 'Ahorro'],
+  [/nomina|salario|salary/, 'Nomina'],
+]
+export function categoriaDesdeBanco(nombre, tipo = 'gasto') {
+  const t = sinAcentos(nombre).trim()
+  if (!t) return null
+  const hit = CATEGORIAS_BANCO.find(([re]) => re.test(t))?.[1]
+  if (!hit) return String(nombre).trim()
+  if (tipo === 'ingreso') {
+    if (hit === 'Ahorro') return 'Desde ahorro'
+    if (hit === 'Nomina' || hit === 'Inversion') return hit
+    return null // "Compras" como ingreso de ING (una devolución) lo decide la regla
+  }
+  return hit === 'Nomina' ? null : hit
+}
 
 // Busca la primera regla que encaja con el concepto.
 export function reglaPara(concepto, tipo = 'gasto') {

@@ -9,7 +9,8 @@
 import { centimosDe, claveMes } from './movimientosUtils'
 import { esAjuste, esTraspaso } from './categorias'
 import { fechaCobroEnMes, tocaEnMes } from './periodicidad'
-import { claveComercio, directorio, mismaEtiqueta, normalizarTexto } from './comercios'
+import { claveComercio, directorio, marcaDe, mismaEtiqueta, normalizarTexto } from './comercios'
+import { reglaPara } from './categorizar'
 
 const pad = (n) => String(n).padStart(2, '0')
 const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -26,9 +27,15 @@ export function esDelFijo(rec, m, dir = directorio()) {
   const delFijo = claveComercio(rec.nombre).split(' ').filter((p) => p.length >= 3)
   // Todas las palabras del fijo en el concepto ("Seguro moto" ⊂ "SEGURO MOTO MAPFRE")…
   if (contiene(normalizarTexto(`${nombreMov} ${m.nota ?? ''} ${m.fuente?.nombre ?? ''}`), delFijo)) return true
-  // …o el comercio real del movimiento dentro del nombre del fijo ("Iberdrola" ⊂ "Luz Iberdrola").
+  // …o el comercio real del movimiento dentro del nombre del fijo ("Iberdrola" ⊂ "Luz Iberdrola")…
   const delMov = normalizarTexto(nombreMov).split(' ').filter((p) => p.length >= 4)
-  return contiene(normalizarTexto(rec.nombre), delMov)
+  if (contiene(normalizarTexto(rec.nombre), delMov)) return true
+  // …o el mismo TIPO de recibo: un fijo llamado "Gimnasio" y el cargo "BASIC-FIT",
+  // "Luz" e "IBERDROLA" (la misma regla del diccionario, de recibo o suscripción).
+  // Solo si el fijo tiene nombre genérico: un fijo "Netflix" nunca se queda con el cargo de Spotify.
+  if (marcaDe(rec.nombre)) return false
+  const delNombre = reglaPara(rec.nombre)
+  return Boolean(delNombre?.fijo && delNombre === (reglaPara(m.nota ?? '') ?? reglaPara(nombreMov ?? '')))
 }
 
 /**

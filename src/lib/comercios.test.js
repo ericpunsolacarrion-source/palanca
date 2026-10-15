@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buscarParecido, claveComercio, crearDirectorio, distancia, marcaDe, mismaEtiqueta } from './comercios'
+import { buscarParecido, claveComercio, crearDirectorio, distancia, marcaDe, mismaEtiqueta, nombreParaComercio } from './comercios'
 
 describe('mismaEtiqueta: mayúsculas, acentos, plural, espacios', () => {
   it.each([
@@ -90,5 +90,19 @@ describe('directorio: memoria del usuario (el caso ALIPAM23)', () => {
   it('la memoria manda sobre la marca (el usuario tiene la última palabra)', () => {
     const d = crearDirectorio([{ clave: 'amazon', nombre: 'Regalos Amazon' }])
     expect(d.nombreDe('AMAZON')).toBe('Regalos Amazon')
+  })
+})
+
+describe('nombreParaComercio: lo que escribe el usuario a mano', () => {
+  it('uno que ya tiene, aunque lo escriba con errata', () => {
+    expect(nombreParaComercio('bar pacoo', ['Bar Paco'])).toEqual({ nombre: 'Bar Paco', de: 'tuyo', corregido: true })
+  })
+  it('una marca conocida, en minúsculas o con errata', () => {
+    expect(nombreParaComercio('mercadona')).toMatchObject({ nombre: 'Mercadona', de: 'marca' })
+    expect(nombreParaComercio('mercadoma')).toMatchObject({ nombre: 'Mercadona', corregido: true })
+  })
+  it('si no, con mayúscula inicial (y respetando lo que ya trae forma)', () => {
+    expect(nombreParaComercio('frutería lola').nombre).toBe('Frutería Lola')
+    expect(nombreParaComercio('La Tagliatella').nombre).toBe('La Tagliatella')
   })
 })

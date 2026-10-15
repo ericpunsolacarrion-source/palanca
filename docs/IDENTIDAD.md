@@ -32,7 +32,12 @@ De cualquier texto del banco se saca una clave estable:
 - Al crear una categoría o un concepto nuevo, si ya existe igual se reutiliza
   y si es parecido se pregunta «¿Querías decir X?» (`SelectorEtiqueta`).
 
-## 5. La memoria (`comercios_alias`)
+## 5. Lo que escribe el usuario (`nombreParaComercio`)
+Al renombrar en la importación o editar en el historial: uno que ya tiene (con
+errata incluida) → una marca conocida ("mercadoma" → "Mercadona") → lo escrito
+con mayúscula inicial ("bar paco" → "Bar Paco").
+
+## 5b. La memoria (`comercios_alias`)
 Tabla `(usuario_id, clave, nombre, categoria)` con RLS (cada uno solo ve las suyas),
 en `supabase-schema-metricas.sql` §8. Se borra con la cuenta y sale en «Descargar mis datos».
 Sin el SQL, se guarda en el dispositivo (`palanca_comercios_<uid>`) y se sube sola
@@ -54,7 +59,26 @@ A partir de ahí, el siguiente extracto con «ALIPAM55» sale como **Mercadona �
 | Suscripciones detectadas | agrupa cargos aunque el código cambie cada mes |
 | Buscador, listas, Inicio, Fulcro | muestran y encuentran «Mercadona», nunca «ALIPAM23» |
 
-## 7. Contabilidad conectada
+## 7. Extractos de cada banco (probados con clientes simulados)
+`src/lib/clientesSimulados.js` genera un año de vida real de 5 clientes con el
+extracto TAL CUAL lo exporta su banco; `clientesSimulados.test.js` comprueba que,
+tras importarlo, Palanca dice exactamente lo que pasó (al céntimo).
+
+| Banco | Formato | Lo que había que entender |
+|---|---|---|
+| BBVA | `;`, líneas del banco antes de la tabla, "PAGO CON TARJETA EN …" | nombres limpios ("Bar Paco", no "Con En Bar Paco") |
+| Santander | importes `-32,57 EUR`, tarjeta `5402XXXXXXXX1234` | el código de moneda y la tarjeta enmascarada |
+| CaixaBank | columnas Cargo / Abono sin signo | el lado decide gasto o ingreso |
+| ING | trae SU categoría ("Alimentación", "Movimientos excluidos") | solo como pista, traducida a la de Palanca (`categoriaDesdeBanco`) |
+| Revolut | inglés, comas, "Started Date", tipo `CARD_PAYMENT`, estado `REVERTED` | fecha, tipo inservible ignorado, operaciones no completadas fuera |
+
+En todos: traspasos a y desde la cuenta de ahorro (neutros), aportaciones y
+**retiradas** de inversión ("REEMBOLSO FONDO" no es una devolución de compra),
+devoluciones, intereses y dividendos (sí son ingreso). Reimportar el mismo
+extracto no duplica nada, y "Descargar mis datos" en CSV se reimporta con las
+mismas cifras exactas (ida y vuelta).
+
+## 8. Contabilidad conectada
 - **Devoluciones** (`esDevolucion`): un ingreso «Devolución/Reembolso» **no es ingreso**,
   resta gasto, y en el desglose resta de la categoría del comercio que devuelve
   (MOTOR.md E6). El patrimonio sí lo cuenta como dinero que entra.

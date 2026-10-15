@@ -27,7 +27,9 @@ function historial(n, hoy) {
     else if (r < 0.65) movs.push({ ...base, tipo: 'ingreso', nota: 'NOMINA', categoria: { nombre: 'Nomina' } })
     else if (r < 0.72) movs.push({ ...base, tipo: 'gasto', nota: 'Indexa', categoria: { nombre: 'Inversion' } })
     else if (r < 0.78) movs.push({ ...base, tipo: 'gasto', nota: 'Traspaso', categoria: { nombre: 'Ahorro' } })
-    else if (r < 0.86) movs.push({ ...base, tipo: elegir(['ingreso', 'gasto']), nota: 'Ajuste', categoria: { nombre: 'Ajuste' } })
+    else if (r < 0.83) movs.push({ ...base, tipo: elegir(['ingreso', 'gasto']), nota: 'Ajuste', categoria: { nombre: 'Ajuste' } })
+    else if (r < 0.86) movs.push({ ...base, tipo: 'ingreso', nota: 'TRASPASO DESDE CUENTA AHORRO', categoria: { nombre: 'Desde ahorro' } })
+    else if (r < 0.88) movs.push({ ...base, tipo: 'ingreso', nota: 'REEMBOLSO FONDO INDEXA', categoria: { nombre: 'Inversion' } })
     else movs.push({ ...base, tipo: 'ingreso', nota: `DEVOLUCION ${elegir(COMERCIOS)}`, categoria: { nombre: 'Devoluciones' } })
   }
   return movs
@@ -45,18 +47,31 @@ describe('invariantes del motor (fuzz)', () => {
       const movs = historial(60, HOY)
       const vig = movs.filter((m) => m.fecha <= hoy)
       // Entran: ingresos (nómina, devoluciones, ajustes +). Salen: consumo y ajustes −.
-      // Inversión y traspasos son entre bolsas propias: no salen del patrimonio (E4).
-      const entradas = suma(vig.filter((m) => m.tipo === 'ingreso'))
+      // Inversión, retiradas y traspasos son entre bolsas propias: no cruzan la
+      // frontera (E4)… salvo lo que se retira POR ENCIMA de lo aportado hasta
+      // ese día, que es ganancia que entra.
+      const entradas = suma(vig.filter((m) => m.tipo === 'ingreso' && !esCat(m, 'Inversion') && !esCat(m, 'Desde ahorro')))
       const salidas = suma(vig.filter((m) => m.tipo === 'gasto' && !esCat(m, 'Inversion') && !esCat(m, 'Ahorro')))
-      expect(Math.round(bolsas(movs, hoy).patrimonio * 100)).toBe(entradas - salidas)
+      let bolsaInv = 0
+      let ganancia = 0
+      const orden = vig.filter((m) => esCat(m, 'Inversion')).sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : (a.tipo === 'ingreso') - (b.tipo === 'ingreso')))
+      for (const m of orden) {
+        if (m.tipo === 'gasto') bolsaInv += centimosDe(m)
+        else (ganancia += Math.max(0, centimosDe(m) - bolsaInv)), (bolsaInv = Math.max(0, bolsaInv - centimosDe(m)))
+      }
+      const b = bolsas(movs, hoy)
+      expect(Math.round(b.patrimonio * 100)).toBe(entradas - salidas + ganancia)
+      expect(Math.round(b.bolsaInversion * 100)).toBe(bolsaInv)
+      expect(b.bolsaInversion).toBeGreaterThanOrEqual(0)
     }
   })
 
-  it('N2/E4: un traspaso al ahorro o una inversión nunca cambian el patrimonio', () => {
+  it('N2/E4: un traspaso (en cualquier sentido) o una inversión nunca cambian el patrimonio', () => {
     for (let k = 0; k < 200; k += 1) {
       const movs = historial(40, HOY)
       const antes = bolsas(movs, hoy).patrimonio
-      const extra = { id: 'x', tipo: 'gasto', fecha: hoy, importe: 123.45, importe_centimos: 12345, categoria: { nombre: elegir(['Ahorro', 'Inversion']) } }
+      const [tipo, cat] = elegir([['gasto', 'Ahorro'], ['gasto', 'Inversion'], ['ingreso', 'Desde ahorro']])
+      const extra = { id: 'x', tipo, fecha: hoy, importe: 123.45, importe_centimos: 12345, categoria: { nombre: cat } }
       expect(bolsas([...movs, extra], hoy).patrimonio).toBe(antes)
     }
   })
@@ -65,9 +80,11 @@ describe('invariantes del motor (fuzz)', () => {
     for (let k = 0; k < 400; k += 1) {
       const movs = historial(60, HOY)
       const t = totalesDe(movs)
-      const flujo = movs.filter((m) => !esCat(m, 'Ajuste') && !(m.tipo === 'gasto' && esCat(m, 'Ahorro')))
-      const ingresos = suma(flujo.filter((m) => m.tipo === 'ingreso' && !esDevolucion(m)))
+      const flujo = movs.filter((m) => !esCat(m, 'Ajuste') && !(m.tipo === 'gasto' && esCat(m, 'Ahorro')) && !esCat(m, 'Desde ahorro'))
+      const ingresos = suma(flujo.filter((m) => m.tipo === 'ingreso' && !esDevolucion(m) && !esCat(m, 'Inversion')))
       const gastos = suma(flujo.filter((m) => m.tipo === 'gasto' && !esCat(m, 'Inversion'))) - suma(flujo.filter(esDevolucion))
+      const invertido = suma(flujo.filter((m) => m.tipo === 'gasto' && esCat(m, 'Inversion'))) - suma(flujo.filter((m) => m.tipo === 'ingreso' && esCat(m, 'Inversion')))
+      expect(Math.round(t.invertido * 100)).toBe(invertido)
       expect(Math.round(t.ingresos * 100)).toBe(ingresos)
       expect(Math.round(t.gastos * 100)).toBe(gastos)
       expect(Math.round(t.ahorro * 100)).toBe(ingresos - gastos)
@@ -127,6 +144,31 @@ describe('invariantes del motor (fuzz)', () => {
         expect(t).toContain(`**${formatearEuros(gastos)}**`)
       }
     }
+  })
+})
+
+describe('retiradas de inversión y vuelta del ahorro (casos concretos)', () => {
+  const m = (tipo, cat, importe, fecha) => ({ tipo, fecha, importe, importe_centimos: Math.round(importe * 100), nota: '', fuente: null, categoria: { nombre: cat } })
+  it('rescatar un fondo pasa el dinero a liquidez: ni ingreso ni cambio de patrimonio', () => {
+    const movs = [m('ingreso', 'Nomina', 2000, '2026-01-01'), m('gasto', 'Inversion', 1000, '2026-01-02'), m('ingreso', 'Inversion', 400, '2026-03-01')]
+    expect(totalesDe(movs)).toMatchObject({ ingresos: 2000, gastos: 0, invertido: 600, ahorro: 2000 })
+    expect(bolsas(movs)).toMatchObject({ bolsaInversion: 600, bolsaLiquidez: 1400, patrimonio: 2000 })
+  })
+  it('sacar más de lo aportado: el exceso es ganancia y la bolsa no queda negativa', () => {
+    const movs = [m('gasto', 'Inversion', 1000, '2026-01-02'), m('ingreso', 'Inversion', 1250, '2026-06-01')]
+    expect(bolsas(movs)).toMatchObject({ bolsaInversion: 0, patrimonio: 250 })
+  })
+  it('el orden de fecha manda, no el de la lista', () => {
+    const movs = [m('ingreso', 'Inversion', 500, '2026-06-01'), m('gasto', 'Inversion', 500, '2026-01-01')]
+    expect(bolsas(movs)).toMatchObject({ bolsaInversion: 0, patrimonio: 0 })
+  })
+  it('traer dinero de tu cuenta de ahorro no es un ingreso', () => {
+    const movs = [m('ingreso', 'Nomina', 1500, '2026-01-01'), m('gasto', 'Ahorro', 500, '2026-01-02'), m('ingreso', 'Desde ahorro', 300, '2026-02-01')]
+    expect(totalesDe(movs)).toMatchObject({ ingresos: 1500, gastos: 0, ahorro: 1500 })
+    expect(bolsas(movs).patrimonio).toBe(1500)
+  })
+  it('un ingreso llamado "Ahorro" (intereses) sigue siendo ingreso', () => {
+    expect(totalesDe([m('ingreso', 'Ahorro', 12, '2026-01-01')]).ingresos).toBe(12)
   })
 })
 

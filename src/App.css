@@ -1299,6 +1299,21 @@ button[type='submit']:disabled {
   gap: var(--sp-2);
 }
 
+.patrimonio-negativo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.patrimonio-negativo input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
 /* Importador CSV */
 .importador {
   gap: var(--sp-4);

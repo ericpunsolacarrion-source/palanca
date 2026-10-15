@@ -30,9 +30,18 @@ No recalcular a mano en componentes: usar siempre estas utilidades.
 - **Traspaso a ahorro** = tipo `gasto` con categoría `Ahorro` (`esTraspaso()`):
   apartar dinero a tu cuenta de ahorro. Neutro: ni gasto, ni ingreso, no cambia
   el patrimonio (MOTOR.md E4). Ya no se crea de serie en el onboarding.
+- **Vuelta del ahorro** = tipo `ingreso` con categoría `Desde ahorro`
+  (también `esTraspaso()`): traes dinero de tu cuenta de ahorro. Neutro, como
+  el traspaso de ida: ni ingreso ni cambio de patrimonio.
 - **Inversión** = movimientos de tipo `gasto` con categoría `Inversion`
   (`esInversion()` en `src/lib/categorias.js`). Se muestra en dorado, nunca
   como gasto negativo.
+- **Retirada de inversión** = tipo `ingreso` con categoría `Inversion`
+  (`esRetiradaInversion()`): vender o rescatar. Resta de lo invertido y suma
+  a la liquidez; no es ingreso y el patrimonio no cambia, salvo lo retirado
+  por encima de lo aportado hasta ese día, que entra como ganancia (`bolsas()`).
+- **Devolución** = ingreso de categoría `Devoluciones`/`Reembolso`
+  (`esDevolucion()`): no es ingreso, resta gasto de la categoría del comercio.
 - **Ahorro** = ingresos − gastos de consumo. La inversión ES parte del
   ahorro (invertir no penaliza el ratio de ahorro ni agota el presupuesto).
 - **Ratio de ahorro** = ahorro / ingresos × 100 (0 si no hay ingresos).

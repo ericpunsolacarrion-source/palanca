@@ -7,6 +7,7 @@ import Icono from './Icono'
 import { crearAjuste } from '../lib/ajustes'
 import { useSaldo } from '../lib/useSaldo'
 import { toast } from '../lib/toast'
+import InputImporte from './InputImporte'
 
 const DIAS_AVISO = 45
 
@@ -48,7 +49,8 @@ function LineaPatrimonio({ serie }) {
 // liquidez con el banco (crea un ajuste visible).
 export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerInversion, soloLectura = false }) {
   const [abierto, setAbierto] = useState(false)
-  const [saldoReal, setSaldoReal] = useState('')
+  const [saldoReal, setSaldoReal] = useState(null)
+  const [enNegativo, setEnNegativo] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const { ultimaReconciliacion: ultimaMeta, marcarReconciliado } = useSaldo(usuarioId)
 
@@ -68,8 +70,9 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerIn
 
   async function confirmarAjuste(e) {
     e.preventDefault()
-    const real = Number(saldoReal)
-    if (saldoReal === '' || !Number.isFinite(real) || real < 0) return
+    // Una cuenta en descubierto también se cuadra (saldo negativo).
+    const real = Number(saldoReal) * (enNegativo ? -1 : 1)
+    if (saldoReal === null || saldoReal === '' || !Number.isFinite(real)) return
     setGuardando(true)
     const diff = Math.round((real - bolsaLiquidez) * 100) / 100
     try {
@@ -83,7 +86,8 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerIn
         if (!ok) throw new Error('No se pudo crear el ajuste')
       }
       marcarReconciliado()
-      setSaldoReal('')
+      setSaldoReal(null)
+      setEnNegativo(false)
       setAbierto(false)
       toast(Math.abs(diff) < 0.01 ? 'Tu saldo ya cuadraba' : 'Saldo reconciliado')
       onGuardado?.()
@@ -159,7 +163,8 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerIn
             >
               <h3 className="patrimonio-modal-titulo">Ajustar tu saldo líquido</h3>
               <p className="ayuda">
-                Introduce el dinero líquido que tienes ahora mismo (cuenta del banco). Compararemos
+                Suma lo que tienes ahora mismo en tus cuentas: la corriente <strong>y la de ahorro</strong>, si
+                apartas dinero ahí (para Palanca sigue siendo tuyo y disponible). Lo invertido, no. Compararemos
                 con nuestra estimación y crearemos un ajuste visible para cuadrarlo.
               </p>
               <div className="patrimonio-teorica">
@@ -167,21 +172,11 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerIn
               </div>
               <form onSubmit={confirmarAjuste} className="patrimonio-form">
                 <label htmlFor="saldo-real">Tu saldo real (€)</label>
-                <div className="campo-euro">
-                  <input
-                    id="saldo-real"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="0.01"
-                    value={saldoReal}
-                    onChange={(ev) => setSaldoReal(ev.target.value)}
-                    autoFocus
-                  />
-                  <span className="campo-euro-simbolo" aria-hidden="true">
-                    €
-                  </span>
-                </div>
+                <InputImporte id="saldo-real" value={saldoReal} onValueChange={setSaldoReal} autoFocus />
+                <label className="patrimonio-negativo">
+                  <input type="checkbox" checked={enNegativo} onChange={(ev) => setEnNegativo(ev.target.checked)} />
+                  Mi cuenta está en negativo (descubierto)
+                </label>
                 <div className="modal-acciones">
                   <button
                     type="button"
@@ -190,7 +185,7 @@ export default function Patrimonio({ usuarioId, movimientos, onGuardado, onVerIn
                   >
                     Cancelar
                   </button>
-                  <button type="submit" className="modal-confirmar" disabled={guardando || saldoReal === ''}>
+                  <button type="submit" className="modal-confirmar" disabled={guardando || saldoReal === null || saldoReal === ''}>
                     {guardando ? 'Ajustando…' : 'Ajustar'}
                   </button>
                 </div>

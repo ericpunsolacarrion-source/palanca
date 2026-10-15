@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
+import { nombrePropio } from '../lib/nombrePropio'
 import { createPortal } from 'react-dom'
 import { borrarCuenta } from '../lib/auth'
 import { actualizarPerfil } from '../lib/perfil'
@@ -79,7 +80,7 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
   async function handleGuardar() {
     setGuardando(true)
     const campos = {
-      nombre: nombre.trim() || null,
+      nombre: nombrePropio(nombre) || null,
       anio_nacimiento: /^\d{4}$/.test(anio) ? Number(anio) : null,
     }
     const actualizado = await actualizarPerfil(usuarioId, campos)

@@ -106,6 +106,16 @@ function periodo(t, hoy) {
 
 const enPeriodo = (p, hoyIso) => (m) => (p.tipo === 'todo' ? m.fecha <= hoyIso : m.fecha >= p.desde && m.fecha <= p.hasta && m.fecha <= hoyIso)
 
+// "¿Cuánto he ahorrado este mes?" cuando la nómina llega a final de mes: se
+// dice lo que va de mes y, para que la respuesta sirva, cómo cerró el anterior.
+function sinIngresoAun(per, tot, movimientos, hoy, hoyIso) {
+  const base = `${capital(per.etiqueta)} aún no han entrado ingresos (gastos hasta hoy: ${formatearEuros(tot.gastos)}).`
+  if (per.etiqueta !== 'este mes') return base.replace('aún no han', 'no han')
+  const ant = totalesDe(movimientos.filter(enPeriodo(periodo('el mes pasado', hoy), hoyIso)))
+  if (ant.ingresos <= 0) return base
+  return `${base} El mes pasado ahorraste **${formatearEuros(ant.ahorro)}**, el ${Math.round(ant.ratioAhorro)} % de tus ingresos.`
+}
+
 // ── El "qué": tema, categoría o comercio ──────────────────────────────────────
 // Texto en el que buscar: el comercio REAL (memoria/marca) + lo del banco + categoría.
 const textoMov = (m) => sinAcentos(`${nombreComercio(m)} ${m.nota ?? ''} ${m.fuente?.nombre ?? ''} ${m.categoria?.nombre ?? ''}`)
@@ -134,7 +144,12 @@ function resolverObjetivo(t, movimientos) {
 
   // 2. Varias palabras ("seguro de moto"): todas en el concepto.
   const todas = (m) => tokens.every((tok) => tieneToken(textoMov(m), tok))
-  if (movimientos.some(todas)) return { nombre: capital(tokens.join(' ')), filtro: todas }
+  const encontrados = movimientos.filter(todas)
+  if (encontrados.length) {
+    // Si todos son del mismo comercio, con su nombre de verdad ("Bar Paco").
+    const nombres = new Set(encontrados.map(nombreComercio).filter(Boolean))
+    return { nombre: nombres.size === 1 ? [...nombres][0] : capital(tokens.join(' ')), filtro: todas }
+  }
 
   // 3. Tema conocido ("gasolina" → Repsol, Cepsa, BP…).
   if (tokens.length === 1) {
@@ -276,11 +291,17 @@ export function respuestaLocal(pregunta, { movimientos = [], recurrentes = [], h
     if (esAhorro) {
       return tot.ingresos > 0
         ? `${capital(perUsado.etiqueta)} has ahorrado **${formatearEuros(tot.ahorro)}**: el ${Math.round(tot.ratioAhorro)} % de lo que ha entrado (${formatearEuros(tot.ingresos)} de ingresos y ${formatearEuros(tot.gastos)} de gastos).`
-        : `${capital(perUsado.etiqueta)} no han entrado ingresos, así que no hay ahorro que calcular (gastos: ${formatearEuros(tot.gastos)}).`
+        : sinIngresoAun(perUsado, tot, movimientos, hoy, hoyIso)
     }
     const inv = dentro.filter((m) => esInversion(m) && (objetivo.sin || !objetivo.filtro || objetivo.filtro(m)))
-    const totalInv = inv.reduce((s, m) => s + centimosDe(m), 0)
-    return `${capital(perUsado.etiqueta)} has invertido **${eur(totalInv)}**${objetivo.sin ? '' : ` en **${objetivo.nombre}**`} (${inv.length} ${inv.length === 1 ? 'aportación' : 'aportaciones'}).`
+    const aport = inv.filter((m) => m.tipo !== 'ingreso')
+    const retir = inv.filter((m) => m.tipo === 'ingreso')
+    const totalAport = aport.reduce((s, m) => s + centimosDe(m), 0)
+    const donde = objetivo.sin ? '' : ` en **${objetivo.nombre}**`
+    const base = `${capital(perUsado.etiqueta)} has invertido **${eur(totalAport)}**${donde} (${aport.length} ${aport.length === 1 ? 'aportación' : 'aportaciones'})`
+    if (!retir.length) return `${base}.`
+    const totalRetir = retir.reduce((s, m) => s + centimosDe(m), 0)
+    return `${base} y has retirado **${eur(totalRetir)}**: en neto, ${totalAport >= totalRetir ? `**${eur(totalAport - totalRetir)}** más invertido` : `**${eur(totalRetir - totalAport)}** menos invertido`}.`
   }
 
   // Gasto (con o sin "qué").

@@ -3,7 +3,7 @@
 
 // Columnas que entendemos. 'cargo'/'abono' cubren los extractos que separan
 // salidas y entradas en dos columnas (Debe/Haber) en vez de un importe con signo.
-export const COLUMNAS = ['fecha', 'tipo', 'categoria', 'concepto', 'importe', 'cargo', 'abono', 'plataforma']
+export const COLUMNAS = ['fecha', 'tipo', 'categoria', 'concepto', 'importe', 'cargo', 'abono', 'plataforma', 'estado']
 // 'tipo' es opcional: en extractos bancarios lo deduce el signo del importe.
 export const COLUMNAS_REQUERIDAS = ['fecha', 'importe']
 
@@ -118,7 +118,8 @@ function normaliza(s) {
 export function columnaDeCabecera(cabecera) {
   const h = normaliza(cabecera).replace(/[().:_]/g, ' ').replace(/\s+/g, ' ').trim()
   if (!h || /^saldo|disponible|divisa|moneda|^n[ºo°]? ?(de )?(cuenta|tarjeta)|referencia/.test(h)) return null
-  if (/^(f |fecha|date|dia\b)/.test(h)) return 'fecha'
+  if (/^(f |fecha|date|dia\b)|\bdate$/.test(h)) return 'fecha' // "Started Date" (Revolut)
+  if (/^(estado|state|status)$/.test(h)) return 'estado'
   if (/^(cargo|cargos|debe|debito|salidas?|gastos?)$/.test(h)) return 'cargo'
   if (/^(abono|abonos|haber|credito|entradas?|ingresos?)$/.test(h)) return 'abono'
   if (/importe|amount|cantidad|monto|^valor$|^euros?$|^eur$/.test(h)) return 'importe'
@@ -179,7 +180,8 @@ function componer(yy, mm, dd) {
 export function parseImporteConSigno(valor) {
   // Celda numérica de Excel: ya es un número (no reinterpretar "1.234").
   if (typeof valor === 'number') return Number.isFinite(valor) ? Math.round(valor * 100) / 100 : null
-  let s = String(valor || '').trim().replace(/[€\s\u00a0]/g, '')
+  // Fuera el símbolo o el código de la moneda ("-32,57 EUR", "EUR 12.00").
+  let s = String(valor || '').trim().replace(/\b(eur|euros?|usd|gbp)\b/gi, '').replace(/[€\s\u00a0]/g, '')
   if (!s) return null
   let negativo = false
   if (/^\(.*\)$/.test(s)) {
@@ -228,6 +230,9 @@ export function validarFila(campos, mapeo, { signoDecideTipo = false } = {}) {
 
   const fecha = parseFecha(get('fecha'))
   if (!fecha) return { ok: false, motivo: 'fecha inválida' }
+  // Operaciones que no llegaron a hacerse (Revolut: REVERTED, DECLINED…).
+  const estado = normaliza(get('estado'))
+  if (estado && OPERACION_NO_HECHA.test(estado)) return { ok: false, motivo: `operación no completada (${get('estado')})` }
   // Cargos programados que aún no han ocurrido: no son movimientos todavía.
   const h = new Date()
   const hoy = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`
@@ -258,6 +263,14 @@ export function validarFila(campos, mapeo, { signoDecideTipo = false } = {}) {
   else return { ok: false, motivo: `tipo desconocido ("${get('tipo')}")` }
 
   let categoria = String(get('categoria') || '').trim()
+  // En un extracto del BANCO (sin columna de tipo) su categoría es solo una
+  // pista: "Alimentación" de ING no debe crear otra categoría junto a "Comida".
+  // La plantilla de Palanca (con tipo) sí manda.
+  let categoriaBanco = ''
+  if (!(mapeo.tipo >= 0) && categoria && normaliza(categoria) !== 'inversion') {
+    categoriaBanco = categoria
+    categoria = ''
+  }
   const plataforma = String(get('plataforma') || '').trim()
   if (esInversion) categoria = 'Inversion'
   else if (normaliza(categoria) === 'inversion') esInversion = true
@@ -268,9 +281,12 @@ export function validarFila(campos, mapeo, { signoDecideTipo = false } = {}) {
 
   return {
     ok: true,
-    mov: { fecha, tipo, categoria, nota, importe, plataforma, esInversion },
+    mov: { fecha, tipo, categoria, nota, importe, plataforma, esInversion, ...(categoriaBanco ? { categoriaBanco } : {}) },
   }
 }
+
+const OPERACION_NO_HECHA = /revert|declin|fail|rechaz|denegad|anulad|cancel|pending|pendiente/
+const TIPOS_CONOCIDOS = new Set(['ingreso', 'income', 'gasto', 'expense', 'inversion', 'inversión'])
 
 // Clave para detectar duplicados frente a los movimientos existentes.
 export function claveDuplicado({ fecha, tipo, importe, nota }) {
@@ -291,6 +307,14 @@ export function procesarFilas(filas, mapeo, clavesExistentes, { inicio = 0 } = {
     mapeo.cargo >= 0 ||
     mapeo.abono >= 0 ||
     (mapeo.importe >= 0 && filas.some((c) => (parseImporteConSigno(c[mapeo.importe]) ?? 0) < 0))
+
+  // Una columna "tipo" que no dice gasto/ingreso (Revolut: CARD_PAYMENT,
+  // TOPUP…) no sirve: manda el signo.
+  if (mapeo.tipo >= 0) {
+    const valores = filas.map((c) => normaliza(c[mapeo.tipo])).filter(Boolean)
+    const entendidos = valores.filter((v) => TIPOS_CONOCIDOS.has(v)).length
+    if (valores.length && entendidos < valores.length / 2) mapeo = { ...mapeo, tipo: -1 }
+  }
 
   filas.forEach((campos, i) => {
     const res = validarFila(campos, mapeo, { signoDecideTipo })

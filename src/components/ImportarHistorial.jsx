@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { CATEGORIA_INVERSION, esInversion, etiquetaCategoria, formatearEuros } from '../lib/categorias'
+import { CATEGORIA_INVERSION, etiquetaCategoria, formatearEuros } from '../lib/categorias'
 import { claveDuplicado, COLUMNAS, detectarMapeo, faltanColumnas, procesarFilas, tablaDesdeFilas } from '../lib/importarCsv'
 import { ArchivoNoSoportado, leerArchivoMovimientos } from '../lib/leerArchivo'
 import { capturasActivas, leerCapturas } from '../lib/capturas'
@@ -12,7 +12,7 @@ import { deducirMapeoIA } from '../lib/mapearColumnasIA'
 import { useImportaciones } from '../lib/useImportaciones'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { useComerciosCompartidos } from '../lib/DatosCompartidos'
-import { buscarParecido, directorio, formaEtiqueta, normalizarTexto } from '../lib/comercios'
+import { directorio, formaEtiqueta, nombreParaComercio, normalizarTexto } from '../lib/comercios'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import { aCentimos } from '../lib/importe'
@@ -40,7 +40,7 @@ const ETIQUETA_COL = {
   plataforma: 'Plataforma',
 }
 const CATEGORIAS_GASTO = ['Comida', 'Restaurantes', 'Transporte', 'Vivienda', 'Suministros', 'Suscripciones', 'Seguros', 'Compras', 'Salud', 'Ocio', 'Deporte', 'Viajes', 'Educación', 'Comisiones', 'Impuestos', 'Efectivo', 'Ahorro', 'Inversion', 'Otros']
-const CATEGORIAS_INGRESO = ['Nomina', 'Pensión', 'Prestaciones', 'Transferencias', 'Devoluciones', 'Intereses', 'Otros ingresos']
+const CATEGORIAS_INGRESO = ['Nomina', 'Pensión', 'Prestaciones', 'Transferencias', 'Devoluciones', 'Intereses', 'Desde ahorro', 'Inversion', 'Otros ingresos']
 const MAX_CAPTURAS = 20
 const fmtMes = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' }).replace('.', '')
 
@@ -131,7 +131,7 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
 
   const clavesExistentes = useMemo(() => {
     const set = new Set()
-    for (const m of movimientos) set.add(claveDuplicado({ fecha: m.fecha, tipo: esInversion(m) ? 'gasto' : m.tipo, importe: m.importe, nota: m.nota }))
+    for (const m of movimientos) set.add(claveDuplicado({ fecha: m.fecha, tipo: m.tipo, importe: m.importe, nota: m.nota }))
     return set
   }, [movimientos])
   // `alias` en las dependencias: si cambia la memoria de comercios, se recalcula.
@@ -174,10 +174,9 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
     setEditando(null)
     const limpio = texto.trim().replace(/\s+/g, ' ')
     if (!limpio || limpio === g.nombre) return
-    const parecido = buscarParecido(limpio, conocidos, (x) => x)
-    const nombre = parecido ? parecido.item : limpio
+    const { nombre, de, corregido } = nombreParaComercio(limpio, conocidos)
     setCambiosNombre((c) => ({ ...c, [g.clave]: nombre }))
-    if (parecido && !parecido.exacto) toast(`Lo hemos dejado como «${nombre}», que ya tenías`)
+    if (corregido) toast(de === 'tuyo' ? `Lo hemos dejado como «${nombre}», que ya tenías` : `Lo hemos dejado como «${nombre}»`)
     if (!cambiosCat[g.clave]) {
       const sugerida = categorizador({ nota: nombre, tipo: g.tipo })
       if (sugerida.origen !== 'defecto') setCambiosCat((c) => ({ ...c, [g.clave]: sugerida.categoria }))
@@ -394,7 +393,11 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
     )
   } else if (paso === 'revisar') {
     const faltan = tabla ? faltanColumnas(mapeo) : []
-    const gruposVisibles = verTodosGrupos ? grupos : grupos.slice(0, 10)
+    // Primero lo que Palanca no ha reconocido (necesita al usuario); después, por
+    // dinero: un traspaso al ahorro o un rescate de fondo pesan más que un café.
+    const sinReconocer = (g) => /^Otros/.test(cambiosCat[g.clave] ?? g.categoria)
+    const ordenados = [...grupos].sort((a, b) => sinReconocer(b) - sinReconocer(a) || b.total - a.total)
+    const gruposVisibles = verTodosGrupos ? ordenados : ordenados.slice(0, 10)
     contenido = (
       <div className="ih-revisar">
         <div className="ih-origen">
@@ -504,7 +507,7 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
                       onChange={(e) => setCambiosCat({ ...cambiosCat, [g.clave]: e.target.value })}
                     >
                       {[...new Set([cambiosCat[g.clave] ?? g.categoria, ...opcionesCat(g.tipo)])].map((c) => (
-                        <option key={c} value={c}>{etiquetaCategoria(c)}</option>
+                        <option key={c} value={c}>{etiquetaCategoria(c, g.tipo)}</option>
                       ))}
                     </select>
                   </li>
