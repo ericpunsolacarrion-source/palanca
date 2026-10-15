@@ -32,6 +32,14 @@ const EVENTOS = {
 }
 
 const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0)
+// "hoy", "ayer", "hace 12 días" (respecto a la fecha del informe).
+function haceDias(fechaIso, hoyIso) {
+  if (!fechaIso) return '—'
+  const dias = Math.round((Date.parse(hoyIso) - Date.parse(fechaIso)) / 86400000)
+  if (dias <= 0) return 'hoy'
+  if (dias === 1) return 'ayer'
+  return `hace ${dias} días`
+}
 const num = (v) => (v == null ? '—' : String(v).replace('.', ','))
 
 function Kpi({ etiqueta, valor, nota }) {
@@ -151,7 +159,7 @@ function Retencion({ filas }) {
   )
 }
 
-function ListaUsuarios({ lista }) {
+function ListaUsuarios({ lista, hoy }) {
   const [filtro, setFiltro] = useState('todos')
   const [q, setQ] = useState('')
   const visibles = lista.filter(
@@ -189,14 +197,16 @@ function ListaUsuarios({ lista }) {
           <tbody>
             {visibles.map((u) => (
               <tr key={u.email + u.alta}>
-                <td className="pm-email">
-                  {u.email || '(sin email)'}
-                  <small>alta {formatearFecha(u.alta)}</small>
+                <td>
+                  <span className="pm-email">
+                    {u.email || '(sin email)'}
+                    <small>alta {formatearFecha(u.alta)}</small>
+                  </span>
                 </td>
                 <td>
                   <span className={`pm-estado ${u.estado}`}>{ESTADOS[u.estado]?.texto ?? u.estado}</span>
                 </td>
-                <td>{u.ultima ? formatearFecha(u.ultima) : '—'}</td>
+                <td title={u.ultima ? formatearFecha(u.ultima) : ''}>{haceDias(u.ultima, hoy)}</td>
                 <td>{u.dias30}</td>
                 <td>{u.cada_cuanto == null ? '—' : `${num(u.cada_cuanto)} d`}</td>
                 <td>
@@ -330,7 +340,7 @@ export default function PanelMetricas({ onCerrar }) {
               )}
             </section>
 
-            <ListaUsuarios lista={d.lista} />
+            <ListaUsuarios lista={d.lista} hoy={d.hoy} />
           </>
         )}
       </section>
