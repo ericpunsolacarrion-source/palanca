@@ -1,6 +1,7 @@
 import { resumenDelMes } from './inicio'
 import { cobrosProximos, estadoCobro, costeAnual, costeMensual, periodoDe } from './periodicidad'
 import { calcularAvisos } from './avisos'
+import { planDeAhorro } from './negociables'
 import { esInversion } from './categorias'
 import {
   agregarPorMes,
@@ -145,6 +146,19 @@ function resumenFijos(recurrentes, movimientos, descartadas) {
     sinDiaDeCobro: activos.filter((r) => estadoCobro(r) === 'sin-dia').map((r) => recortar(r.nombre)),
     proximos30Dias: cobrosProximos(activos, 30).map((c) => ({ nombre: recortar(c.rec.nombre), importe: c.importe, cuando: c.texto })),
     avisos: calcularAvisos(recurrentes, movimientos, new Date(), { descartadas }).map((a) => `${a.titulo}: ${a.detalle}`),
+    // Plan de ahorro: recibos NEGOCIABLES (luz, teléfono, seguros…) con el
+    // ahorro orientativo y el momento ideal para negociar.
+    planAhorro: (() => {
+      const plan = planDeAhorro(activos)
+      return {
+        ahorroOrientativoAnual: { min: plan.negociable.min, max: plan.negociable.max },
+        recibos: plan.items
+          .filter((i) => i.palanca.negociable)
+          .slice(0, 6)
+          .map((i) => ({ nombre: recortar(i.rec.nombre), tipo: i.palanca.titulo, costeAnual: Math.round(i.costeAnual), ahorroMax: i.ahorroMax, cuando: i.momento?.texto })),
+        suscripcionesDigitalesAnual: plan.digital.costeAnual,
+      }
+    })(),
   }
 }
 

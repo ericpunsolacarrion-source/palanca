@@ -19,22 +19,24 @@ export const config = { maxDuration: 30 }
 const MAX_CABECERAS = 100 // nº máximo de columnas (corta payloads abusivos)
 
 // Columnas canónicas que la app entiende (ver lib/importarCsv.js).
-const COLUMNAS = ['fecha', 'tipo', 'categoria', 'concepto', 'importe', 'plataforma']
+const COLUMNAS = ['fecha', 'tipo', 'categoria', 'concepto', 'importe', 'cargo', 'abono', 'plataforma']
 
 const SYSTEM_PROMPT = `Eres un asistente que mapea columnas de un CSV de movimientos financieros a un esquema fijo.
 
-Recibes las CABECERAS del CSV y unas pocas filas de ejemplo. Debes deducir, para cada columna canónica, el ÍNDICE (base 0) de la columna del CSV que le corresponde, o -1 si no existe.
+Recibes las CABECERAS del CSV (o extracto bancario) y unas pocas filas de ejemplo. Ignora columnas de saldo, referencia o divisa. Debes deducir, para cada columna canónica, el ÍNDICE (base 0) de la columna del CSV que le corresponde, o -1 si no existe.
 
 Columnas canónicas:
 - fecha: la fecha del movimiento (formatos como 2025-03-13 o 13/03/2025).
 - tipo: gasto / ingreso / inversion (o income/expense).
 - categoria: categoría del movimiento (Comida, Nómina, Suscripciones…).
 - concepto: descripción o nota libre del movimiento.
-- importe: la cantidad (positiva). Puede venir con € o separadores de miles.
+- importe: la cantidad, con signo si el extracto lo usa (negativo = sale dinero). Puede venir con € o separadores de miles. NO es el saldo.
+- cargo: SOLO si el extracto separa salidas y entradas en dos columnas: la columna de salidas (Cargo, Debe, Débito…). Si no, -1.
+- abono: igual, la columna de entradas (Abono, Haber, Crédito…). Si no, -1.
 - plataforma: broker o plataforma de inversión (opcional; suele faltar).
 
 Responde EXCLUSIVAMENTE con un objeto JSON válido, sin texto adicional ni bloques de código, con esta forma exacta:
-{"fecha":N,"tipo":N,"categoria":N,"concepto":N,"importe":N,"plataforma":N}
+{"fecha":N,"tipo":N,"categoria":N,"concepto":N,"importe":N,"cargo":N,"abono":N,"plataforma":N}
 donde cada N es el índice de columna (entero >= 0) o -1 si esa columna no está presente.`
 
 export default async function handler(req, res) {

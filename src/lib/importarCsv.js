@@ -1,35 +1,84 @@
 // Lógica pura del importador CSV: parseo, detección de columnas y validación
 // robusta fila a fila. La UI vive en components/ImportadorCsv.jsx.
 
-// Columnas esperadas (formato documentado para el usuario).
-export const COLUMNAS = ['fecha', 'tipo', 'categoria', 'concepto', 'importe', 'plataforma']
+// Columnas que entendemos. 'cargo'/'abono' cubren los extractos que separan
+// salidas y entradas en dos columnas (Debe/Haber) en vez de un importe con signo.
+export const COLUMNAS = ['fecha', 'tipo', 'categoria', 'concepto', 'importe', 'cargo', 'abono', 'plataforma']
 // 'tipo' es opcional: en extractos bancarios lo deduce el signo del importe.
 export const COLUMNAS_REQUERIDAS = ['fecha', 'importe']
 
-// --- Parser CSV con soporte de comillas ---
-export function parseCsv(texto) {
-  const lineas = String(texto)
+// ¿Falta algo imprescindible? Fecha, y un importe (o al menos cargo/abono).
+export function faltanColumnas(mapeo) {
+  const tiene = (c) => (mapeo[c] ?? -1) >= 0
+  const faltan = []
+  if (!tiene('fecha')) faltan.push('fecha')
+  if (!tiene('importe') && !tiene('cargo') && !tiene('abono')) faltan.push('importe')
+  return faltan
+}
+
+// --- Lectura del texto: todas las líneas, con el separador mayoritario ---
+export function leerFilasTexto(texto) {
+  const lineas = String(texto ?? '')
+    .replace(/^\uFEFF/, '')
     .split(/\r?\n/)
     .filter((l) => l.trim().length > 0)
-  if (lineas.length === 0) return { cabeceras: [], filas: [] }
-  const sep = detectarSeparador(lineas[0])
-  const cabeceras = splitLinea(lineas[0].replace(/^\uFEFF/, ''), sep)
-  const filas = lineas.slice(1).map((l) => splitLinea(l, sep))
+  if (lineas.length === 0) return []
+  const sep = detectarSeparador(lineas.slice(0, 40))
+  return lineas.map((l) => splitLinea(l, sep))
+}
+
+// Los extractos del banco traen antes de la tabla líneas de información
+// (titular, cuenta, periodo…). La cabecera es la primera fila (de las 40
+// primeras) que nombra al menos dos columnas que reconocemos; si ninguna lo
+// hace, la primera fila.
+export function detectarFilaCabecera(filas) {
+  let mejor = 0
+  let puntos = 0
+  for (let i = 0; i < Math.min(filas.length, 40); i += 1) {
+    const reconocidas = new Set(filas[i].map(columnaDeCabecera).filter(Boolean))
+    if (reconocidas.size >= 2 && reconocidas.size > puntos) {
+      mejor = i
+      puntos = reconocidas.size
+      if (reconocidas.has('fecha') && (reconocidas.has('importe') || reconocidas.has('cargo'))) break
+    }
+  }
+  return mejor
+}
+
+// Filas (arrays de celdas, de CSV, Excel o HTML) → { cabeceras, filas } con la
+// cabecera ya localizada. `inicio` = índice de la cabecera (para nº de fila).
+export function tablaDesdeFilas(filas) {
+  if (!filas.length) return { cabeceras: [], filas: [], inicio: 0 }
+  const inicio = detectarFilaCabecera(filas)
+  const cabeceras = filas[inicio].map((c) => String(c ?? '').trim())
+  const datos = filas
+    .slice(inicio + 1)
+    .filter((f) => f.some((c) => String(c ?? '').trim() !== ''))
+  return { cabeceras, filas: datos, inicio }
+}
+
+// --- Parser CSV con soporte de comillas ---
+export function parseCsv(texto) {
+  const { cabeceras, filas } = tablaDesdeFilas(leerFilasTexto(texto))
   return { cabeceras, filas }
 }
 
 // Excel en español exporta con ';' (la coma es el decimal). Se elige el
-// separador más frecuente de la cabecera (fuera de comillas): ';', tab o ','.
-function detectarSeparador(cabecera) {
-  const sinComillas = cabecera.replace(/"[^"]*"/g, '')
-  const cuenta = (c) => sinComillas.split(c).length - 1
+// separador más frecuente (fuera de comillas) en las primeras líneas: ';',
+// tab o ','. Se mira la línea con más separadores, no solo la primera, porque
+// la primera de un extracto suele ser un título.
+function detectarSeparador(lineas) {
   const candidatos = [';', '\t', ',']
   let mejor = ','
   let max = 0
-  for (const c of candidatos) {
-    if (cuenta(c) > max) {
-      max = cuenta(c)
-      mejor = c
+  for (const linea of lineas) {
+    const sinComillas = linea.replace(/"[^"]*"/g, '')
+    for (const c of candidatos) {
+      const n = sinComillas.split(c).length - 1
+      if (n > max) {
+        max = n
+        mejor = c
+      }
     }
   }
   return mejor
@@ -64,51 +113,72 @@ function normaliza(s) {
     .trim()
 }
 
-// Adivina, para cada columna canónica, el índice en las cabeceras del CSV.
+// ¿Qué columna canónica es esta cabecera? (nombres reales de extractos
+// españoles: "F. Valor", "Fecha operación", "Importe (EUR)", "Cargo", "Haber"…)
+export function columnaDeCabecera(cabecera) {
+  const h = normaliza(cabecera).replace(/[().:_]/g, ' ').replace(/\s+/g, ' ').trim()
+  if (!h || /^saldo|disponible|divisa|moneda|^n[ºo°]? ?(de )?(cuenta|tarjeta)|referencia/.test(h)) return null
+  if (/^(f |fecha|date|dia\b)/.test(h)) return 'fecha'
+  if (/^(cargo|cargos|debe|debito|salidas?|gastos?)$/.test(h)) return 'cargo'
+  if (/^(abono|abonos|haber|credito|entradas?|ingresos?)$/.test(h)) return 'abono'
+  if (/importe|amount|cantidad|monto|^valor$|^euros?$|^eur$/.test(h)) return 'importe'
+  if (/^categoria|category|^cat$/.test(h)) return 'categoria'
+  if (/^tipo$|^type$|^tipo de movimiento$/.test(h)) return 'tipo'
+  if (/plataforma|broker|^fuente$|^platform$/.test(h)) return 'plataforma'
+  if (/concepto|descripcion|description|detalle|^movimiento|operacion|comercio|beneficiario|observaciones|^nota|^concept|establecimiento/.test(h)) return 'concepto'
+  return null
+}
+
+// Adivina, para cada columna canónica, el índice en las cabeceras. Si hay
+// varias candidatas (p. ej. "Fecha operación" y "Fecha valor"), la primera.
 export function detectarMapeo(cabeceras) {
-  const alias = {
-    fecha: ['fecha', 'date', 'dia'],
-    tipo: ['tipo', 'type'],
-    categoria: ['categoria', 'category', 'cat'],
-    concepto: ['concepto', 'nota', 'descripcion', 'description', 'concept'],
-    importe: ['importe', 'amount', 'cantidad', 'valor', 'monto'],
-    plataforma: ['plataforma', 'fuente', 'platform', 'broker'],
-  }
-  const norm = cabeceras.map(normaliza)
-  const mapeo = {}
-  for (const col of COLUMNAS) {
-    mapeo[col] = norm.findIndex((h) => alias[col].includes(h))
-  }
+  const mapeo = Object.fromEntries(COLUMNAS.map((c) => [c, -1]))
+  cabeceras.forEach((cab, i) => {
+    const col = columnaDeCabecera(cab)
+    if (col && mapeo[col] < 0) mapeo[col] = i
+  })
   return mapeo
 }
 
-// Fecha → 'YYYY-MM-DD' o null. Acepta YYYY-MM-DD y DD/MM/YYYY (o con guiones).
+// Fecha → 'YYYY-MM-DD' o null. Acepta YYYY-MM-DD, YYYY/MM/DD, DD/MM/YYYY,
+// DD-MM-YYYY, DD.MM.YYYY, DD/MM/YY, con hora detrás o sin ella, objetos Date y
+// el número de serie de Excel (días desde 1899-12-30).
 export function parseFecha(valor) {
-  const s = String(valor || '').trim()
-  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
-  let y
-  let mo
-  let d
-  if (m) {
-    ;[, y, mo, d] = m
-  } else if ((m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/))) {
-    ;[, d, mo, y] = m
-  } else {
-    return null
+  if (valor instanceof Date) {
+    if (Number.isNaN(valor.getTime())) return null
+    return componer(valor.getFullYear(), valor.getMonth() + 1, valor.getDate())
   }
-  const yy = Number(y)
-  const mm = Number(mo)
-  const dd = Number(d)
-  if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null
+  if (typeof valor === 'number') {
+    if (valor < 20000 || valor > 80000) return null
+    const d = new Date(Date.UTC(1899, 11, 30) + Math.round(valor) * 86400000)
+    return componer(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate())
+  }
+  const s = String(valor || '')
+    .trim()
+    .replace(/[T\s].*$/, '') // "15/10/2026 10:23" o ISO con hora
+  let m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/)
+  if (m) return componer(Number(m[1]), Number(m[2]), Number(m[3]))
+  m = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2}|\d{4})$/)
+  if (m) {
+    const anio = m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3])
+    return componer(anio, Number(m[2]), Number(m[1]))
+  }
+  return null
+}
+
+function componer(yy, mm, dd) {
+  if (!(yy >= 1900 && yy <= 2100) || mm < 1 || mm > 12 || dd < 1 || dd > 31) return null
   const iso = `${yy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`
-  const fecha = new Date(iso)
-  if (Number.isNaN(fecha.getTime()) || fecha.getUTCMonth() + 1 !== mm) return null
+  const fecha = new Date(`${iso}T00:00:00Z`)
+  if (Number.isNaN(fecha.getTime()) || fecha.getUTCMonth() + 1 !== mm || fecha.getUTCDate() !== dd) return null
   return iso
 }
 
 // Importe CON signo (acepta "1.234,56", "1234.56", "1,50", "1.234", "-45,30",
 // "(45,30)") → número o null. El formato por defecto es el español.
 export function parseImporteConSigno(valor) {
+  // Celda numérica de Excel: ya es un número (no reinterpretar "1.234").
+  if (typeof valor === 'number') return Number.isFinite(valor) ? Math.round(valor * 100) / 100 : null
   let s = String(valor || '').trim().replace(/[€\s\u00a0]/g, '')
   if (!s) return null
   let negativo = false
@@ -159,7 +229,13 @@ export function validarFila(campos, mapeo, { signoDecideTipo = false } = {}) {
   const fecha = parseFecha(get('fecha'))
   if (!fecha) return { ok: false, motivo: 'fecha inválida' }
 
-  const conSigno = parseImporteConSigno(get('importe'))
+  // Importe con signo, o columnas separadas de cargo (sale) y abono (entra).
+  let conSigno = parseImporteConSigno(get('importe'))
+  if ((conSigno === null || conSigno === 0) && (mapeo.cargo >= 0 || mapeo.abono >= 0)) {
+    const abono = Math.abs(parseImporteConSigno(get('abono')) ?? 0)
+    const cargo = Math.abs(parseImporteConSigno(get('cargo')) ?? 0)
+    conSigno = Math.round((abono - cargo) * 100) / 100
+  }
   if (conSigno === null || conSigno === 0) return { ok: false, motivo: 'importe no válido' }
   const importe = Math.abs(conSigno)
 
@@ -181,7 +257,8 @@ export function validarFila(campos, mapeo, { signoDecideTipo = false } = {}) {
   const plataforma = String(get('plataforma') || '').trim()
   if (esInversion) categoria = 'Inversion'
   else if (normaliza(categoria) === 'inversion') esInversion = true
-  if (!categoria) categoria = tipo === 'ingreso' ? 'Nomina' : 'Otros'
+  // Sin categoría en el fichero: queda vacía y la sugiere el categorizador
+  // (lib/categorizar.js) a partir del concepto y del historial del usuario.
 
   const nota = String(get('concepto') || '').trim()
 
@@ -196,22 +273,25 @@ export function claveDuplicado({ fecha, tipo, importe, nota }) {
   return `${fecha}|${tipo}|${Number(importe).toFixed(2)}|${(nota || '').toLowerCase()}`
 }
 
-// Procesa todo el CSV: valida, separa válidas/erróneas y marca duplicados.
-export function procesarCsv(texto, mapeo, clavesExistentes) {
-  const { filas } = parseCsv(texto)
+// Procesa filas ya leídas (CSV, Excel, HTML o capturas): valida, separa
+// válidas/erróneas y marca duplicados. `inicio` = fila de la cabecera, para
+// dar el nº de fila real del archivo en los errores.
+export function procesarFilas(filas, mapeo, clavesExistentes, { inicio = 0 } = {}) {
   const validas = []
   const errores = []
   const duplicados = []
   const clavesLote = new Set()
-  // ¿El fichero expresa los gastos con signo negativo? Entonces, en filas sin
-  // tipo, los positivos son ingresos (formato típico de extracto bancario).
+  // ¿El fichero expresa los gastos con signo negativo (o en columna de cargo)?
+  // Entonces, en filas sin tipo, los positivos son ingresos.
   const signoDecideTipo =
-    mapeo.importe >= 0 && filas.some((c) => (parseImporteConSigno(c[mapeo.importe]) ?? 0) < 0)
+    mapeo.cargo >= 0 ||
+    mapeo.abono >= 0 ||
+    (mapeo.importe >= 0 && filas.some((c) => (parseImporteConSigno(c[mapeo.importe]) ?? 0) < 0))
 
   filas.forEach((campos, i) => {
     const res = validarFila(campos, mapeo, { signoDecideTipo })
     if (!res.ok) {
-      errores.push({ fila: i + 2, motivo: res.motivo, campos })
+      errores.push({ fila: inicio + i + 2, motivo: res.motivo, campos })
       return
     }
     const clave = claveDuplicado(res.mov)
@@ -224,4 +304,10 @@ export function procesarCsv(texto, mapeo, clavesExistentes) {
   })
 
   return { validas, errores, duplicados }
+}
+
+// Procesa todo el CSV (texto): localiza la cabecera y procesa sus filas.
+export function procesarCsv(texto, mapeo, clavesExistentes) {
+  const { filas, inicio } = tablaDesdeFilas(leerFilasTexto(texto))
+  return procesarFilas(filas, mapeo, clavesExistentes, { inicio })
 }

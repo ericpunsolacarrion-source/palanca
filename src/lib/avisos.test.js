@@ -76,3 +76,20 @@ describe('avisos que piden confirmar', () => {
     expect(a.porConfirmar).toBe(true)
   })
 })
+
+describe('aviso del momento de negociar', () => {
+  const hoy = new Date(2026, 9, 15)
+  const seguro = (mes, dia) => ({ id: 's', activo: true, tipo: 'gasto', nombre: 'Seguro del coche', importe: 400, periodoMeses: 12, mesInicio: mes, diaMes: dia, mesesAplicados: [] })
+  it('a 40 días de la renovación', () => {
+    const a = calcularAvisos([seguro(11, 24)], [], hoy).find((x) => x.tipo === 'negociar')
+    expect(a.titulo).toBe('Momento de negociar Seguro del coche')
+  })
+  it('fuera de la ventana (a 20 o a 70 días), no', () => {
+    expect(calcularAvisos([seguro(11, 4)], [], hoy).some((x) => x.tipo === 'negociar')).toBe(false)
+    expect(calcularAvisos([seguro(12, 24)], [], hoy).some((x) => x.tipo === 'negociar')).toBe(false)
+  })
+  it('un recibo mensual no negociable (alquiler), nunca', () => {
+    const alquiler = { id: 'a', activo: true, tipo: 'gasto', nombre: 'Alquiler', importe: 750, periodoMeses: 1, diaMes: 20, mesesAplicados: [] }
+    expect(calcularAvisos([alquiler], [], hoy).some((x) => x.tipo === 'negociar')).toBe(false)
+  })
+})

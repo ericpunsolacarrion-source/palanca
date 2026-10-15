@@ -45,7 +45,7 @@ async function notificar(titulo, cuerpo, tag) {
   }
 }
 
-const ICONO = { cobro: 'fijos', renovacion: 'calendario', subida: 'sube', ingreso: 'baja' }
+const ICONO = { cobro: 'fijos', renovacion: 'calendario', subida: 'sube', ingreso: 'baja', negociar: 'presupuesto' }
 
 export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimientos, onVerSuscripciones, onConfirmar }) {
   const [cerrados, setCerrados] = useState(() => leerSet(claveCerrados(usuarioId)))
@@ -121,7 +121,11 @@ export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimie
               <span className="av-item-titulo">{a.titulo}</span>
               <span className="av-item-detalle">{a.detalle}</span>
             </span>
-            {a.porConfirmar && onConfirmar ? (
+            {a.tipo === 'negociar' ? (
+              <button type="button" className="av-confirmar av-secundario" onClick={onVerSuscripciones}>
+                Ver cómo
+              </button>
+            ) : a.porConfirmar && onConfirmar ? (
               <button type="button" className="av-confirmar" onClick={() => onConfirmar(a.recId)}>
                 Confirmar
               </button>

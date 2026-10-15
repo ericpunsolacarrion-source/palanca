@@ -8,6 +8,7 @@ import { claveMesActual, formatearFecha, hoyIso } from '../lib/movimientosUtils'
 import { biografiaRecurrente } from '../lib/biografiaRecurrente'
 import { PERIODOS, costeAnual, costeMensual, estadoCobro, fechaCobroEnMes, periodoDe, textoCalendario } from '../lib/periodicidad'
 import CalendarioCobros from './CalendarioCobros'
+import PlanAhorro from './PlanAhorro'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
@@ -521,6 +522,8 @@ export default function Recurrentes({ usuarioId, movimientos, onRegistrado, abri
   return (
     <div className="tubase vista fade-in-up">
       <Hero gastoMes={gastoMes} gastoAnual={gastoAnual} nActivos={nActivos} estado={estado} />
+
+      <PlanAhorro usuarioId={usuarioId} recurrentes={items} onActualizar={actualizar} />
 
       {items.some((r) => r.activo) && <CalendarioCobros items={items} onAbrir={setDetalle} />}
 
