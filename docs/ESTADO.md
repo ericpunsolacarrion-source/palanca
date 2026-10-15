@@ -30,6 +30,7 @@ premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](EST
 | Guía pantalla a pantalla | [PANTALLAS.md](PANTALLAS.md) |
 | **Sistema visual** (colores, tipografía, iconos, qué NO hacer) | **[DISENO.md](DISENO.md)** |
 | **Fulcro** (qué ve, hasta dónde llega, coste, pruebas) | **[FULCRO.md](FULCRO.md)** |
+| **Métricas de uso** (panel admin, qué se guarda, definiciones) | **[METRICAS.md](METRICAS.md)** |
 | **Competencia y conexión con el banco** (PSD2, agregadores, licencia, ISO) | **[VISION_BANCO.md](VISION_BANCO.md)** |
 | Estado de plataforma / negocio (dossier largo) | [ESTADO-PLATAFORMA.md](ESTADO-PLATAFORMA.md) |
 | Reglas de cálculo y disciplina | [../CLAUDE.md](../CLAUDE.md) |
@@ -72,6 +73,15 @@ calendario, avisos) y el **rediseño visual v2** (ver DISENO.md). Además
 **fijos con día obligatorio y confirmación en su día** (también desde el
 inicio) y **datos de ejemplo + demo rápida** para usuarios nuevos. Detalle en
 PANTALLAS.md §3 y §4b.
+
+**2026-10-15 — Métricas y RGPD (en `develop`):**
+- **Panel de métricas solo para admin**: Tu cuenta → Métricas de Palanca. Muestra activos, frecuencia, embudo, retención y usuarios ([METRICAS.md](METRICAS.md)).
+- **Analítica propia**: sin importes ni textos, y se puede desactivar.
+- **Descargar mis datos**: CSV o JSON.
+- **Ahorros negociados en BD**: con respaldo local.
+- **Política de privacidad actualizada**: uso, capturas a Anthropic y portabilidad.
+- **Arreglo del borrado de cuenta**: antes se dejaba los fijos, los gastos rápidos, los escenarios y el uso de Fulcro.
+- **Requiere ejecutar `supabase-schema-metricas.sql`** (un solo bloque, probado en Postgres 16). Sin él, todo sigue funcionando como antes.
 
 **Noche del 2026-10-14 (rondas de producto, todo en `develop`):**
 - **Fulcro listo para usar**: funciona con datos de ejemplo, acceso directo

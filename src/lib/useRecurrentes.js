@@ -5,6 +5,7 @@ import { estadoCobro, fechaCobroEnMes } from './periodicidad'
 import { aCentimos } from './importe'
 import { toast } from './toast'
 import { AVISO_DEMO, esDemo } from './datosDemo'
+import { registrarEvento } from './analitica'
 
 // Recurrentes del usuario (alquiler, nómina, suscripción…), persistidos en
 // Supabase (tabla `recurrentes` + `recurrentes_confirmaciones` para la racha).
@@ -214,6 +215,7 @@ export function useRecurrentes(usuarioId) {
         toast('No se ha podido guardar el recurrente.', 'error')
         return null
       }
+      registrarEvento('fijo_nuevo')
       // Meses que YA están pagados (p. ej. un cargo detectado en el extracto):
       // se marcan como confirmados SIN crear movimiento (ya existe), para que no
       // salgan como pendientes ni se dupliquen al confirmar. Deshacer solo quita
@@ -334,6 +336,7 @@ export function useRecurrentes(usuarioId) {
         toast('No se ha podido registrar. Inténtalo de nuevo.', 'error')
         return null
       }
+      registrarEvento('cobro_confirmado')
       await marcarAplicado(rec.id, { movimientoId: fila?.id ?? null, importeCentimos: aCentimos(importe) })
       return fila
     },

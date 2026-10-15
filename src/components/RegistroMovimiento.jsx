@@ -14,6 +14,7 @@ import { toast } from '../lib/toast'
 import InputImporte from './InputImporte'
 import InputFecha from './InputFecha'
 import GastosRapidos from './GastosRapidos'
+import { registrarEvento } from '../lib/analitica'
 
 const TOAST_MODO = { gasto: 'Gasto guardado', ingreso: 'Ingreso guardado', inversion: 'Inversión guardada' }
 
@@ -129,6 +130,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
       toast('No se ha podido añadir. Inténtalo de nuevo.', 'error')
       return
     }
+    registrarEvento('movimiento_rapido')
     onGuardado(fila ? { accion: 'crear', filas: [fila] } : undefined)
     toast(`Añadido: ${formatearEuros(rep.importe)}`, 'ok', accionDeshacer(fila))
   }
@@ -161,6 +163,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
       toast('No se ha podido añadir. Inténtalo de nuevo.', 'error')
       return
     }
+    registrarEvento('movimiento_rapido')
     onGuardado(fila ? { accion: 'crear', filas: [fila] } : undefined)
     toast(`${item.nombre}: ${formatearEuros(Number(item.importe))}`, 'ok', accionDeshacer(fila))
   }
@@ -280,6 +283,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
       setError('No se ha podido guardar. Inténtalo de nuevo.')
       return
     }
+    registrarEvento('movimiento')
 
     // "Varios seguidos": se limpia el importe y lo específico del movimiento,
     // pero se MANTIENE la fecha y el tipo, se pliegan los detalles y se re-enfoca

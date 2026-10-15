@@ -17,6 +17,7 @@ import { aCentimos } from '../lib/importe'
 import { formatearFecha } from '../lib/movimientosUtils'
 import { fechaRelativa } from '../lib/inicio'
 import Icono from './Icono'
+import { registrarEvento } from '../lib/analitica'
 
 // TRAE TU HISTORIAL: el momento clave para enganchar. Con un año de
 // movimientos, Palanca enseña desde el primer día en qué se va el dinero, las
@@ -281,6 +282,7 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
         for (const r of data ?? []) ids.push(r.id)
       }
       registrar({ nombre: origen?.nombre ?? 'Importación', ids })
+      registrarEvento(origen?.tipo === 'capturas' ? 'importacion_capturas' : 'importacion')
 
       // Resumen de lo traído: historial, suscripciones y ahorro posible.
       const todos = [...movimientos, ...finales.map(comoMovimiento)]

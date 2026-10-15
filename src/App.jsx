@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react
 import { supabase } from './lib/supabaseClient'
 import { useAuth } from './lib/useAuth'
 import { cerrarSesionAuth } from './lib/auth'
+import { iniciarAnalitica, registrarEvento } from './lib/analitica'
 import Auth from './components/Auth'
 import PantallaCarga from './components/PantallaCarga'
 import CuentaPanel from './components/CuentaPanel'
@@ -158,6 +159,13 @@ function App() {
     })
   }, [usuarioId])
 
+  // Analítica de uso propia (solo tipo de acción y cuándo; ver lib/analitica.js).
+  const analiticaPermitida = perfil ? perfil.analitica !== false : null
+  useEffect(() => {
+    if (analiticaPermitida === null) return
+    iniciarAnalitica({ usuarioId, permitida: analiticaPermitida })
+  }, [usuarioId, analiticaPermitida])
+
   // Fuente única de datos: TODOS los movimientos del usuario, ordenados por
   // fecha. Cada pantalla deriva lo que necesita de aquí, así crear/editar/
   // borrar en cualquier sitio se refleja en toda la app.
@@ -264,6 +272,12 @@ function App() {
     guardarMarca(clave)
     setTourAbierto(true)
   }, [enDemo, usuarioId])
+  useEffect(() => {
+    if (tourAbierto) registrarEvento('tour')
+  }, [tourAbierto])
+  useEffect(() => {
+    if (enDemo) registrarEvento('datos_ejemplo')
+  }, [enDemo])
 
   const empezarConMisDatos = useCallback(() => {
     if (forzarEjemplo) {

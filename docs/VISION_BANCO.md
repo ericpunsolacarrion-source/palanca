@@ -74,6 +74,8 @@ Base legal: PSD2 (RDL 19/2018). Leer cuentas es un **servicio de información so
    Es requisito para cualquier agregador.
 4. **Métricas de producto**: retención a 30 días y cuántos importan su año. Sin tracción, ningún agregador ni inversor se mueve.
 
+**Hecho (15-10-2026):** exportar y borrar la cuenta (completo), ahorros en BD, política actualizada y panel de métricas (docs/METRICAS.md). Pendiente: MFA opcional y revisión de RLS de todas las tablas.
+
 ## 4. Orden propuesto
 | Cuándo | Qué |
 |---|---|

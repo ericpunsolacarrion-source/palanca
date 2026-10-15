@@ -192,7 +192,7 @@ export function guionLlamada(rec, tipo, { antiguedad } = {}) {
 }
 
 // ── Ahorro conseguido (lo que el usuario logra al negociar) ──────────────────
-// Se guarda en este dispositivo. Es la cifra de la que presumir: "Palanca te
+// Copia local (y cálculo); la fuente es la BD: lib/useAhorrosNegociados.js. Es la cifra de la que presumir: "Palanca te
 // ha ahorrado X € al año".
 const claveAhorros = (usuarioId) => `palanca_ahorros_negociados_${usuarioId}`
 

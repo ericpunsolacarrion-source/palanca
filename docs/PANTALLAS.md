@@ -172,3 +172,14 @@ activar el envío). Detalle y plantilla de Edge Function en `docs/REPORTE_SEMANA
 2. Activar el envío del reporte semanal (infraestructura: proveedor de email + Edge Function + cron; ver `docs/REPORTE_SEMANAL.md`).
 3. Notificaciones push reales con la app cerrada (hoy los avisos de Fijos lanzan una notificación local solo al abrir la app).
 4. Splash screens específicos de iOS.
+
+
+## Tu cuenta (botón de la cabecera)
+- Nombre y año de nacimiento.
+- Ver la demo rápida y ver la app con datos de ejemplo.
+- **Tus datos**:
+  - descargar los movimientos en CSV (formato español; Palanca lo reimporta tal cual);
+  - descargar todo en JSON (todas las tablas, también los eventos).
+- Interruptor **"Ayudar a mejorar Palanca"** (`perfiles.analitica`). Solo aparece si la columna existe.
+- **Métricas de Palanca (admin)**: solo si `soy_admin()` lo permite. Abre `PanelMetricas.jsx` a pantalla completa (ver METRICAS.md).
+- Cerrar sesión y borrar la cuenta. El borrado elimina todas las tablas con `usuario_id` (`borrar_mi_cuenta()`).

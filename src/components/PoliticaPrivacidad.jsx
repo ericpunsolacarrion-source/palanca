@@ -19,7 +19,7 @@ export default function PoliticaPrivacidad({ onCerrar }) {
         </header>
 
         <div className="privacidad-cuerpo">
-          <p className="ayuda-mini">Última actualización: julio de 2026.</p>
+          <p className="ayuda-mini">Última actualización: octubre de 2026.</p>
 
           <h3>Responsable del tratamiento</h3>
           <p>
@@ -35,23 +35,36 @@ export default function PoliticaPrivacidad({ onCerrar }) {
               Los <strong>datos financieros que tú introduces</strong>: movimientos (ingresos, gastos,
               inversiones), categorías, presupuestos, objetivos y planificaciones.
             </li>
+            <li>
+              <strong>Datos de uso</strong>: qué acciones usas y cuándo (por ejemplo, "abrió la app" o
+              "importó un extracto"). Nunca importes, conceptos ni textos. Puedes desactivarlo en{' '}
+              <em>Tu cuenta → Ayudar a mejorar Palanca</em>.
+            </li>
           </ul>
 
           <h3>Para qué los usamos</h3>
           <p>
             Únicamente para prestarte el servicio de organización de tus finanzas personales dentro de
-            Palanca. No vendemos tus datos ni los cedemos a terceros con fines publicitarios.
+            Palanca y, con los datos de uso, para saber qué funciona y mejorar la app (estadísticas
+            internas, sin herramientas de terceros). No vendemos tus datos ni los cedemos a terceros
+            con fines publicitarios.
           </p>
 
           <h3>Base legal</h3>
-          <p>Tu consentimiento, que das al registrarte y que puedes retirar en cualquier momento borrando tu cuenta.</p>
+          <p>
+            Tu consentimiento, que das al registrarte y que puedes retirar en cualquier momento borrando tu
+            cuenta. Los datos de uso se basan en nuestro interés legítimo en mejorar el servicio; puedes
+            oponerte desactivándolos en Tu cuenta.
+          </p>
 
           <h3>Dónde se guardan (encargados del tratamiento)</h3>
           <p>
             Los datos se almacenan en <strong>Supabase</strong> (infraestructura en la Unión Europea,
             región de Irlanda) y la aplicación se sirve a través de <strong>Vercel</strong>. El asistente
             "Fulcro" solo recibe <strong>resúmenes agregados y anónimos</strong>, nunca tus movimientos en
-            bruto.
+            bruto. Si eliges <strong>importar con capturas de pantalla</strong>, esas imágenes se envían a{' '}
+            <strong>Anthropic</strong> (proveedor de la IA, con sede en EE. UU. y garantías contractuales
+            para transferencias internacionales) solo para leer los movimientos; no las guardamos.
           </p>
 
           <h3>Cuánto tiempo los conservamos</h3>
@@ -61,8 +74,10 @@ export default function PoliticaPrivacidad({ onCerrar }) {
 
           <h3>Tus derechos</h3>
           <p>
-            Puedes acceder, rectificar y <strong>suprimir</strong> tus datos. Desde la propia app puedes
-            eliminar tu cuenta y todos tus datos en cualquier momento. Para cualquier otra solicitud,
+            Puedes acceder, rectificar, <strong>descargar</strong> y <strong>suprimir</strong> tus datos. Desde
+            Tu cuenta puedes descargarlos (CSV o JSON completo) y eliminar tu cuenta con todos tus datos
+            en cualquier momento. También puedes reclamar ante la Agencia Española de Protección de
+            Datos (aepd.es). Para cualquier otra solicitud,
             escríbenos al email de contacto.
           </p>
         </div>

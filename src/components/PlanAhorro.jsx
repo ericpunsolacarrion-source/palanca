@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { formatearEuros } from '../lib/categorias'
 import { biografiaRecurrente } from '../lib/biografiaRecurrente'
-import { guionLlamada, leerAhorros, planDeAhorro, registrarAhorro, totalAhorrado } from '../lib/negociables'
+import { guionLlamada, planDeAhorro, totalAhorrado } from '../lib/negociables'
+import { useAhorrosNegociados } from '../lib/useAhorrosNegociados'
 import { preguntarAFulcro } from '../lib/fulcro'
 import { esDemo, AVISO_DEMO } from '../lib/datosDemo'
 import { toast } from '../lib/toast'
@@ -15,7 +16,7 @@ import Icono from './Icono'
 // Palanca te ha ahorrado". Lo de precio fijo (Netflix…) se trata aparte:
 // no se negocia, se pausa o se rota.
 
-function HojaNegociar({ item, usuarioId, onCerrar, onActualizar, onAhorro }) {
+function HojaNegociar({ item, onCerrar, onActualizar, onRegistrar }) {
   const { rec, tipo, palanca, momento, ahorroMin, ahorroMax } = item
   const bio = useMemo(() => biografiaRecurrente(rec), [rec])
   const guion = guionLlamada(rec, tipo, { antiguedad: bio.meses >= 1 ? bio.antiguedad : null })
@@ -36,11 +37,9 @@ function HojaNegociar({ item, usuarioId, onCerrar, onActualizar, onAhorro }) {
     if (!(n > 0)) return
     if (esDemo(rec.id)) return toast(AVISO_DEMO)
     if (n >= Number(rec.importe)) return toast('El nuevo precio debe ser menor que el actual.', 'error')
-    const lista = registrarAhorro(usuarioId, { recId: rec.id, nombre: rec.nombre, antes: rec.importe, despues: n, periodoMeses: rec.periodoMeses })
+    const { ahorroAnual } = await onRegistrar({ recId: rec.id, nombre: rec.nombre, antes: rec.importe, despues: n, periodoMeses: rec.periodoMeses })
     await onActualizar(rec.id, { importe: n })
-    const ahorro = lista.find((a) => a.recId === rec.id)?.ahorroAnual ?? 0
-    toast(`¡Bien hecho! Ahorras ${formatearEuros(ahorro)} al año con ${rec.nombre}`)
-    onAhorro(lista)
+    toast(`¡Bien hecho! Ahorras ${formatearEuros(ahorroAnual)} al año con ${rec.nombre}`)
     onCerrar()
   }
 
@@ -145,7 +144,7 @@ function HojaNegociar({ item, usuarioId, onCerrar, onActualizar, onAhorro }) {
 
 export default function PlanAhorro({ usuarioId, recurrentes, onActualizar }) {
   const plan = useMemo(() => planDeAhorro(recurrentes), [recurrentes])
-  const [ahorros, setAhorros] = useState(() => leerAhorros(usuarioId))
+  const { ahorros, registrar } = useAhorrosNegociados(usuarioId)
   const [abierto, setAbierto] = useState(null)
   const [verTodo, setVerTodo] = useState(false)
   const ahorrado = totalAhorrado(ahorros)
@@ -182,7 +181,7 @@ export default function PlanAhorro({ usuarioId, recurrentes, onActualizar }) {
       {visibles.length > 0 && (
         <ul className="pa-lista">
           {visibles.map((item) => {
-            const logrado = ahorros.find((a) => a.recId === item.rec.id)
+            const logrado = ahorros.find((a) => String(a.recId) === String(item.rec.id))
             return (
               <li key={item.rec.id}>
                 <button type="button" className="pa-item" onClick={() => setAbierto(item)}>
@@ -221,10 +220,9 @@ export default function PlanAhorro({ usuarioId, recurrentes, onActualizar }) {
       {abierto && (
         <HojaNegociar
           item={abierto}
-          usuarioId={usuarioId}
           onCerrar={() => setAbierto(null)}
           onActualizar={onActualizar}
-          onAhorro={setAhorros}
+          onRegistrar={registrar}
         />
       )}
     </section>

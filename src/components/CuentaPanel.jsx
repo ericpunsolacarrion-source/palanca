@@ -1,17 +1,63 @@
-import { useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { borrarCuenta } from '../lib/auth'
 import { actualizarPerfil } from '../lib/perfil'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
+import { supabase } from '../lib/supabaseClient'
+import { exportarMovimientosCsv, exportarTodo } from '../lib/exportarDatos'
+import { iniciarAnalitica, registrarEvento } from '../lib/analitica'
+
+const PanelMetricas = lazy(() => import('./PanelMetricas'))
 
 // Panel de cuenta (usuarios de Auth): editar nombre y año de nacimiento, ver
-// email, cerrar sesión y borrar la cuenta con todos sus datos (supresión).
+// email, descargar tus datos, estadísticas de uso, cerrar sesión y borrar la
+// cuenta con todos sus datos (supresión). Al administrador, sus métricas.
 export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualizado, onCerrar, onCerrarSesion, onVerDemo, verEjemplo = false, onVerEjemplo }) {
   const [nombre, setNombre] = useState(perfil?.nombre ?? '')
   const [anio, setAnio] = useState(perfil?.anio_nacimiento ? String(perfil.anio_nacimiento) : '')
   const [guardando, setGuardando] = useState(false)
   const [borrando, setBorrando] = useState(false)
+  const [exportando, setExportando] = useState(null)
+  const [esAdmin, setEsAdmin] = useState(false)
+  const [verMetricas, setVerMetricas] = useState(false)
+  const [analitica, setAnalitica] = useState(perfil?.analitica !== false)
+
+  useEffect(() => {
+    let vivo = true
+    supabase.rpc('soy_admin').then(
+      ({ data }) => vivo && setEsAdmin(data === true),
+      () => {},
+    )
+    return () => {
+      vivo = false
+    }
+  }, [])
+
+  async function handleExportar(tipo) {
+    setExportando(tipo)
+    try {
+      const n = tipo === 'csv' ? await exportarMovimientosCsv(usuarioId) : await exportarTodo(usuarioId, email)
+      registrarEvento('exportacion')
+      toast(tipo === 'csv' ? `Descargados ${n} movimientos` : 'Descargados todos tus datos')
+    } catch {
+      toast('No se ha podido descargar. Inténtalo de nuevo.', 'error')
+    } finally {
+      setExportando(null)
+    }
+  }
+
+  async function handleAnalitica(valor) {
+    setAnalitica(valor)
+    const actualizado = await actualizarPerfil(usuarioId, { analitica: valor })
+    if (actualizado && 'analitica' in actualizado) {
+      onPerfilActualizado?.(actualizado)
+      iniciarAnalitica({ usuarioId, permitida: valor })
+    } else {
+      setAnalitica(!valor)
+      toast('No se ha podido guardar. Inténtalo de nuevo.', 'error')
+    }
+  }
 
   const cambiado =
     (nombre.trim() || null) !== (perfil?.nombre ?? null) ||
@@ -110,6 +156,34 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
             {verEjemplo ? 'Volver a mis datos' : 'Ver la app con datos de ejemplo'}
           </button>
         )}
+        <div className="cuenta-datos">
+          <span className="cuenta-seccion">Tus datos</span>
+          <p className="ayuda-mini">Son tuyos: descárgalos cuando quieras. El CSV se abre en Excel y Palanca lo vuelve a importar.</p>
+          <div className="cuenta-datos-botones">
+            <button type="button" className="cuenta-boton" onClick={() => handleExportar('csv')} disabled={exportando !== null}>
+              {exportando === 'csv' ? 'Preparando…' : 'Movimientos (CSV)'}
+            </button>
+            <button type="button" className="cuenta-boton" onClick={() => handleExportar('json')} disabled={exportando !== null}>
+              {exportando === 'json' ? 'Preparando…' : 'Todo (JSON)'}
+            </button>
+          </div>
+          {perfil && 'analitica' in perfil && (
+            <label className="cuenta-interruptor">
+              <input type="checkbox" checked={analitica} onChange={(e) => handleAnalitica(e.target.checked)} />
+              <span>
+                <strong>Ayudar a mejorar Palanca</strong>
+                <span className="ayuda-mini">Guardamos qué acciones usas y cuándo (por ejemplo, "importó un extracto"). Nunca importes ni conceptos.</span>
+              </span>
+            </label>
+          )}
+        </div>
+
+        {esAdmin && (
+          <button type="button" className="cuenta-boton cuenta-admin" onClick={() => setVerMetricas(true)}>
+            Métricas de Palanca (admin)
+          </button>
+        )}
+
         <button type="button" className="cuenta-boton" onClick={onCerrarSesion}>
           Cerrar sesión
         </button>
@@ -124,6 +198,11 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
           </button>
         </div>
       </section>
+      {verMetricas && (
+        <Suspense fallback={null}>
+          <PanelMetricas onCerrar={() => setVerMetricas(false)} />
+        </Suspense>
+      )}
     </div>,
     document.body,
   )
