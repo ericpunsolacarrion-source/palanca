@@ -2,7 +2,7 @@
 
 **Todo lo que se ha dejado para más adelante, en un solo sitio**, para poder rematarlo algún día.
 Se mantiene al día en cada sesión: lo terminado se marca ✔ con la fecha, lo nuevo se añade en su bloque.
-Última revisión: 15-10-2026 (noche).
+Última revisión: 15-10-2026 (noche, tras activar Fulcro).
 
 Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejora.
 
@@ -27,10 +27,10 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 | | Paso | Para qué | Guía |
 |---|---|---|---|
-| 🟥 | Ejecutar `supabase-schema-metricas.sql` en Supabase | Panel de métricas, planes, ahorros en BD, borrado de cuenta completo, recordatorios y **memoria de comercios** (§8) | `docs/METRICAS.md` |
-| 🟥 | **Límite de gasto mensual en Anthropic** (Console → Limits; por ejemplo 10 $) | Que nunca haya un susto en la factura de IA | `docs/COSTES.md` §5 |
-| 🟧 | Clave de Anthropic en Vercel (solo Preview) + Redeploy | Fulcro e importar por capturas en la versión de prueba | `docs/FULCRO.md` |
-| 🟩 | SQL v2 de `supabase-schema-fulcro.sql` (opcional) | Registro de uso de Fulcro más robusto | `docs/FULCRO.md` |
+| ✔ | ~~Ejecutar `supabase-schema-metricas.sql` en Supabase~~ **Hecho 15-10** en el proyecto **palanca** (el que usa la app, Production y Preview). Allí faltaba `fulcro_uso`: ahora el SQL la incluye | Panel de métricas, planes, ahorros en BD, borrado de cuenta completo, recordatorios y **memoria de comercios** (§8) | `docs/METRICAS.md` |
+| ✔ | ~~Límite de gasto en Anthropic~~ **Hecho 15-10**: 5 $ de saldo sin recarga automática (tope natural). Opcional: límite mensual en Gasto → Límites | Que nunca haya un susto en la factura de IA | `docs/COSTES.md` §5 |
+| ✔ | ~~Clave de Anthropic en Vercel (solo Preview) + Redeploy~~ **Hecho 15-10**. Versión de prueba: palanca-git-develop-palanca-mac.vercel.app | Fulcro e importar por capturas en la versión de prueba | `docs/FULCRO.md` |
+| ✔ | ~~SQL v2 de `supabase-schema-fulcro.sql`~~ **Hecho 15-10** en palanca | Registro de uso de Fulcro más robusto | `docs/FULCRO.md` |
 | 🟧 | Comprar dominio + cuenta Resend + variables | Encender los emails | `docs/RECORDATORIOS.md` |
 | 🟥 | Supabase Pro y Vercel Pro **antes de cobrar** | El plan gratis de Supabase se pausa sin actividad; Vercel Hobby es de uso no comercial (verificar) | `docs/COSTES.md` |
 | 🟥 | Alta de autónomo o sociedad, gestoría, IVA | Poder cobrar legalmente | `docs/COSTES.md` §2 |
@@ -93,6 +93,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 ---
 
 ## Histórico de cosas terminadas que estaban aquí
+- ✔ 15-10-2026 (noche): Fulcro activado en la versión de prueba (clave solo en Preview), SQL de métricas aplicado en el proyecto palanca y panel de Métricas visible para el admin.
 - ✔ 15-10-2026 (noche): motor probado con 5 clientes simulados de 5 bancos y recorridos completos en el navegador; corregidos importación de Santander/Revolut/ING, retiradas de inversión, vuelta del ahorro, fijos genéricos, suscripciones falsas y respuestas de Fulcro.
 - ✔ 15-10-2026 (tarde): motor conectado. Identidad de comercios con memoria, importación por comercio real, editar comercio y categoría con «igualar los demás», fijos sin doble cobro, devoluciones como contra-gasto, sin fechas futuras ([IDENTIDAD.md](IDENTIDAD.md)).
 - ✔ 15-10-2026: respuestas de Fulcro al momento sin IA (preguntas de datos).

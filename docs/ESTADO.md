@@ -79,6 +79,8 @@ calendario, avisos) y el **rediseño visual v2** (ver DISENO.md). Además
 inicio) y **datos de ejemplo + demo rápida** para usuarios nuevos. Detalle en
 PANTALLAS.md §3 y §4b.
 
+**2026-10-15 (noche) — Activado en la versión de prueba:** Fulcro con IA (clave `ANTHROPIC_API_KEY` solo en Preview), SQL de métricas aplicado en el proyecto de Supabase **palanca** (el que usan Production y Preview; "palanca dev" no lo usa la app) y panel de Métricas visible. Prueba: https://palanca-git-develop-palanca-mac.vercel.app
+
 **2026-10-15 (noche) — Motor rematado con clientes simulados (en `develop`):** 5 clientes con un año real de su banco (BBVA, Santander, CaixaBank, ING, Revolut) y 2 recorridos completos en el navegador (52 comprobaciones). Corregido:
 - **Santander y Revolut no importaban nada** (importes `-32,57 EUR`; fechas "Started Date", tipo `CARD_PAYMENT`). Ahora sí, y los pagos revertidos no entran.
 - **ING inflaba el gasto en 10.000 €/año**: sus categorías ("Inversiones", "Movimientos excluidos") contaban como gasto y duplicaban las nuestras. Ahora son solo una pista, traducida.
