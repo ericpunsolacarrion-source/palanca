@@ -9901,3 +9901,20 @@ input[type='number']::-webkit-outer-spin-button {
 .pm-nota {
   margin-top: 12px;
 }
+
+/* Fulcro · respuesta calculada al momento (sin IA) */
+.fulcro-al-momento {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-micro);
+  color: var(--text-3);
+}
+.fulcro-al-momento .link {
+  font-size: var(--fs-xs);
+}

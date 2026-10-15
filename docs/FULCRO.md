@@ -4,6 +4,9 @@
 > Código: `api/consultor.js` (servidor), `src/components/Consultor.jsx` (chat),
 > `src/lib/resumenParaIA.js` + `src/lib/contextoFulcro.js` (datos del motor).
 
+## Respuestas al momento (sin IA)
+Las preguntas de DATOS se responden en el móvil con `src/lib/respuestasLocales.js`: gratis, al instante y sin gastar preguntas del día. Ejemplos: cuánto en gasolina o en un comercio, lo pagado hasta ahora de Spotify, el próximo cobro de un fijo, el total de fijos, en qué se gasta más, e ingresos, ahorro o inversión de un periodo. Lo de CRITERIO va a la IA, y ante la duda también. Cada respuesta al momento ofrece "Que lo analice Fulcro". Tests en `respuestasLocales.test.js`, incluidas 2.000 preguntas aleatorias.
+
 ## Estado
 En pruebas **solo en dev**: se enciende en los despliegues de prueba de Vercel
 (rama `develop` → "Preview"). En la app pública sigue en "Próximamente" hasta

@@ -6,6 +6,8 @@ import { useObjetivosCompartidos, usePresupuestoCompartido } from '../lib/DatosC
 import { supabase } from '../lib/supabaseClient'
 import { leerDescartadas } from '../lib/suscripciones'
 import { EVENTO_FULCRO } from '../lib/fulcro'
+import { respuestaLocal } from '../lib/respuestasLocales'
+import { registrarEvento } from '../lib/analitica'
 
 // ─── ACTIVAR FULCRO ──────────────────────────────────────────────────────────
 // Fulcro se activa cuando el servidor tiene la clave (ANTHROPIC_API_KEY en
@@ -42,6 +44,8 @@ function sugerenciasDe(resumen) {
   const obj = resumen.objetivosAhorro?.find((o) => o.progresoPct < 100)
   if (obj) s.push(`¿Cuándo llegaré a «${obj.nombre}»?`)
   if ((resumen.fijos?.nCompromisos ?? 0) >= 3) s.push('¿Qué suscripciones podría revisar?')
+  // Se responde al momento, sin IA (lib/respuestasLocales.js).
+  if ((resumen.fijos?.nCompromisos ?? 0) >= 1) s.push('¿Cuánto pago en fijos al mes?')
   for (const b of BASICAS) if (s.length < 4 && !s.includes(b)) s.push(b)
   return s.slice(0, 4)
 }
@@ -171,7 +175,7 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
     })
 
   const preguntar = useCallback(
-    async (texto) => {
+    async (texto, { forzarIA = false } = {}) => {
       const pregunta = texto.trim()
       if (!pregunta || enviando || !resumen) return
 
@@ -183,6 +187,33 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
           ...prev,
           { rol: 'usuario', texto: pregunta, local: true },
           { rol: 'consultor', texto: cortesia, local: true },
+        ])
+        setEntrada('')
+        return
+      }
+
+      // Preguntas de DATOS ("¿cuánto he gastado en gasolina…?"): se calculan
+      // aquí, al momento y sin IA (gratis, no gastan preguntas del día).
+      const local = forzarIA ? null : respuestaLocal(pregunta, { movimientos, recurrentes })
+      if (local) {
+        setMensajes((prev) => [
+          ...prev,
+          { rol: 'usuario', texto: pregunta, local: true },
+          { rol: 'consultor', texto: local, local: true, alMomento: true, pregunta },
+        ])
+        setEntrada('')
+        registrarEvento('fulcro_local')
+        return
+      }
+      if (restantes === 0) {
+        setMensajes((prev) => [
+          ...prev,
+          { rol: 'usuario', texto: pregunta, local: true },
+          {
+            rol: 'consultor',
+            local: true,
+            texto: 'Has usado tus preguntas de hoy. Las de **datos** siguen funcionando al momento: por ejemplo, «¿cuánto he gastado en gasolina los últimos 3 meses?» o «¿cuánto pago en fijos al mes?».',
+          },
         ])
         setEntrada('')
         return
@@ -264,7 +295,7 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
         setEnviando(false)
       }
     },
-    [enviando, mensajes, resumen, movimientos],
+    [enviando, mensajes, resumen, movimientos, recurrentes, restantes],
   )
 
   // Abrir con una pregunta desde otra pantalla (evento global).
@@ -424,6 +455,16 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
                         ) : (
                           <TextoFulcro texto={m.texto} />
                         )}
+                        {m.alMomento && (
+                          <div className="fulcro-al-momento">
+                            <span>Calculado al momento con tus datos</span>
+                            {!sinPreguntas && (
+                              <button type="button" className="link" onClick={() => preguntar(m.pregunta, { forzarIA: true })} disabled={enviando}>
+                                Que lo analice Fulcro
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ),
                   )}
@@ -441,12 +482,12 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
                     type="text"
                     value={entrada}
                     onChange={(e) => setEntrada(e.target.value)}
-                    placeholder={sinPreguntas ? 'Sin preguntas por hoy' : 'Pregunta sobre tu dinero…'}
+                    placeholder={sinPreguntas ? 'Pregunta datos: «¿cuánto gasté en…?»' : 'Pregunta sobre tu dinero…'}
                     aria-label="Tu pregunta"
                     maxLength={2000}
-                    disabled={enviando || sinPreguntas}
+                    disabled={enviando}
                   />
-                  <button type="submit" disabled={enviando || !entrada.trim() || sinPreguntas} aria-label="Enviar">
+                  <button type="submit" disabled={enviando || !entrada.trim()} aria-label="Enviar">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" />
                     </svg>

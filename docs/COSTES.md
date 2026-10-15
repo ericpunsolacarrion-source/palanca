@@ -73,3 +73,31 @@ Cómo se lee:
 ## 4. Vigilancia
 - **Coste real de la IA:** la tabla `fulcro_uso` guarda los tokens de cada pregunta. Al mes de lanzar, comparar con esta estimación.
 - **Abuso:** si alguien llega al tope a diario, sale en el panel (Fulcro por usuario).
+
+## 5. Revisión y optimización (15-10-2026)
+
+### Variables (IA): qué está hecho y qué queda
+| | Medida | Efecto |
+|---|---|---|
+| ✔ | **Respuestas al momento sin IA** (`src/lib/respuestasLocales.js`). Las preguntas de datos se calculan en el móvil: "¿cuánto he gastado en gasolina los 3 últimos meses?", "¿cuánto he pagado de Spotify hasta ahora?", "¿cuándo me cobran el seguro de la moto?", "¿cuánto pago en fijos?", "¿en qué gasto más?", ingresos, ahorro e inversión de un periodo, el último pago de algo | **0 €**, al instante y exacto. No gastan preguntas del día: siguen funcionando aunque se acaben las de IA. En el panel se miden como "Respuestas de Fulcro sin IA" |
+| ✔ | Las de criterio van a la IA ("¿me conviene…?", "¿cómo ahorro más?"). Ante la duda, también: mejor gastar 0,05 céntimos que contestar mal. Debajo de cada respuesta al momento hay un botón "Que lo analice Fulcro" | Calidad intacta |
+| ✔ | El modelo más barato (Haiku 5.5), esfuerzo bajo y respuesta con tope de 4.000 tokens | — |
+| ✔ | **Caché**: las instrucciones y el resumen del usuario se leen a 1/10 del precio desde la 2.ª pregunta de una conversación | ≈ −60 % de entrada en conversaciones |
+| ✔ | Topes por persona y día (10 preguntas, 25 envíos de capturas). Los saludos y gracias no llaman a la IA | Coste máximo acotado |
+| ✔ | Extracto Excel/CSV antes que capturas: se procesa en el móvil a 0 € y la app lo propone primero | — |
+| ☐ | Historial de 8 → 4 mensajes | ≈ −20–30 % de entrada en charlas largas. Pequeño, a decidir |
+| ☐ | **Límite de gasto mensual en Anthropic** (Console → Limits), por ejemplo 10 $/mes | Seguro contra sustos. **Hacerlo hoy** |
+
+### Fijos: recomendación
+| Servicio | Recomendación |
+|---|---|
+| Supabase | **Gratis hasta el primer cobro.** Con usuarios activos no se pausa. Pasar a **Pro (25 $)** el día que haya clientes de pago: copias diarias, sin pausas |
+| Vercel | Gratis (Hobby) mientras no se cobre; **Pro (20 $) al cobrar** (verificar condiciones). Alternativa a estudiar: Cloudflare Pages, gratis y con uso comercial permitido (verificar), pero obliga a adaptar las funciones `/api`. Ahorraría ≈ 20 $/mes |
+| Resend | Gratis (3.000 emails/mes). Con nuestros topes da para unos 1.000 usuarios activos |
+| Dominio | Comprarlo en un registrador a precio de coste (≈ 10–15 €/año) |
+| Stripe | Empujar el **plan anual**: los 0,25 € fijos por cobro pesan un 8 % en la cuota mensual y un 2 % en la anual. Si se vende mucho fuera de España, valorar una pasarela que gestione el IVA de cada país (*Merchant of Record*: cobra más, ≈ 5 %, pero ahorra gestoría) |
+
+### Resumen
+- **IA:** céntimos por usuario. Con las respuestas al momento, las preguntas de datos (probablemente la mayoría) pasan a costar 0.
+- **Lo que pesa son los fijos al cobrar (≈ 45 €/mes) y el autónomo.**
+- La palanca de margen es **vender el anual** y llegar a los **16–45 clientes** que cubren costes (punto 3).

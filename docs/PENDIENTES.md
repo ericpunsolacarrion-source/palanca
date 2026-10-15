@@ -19,6 +19,8 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 | 🟧 | **Límite de Fulcro en Gratis** | Propuesta: 5 preguntas al mes | `docs/PREMIUM.md` |
 | ✔ | Invitar a un amigo | **Decidido:** 1 mes gratis al que invita solo si el invitado se da de alta **y paga** | `docs/PREMIUM.md` |
 | ✔ | Garantía "si no ahorras, te devolvemos" | **Descartada**: no se puede medir el ahorro | `docs/PREMIUM.md` |
+| 🟧 | **Fulcro "de datos" para todos** | Las respuestas al momento no usan IA: se podrían abrir ya en la app pública (también en Gratis, sin límite) aunque la IA siga en "Próximamente". ¿Sí? | `src/lib/respuestasLocales.js` |
+| 🟩 | Historial de Fulcro de 8 → 4 mensajes | Ahorra ≈ 20–30 % en charlas largas; puede restar algo de memoria | `api/consultor.js` |
 | 🟥 | **Cuándo lanzar** a la app pública | Cuando Eric diga "lánzalo": `develop` → `main` | `docs/ESTADO.md` |
 
 ## B. Pasos que solo puede hacer Eric (accesos)
@@ -26,6 +28,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 | | Paso | Para qué | Guía |
 |---|---|---|---|
 | 🟥 | Ejecutar `supabase-schema-metricas.sql` en Supabase | Panel de métricas, planes, ahorros en BD, borrado de cuenta completo, recordatorios | `docs/METRICAS.md` |
+| 🟥 | **Límite de gasto mensual en Anthropic** (Console → Limits; por ejemplo 10 $) | Que nunca haya un susto en la factura de IA | `docs/COSTES.md` §5 |
 | 🟧 | Clave de Anthropic en Vercel (solo Preview) + Redeploy | Fulcro e importar por capturas en la versión de prueba | `docs/FULCRO.md` |
 | 🟩 | SQL v2 de `supabase-schema-fulcro.sql` (opcional) | Registro de uso de Fulcro más robusto | `docs/FULCRO.md` |
 | 🟧 | Comprar dominio + cuenta Resend + variables | Encender los emails | `docs/RECORDATORIOS.md` |
@@ -46,6 +49,8 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 - 🟩 Probar variantes de asunto de los emails cuando haya volumen.
 
 ### Importación y Fulcro
+- 🟩 Ampliar las **respuestas al momento** con lo que pregunte la gente: mirar en el panel qué va a la IA y debería ir local.
+- 🟩 Estudiar Cloudflare Pages en lugar de Vercel Pro (ahorro ≈ 20 $/mes; obliga a adaptar `/api`).
 - 🟧 Probar la **lectura de capturas con la API real**: hasta ahora solo se ha probado con datos simulados.
 - 🟧 Ejecutar `scripts/probar-fulcro.mjs` con la clave real.
 - 🟩 **Guías de descarga del extracto banco por banco** (ahora son genéricas; los menús de cada banco no están verificados).
@@ -78,4 +83,5 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 ---
 
 ## Histórico de cosas terminadas que estaban aquí
+- ✔ 15-10-2026: respuestas de Fulcro al momento sin IA (preguntas de datos).
 - ✔ 15-10-2026: panel de métricas solo admin, Premium/Gratis en el panel, descargar mis datos, borrado de cuenta completo, motor de emails (apagado), estudio de costes.

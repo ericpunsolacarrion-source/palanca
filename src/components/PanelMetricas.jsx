@@ -49,6 +49,7 @@ const EVENTOS = {
   datos_ejemplo: 'Vistas con datos de ejemplo',
   exportacion: 'Descargas de datos',
   clic_email: 'Volvieron desde un email',
+  fulcro_local: 'Respuestas de Fulcro sin IA (gratis)',
 }
 
 const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0)

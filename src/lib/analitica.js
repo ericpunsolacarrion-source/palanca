@@ -8,7 +8,7 @@ import { supabase } from './supabaseClient'
 //
 // Tipos: visita · movimiento · movimiento_rapido · cobro_confirmado ·
 // fijo_nuevo · importacion · importacion_capturas · ahorro_negociado ·
-// tour · datos_ejemplo · exportacion · clic_email (entró desde un recordatorio)
+// tour · datos_ejemplo · exportacion · clic_email (entró desde un recordatorio) · fulcro_local (respuesta de datos sin IA)
 
 export const MINUTOS_VISITA = 30
 const CLAVE_VISITA = 'palanca_ultima_visita'
