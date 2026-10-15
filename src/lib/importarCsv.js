@@ -228,6 +228,10 @@ export function validarFila(campos, mapeo, { signoDecideTipo = false } = {}) {
 
   const fecha = parseFecha(get('fecha'))
   if (!fecha) return { ok: false, motivo: 'fecha inválida' }
+  // Cargos programados que aún no han ocurrido: no son movimientos todavía.
+  const h = new Date()
+  const hoy = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`
+  if (fecha > hoy) return { ok: false, motivo: 'fecha futura (aún no ha ocurrido)' }
 
   // Importe con signo, o columnas separadas de cargo (sale) y abono (entra).
   let conSigno = parseImporteConSigno(get('importe'))

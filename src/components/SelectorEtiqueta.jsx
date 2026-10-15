@@ -1,4 +1,5 @@
 import { NUEVA_ETIQUETA } from '../lib/etiquetas'
+import { buscarParecido } from '../lib/comercios'
 
 export default function SelectorEtiqueta({
   id,
@@ -11,6 +12,8 @@ export default function SelectorEtiqueta({
   placeholder,
   compacto = false,
 }) {
+  // Al escribir uno nuevo: ¿ya existe (mayúsculas/acentos) o es una errata?
+  const parecido = valor === NUEVA_ETIQUETA && nuevoNombre?.trim().length >= 3 ? buscarParecido(nuevoNombre, items) : null
   return (
     <>
       <label htmlFor={id}>{label}</label>
@@ -46,6 +49,14 @@ export default function SelectorEtiqueta({
           placeholder={placeholder}
           autoFocus
         />
+      )}
+      {parecido && (
+        <p className="etiqueta-parecida" role="status">
+          {parecido.exacto ? `Ya tienes «${parecido.item.nombre}».` : `¿Querías decir «${parecido.item.nombre}»?`}{' '}
+          <button type="button" className="link" onClick={() => onChange(parecido.item.id)}>
+            Usar «{parecido.item.nombre}»
+          </button>
+        </p>
       )}
     </>
   )

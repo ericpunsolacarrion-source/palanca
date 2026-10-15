@@ -11,6 +11,8 @@ import { planDeAhorro } from '../lib/negociables'
 import { deducirMapeoIA } from '../lib/mapearColumnasIA'
 import { useImportaciones } from '../lib/useImportaciones'
 import { useEtiquetas } from '../lib/useEtiquetas'
+import { useComerciosCompartidos } from '../lib/DatosCompartidos'
+import { buscarParecido, directorio, formaEtiqueta, normalizarTexto } from '../lib/comercios'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import { aCentimos } from '../lib/importe'
@@ -114,6 +116,9 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
   const [filasCapturas, setFilasCapturas] = useState(null)
   const [avisos, setAvisos] = useState([])
   const [cambiosCat, setCambiosCat] = useState({}) // clave de grupo → categoría elegida
+  const [cambiosNombre, setCambiosNombre] = useState({}) // clave de grupo → comercio real
+  const [editando, setEditando] = useState(null) // clave de grupo cuyo nombre se edita
+  const { alias, recordar } = useComerciosCompartidos()
   const [incluirParecidos, setIncluirParecidos] = useState(false)
   const [verTodosGrupos, setVerTodosGrupos] = useState(false)
   const [guardando, setGuardando] = useState(false)
@@ -129,7 +134,20 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
     for (const m of movimientos) set.add(claveDuplicado({ fecha: m.fecha, tipo: esInversion(m) ? 'gasto' : m.tipo, importe: m.importe, nota: m.nota }))
     return set
   }, [movimientos])
-  const categorizador = useMemo(() => crearCategorizador(movimientos), [movimientos])
+  // `alias` en las dependencias: si cambia la memoria de comercios, se recalcula.
+  const categorizador = useMemo(() => crearCategorizador(movimientos), [movimientos, alias]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Comercios que ya conoce (memoria + lo apuntado): sugerencias al renombrar.
+  const conocidos = useMemo(() => {
+    const dir = directorio()
+    const nombres = new Map()
+    for (const a of alias) nombres.set(a.nombre.toLowerCase(), a.nombre)
+    for (const m of movimientos) {
+      const n = dir.nombreDe(m)
+      if (n && n.length <= 40) nombres.set(n.toLowerCase(), nombres.get(n.toLowerCase()) ?? n)
+    }
+    return [...nombres.values()].sort((a, b) => a.localeCompare(b, 'es'))
+  }, [alias, movimientos])
 
   // Filas válidas (archivo o capturas), con duplicados exactos fuera y categoría sugerida.
   const procesado = useMemo(() => {
@@ -148,7 +166,23 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
   }, [tabla, mapeo, filasCapturas, clavesExistentes, categorizador])
 
   const parecidos = useMemo(() => (procesado ? indicesParecidos(procesado.validas, movimientos) : new Set()), [procesado, movimientos])
-  const grupos = useMemo(() => (procesado ? agruparPorComercio(procesado.validas) : []), [procesado])
+  const grupos = useMemo(() => (procesado ? agruparPorComercio(procesado.validas) : []), [procesado, alias]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Renombrar un comercio: si se parece a uno conocido (mayúsculas, errata),
+  // se usa el conocido; y si aún no se eligió categoría, se propone la suya.
+  function renombrar(g, texto) {
+    setEditando(null)
+    const limpio = texto.trim().replace(/\s+/g, ' ')
+    if (!limpio || limpio === g.nombre) return
+    const parecido = buscarParecido(limpio, conocidos, (x) => x)
+    const nombre = parecido ? parecido.item : limpio
+    setCambiosNombre((c) => ({ ...c, [g.clave]: nombre }))
+    if (parecido && !parecido.exacto) toast(`Lo hemos dejado como «${nombre}», que ya tenías`)
+    if (!cambiosCat[g.clave]) {
+      const sugerida = categorizador({ nota: nombre, tipo: g.tipo })
+      if (sugerida.origen !== 'defecto') setCambiosCat((c) => ({ ...c, [g.clave]: sugerida.categoria }))
+    }
+  }
 
   // Filas finales: con las categorías cambiadas por grupo y sin lo ya apuntado.
   const finales = useMemo(() => {
@@ -172,6 +206,8 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
     setFilasCapturas(null)
     setAvisos([])
     setCambiosCat({})
+    setCambiosNombre({})
+    setEditando(null)
     setIncluirParecidos(false)
     setVerTodosGrupos(false)
     setError(null)
@@ -230,13 +266,23 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
 
   async function idsDeCategorias(filas) {
     const { data: existentes } = await supabase.from('categorias').select('id, tipo, nombre').eq('usuario_id', usuarioId)
+    // Sin duplicados: "comida" del archivo es tu "Comida" (mayúsculas, acentos, plural).
     const mapa = {}
-    for (const c of existentes ?? []) mapa[`${c.tipo}|${c.nombre}`] = c.id
+    const porForma = new Map()
+    for (const c of existentes ?? []) {
+      mapa[`${c.tipo}|${c.nombre}`] = c.id
+      porForma.set(`${c.tipo}|${formaEtiqueta(c.nombre)}`, c.id)
+    }
+    const deForma = (tipo, nombre) => porForma.get(`${tipo}|${formaEtiqueta(nombre)}`)
     const necesarias = new Set(filas.map((f) => `${f.tipo}|${f.esInversion ? CATEGORIA_INVERSION : f.categoria}`))
-    const aCrear = [...necesarias].filter((k) => !mapa[k]).map((k) => {
+    const aCrear = []
+    for (const k of necesarias) {
+      if (mapa[k]) continue
       const [tipo, nombre] = k.split('|')
-      return { usuario_id: usuarioId, tipo, nombre }
-    })
+      const existente = deForma(tipo, nombre)
+      if (existente) mapa[k] = existente
+      else aCrear.push({ usuario_id: usuarioId, tipo, nombre })
+    }
     if (aCrear.length) {
       const { data } = await supabase.from('categorias').insert(aCrear).select('id, tipo, nombre')
       for (const c of data ?? []) mapa[`${c.tipo}|${c.nombre}`] = c.id
@@ -247,8 +293,14 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
   async function idsDeFuentes(filas) {
     const { data: existentes } = await supabase.from('fuentes').select('id, nombre').eq('usuario_id', usuarioId)
     const mapa = {}
-    for (const f of existentes ?? []) mapa[f.nombre] = f.id
-    const aCrear = [...new Set(filas.filter((f) => f.esInversion && f.plataforma).map((f) => f.plataforma))]
+    const porForma = new Map()
+    for (const f of existentes ?? []) {
+      mapa[f.nombre] = f.id
+      porForma.set(normalizarTexto(f.nombre), f.id)
+    }
+    const plataformas = [...new Set(filas.filter((f) => f.esInversion && f.plataforma).map((f) => f.plataforma))]
+    for (const n of plataformas) if (!mapa[n] && porForma.has(normalizarTexto(n))) mapa[n] = porForma.get(normalizarTexto(n))
+    const aCrear = plataformas
       .filter((n) => !mapa[n])
       .map((nombre) => ({ usuario_id: usuarioId, tipo: 'gasto', nombre }))
     if (aCrear.length) {
@@ -282,6 +334,16 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
         for (const r of data ?? []) ids.push(r.id)
       }
       registrar({ nombre: origen?.nombre ?? 'Importación', ids })
+      // MEMORIA: lo que el usuario ha corregido se recuerda para siempre. La
+      // próxima vez que el banco escriba "ALIPAM23", será Mercadona sin preguntar.
+      const aprendido = []
+      for (const g of grupos) {
+        const nombre = cambiosNombre[g.clave]
+        const categoria = cambiosCat[g.clave]
+        if (!nombre && !categoria) continue
+        for (const clave of g.claves) aprendido.push({ clave, nombre: nombre ?? g.nombre, ...(categoria ? { categoria } : {}) })
+      }
+      if (aprendido.length) await recordar(aprendido)
       registrarEvento(origen?.tipo === 'capturas' ? 'importacion_capturas' : 'importacion')
 
       // Resumen de lo traído: historial, suscripciones y ahorro posible.
@@ -399,16 +461,42 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
             <section className="ih-grupos" aria-label="Categorías por comercio">
               <header>
                 <h3>Revisa las categorías</h3>
-                <p>Las hemos puesto por ti. Cambiar una cambia todos los movimientos de ese comercio.</p>
+                <p>Las hemos puesto por ti. Cambiar una cambia todos los movimientos de ese comercio. Si el banco usa un nombre raro, tócalo y dinos cuál es: lo recordaremos siempre.</p>
               </header>
               <ul>
-                {gruposVisibles.map((g) => (
+                {gruposVisibles.map((g) => {
+                  const nombre = cambiosNombre[g.clave] ?? g.nombre
+                  const recordado = !cambiosNombre[g.clave] && (g.origen === 'memoria' || g.origen === 'memoria-aprox')
+                  return (
                   <li key={g.clave} className="ih-grupo">
                     <span className="ih-grupo-texto">
-                      <span className="ih-grupo-nombre">{g.nombre}</span>
+                      {editando === g.clave ? (
+                        <input
+                          className="ih-grupo-input"
+                          defaultValue={nombre}
+                          list="ih-conocidos"
+                          aria-label={`Nombre real de ${g.nombre}`}
+                          autoFocus
+                          maxLength={60}
+                          onBlur={(e) => renombrar(g, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') e.currentTarget.blur()
+                            if (e.key === 'Escape') setEditando(null)
+                          }}
+                        />
+                      ) : (
+                        <button type="button" className="ih-grupo-nombre" onClick={() => setEditando(g.clave)} aria-label={`Cambiar el nombre de ${nombre}`}>
+                          {nombre}
+                          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z" /></svg>
+                        </button>
+                      )}
                       <span className="ih-grupo-meta">
+                        {recordado && <span className="ih-recordado">Reconocido</span>}
                         {g.n} {g.n === 1 ? 'movimiento' : 'movimientos'} · <span className={g.tipo}>{g.tipo === 'ingreso' ? '+' : '−'}{formatearEuros(Math.round(g.total))}</span>
                       </span>
+                      {g.ejemplo && g.ejemplo.trim().toLowerCase() !== nombre.toLowerCase() && (
+                        <span className="ih-grupo-banco">En el banco: {g.ejemplo.length > 38 ? `${g.ejemplo.slice(0, 36)}…` : g.ejemplo}</span>
+                      )}
                     </span>
                     <select
                       aria-label={`Categoría de ${g.nombre}`}
@@ -420,8 +508,14 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
                       ))}
                     </select>
                   </li>
-                ))}
+                  )
+                })}
               </ul>
+              <datalist id="ih-conocidos">
+                {conocidos.slice(0, 300).map((n) => (
+                  <option key={n} value={n} />
+                ))}
+              </datalist>
               {grupos.length > 10 && (
                 <button type="button" className="link" onClick={() => setVerTodosGrupos((v) => !v)}>
                   {verTodosGrupos ? 'Ver menos' : `Ver los ${grupos.length} comercios`}

@@ -9918,3 +9918,65 @@ input[type='number']::-webkit-outer-spin-button {
 .fulcro-al-momento .link {
   font-size: var(--fs-xs);
 }
+
+/* Importar · nombre real del comercio (memoria) */
+button.ih-grupo-nombre {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  color: var(--text-h);
+  text-align: left;
+  cursor: pointer;
+}
+button.ih-grupo-nombre svg {
+  flex: none;
+  color: var(--text-3);
+}
+button.ih-grupo-nombre:hover svg,
+button.ih-grupo-nombre:focus-visible svg {
+  color: var(--accent-2);
+}
+.ih-grupo-input {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: var(--radio-s);
+  border: 1px solid var(--accent);
+  background: var(--card-bg-2);
+  color: var(--text-h);
+  font: inherit;
+  font-size: var(--fs-s);
+}
+.ih-grupo-banco {
+  font-size: var(--fs-micro);
+  color: var(--text-3);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ih-recordado {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  border-radius: var(--radio-pastilla);
+  border: 1px solid var(--accent-2);
+  color: var(--accent-2);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+}
+
+.etiqueta-parecida {
+  margin: 6px 0 0;
+  font-size: var(--fs-xs);
+  color: var(--text);
+}
+.edicion-banco {
+  margin: 4px 0 2px;
+  overflow-wrap: anywhere;
+}

@@ -7,9 +7,10 @@
 // Regla de oro: ante la duda, null → la pregunta va a Fulcro (IA). Mejor
 // gastar 0,05 céntimos que contestar mal.
 
-import { centimosDe, esConsumo, etiquetaMes, formatearFecha } from './movimientosUtils'
-import { esInversion, etiquetaCategoria, formatearEuros } from './categorias'
+import { categoriaDeDevolucion, centimosDe, esConsumo, etiquetaMes, formatearFecha, gastoPorCategoria, totalesDe } from './movimientosUtils'
+import { esDevolucion, esInversion, etiquetaCategoria, formatearEuros } from './categorias'
 import { periodoDe, proximoCobro } from './periodicidad'
+import { nombreComercio } from './comercios'
 
 const sinAcentos = (s) =>
   String(s ?? '')
@@ -106,7 +107,8 @@ function periodo(t, hoy) {
 const enPeriodo = (p, hoyIso) => (m) => (p.tipo === 'todo' ? m.fecha <= hoyIso : m.fecha >= p.desde && m.fecha <= p.hasta && m.fecha <= hoyIso)
 
 // ── El "qué": tema, categoría o comercio ──────────────────────────────────────
-const textoMov = (m) => sinAcentos(`${m.nota ?? ''} ${m.fuente?.nombre ?? ''} ${m.categoria?.nombre ?? ''}`)
+// Texto en el que buscar: el comercio REAL (memoria/marca) + lo del banco + categoría.
+const textoMov = (m) => sinAcentos(`${nombreComercio(m)} ${m.nota ?? ''} ${m.fuente?.nombre ?? ''} ${m.categoria?.nombre ?? ''}`)
 const tieneToken = (texto, tok) => new RegExp(`\\b${tok.replace(/s$/, '')}s?\\b`).test(texto)
 
 function resolverObjetivo(t, movimientos) {
@@ -121,7 +123,13 @@ function resolverObjetivo(t, movimientos) {
   }
   if (tokens.length === 1) {
     const cat = cats.get(tokens[0]) ?? cats.get(tokens[0].replace(/s$/, '')) ?? cats.get(`${tokens[0]}s`)
-    if (cat) return { nombre: etiquetaCategoria(cat), filtro: (m) => m.categoria?.nombre === cat }
+    if (cat)
+      return {
+        nombre: etiquetaCategoria(cat),
+        filtro: (m) => m.categoria?.nombre === cat,
+        // Las devoluciones van a la categoría del comercio que devuelve.
+        filtroDevolucion: (d) => categoriaDeDevolucion(d, movimientos) === cat,
+      }
   }
 
   // 2. Varias palabras ("seguro de moto"): todas en el concepto.
@@ -156,8 +164,10 @@ const mesesEntre = (desde, hasta) => {
   return (y2 - y1) * 12 + (m2 - m1) + 1
 }
 
-function respuestaGasto({ objetivo, movs, p, hoyIso, verboPago }) {
-  const total = movs.reduce((s, m) => s + centimosDe(m), 0)
+function respuestaGasto({ objetivo, movs, devoluciones = [], p, hoyIso, verboPago }) {
+  const devuelto = devoluciones.reduce((s, m) => s + centimosDe(m), 0)
+  // Neto de devoluciones: mismo número que el resto de la app (MOTOR.md E6).
+  const total = movs.reduce((s, m) => s + centimosDe(m), 0) - devuelto
   const que = objetivo ? ` en **${objetivo.nombre}**` : ''
   if (movs.length === 0) {
     return objetivo
@@ -170,6 +180,7 @@ function respuestaGasto({ objetivo, movs, p, hoyIso, verboPago }) {
   const lineas = [`${cuando} ${verbo} **${eur(total)}**${que} (${movs.length} ${movs.length === 1 ? 'pago' : 'pagos'}).`]
   const meses = lineaMeses(movs, p)
   if (meses) lineas.push(`- Por meses: ${meses}`)
+  if (devuelto > 0) lineas.push(`- Ya descontadas las devoluciones: ${eur(devuelto)}.`)
   const nMeses = p.tipo === 'todo' ? mesesEntre(primera, hoyIso) : mesesEntre(p.desde, p.hasta)
   if (nMeses >= 2) lineas.push(`- De media, **${eur(total / nMeses)} al mes**.`)
   if (objetivo) {
@@ -235,12 +246,13 @@ export function respuestaLocal(pregunta, { movimientos = [], recurrentes = [], h
   // ¿En qué gasto más?
   if (/\b(en que|donde|a que)\b/.test(t) && /\b(mas|se me va|se va)\b/.test(t)) {
     const per = p ?? periodo('este mes', hoy)
-    const mapa = new Map()
-    for (const m of movimientos) if (esConsumo(m) && enPeriodo(per, hoyIso)(m)) mapa.set(m.categoria?.nombre ?? 'Sin categoría', (mapa.get(m.categoria?.nombre ?? 'Sin categoría') ?? 0) + centimosDe(m))
-    const total = [...mapa.values()].reduce((a, b) => a + b, 0)
-    if (!total) return `No has apuntado gastos ${per.etiqueta}.`
+    // Mismas funciones del motor que Inicio y Presupuesto (neto de devoluciones).
+    const dentro = movimientos.filter(enPeriodo(per, hoyIso))
+    const mapa = gastoPorCategoria(dentro)
+    const total = totalesDe(dentro).gastos
+    if (!(total > 0) || mapa.size === 0) return `No has apuntado gastos ${per.etiqueta}.`
     const top = [...mapa.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
-    return [`${capital(per.etiqueta)} has gastado **${eur(total)}**. Donde más:`, ...top.map(([c, v]) => `- **${etiquetaCategoria(c)}**: ${eur(v)} (${Math.round((v / total) * 100)} %)`)].join('\n')
+    return [`${capital(per.etiqueta)} has gastado **${formatearEuros(total)}**. Donde más:`, ...top.map(([c, v]) => `- **${etiquetaCategoria(c)}**: ${formatearEuros(v)} (${Math.round((v / total) * 100)} %)`)].join('\n')
   }
 
   const esIngreso = /\b(ingresado|ingrese|ingresos|cobrado|cobre|ganado|gane)\b/.test(t)
@@ -258,14 +270,13 @@ export function respuestaLocal(pregunta, { movimientos = [], recurrentes = [], h
     if (!objetivo.sin && !esInv) return null // "¿cuánto he cobrado de X?" → IA (raro)
     const perUsado = per ?? periodo('este mes', hoy)
     const dentro = movimientos.filter(enPeriodo(perUsado, hoyIso))
-    const ingresos = dentro.filter((m) => m.tipo === 'ingreso' && !/ajuste|ahorro/i.test(m.categoria?.nombre ?? '')).reduce((s, m) => s + centimosDe(m), 0)
-    const gastos = dentro.filter(esConsumo).reduce((s, m) => s + centimosDe(m), 0)
-    if (esIngreso) return `${capital(perUsado.etiqueta)} han entrado **${eur(ingresos)}**.`
+    // La regla única del motor (totalesDe): sin ajustes, traspasos ni devoluciones como ingreso.
+    const tot = totalesDe(dentro)
+    if (esIngreso) return `${capital(perUsado.etiqueta)} han entrado **${formatearEuros(tot.ingresos)}**.`
     if (esAhorro) {
-      const ahorro = ingresos - gastos
-      return ingresos > 0
-        ? `${capital(perUsado.etiqueta)} has ahorrado **${eur(ahorro)}**: el ${Math.round((ahorro / ingresos) * 100)} % de lo que ha entrado (${eur(ingresos)} de ingresos y ${eur(gastos)} de gastos).`
-        : `${capital(perUsado.etiqueta)} no han entrado ingresos, así que no hay ahorro que calcular (gastos: ${eur(gastos)}).`
+      return tot.ingresos > 0
+        ? `${capital(perUsado.etiqueta)} has ahorrado **${formatearEuros(tot.ahorro)}**: el ${Math.round(tot.ratioAhorro)} % de lo que ha entrado (${formatearEuros(tot.ingresos)} de ingresos y ${formatearEuros(tot.gastos)} de gastos).`
+        : `${capital(perUsado.etiqueta)} no han entrado ingresos, así que no hay ahorro que calcular (gastos: ${formatearEuros(tot.gastos)}).`
     }
     const inv = dentro.filter((m) => esInversion(m) && (objetivo.sin || !objetivo.filtro || objetivo.filtro(m)))
     const totalInv = inv.reduce((s, m) => s + centimosDe(m), 0)
@@ -277,15 +288,17 @@ export function respuestaLocal(pregunta, { movimientos = [], recurrentes = [], h
     return `No veo gastos de **${objetivo.nombre}** en tus movimientos. Si lo apuntaste con otro nombre, prueba con ese (por ejemplo, el nombre del comercio).`
   }
   const filtro = objetivo.sin ? () => true : objetivo.filtro
+  const filtroDev = objetivo.sin ? () => true : (objetivo.filtroDevolucion ?? objetivo.filtro)
+  const devolucionesEn = (periodoX) => movimientos.filter((m) => esDevolucion(m) && filtroDev(m) && enPeriodo(periodoX, hoyIso)(m))
   if (!per) {
     // Presente sin periodo ("¿cuánto gasto en gasolina?"): media de los 3 últimos meses completos.
     const tres = periodo('ultimos 3 meses', hoy)
     const movs = movimientos.filter((m) => esConsumo(m) && filtro(m) && enPeriodo(tres, hoyIso)(m))
-    const total = movs.reduce((s, m) => s + centimosDe(m), 0)
+    const total = movs.reduce((s, m) => s + centimosDe(m), 0) - devolucionesEn(tres).reduce((s, m) => s + centimosDe(m), 0)
     if (!movs.length) return `No veo gastos en **${objetivo.nombre}** en los últimos 3 meses.`
     const linea = lineaMeses(movs, tres)
     return [`En **${objetivo.nombre}** gastas de media **${eur(total / 3)} al mes** (últimos 3 meses: ${eur(total)}).`, ...(linea ? [`- ${linea}`] : [])].join('\n')
   }
   const movs = movimientos.filter((m) => esConsumo(m) && filtro(m) && enPeriodo(per, hoyIso)(m))
-  return respuestaGasto({ objetivo: objetivo.sin ? null : objetivo, movs, p: per, hoyIso, verboPago: /\bpag/.test(t) })
+  return respuestaGasto({ objetivo: objetivo.sin ? null : objetivo, movs, devoluciones: devolucionesEn(per), p: per, hoyIso, verboPago: /\bpag/.test(t) })
 }

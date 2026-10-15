@@ -46,3 +46,59 @@ describe('revisión de una importación', () => {
     expect(resumenHistorial([])).toBeNull()
   })
 })
+
+describe('importación conectada (identidad y duplicados)', async () => {
+  const { crearDirectorio } = await import('./comercios')
+  const { crearCategorizador } = await import('./categorizar')
+  const fila = (fecha, nota, importe, tipo = 'gasto') => ({ fecha, nota, importe, tipo, categoria: '', esInversion: false })
+  const mov = (fecha, importe, extra = {}) => ({ fecha, tipo: 'gasto', importe, importe_centimos: Math.round(importe * 100), nota: null, fuente: null, categoria: { nombre: 'Comida' }, ...extra })
+
+  it('ALIPAM23: lo que el usuario dijo una vez agrupa con Mercadona y hereda su categoría', () => {
+    const dir = crearDirectorio([{ clave: 'alipam', nombre: 'Mercadona', categoria: 'Comida' }])
+    const filas = [fila('2026-10-01', 'PAGO TARJETA ALIPAM23', 30), fila('2026-10-03', 'COMPRA TARJ. MERCADONA VALENCIA', 50), fila('2026-10-05', 'PAGO TARJETA ALIPAM88', 20)]
+    const grupos = agruparPorComercio(filas, dir)
+    expect(grupos).toHaveLength(1)
+    expect(grupos[0]).toMatchObject({ nombre: 'Mercadona', n: 3, total: 100, origen: 'memoria' })
+    expect(grupos[0].claves.sort()).toEqual(['alipam', 'mercadona valencia'])
+    const cat = crearCategorizador([], dir)
+    expect(cat({ nota: 'PAGO TARJETA ALIPAM23' })).toMatchObject({ categoria: 'Comida', origen: 'memoria', comercio: 'Mercadona' })
+  })
+
+  it('sin memoria, ALIPAM23 con el nombre real de una marca hereda la regla (Mercadona → Comida)', () => {
+    const dir = crearDirectorio([{ clave: 'alipam', nombre: 'Mercadona' }])
+    expect(crearCategorizador([], dir)({ nota: 'PAGO TARJETA ALIPAM23' }).categoria).toBe('Comida')
+  })
+
+  it('el historial también aprende por comercio real (aunque el banco lo escriba distinto)', () => {
+    const dir = crearDirectorio([])
+    const hist = [mov('2026-09-01', 10, { nota: 'COMPRA TARJ MERCADONA MADRID', categoria: { nombre: 'Supermercado' } })]
+    expect(crearCategorizador(hist, dir)({ nota: 'MERCADONA VALENCIA 123' }).categoria).toBe('Supermercado')
+  })
+
+  const dir = crearDirectorio([])
+  it('fijo confirmado el día 5 y el banco lo carga el 6: ya apuntado', () => {
+    const existentes = [mov('2026-10-05', 10.99, { nota: 'Spotify', es_fijo: true })]
+    expect([...indicesParecidos([fila('2026-10-06', 'SPOTIFY AB', 10.99)], existentes, dir)]).toEqual([0])
+  })
+  it('gasto rápido sin comercio y el banco al día siguiente: ya apuntado', () => {
+    const existentes = [mov('2026-10-10', 85.4)]
+    expect([...indicesParecidos([fila('2026-10-11', 'COMPRA TARJ MERCADONA', 85.4)], existentes, dir)]).toEqual([0])
+  })
+  it('mismo importe, otro comercio, otro día: NO es el mismo', () => {
+    const existentes = [mov('2026-10-10', 12.99, { nota: 'Netflix' })]
+    expect([...indicesParecidos([fila('2026-10-12', 'ZARA', 12.99)], existentes, dir)]).toEqual([])
+  })
+  it('importes pequeños solo cuentan el mismo día (dos cafés no son el mismo)', () => {
+    const existentes = [mov('2026-10-10', 1.5)]
+    expect([...indicesParecidos([fila('2026-10-11', 'CAFETERIA', 1.5)], existentes, dir)]).toEqual([])
+  })
+  it('a más de 3 días no se considera duplicado', () => {
+    const existentes = [mov('2026-10-01', 40, { nota: 'Repsol' })]
+    expect([...indicesParecidos([fila('2026-10-06', 'ESTACION REPSOL', 40)], existentes, dir)]).toEqual([])
+  })
+  it('un apunte cubre una sola fila; el exacto gana al cercano', () => {
+    const existentes = [mov('2026-10-10', 20, { nota: 'Mercadona' })]
+    const filas = [fila('2026-10-11', 'MERCADONA', 20), fila('2026-10-10', 'MERCADONA', 20)]
+    expect([...indicesParecidos(filas, existentes, dir)]).toEqual([1])
+  })
+})

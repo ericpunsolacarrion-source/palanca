@@ -1,3 +1,4 @@
+import { nombreComercio } from './comercios'
 // Búsqueda en el historial: concepto, comercio, nota, categoría o importe
 // ("mercadona", "netflix", "13,99"). Sin acentos ni mayúsculas.
 const normalizar = (t) =>
@@ -11,6 +12,7 @@ export function coincideBusqueda(m, consulta) {
   if (!q) return true
   const importe = Number(m.importe)
   const textos = [
+    nombreComercio(m), // el comercio real: "mercadona" encuentra "PAGO TARJETA ALIPAM23"
     m.nota,
     m.fuente?.nombre,
     m.categoria?.nombre,

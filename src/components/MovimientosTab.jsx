@@ -103,7 +103,7 @@ export default function MovimientosTab({
         {movsFiltrados.length === 0 ? (
           <p className="ayuda">No hay {ETIQUETA_FILTRO[filtro].toLowerCase()} este mes.</p>
         ) : (
-          <ListaMovimientos movimientos={movsFiltrados} cargando={cargando} onEliminado={onGuardado} />
+          <ListaMovimientos usuarioId={usuarioId} todos={movimientosReales ?? movimientos} movimientos={movsFiltrados} cargando={cargando} onEliminado={onGuardado} />
         )}
       </div>
     )
@@ -191,6 +191,8 @@ export default function MovimientosTab({
             <p className="ayuda hist-sin-resultados">No hay movimientos que coincidan con «{busqueda.trim()}».</p>
           ) : (
           <ListaMovimientos
+            usuarioId={usuarioId}
+            todos={movimientosReales ?? movimientos}
             movimientos={movsHistorial}
             cargando={cargando}
             onEliminado={onGuardado}

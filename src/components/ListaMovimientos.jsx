@@ -11,14 +11,27 @@ import { confirmar } from '../lib/confirmar'
 import { aCentimos } from '../lib/importe'
 import InputImporte from './InputImporte'
 import InputFecha from './InputFecha'
+import { useEtiquetas } from '../lib/useEtiquetas'
+import { useComerciosCompartidos } from '../lib/DatosCompartidos'
+import { claveComercio, directorio, mismaEtiqueta } from '../lib/comercios'
+import { esAjuste } from '../lib/categorias'
 
-function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
+function FilaEdicion({ movimiento, usuarioId, todos = [], onCancelar, onGuardado }) {
   const [importe, setImporte] = useState(Number(movimiento.importe))
   const [fecha, setFecha] = useState(movimiento.fecha)
   const [esFijo, setEsFijo] = useState(movimiento.es_fijo)
   const [nota, setNota] = useState(movimiento.nota ?? '')
+  const identidad = directorio().identificar(movimiento)
+  const [comercio, setComercio] = useState(identidad.nombre)
+  const [categoriaId, setCategoriaId] = useState(movimiento.categoria_id ?? movimiento.categoria?.id ?? '')
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
+  const { recordar } = useComerciosCompartidos()
+  const { items: categorias } = useEtiquetas('categorias', usuarioId, movimiento.tipo)
+  // Comercio y categoría se editan en el consumo y los ingresos; no en
+  // inversiones (su "comercio" es la plataforma) ni en ajustes de saldo.
+  const editable = !esInversion(movimiento) && !esAjuste(movimiento)
+  const categoriasVisibles = categorias.filter((c) => c.nombre !== 'Ajuste' && c.nombre !== 'Inversion')
 
   async function handleGuardar(e) {
     e.preventDefault()
@@ -27,23 +40,64 @@ function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
       setError('Introduce un importe válido mayor que 0.')
       return
     }
+    const nombreNuevo = comercio.trim().replace(/\s+/g, ' ')
+    const cambiaComercio = editable && nombreNuevo && !mismaEtiqueta(nombreNuevo, identidad.nombre)
+    const cambiaCategoria = editable && categoriaId && categoriaId !== (movimiento.categoria_id ?? movimiento.categoria?.id)
+    // Si el movimiento no tenía texto (gasto rápido), el comercio pasa a ser su nota.
+    const sinTexto = !(movimiento.nota || movimiento.fuente?.nombre)
+    const notaFinal = cambiaComercio && sinTexto && !nota.trim() ? nombreNuevo : nota.trim() || null
 
     setGuardando(true)
     const { data: fila, error: errorUpdate } = await supabase
       .from('movimientos')
-      .update({ importe: importeNumero, importe_centimos: aCentimos(importeNumero), fecha, es_fijo: esFijo, nota: nota.trim() || null })
+      .update({
+        importe: importeNumero,
+        importe_centimos: aCentimos(importeNumero),
+        fecha,
+        es_fijo: esFijo,
+        nota: notaFinal,
+        ...(cambiaCategoria ? { categoria_id: categoriaId } : {}),
+      })
       .eq('id', movimiento.id)
       .select(SELECT_MOVIMIENTO)
       .single()
-
     setGuardando(false)
-
     if (errorUpdate) {
       setError('No se ha podido guardar. Inténtalo de nuevo.')
       return
     }
 
-    toast('Cambios guardados')
+    // MEMORIA: "este texto del banco es <comercio>" (y su categoría), para siempre.
+    const nombreCat = categorias.find((c) => c.id === categoriaId)?.nombre
+    const clave = claveComercio(movimiento.nota || movimiento.fuente?.nombre || '')
+    if (clave && (cambiaComercio || cambiaCategoria)) {
+      await recordar([{ clave, nombre: cambiaComercio ? nombreNuevo : identidad.nombre, ...(cambiaCategoria && nombreCat ? { categoria: nombreCat } : {}) }])
+    }
+
+    // ¿Hay más movimientos de ese comercio con otra categoría? Se ofrece igualarlos.
+    const nombreFinal = cambiaComercio ? nombreNuevo : identidad.nombre
+    if (cambiaCategoria && nombreFinal) {
+      const dir = directorio()
+      const otros = todos.filter(
+        (x) =>
+          x.id !== movimiento.id &&
+          !esDemo(x.id) &&
+          x.tipo === movimiento.tipo &&
+          !esInversion(x) &&
+          !esAjuste(x) &&
+          (x.categoria_id ?? x.categoria?.id) !== categoriaId &&
+          (mismaEtiqueta(dir.nombreDe(x), nombreFinal) || (clave && claveComercio(x.nota || x.fuente?.nombre || '') === clave)),
+      )
+      if (otros.length && (await confirmar(`¿Poner también «${etiquetaCategoria(nombreCat)}» a los otros ${otros.length} movimientos de ${nombreFinal}?`))) {
+        const { error: errLote } = await supabase.from('movimientos').update({ categoria_id: categoriaId }).in('id', otros.map((x) => x.id))
+        if (errLote) toast('No se han podido actualizar los demás. Inténtalo de nuevo.', 'error')
+        else toast(`Actualizados ${otros.length + 1} movimientos de ${nombreFinal}`)
+        onGuardado() // recarga completa: cambian varios
+        return
+      }
+    }
+
+    toast(cambiaComercio ? `Guardado. Recordaremos que es ${nombreNuevo}` : 'Cambios guardados')
     onGuardado(fila ? { accion: 'editar', fila } : undefined)
   }
 
@@ -58,6 +112,33 @@ function FilaEdicion({ movimiento, onCancelar, onGuardado }) {
 
       <label htmlFor={`fecha-${movimiento.id}`}>Fecha</label>
       <InputFecha id={`fecha-${movimiento.id}`} value={fecha} onChange={setFecha} max={hoyIso()} />
+
+      {editable && (
+        <>
+          <label htmlFor={`comercio-${movimiento.id}`}>{movimiento.tipo === 'ingreso' ? 'De quién' : 'Comercio'}</label>
+          <input
+            id={`comercio-${movimiento.id}`}
+            type="text"
+            value={comercio}
+            maxLength={60}
+            onChange={(e) => setComercio(e.target.value)}
+            placeholder={movimiento.tipo === 'ingreso' ? 'ej. Empresa, Bizum de Ana' : 'ej. Mercadona'}
+          />
+          {movimiento.nota && !mismaEtiqueta(movimiento.nota, comercio) && (
+            <p className="ayuda-mini edicion-banco">En el banco: {movimiento.nota}. Si cambias el nombre, lo recordaremos para los próximos.</p>
+          )}
+
+          <label htmlFor={`categoria-${movimiento.id}`}>Categoría</label>
+          <select id={`categoria-${movimiento.id}`} value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
+            {!categoriasVisibles.some((c) => c.id === categoriaId) && movimiento.categoria && (
+              <option value={categoriaId}>{etiquetaCategoria(movimiento.categoria.nombre)}</option>
+            )}
+            {categoriasVisibles.map((c) => (
+              <option key={c.id} value={c.id}>{etiquetaCategoria(c.nombre)}</option>
+            ))}
+          </select>
+        </>
+      )}
 
       <div className="tipo-toggle">
         <button type="button" className={!esFijo ? 'activo' : ''} onClick={() => setEsFijo(false)}>
@@ -112,6 +193,8 @@ function etiquetaMes(clave) {
 }
 
 export default function ListaMovimientos({
+  usuarioId,
+  todos,
   movimientos,
   cargando,
   onEliminado,
@@ -160,6 +243,8 @@ export default function ListaMovimientos({
         <li key={m.id} className={inversion ? 'inversion' : m.tipo}>
           <FilaEdicion
             movimiento={m}
+            usuarioId={usuarioId}
+            todos={todos ?? movimientos}
             onCancelar={() => setEditandoId(null)}
             onGuardado={(cambio) => {
               setEditandoId(null)

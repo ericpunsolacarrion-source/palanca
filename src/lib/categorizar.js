@@ -8,7 +8,7 @@
 // (luz, telefonía, seguros, banco, gimnasio…): base del plan de ahorro.
 // Lógica pura y testeable.
 
-import { normalizarComercio } from './suscripciones'
+import { directorio } from './comercios'
 
 // negociable: tipo de palanca de ahorro (ver lib/negociables.js).
 // fijo: 'suscripcion' | 'recibo' → candidato a compromiso en Fijos.
@@ -85,16 +85,18 @@ export function reglaPara(concepto, tipo = 'gasto') {
 
 /**
  * Crea un categorizador que aprende de los movimientos que ya tiene el
- * usuario. Devuelve fn({ nota, tipo }) → { categoria, origen, fijo?, negociable? }.
+ * usuario. Devuelve fn({ nota, tipo }) → { categoria, origen, fijo?, negociable?, comercio }.
+ * Orden: lo que el usuario dijo de ese comercio (memoria) → su historial con
+ * ese comercio (aunque el banco lo escribiera distinto) → reglas → "Otros".
  */
-export function crearCategorizador(movimientosExistentes = []) {
-  // comercio normalizado + tipo → categoría más frecuente en su historial.
+export function crearCategorizador(movimientosExistentes = [], dir = directorio()) {
+  // comercio REAL + tipo → categoría más frecuente en su historial.
   const conteo = new Map()
   for (const m of movimientosExistentes) {
     const nombre = m.categoria?.nombre
-    const clave = normalizarComercio(m.fuente?.nombre || m.nota || '')
-    if (!nombre || !clave || nombre === 'Ajuste') continue
-    const k = `${m.tipo}|${clave}`
+    const grupo = dir.grupoDe(m)
+    if (!nombre || !grupo || nombre === 'Ajuste') continue
+    const k = `${m.tipo}|${grupo}`
     const porCat = conteo.get(k) ?? new Map()
     porCat.set(nombre, (porCat.get(nombre) ?? 0) + 1)
     conteo.set(k, porCat)
@@ -105,13 +107,17 @@ export function crearCategorizador(movimientosExistentes = []) {
   }
 
   return function categorizar({ nota, tipo = 'gasto' }) {
-    const regla = reglaPara(nota, tipo)
-    const extra = regla ? { fijo: regla.fijo, negociable: regla.negociable } : {}
-    const clave = normalizarComercio(nota || '')
-    const tuya = clave ? aprendido.get(`${tipo}|${clave}`) : null
+    const id = dir.identificar(nota || '')
+    // La regla se prueba con el texto del banco y con el nombre real
+    // ("ALIPAM23" que el usuario dijo que es Mercadona → regla de supermercado).
+    const regla = reglaPara(nota, tipo) ?? (id.nombre ? reglaPara(id.nombre, tipo) : null)
+    const extra = { ...(regla ? { fijo: regla.fijo, negociable: regla.negociable } : {}), comercio: id.nombre }
+    if (id.categoria) return { categoria: id.categoria, origen: 'memoria', ...extra }
+    const grupo = dir.grupoDe(nota || '')
+    const tuya = grupo ? aprendido.get(`${tipo}|${grupo}`) : null
     if (tuya) return { categoria: tuya, origen: 'historial', ...extra }
     if (regla) return { categoria: regla.categoria, origen: 'regla', ...extra }
-    return { categoria: tipo === 'ingreso' ? 'Otros ingresos' : 'Otros', origen: 'defecto' }
+    return { categoria: tipo === 'ingreso' ? 'Otros ingresos' : 'Otros', origen: 'defecto', ...extra }
   }
 }
 

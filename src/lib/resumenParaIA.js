@@ -20,6 +20,7 @@ import {
   totalesDe,
   ultimaReconciliacion,
   valorBolsaPorTipo,
+  hoyIso,
 } from './movimientosUtils'
 
 // Construye un resumen ESTRUCTURADO y compacto de la situación financiera del
@@ -170,7 +171,7 @@ export function construirResumenIA(
   const tMes = totalesDe(mes)
   const { ahorroMedio, invertidoMedio } = resumenMensualMedio(movimientos)
   const { estimacion: gastoEstimado, mesesUsados } = estimacionGastoMensual(movimientos)
-  const bolsasCalc = bolsas(movimientos)
+  const bolsasCalc = bolsas(movimientos, hoyIso()) // patrimonio de HOY (T2)
   const reconcISO = ultimaReconciliacion(movimientos)
   const reconciliada = reconcISO !== null
 

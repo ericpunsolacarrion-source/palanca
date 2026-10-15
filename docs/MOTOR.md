@@ -56,6 +56,11 @@
   `tipo_evento` es cómo entran nuevos eventos realizados (ver §9, F1/F2a); no es
   semántica libre.
 
+  *Implementación actual (Fase 1):* mientras no exista `tipo_evento`, la
+  devolución se reconoce por la categoría o el texto («Devolución», «Reembolso»;
+  `esDevolucion` en `categorias.js`) y `totalesDe` / `gastoPorCategoria` la
+  restan del gasto. Ver [IDENTIDAD.md](IDENTIDAD.md) §7.
+
 ---
 
 ## §2. Invariantes temporales (T) — monotemporal

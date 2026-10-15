@@ -1,4 +1,4 @@
-import { agregarPorMes, bolsas, bolsasConsolidadas, totalesDe, valorBolsaPorTipo } from './movimientosUtils'
+import { agregarPorMes, bolsas, bolsasConsolidadas, totalesDe, valorBolsaPorTipo, hoyIso } from './movimientosUtils'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sistema de logros por niveles, fácilmente ampliable: cada logro es una
@@ -110,7 +110,7 @@ function mesesSeguidosAhorrando(movimientos) {
 export function calcularMetricas({ movimientos, movimientosMes, objetivoInversion = 0, objetivos = [] }) {
   const totalMes = totalesDe(movimientosMes)
   // Inversión: al instante (cada aportación es un hecho, no depende del mes).
-  const bolsasFull = bolsas(movimientos)
+  const bolsasFull = bolsas(movimientos, hoyIso()) // patrimonio de HOY (T2)
   const { bolsaInversion } = bolsasFull
   // Liquidez y patrimonio: solo sobre datos consolidados (meses cerrados o saldo
   // reconciliado), nunca inflados por un ingreso del mes en curso.

@@ -8,6 +8,7 @@
 // ratificado por el usuario: contrato MOTOR.md F4).
 
 import { centimosDe, esConsumo, hoyIso } from './movimientosUtils'
+import { grupoComercio, nombreComercio } from './comercios'
 
 const DIA_MS = 86400000
 
@@ -62,9 +63,11 @@ const PERIODOS = [
   { id: 'anual', meses: 12, dias: 365, min: 330, max: 400, porAnio: 1, minCargos: 2 },
 ]
 
-// Clave del comercio de un movimiento: la fuente/concepto si existe; si no, la nota.
+// Clave del comercio REAL de un movimiento (lib/comercios.js): el mismo sitio
+// escrito de formas distintas por el banco ("NETFLIX.COM", "PAYPAL *NETFLIX")
+// o con un alias del usuario cuenta como uno solo.
 function claveDe(m) {
-  return normalizarComercio(m.fuente?.nombre || '') || normalizarComercio(m.nota || '')
+  return grupoComercio(m)
 }
 
 // ¿Ya lo sigue el usuario como compromiso en "Base"?
@@ -72,6 +75,7 @@ function yaSeguido(grupo, recurrentes) {
   return recurrentes.some(
     (r) =>
       (r.fuenteId && grupo.fuenteId && r.fuenteId === grupo.fuenteId) ||
+      grupoComercio(r.nombre) === grupo.clave ||
       normalizarComercio(r.nombre) === grupo.clave,
   )
 }
@@ -156,7 +160,7 @@ export function detectarSuscripciones(movimientos, recurrentes = [], opciones = 
 
     resultado.push({
       clave,
-      nombre: ultimo.fuente?.nombre?.trim() || nombreBonito(clave),
+      nombre: nombreComercio(ultimo) || nombreBonito(clave),
       periodicidad: periodo.id,
       periodoMeses: periodo.meses,
       // Un mes en que se cobra (para los no mensuales): el del último cargo.

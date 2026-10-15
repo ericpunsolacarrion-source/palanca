@@ -3,6 +3,7 @@ import { formatearEuros } from '../lib/categorias'
 import { formatearFecha } from '../lib/movimientosUtils'
 import { toast } from '../lib/toast'
 import Icono from './Icono'
+import { useComerciosCompartidos } from '../lib/DatosCompartidos'
 import { costeAnualTotal, detectarSuscripciones, guardarDescartadas, leerDescartadas } from '../lib/suscripciones'
 
 // Cargos periódicos detectados en tus movimientos (p. ej. tras importar el
@@ -11,10 +12,12 @@ import { costeAnualTotal, detectarSuscripciones, guardarDescartadas, leerDescart
 export default function SuscripcionesDetectadas({ usuarioId, movimientos, recurrentes, onAnadir }) {
   const [descartadas, setDescartadas] = useState(() => leerDescartadas(usuarioId))
   const [anadiendo, setAnadiendo] = useState(null)
+  // La memoria de comercios cambia quién es quién: se recalcula con ella.
+  const { alias } = useComerciosCompartidos()
 
   const detectadas = useMemo(
     () => detectarSuscripciones(movimientos ?? [], recurrentes, { descartadas }),
-    [movimientos, recurrentes, descartadas],
+    [movimientos, recurrentes, descartadas, alias], // eslint-disable-line react-hooks/exhaustive-deps
   )
 
   if (detectadas.length === 0) return null

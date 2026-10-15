@@ -4,7 +4,7 @@
 > sesión: qué está vivo, dónde mirar, qué sigue. Mantenerlo al día tras cada
 > cambio relevante o despliegue.
 >
-> **Última actualización:** 2026-10-14 · **Último deploy:** `28c4bfe`
+> **Última actualización:** 2026-10-15 · **Último deploy:** `28c4bfe`
 
 ---
 
@@ -27,6 +27,7 @@ premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](EST
 | Tema | Documento |
 |---|---|
 | **Contrato del motor** (invariantes, inamovible) | **[MOTOR.md](MOTOR.md)** |
+| **Identidad de comercios** (ALIPAM23 = Mercadona, erratas, memoria) | **[IDENTIDAD.md](IDENTIDAD.md)** |
 | Guía pantalla a pantalla | [PANTALLAS.md](PANTALLAS.md) |
 | **Sistema visual** (colores, tipografía, iconos, qué NO hacer) | **[DISENO.md](DISENO.md)** |
 | **Fulcro** (qué ve, hasta dónde llega, coste, pruebas) | **[FULCRO.md](FULCRO.md)** |
@@ -77,6 +78,17 @@ calendario, avisos) y el **rediseño visual v2** (ver DISENO.md). Además
 **fijos con día obligatorio y confirmación en su día** (también desde el
 inicio) y **datos de ejemplo + demo rápida** para usuarios nuevos. Detalle en
 PANTALLAS.md §3 y §4b.
+
+**2026-10-15 (tarde) — Motor conectado: identidad de comercios (en `develop`):** detalle en [IDENTIDAD.md](IDENTIDAD.md).
+- **Un comercio, un nombre en toda la app**: «ALIPAM23», «ALIPAM77» y «mercadoma» se reconocen como Mercadona (mayúsculas, acentos, erratas, plurales, números del banco).
+- **Memoria por usuario** (`comercios_alias`): lo que el cliente corrige una vez se aplica solo en el siguiente extracto («Reconocido»).
+- **Importar**: grupos por comercio real, renombrar con sugerencias, texto original del banco visible y duplicados a ±3 días.
+- **Historial**: editar el comercio y la categoría, con la opción de igualar los demás movimientos de ese comercio.
+- **Fijos sin doble cobro**: si el cargo ya está en los movimientos, el fijo sale como hecho.
+- **Devoluciones como contra-gasto** (no ingreso) y **sin fechas futuras** al importar.
+- Categorías y conceptos **sin duplicados** («comida» = «Comida»).
+- **Pruebas**: 336 tests, fuzz de invariantes al céntimo y 20 comprobaciones e2e del caso ALIPAM.
+- **Requiere** la sección 8 de `supabase-schema-metricas.sql`. Sin ella, la memoria se guarda en el dispositivo.
 
 **2026-10-15 — Métricas y RGPD (en `develop`):**
 - **Panel de métricas solo para admin**: Tu cuenta → Métricas de Palanca. Muestra activos, frecuencia, embudo, retención y usuarios ([METRICAS.md](METRICAS.md)).

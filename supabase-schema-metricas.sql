@@ -16,6 +16,8 @@
 --     historial). SOLO el administrador puede cambiarlos (admin_cambiar_plan).
 --  7) recordatorios por email: preferencia (perfiles.recordatorios), registro
 --     de envíos y la lista de candidatos (solo para el servidor).
+--  8) comercios_alias: la MEMORIA de comercios de cada usuario ("ALIPAM23" del
+--     banco es Mercadona). Se aprende al importar y al corregir un movimiento.
 -- ============================================================================
 
 -- 1) Eventos de uso ----------------------------------------------------------
@@ -548,6 +550,25 @@ end;
 $$;
 revoke all on function public.palanca_metricas(boolean) from public, anon;
 grant execute on function public.palanca_metricas(boolean) to authenticated;
+
+-- 8) Memoria de comercios -----------------------------------------------------------
+create table if not exists public.comercios_alias (
+  usuario_id  text not null,
+  clave       text not null check (char_length(clave) between 1 and 120),
+  nombre      text not null check (char_length(nombre) between 1 and 80),
+  categoria   text check (char_length(categoria) <= 60),
+  updated_at  timestamptz not null default now(),
+  primary key (usuario_id, clave)
+);
+alter table public.comercios_alias enable row level security;
+drop policy if exists palanca_sel on public.comercios_alias;
+drop policy if exists palanca_ins on public.comercios_alias;
+drop policy if exists palanca_upd on public.comercios_alias;
+drop policy if exists palanca_del on public.comercios_alias;
+create policy palanca_sel on public.comercios_alias for select to authenticated using (usuario_id = auth.uid()::text);
+create policy palanca_ins on public.comercios_alias for insert to authenticated with check (usuario_id = auth.uid()::text);
+create policy palanca_upd on public.comercios_alias for update to authenticated using (usuario_id = auth.uid()::text) with check (usuario_id = auth.uid()::text);
+create policy palanca_del on public.comercios_alias for delete to authenticated using (usuario_id = auth.uid()::text);
 
 -- 5) Borrado completo de la cuenta --------------------------------------------
 -- Recorre TODAS las tablas públicas con columna usuario_id (también las que se

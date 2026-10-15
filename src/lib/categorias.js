@@ -26,6 +26,22 @@ export const CATEGORIA_AJUSTE = 'Ajuste'
 // neutro). Solución provisional por nombre hasta la Fase 2 (nodos/cuentas).
 export const CATEGORIA_TRASPASO = 'Ahorro'
 
+// Categoría de DEVOLUCIONES (reembolsos de compras). Una devolución NO es un
+// ingreso (MOTOR.md E6): es un CONTRA-GASTO. Resta del gasto de consumo (de la
+// categoría del comercio que devuelve) y sí suma a la liquidez (el dinero entra).
+export const CATEGORIA_DEVOLUCION = 'Devoluciones'
+const NOMBRES_DEVOLUCION = /^(devolucion|devoluciones|reembolso|reembolsos|devolucion compra|devoluciones compras)$/
+
+export function esDevolucion(movimiento) {
+  if (movimiento.tipo !== 'ingreso') return false
+  const n = String(movimiento.categoria?.nombre ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+  return NOMBRES_DEVOLUCION.test(n)
+}
+
 // Formato español único para importes: punto de miles, coma decimal, € al
 // final. Sin decimales cuando el importe es redondo (100.000 €) y con 2
 // decimales cuando hay céntimos (1.234,56 €).

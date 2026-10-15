@@ -67,7 +67,7 @@ describe('textos de listas', () => {
   })
   it('concepto: comercio legible, nota o categoría', () => {
     expect(conceptoDe(mov('gasto', 'Comida', 1, '2026-10-01', 'MERCADONA'))).toBe('Mercadona')
-    expect(conceptoDe(mov('gasto', 'Ocio', 1, '2026-10-01', 'COMPRA TARJ. NETFLIX.COM'))).toBe('Compra Tarj. Netflix.com')
+    expect(conceptoDe(mov('gasto', 'Ocio', 1, '2026-10-01', 'COMPRA TARJ. NETFLIX.COM'))).toBe('Netflix') // el comercio real, no el texto del banco
     expect(conceptoDe(mov('gasto', 'Ocio', 1, '2026-10-01', 'Cena con Ana'))).toBe('Cena con Ana')
     expect(conceptoDe(mov('gasto', 'Ocio', 1, '2026-10-01'))).toBe('Ocio')
     expect(conceptoDe({ tipo: 'ingreso', importe: 1, fecha: '2026-10-01', categoria: { nombre: 'Ajuste' } })).toBe('Ajuste de saldo')

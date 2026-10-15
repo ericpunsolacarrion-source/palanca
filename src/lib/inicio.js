@@ -2,6 +2,7 @@
 // reglas únicas de movimientosUtils: patrimonio con `bolsas`, flujos del mes
 // con `totalesDe`, consumo con `gastoPorCategoria`. Ningún cálculo a mano.
 
+import { nombreComercio } from './comercios'
 import { esAjuste, etiquetaCategoria } from './categorias'
 import { bolsas, gastoPorCategoria, totalesDe } from './movimientosUtils'
 
@@ -115,13 +116,10 @@ export function fechaRelativa(fechaIso, hoy = new Date()) {
   return new Intl.DateTimeFormat('es-ES', opciones).format(f).replace('.', '')
 }
 
-/** Texto principal de un movimiento en listas: comercio, nota o categoría. */
+/** Texto principal de un movimiento en listas: el comercio REAL (memoria del
+ * usuario, marca o lo apuntado; ver lib/comercios.js), o si no, la categoría. */
 export function conceptoDe(m) {
-  let texto = (m.fuente?.nombre || m.nota || '').trim()
-  // Los extractos del banco vienen EN MAYÚSCULAS: "MERCADONA" → "Mercadona".
-  if (/[A-ZÁÉÍÓÚÑ]/.test(texto) && texto === texto.toUpperCase()) {
-    texto = texto.toLowerCase().replace(/(^|[\s(/-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase())
-  }
+  const texto = nombreComercio(m)
   if (texto) return texto.length > 40 ? `${texto.slice(0, 38)}…` : texto
   if (esAjuste(m)) return 'Ajuste de saldo'
   return m.categoria?.nombre ? etiquetaCategoria(m.categoria.nombre) : m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'

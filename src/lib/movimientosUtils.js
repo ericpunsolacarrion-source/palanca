@@ -1,4 +1,6 @@
-import { esAjuste, esInversion, esTraspaso } from './categorias'
+import { esAjuste, esDevolucion, esInversion, esTraspaso } from './categorias'
+import { directorio } from './comercios'
+import { reglaPara } from './categorizar'
 import { aCentimos, aEuros } from './importe'
 import { importesOcultos } from './privacidad'
 
@@ -27,16 +29,46 @@ export function sumarImportes(movimientos) {
   return aEuros(total)
 }
 
+// ¿A qué categoría de gasto pertenece una DEVOLUCIÓN? A la del comercio que
+// devuelve: lo que el usuario dijo de él (memoria) → la categoría con la que
+// más compra en ese comercio → la regla del comercio → "Devoluciones".
+export function categoriaDeDevolucion(m, movimientos = []) {
+  const dir = directorio()
+  const id = dir.identificar(m)
+  if (id.categoria) return id.categoria
+  const grupo = dir.grupoDe(m)
+  if (grupo) {
+    const conteo = new Map()
+    for (const x of movimientos) {
+      if (!esConsumo(x) || dir.grupoDe(x) !== grupo) continue
+      const c = x.categoria?.nombre ?? 'Sin categoría'
+      conteo.set(c, (conteo.get(c) ?? 0) + 1)
+    }
+    if (conteo.size) return [...conteo.entries()].sort((a, b) => b[1] - a[1])[0][0]
+  }
+  return reglaPara(m.nota || m.fuente?.nombre || '', 'gasto')?.categoria ?? 'Devoluciones'
+}
+
 // Gasto de consumo por categoría (suma exacta en céntimos). Devuelve un Map
 // nombre → euros. Fuente única para gráficos, presupuesto, píldoras e IA.
+// Las DEVOLUCIONES restan de la categoría del comercio (contra-gasto). Una
+// categoría nunca queda en negativo en el desglose (si en el periodo se
+// devolvió más de lo que se compró en ella, se muestra a 0 y se omite).
 export function gastoPorCategoria(movimientos) {
   const mapa = new Map()
   for (const m of movimientos) {
-    if (!esConsumo(m)) continue
-    const nombre = m.categoria?.nombre ?? 'Sin categoría'
-    mapa.set(nombre, (mapa.get(nombre) ?? 0) + centimosDe(m))
+    if (esConsumo(m)) {
+      const nombre = m.categoria?.nombre ?? 'Sin categoría'
+      mapa.set(nombre, (mapa.get(nombre) ?? 0) + centimosDe(m))
+    } else if (esDevolucion(m)) {
+      const nombre = categoriaDeDevolucion(m, movimientos)
+      mapa.set(nombre, (mapa.get(nombre) ?? 0) - centimosDe(m))
+    }
   }
-  for (const [k, v] of mapa) mapa.set(k, aEuros(v))
+  for (const [k, v] of mapa) {
+    if (v <= 0) mapa.delete(k)
+    else mapa.set(k, aEuros(v))
+  }
   return mapa
 }
 
@@ -175,7 +207,7 @@ export function ultimosNMeses(n, claveFin = claveMesActual()) {
 }
 
 // Regla única de la app (ver CLAUDE.md):
-//   gasto   = solo consumo (excluye inversión)
+//   gasto   = solo consumo (excluye inversión), NETO de devoluciones
 //   ahorro  = ingresos - gastos de consumo (la inversión ES parte del ahorro)
 //   invertido = movimientos de gasto con categoría "Inversion"
 export function totalesDe(movimientos) {
@@ -188,7 +220,9 @@ export function totalesDe(movimientos) {
     // Los traspasos a tu ahorro tampoco: el dinero sigue siendo tuyo.
     if (esAjuste(m) || esTraspaso(m)) continue
     const importe = centimosDe(m)
-    if (m.tipo === 'ingreso') ingresos += importe
+    // Una devolución no es un ingreso: es un contra-gasto (MOTOR.md E6).
+    if (esDevolucion(m)) gastos -= importe
+    else if (m.tipo === 'ingreso') ingresos += importe
     else if (esInversion(m)) invertido += importe
     else gastos += importe
   }

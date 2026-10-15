@@ -5,9 +5,9 @@
 // Idea clave: revisar 300 filas una a una nadie lo hace. Se revisa por
 // COMERCIO: "Mercadona · 52 movimientos → Comida". Cambiar uno cambia todos.
 
-import { normalizarComercio } from './suscripciones'
-import { esConsumo } from './movimientosUtils'
-import { CATEGORIA_INVERSION } from './categorias'
+import { centimosDe, esConsumo } from './movimientosUtils'
+import { CATEGORIA_INVERSION, esDevolucion } from './categorias'
+import { claveComercio, directorio } from './comercios'
 
 // Movimientos leídos de capturas → forma canónica del importador.
 export function filasDeCapturas(movimientos) {
@@ -33,57 +33,91 @@ export function categorizarFilas(filas, categorizador) {
   })
 }
 
-const nombreBonito = (t) =>
-  String(t)
-    .toLowerCase()
-    .replace(/(^|\s)(\p{L})/gu, (_, a, b) => a + b.toUpperCase())
-
 /**
- * Agrupa por comercio (y tipo): [{ clave, nombre, tipo, n, total, categoria,
- * indices }] de más a menos movimientos. `categoria` = la más frecuente del grupo.
+ * Agrupa por COMERCIO REAL (y tipo): "PAGO TARJETA ALIPAM23" que el usuario ya
+ * dijo que es Mercadona va con "COMPRA TARJ. MERCADONA". Devuelve
+ * [{ clave, nombre, tipo, n, total, categoria, indices, ejemplo, claves, origen }]
+ * de más a menos movimientos. `claves`: las claves de los textos del banco del
+ * grupo (para recordar el nombre de todas). `categoria`: la más frecuente.
  */
-export function agruparPorComercio(filas) {
+export function agruparPorComercio(filas, dir = directorio()) {
   const grupos = new Map()
   filas.forEach((f, i) => {
-    const comercio = normalizarComercio(f.nota) || 'sin concepto'
-    const clave = `${f.tipo}|${comercio}`
-    const g = grupos.get(clave) ?? { clave, nombre: comercio === 'sin concepto' ? 'Sin concepto' : nombreBonito(comercio), tipo: f.tipo, n: 0, total: 0, indices: [], cats: new Map() }
+    const id = dir.identificar(f.nota || '')
+    const grupo = dir.grupoDe(f.nota || '') || 'sin concepto'
+    const clave = `${f.tipo}|${grupo}`
+    const g =
+      grupos.get(clave) ??
+      { clave, nombre: id.nombre || 'Sin concepto', tipo: f.tipo, n: 0, total: 0, indices: [], cats: new Map(), ejemplo: f.nota || '', claves: new Set(), origen: id.origen }
     g.n += 1
     g.total += f.importe
     g.indices.push(i)
     g.cats.set(f.categoria, (g.cats.get(f.categoria) ?? 0) + 1)
+    const k = claveComercio(f.nota || '')
+    if (k) g.claves.add(k)
+    if (id.origen === 'memoria' || id.origen === 'memoria-aprox') g.origen = id.origen
     grupos.set(clave, g)
   })
   return [...grupos.values()]
-    .map(({ cats, ...g }) => ({ ...g, total: Math.round(g.total * 100) / 100, categoria: [...cats.entries()].sort((a, b) => b[1] - a[1])[0][0] }))
+    .map(({ cats, claves, ...g }) => ({
+      ...g,
+      claves: [...claves],
+      total: Math.round(g.total * 100) / 100,
+      categoria: [...cats.entries()].sort((a, b) => b[1] - a[1])[0][0],
+    }))
     .sort((a, b) => b.n - a.n || b.total - a.total)
 }
 
+const DIA = 86400000
+const diasEntre = (a, b) => Math.abs(Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / DIA
+
 /**
- * Filas que PARECEN ya apuntadas a mano (mismo día, tipo e importe que un
- * movimiento existente, aunque el concepto se escriba distinto: "Mercadona"
- * frente a "COMPRA TARJ. MERCADONA"). Se proponen excluidas por defecto.
+ * Filas que PARECEN ya apuntadas (se proponen fuera; el usuario puede incluirlas):
+ *  - mismo día, tipo e importe (aunque el concepto se escriba distinto); o
+ *  - mismo tipo e importe a ±3 días, si es el MISMO comercio, o si lo apuntado
+ *    no dice de dónde es (gasto rápido), o era un fijo confirmado (el banco lo
+ *    carga uno o dos días después). Importes pequeños (< 5 €): solo mismo día.
+ * Cada movimiento existente cubre como mucho una fila (dos cafés iguales el
+ * mismo día y uno apuntado → solo uno se marca).
  */
-export function indicesParecidos(filas, existentes) {
-  const claves = new Map()
+export function indicesParecidos(filas, existentes, dir = directorio()) {
+  const tipoDe = (m) => (m.tipo === 'ingreso' ? 'ingreso' : 'gasto')
+  const porImporte = new Map()
   for (const m of existentes) {
-    const tipo = m.tipo === 'ingreso' ? 'ingreso' : 'gasto'
-    const k = `${m.fecha}|${tipo}|${Number(m.importe).toFixed(2)}`
-    claves.set(k, (claves.get(k) ?? 0) + 1)
+    const k = `${tipoDe(m)}|${centimosDe(m)}`
+    if (!porImporte.has(k)) porImporte.set(k, [])
+    porImporte.get(k).push({ m, grupo: dir.grupoDe(m), sinComercio: !m.nota && !m.fuente?.nombre, usado: false })
   }
-  const usados = new Map()
   const res = new Set()
-  filas.forEach((f, i) => {
-    const k = `${f.fecha}|${f.tipo}|${Number(f.importe).toFixed(2)}`
-    const hay = claves.get(k) ?? 0
-    const u = usados.get(k) ?? 0
-    // Tantos como existan: si tenías apuntado UN café de 1,50 € ese día y el
-    // banco trae dos, solo uno se marca como ya apuntado.
-    if (u < hay) {
-      res.add(i)
-      usados.set(k, u + 1)
-    }
-  })
+  // Primero las coincidencias exactas de día (las más seguras), luego las cercanas.
+  for (const pasada of ['exacta', 'cercana']) {
+    filas.forEach((f, i) => {
+      if (res.has(i)) return
+      const cent = Math.round(Number(f.importe) * 100)
+      const candidatos = porImporte.get(`${f.tipo}|${cent}`)
+      if (!candidatos) return
+      const grupo = dir.grupoDe(f.nota || '')
+      let mejor = null
+      for (const c of candidatos) {
+        if (c.usado) continue
+        const d = diasEntre(c.m.fecha, f.fecha)
+        if (pasada === 'exacta') {
+          if (d === 0) {
+            mejor = c
+            break
+          }
+          continue
+        }
+        if (d > 3 || cent < 500) continue
+        const encaja = (grupo && c.grupo === grupo) || c.sinComercio || c.m.es_fijo
+        if (encaja && (!mejor || d < mejor.d)) mejor = { ...c, d, ref: c }
+      }
+      if (mejor) {
+        ;(mejor.ref ?? mejor).usado = true
+        res.add(i)
+      }
+    })
+  }
   return res
 }
 
@@ -106,7 +140,8 @@ export function resumenHistorial(filas) {
   for (const f of filas) {
     const cent = Math.round(f.importe * 100)
     const mov = { tipo: f.tipo, categoria: { nombre: f.esInversion ? CATEGORIA_INVERSION : f.categoria } }
-    if (f.tipo === 'ingreso') ingresos += cent
+    if (esDevolucion(mov)) gastos -= cent // contra-gasto, no ingreso (MOTOR.md E6)
+    else if (f.tipo === 'ingreso') ingresos += cent
     else if (esConsumo(mov)) {
       gastos += cent
       porCat.set(f.categoria, (porCat.get(f.categoria) ?? 0) + cent)

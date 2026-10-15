@@ -13,6 +13,8 @@ import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import InputImporte from './InputImporte'
 import SuscripcionesDetectadas from './SuscripcionesDetectadas'
+import { conciliarFijos } from '../lib/conciliarFijos'
+import { useComerciosCompartidos } from '../lib/DatosCompartidos'
 
 const signo = (tipo) => (tipo === 'ingreso' ? '+' : '−')
 
@@ -93,7 +95,7 @@ function CompromisoRow({ rec, registrando, recien, onAbrir, onConfirmarRapido, o
   else if (estado !== 'hecho' && bio.proximo) partes.push(bio.proximo.texto)
 
   const etiqueta = {
-    hecho: `Deshacer ${rec.nombre}`,
+    hecho: rec.detectado ? `Ver ${rec.nombre}` : `Deshacer ${rec.nombre}`,
     confirmar: `Confirmar ${rec.nombre}`,
     'sin-dia': `Poner el día de cobro de ${rec.nombre}`,
   }[estado] ?? `Ver ${rec.nombre}`
@@ -113,7 +115,8 @@ function CompromisoRow({ rec, registrando, recien, onAbrir, onConfirmarRapido, o
         aria-label={etiqueta}
         onClick={(e) => {
           e.stopPropagation()
-          if (estado === 'hecho') return onDesmarcar(rec)
+          // Detectado en tus movimientos: no hay nada que deshacer aquí (se abre la ficha).
+          if (estado === 'hecho') return rec.detectado ? onAbrir(rec) : onDesmarcar(rec)
           if (estado === 'confirmar') return onConfirmarRapido(rec)
           onAbrir(rec)
         }}
@@ -236,7 +239,12 @@ function DetalleSheet({ rec, mesActual, registrando, onCerrar, onConfirmar, onGu
           <p className="tb-hecho-nota tb-fuera-nota">Este mes no toca · próximo cobro {bio.proximo?.texto ?? '—'}</p>
         )}
 
-        {estado === 'hecho' && (
+        {estado === 'hecho' && rec.detectado && (
+          <p className="tb-hecho-nota tb-detectado">
+            Ya está en tus movimientos: {formatearFecha(rec.detectado.fecha)}, {formatearEuros(rec.detectado.importe)}. No hace falta confirmarlo (así no se cuenta dos veces). Si no era este cargo, edita o borra ese movimiento.
+          </p>
+        )}
+        {estado === 'hecho' && !rec.detectado && (
           <div className="tb-hecho-fila">
             <span className="tb-hecho-nota">Confirmado este mes</span>
             <button type="button" className="tb-deshacer" onClick={() => onDesmarcar(rec)}>
@@ -404,7 +412,11 @@ export default function Recurrentes({ usuarioId, movimientos, onRegistrado, abri
   const { crear, actualizar, eliminar, confirmarCobro, desmarcar } = hook
   // Con datos de ejemplo (usuario nuevo) se enseñan sus compromisos de ejemplo;
   // tocarlos no escribe nada (useRecurrentes bloquea los ids "demo-").
-  const items = itemsDemo ?? hook.items
+  // Los fijos cuyo cobro de este mes YA está en tus movimientos (extracto,
+  // captura o a mano) cuentan como pagados: sin doble cobro (lib/conciliarFijos).
+  const { alias } = useComerciosCompartidos()
+  const conciliados = useMemo(() => conciliarFijos(hook.items, movimientos ?? []), [hook.items, movimientos, alias]) // eslint-disable-line react-hooks/exhaustive-deps
+  const items = itemsDemo ?? conciliados
   const cargando = itemsDemo ? false : hook.cargando
   const { items: categoriasGasto } = useEtiquetas('categorias', usuarioId, 'gasto')
   const { items: categoriasIngreso } = useEtiquetas('categorias', usuarioId, 'ingreso')

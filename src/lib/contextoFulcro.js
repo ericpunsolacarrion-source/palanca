@@ -19,7 +19,7 @@ import {
   totalesDe,
   ultimosNMeses,
 } from './movimientosUtils'
-import { normalizarComercio } from './suscripciones'
+import { nombreComercio } from './comercios'
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 
@@ -44,7 +44,9 @@ function aparece(etiqueta, palabras) {
   return partes.length > 0 && partes.every((p) => palabras.has(p) || palabras.has(`${p}s`) || palabras.has(p.replace(/s$/, '')))
 }
 
-const comercioDe = (m) => normalizarComercio(m.fuente?.nombre || '') || normalizarComercio(m.nota || '')
+// El comercio REAL (memoria del usuario, marca o lo apuntado): "ALIPAM23" que
+// el usuario dijo que es Mercadona cuenta como Mercadona.
+const comercioDe = (m) => nombreComercio(m)
 
 // Serie de los últimos n meses (clave → céntimos) para un filtro de movimientos.
 function serieMensual(movimientos, filtro, n = 6) {

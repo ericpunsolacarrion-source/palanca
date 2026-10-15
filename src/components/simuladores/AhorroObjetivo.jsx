@@ -170,7 +170,7 @@ export default function AhorroObjetivo({ usuarioId, movimientos = [] }) {
   const [editandoId, setEditandoId] = useState(null)
   const [guardando, setGuardando] = useState(false)
 
-  const bolsasCalc = useMemo(() => bolsas(movimientos), [movimientos])
+  const bolsasCalc = useMemo(() => bolsas(movimientos, hoyIso()), [movimientos]) // patrimonio de HOY
   const valorBolsa = (tipo) => valorBolsaPorTipo(bolsasCalc, tipo)
 
   // Ritmo mensual según el tipo de objetivo (ahorro líquido / inversión /

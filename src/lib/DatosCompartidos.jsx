@@ -15,13 +15,23 @@ import { createContext, useContext } from 'react'
 
 const PresupuestoCtx = createContext(null)
 const ObjetivosCtx = createContext(null)
+const ComerciosCtx = createContext(null)
 
-export function DatosCompartidosProvider({ presupuesto, objetivos, children }) {
+export function DatosCompartidosProvider({ presupuesto, objetivos, comercios = null, children }) {
   return (
     <PresupuestoCtx.Provider value={presupuesto}>
-      <ObjetivosCtx.Provider value={objetivos}>{children}</ObjetivosCtx.Provider>
+      <ObjetivosCtx.Provider value={objetivos}>
+        <ComerciosCtx.Provider value={comercios}>{children}</ComerciosCtx.Provider>
+      </ObjetivosCtx.Provider>
     </PresupuestoCtx.Provider>
   )
+}
+
+// Memoria de comercios (useComercios). Fuera del proveedor (tests) devuelve una
+// versión inerte: el directorio activo sigue funcionando sin memoria.
+const COMERCIOS_INERTE = { alias: [], recordar: async () => {}, olvidar: async () => {} }
+export function useComerciosCompartidos() {
+  return useContext(ComerciosCtx) ?? COMERCIOS_INERTE
 }
 
 // Misma forma que devuelve usePresupuesto(), leyendo del contexto.

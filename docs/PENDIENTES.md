@@ -2,7 +2,7 @@
 
 **Todo lo que se ha dejado para más adelante, en un solo sitio**, para poder rematarlo algún día.
 Se mantiene al día en cada sesión: lo terminado se marca ✔ con la fecha, lo nuevo se añade en su bloque.
-Última revisión: 15-10-2026.
+Última revisión: 15-10-2026 (tarde).
 
 Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejora.
 
@@ -27,7 +27,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 | | Paso | Para qué | Guía |
 |---|---|---|---|
-| 🟥 | Ejecutar `supabase-schema-metricas.sql` en Supabase | Panel de métricas, planes, ahorros en BD, borrado de cuenta completo, recordatorios | `docs/METRICAS.md` |
+| 🟥 | Ejecutar `supabase-schema-metricas.sql` en Supabase | Panel de métricas, planes, ahorros en BD, borrado de cuenta completo, recordatorios y **memoria de comercios** (§8) | `docs/METRICAS.md` |
 | 🟥 | **Límite de gasto mensual en Anthropic** (Console → Limits; por ejemplo 10 $) | Que nunca haya un susto en la factura de IA | `docs/COSTES.md` §5 |
 | 🟧 | Clave de Anthropic en Vercel (solo Preview) + Redeploy | Fulcro e importar por capturas en la versión de prueba | `docs/FULCRO.md` |
 | 🟩 | SQL v2 de `supabase-schema-fulcro.sql` (opcional) | Registro de uso de Fulcro más robusto | `docs/FULCRO.md` |
@@ -67,6 +67,11 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 - 🟩 Ahorros negociados: ya están en BD con copia local; quitar la copia local cuando todo el mundo tenga el SQL.
 
 ### Motor financiero (de `docs/MOTOR.md`)
+- 🟧 **Pantalla «Mis comercios»**: ver y deshacer lo que Palanca ha aprendido (la función `olvidar` ya existe; falta la pantalla).
+- 🟧 Probar la identidad con **extractos reales de varios bancos** (BBVA, Santander, CaixaBank, ING, Revolut) y ampliar el ruido bancario y `MARCAS` con lo que salga.
+- 🟩 Al renombrar un comercio en el historial, ofrecer también igualar el **nombre** de los demás (ahora se iguala la categoría, y el nombre llega solo por la memoria).
+- 🟩 Devoluciones parciales: enlazar cada devolución con su compra concreta (ahora resta de la categoría del comercio).
+- 🟩 Pasar `esDevolucion` a `tipo_evento = devolucion` (Fase 2), en vez de reconocerla por nombre.
 - 🟩 Fase 1, limpieza: leer en céntimos en las tablas secundarias y retirar las columnas en euros.
 - 🟩 **Fase 2 — Nodos y apuntes derivados** (deja de depender del nombre de la categoría).
 - 🟩 **Fase 3 — Historia versionada** (editar o borrar = nueva versión; nada se pierde).
@@ -83,5 +88,6 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 ---
 
 ## Histórico de cosas terminadas que estaban aquí
+- ✔ 15-10-2026 (tarde): motor conectado. Identidad de comercios con memoria, importación por comercio real, editar comercio y categoría con «igualar los demás», fijos sin doble cobro, devoluciones como contra-gasto, sin fechas futuras ([IDENTIDAD.md](IDENTIDAD.md)).
 - ✔ 15-10-2026: respuestas de Fulcro al momento sin IA (preguntas de datos).
 - ✔ 15-10-2026: panel de métricas solo admin, Premium/Gratis en el panel, descargar mis datos, borrado de cuenta completo, motor de emails (apagado), estudio de costes.

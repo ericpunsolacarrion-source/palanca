@@ -29,8 +29,10 @@ import ProyeccionFuturo from './components/ProyeccionFuturo'
 import { pildorasDashboard, elegirPildora, firmaDatos, limpiarPildoras } from './lib/pildoras'
 import { usePresupuesto } from './lib/usePresupuesto'
 import { useRecurrentes } from './lib/useRecurrentes'
+import { conciliarFijos } from './lib/conciliarFijos'
 import { useObjetivosAhorro } from './lib/useObjetivosAhorro'
 import { DatosCompartidosProvider } from './lib/DatosCompartidos'
+import { useComercios } from './lib/useComercios'
 import GraficoEvolucion from './components/GraficoEvolucion'
 import GraficoCategorias from './components/GraficoCategorias'
 import GraficoTasaAhorro from './components/GraficoTasaAhorro'
@@ -102,6 +104,9 @@ function App() {
   // la migración; los datos quedan aislados por usuario con RLS).
   const { session, cargandoAuth, usuarioAuthId } = useAuth()
   const usuarioId = usuarioAuthId
+  // Memoria de comercios ("ALIPAM23" es Mercadona). Va lo primero: fija el
+  // directorio activo (lib/comercios.js) antes de cualquier cálculo de la app.
+  const comerciosData = useComercios(usuarioId)
   const [verCuenta, setVerCuenta] = useState(false)
   const [perfil, setPerfil] = useState(null)
   const [comprobandoPerfil, setComprobandoPerfil] = useState(true)
@@ -229,11 +234,16 @@ function App() {
   // navegación y avisos de cobros en el inicio.
   const {
     items: recurrentesReales,
-    pendientes: recurrentesPendientes,
     cargando: cargandoRecurrentes,
     confirmarCobro,
     desmarcar: desmarcarCobro,
   } = useRecurrentes(usuarioId)
+  // Fijos cuyo cobro de este mes YA está en los movimientos (extracto, captura
+  // o a mano) cuentan como pagados: nada se cuenta dos veces (lib/conciliarFijos).
+  const recurrentesConciliados = useMemo(
+    () => conciliarFijos(recurrentesReales, movimientosReales),
+    [recurrentesReales, movimientosReales, comerciosData.alias], // eslint-disable-line react-hooks/exhaustive-deps
+  )
 
   // ── Datos de EJEMPLO para quien acaba de llegar ──────────────────────────
   // Sin nada propio todavía (el saldo inicial no cuenta), la app se enseña
@@ -257,10 +267,10 @@ function App() {
     forzarEjemplo ||
     (Boolean(perfil) && !cargando && !cargandoRecurrentes && !errorCarga && !tieneDatosPropios && !demoDescartada)
   const movimientos = enDemo ? demo.movimientos : movimientosReales
-  const recurrentes = enDemo ? demo.recurrentes : recurrentesReales
+  const recurrentes = enDemo ? demo.recurrentes : recurrentesConciliados
   const nPendientesFijos = enDemo
     ? demo.recurrentes.filter((r) => ['confirmar', 'sin-dia'].includes(estadoCobro(r))).length
-    : recurrentesPendientes.length
+    : recurrentesConciliados.filter((r) => ['confirmar', 'sin-dia'].includes(estadoCobro(r))).length
 
   // Demo rápida (recorrido guiado): se ofrece sola la primera vez que se ven
   // los datos de ejemplo, y siempre desde "Tu cuenta".
@@ -424,7 +434,7 @@ function App() {
   }
 
   return (
-    <DatosCompartidosProvider presupuesto={presupuestoData} objetivos={objetivosData}>
+    <DatosCompartidosProvider presupuesto={presupuestoData} objetivos={objetivosData} comercios={comerciosData}>
     <div className="app">
       <header className="app-header">
         <h1 className="app-logo">
@@ -591,7 +601,7 @@ function App() {
             onLimpiarFiltro={() => setFiltroMov(null)}
             modoInicialRegistro={modoRegistro}
             movimientosReales={movimientosReales}
-            recurrentes={recurrentesReales}
+            recurrentes={recurrentesConciliados}
             onIrA={irAPestana}
           />
         )}

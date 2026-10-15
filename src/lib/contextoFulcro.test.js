@@ -23,12 +23,12 @@ describe('contextoParaPregunta', () => {
     const cat = d.categorias[0]
     expect(cat.categoria).toBe('Comida')
     expect(cat.ultimos6Meses.at(-1)).toEqual({ mes: m0, total: 70.3 })
-    expect(cat.principalesComerciosUltimos3Meses[0]).toEqual({ comercio: 'mercadona', total: 110.2 })
+    expect(cat.principalesComerciosUltimos3Meses[0]).toEqual({ comercio: 'Mercadona', total: 110.2 })
   })
 
   it('comercio mencionado → compras, total y ticket medio', () => {
     const d = contextoParaPregunta('y en Mercadona qué tal?', MOVS)
-    expect(d.comercios[0]).toMatchObject({ comercio: 'mercadona', compras12Meses: 2, total12Meses: 110.2, ticketMedio: 55.1 })
+    expect(d.comercios[0]).toMatchObject({ comercio: 'Mercadona', compras12Meses: 2, total12Meses: 110.2, ticketMedio: 55.1 })
   })
 
   it('mes mencionado → totales y desglose de ese mes', () => {
