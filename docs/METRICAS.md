@@ -12,6 +12,27 @@ de terceros y sin ver nunca el dinero de nadie.
 No hace falta tocar Vercel. Hasta que se ejecute el SQL, la app funciona igual: no
 registra eventos y el panel dice que falta el SQL.
 
+## Quién puede verlo
+- **Solo los emails de la tabla `admins`** (de serie, el tuyo) y con el **email confirmado**.
+- La comprobación la hace la **base de datos** (`soy_admin()` dentro de cada función): aunque alguien manipulara la app, `palanca_metricas()` y `admin_cambiar_plan()` le responden "Solo administradores".
+- La tabla `admins` no se puede leer desde la app.
+
+## Premium y Gratis (`planes`)
+- **Sin fila = Gratis.** Premium vigente = `plan = 'premium'` y `hasta` vacío o ≥ hoy. Al pasar la fecha queda como **Caducado** sin hacer nada.
+- `origen`: `pago` · `prueba` · `invitacion` · `manual`. `importe_mensual` es lo que paga al mes (una cuota anual se divide entre 12). Cuenta para **Ingresos al mes** solo si es Premium vigente y no está en prueba.
+- **Solo el admin cambia planes**, desde el panel: toca el plan de un usuario en la lista → ficha (Gratis/Premium, cómo lo tiene, importe, hasta, nota). Por dentro llama a `admin_cambiar_plan()`, que guarda cada cambio en `planes_historial` (quién, cuándo, qué).
+- El usuario puede **leer** su plan (`mi_plan()` devuelve `{plan: 'premium'|'gratis', origen, hasta}`), pero no escribirlo: no hay políticas de insert/update.
+- Cuando haya pasarela de pago (Stripe), su webhook escribirá en esta misma tabla con `origen = 'pago'`. El panel no cambia.
+- Métricas:
+  - Premium / En prueba / Gratis / Caducados;
+  - % de conversión;
+  - ingresos al mes y al año;
+  - pruebas que terminan en 7 días;
+  - pasos a Premium y bajas en 30 días;
+  - comparativa de uso por plan;
+  - cambios recientes;
+  - columna y filtro de plan en la lista.
+
 ## Qué se guarda
 - Tabla `eventos`: `usuario_id`, `tipo`, `created_at`. **Nada más**: ni importes, ni conceptos, ni textos.
 - Se escribe solo con `registrar_evento()`, que respeta `perfiles.analitica = false`

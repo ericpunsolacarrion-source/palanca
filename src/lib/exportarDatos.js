@@ -19,6 +19,7 @@ export const TABLAS_USUARIO = [
   'escenarios_simulador',
   'gastos_rapidos',
   'ahorros_negociados',
+  'planes',
   'eventos',
 ]
 

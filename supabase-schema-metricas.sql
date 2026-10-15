@@ -1,7 +1,7 @@
 -- ============================================================================
 -- MÉTRICAS DE USO + AHORROS NEGOCIADOS + BORRADO COMPLETO DE CUENTA
 -- Ejecutar en Supabase: SQL Editor -> (vaciar el editor) -> pegar TODO -> Run.
--- Se puede ejecutar varias veces sin romper nada.
+-- Se puede ejecutar varias veces sin romper nada (también si ya lo ejecutaste antes).
 --
 -- Qué hace:
 --  1) eventos: registro mínimo de uso (qué tipo de acción y cuándo). NUNCA
@@ -12,6 +12,8 @@
 --  4) admins + palanca_metricas(): panel de métricas, SOLO para administradores.
 --  5) borrar_mi_cuenta(): ahora borra TODAS las tablas con datos del usuario
 --     (la versión anterior se dejaba fijos, gastos rápidos, escenarios y Fulcro).
+--  6) planes: Gratis / Premium por usuario (con origen, importe, caducidad e
+--     historial). SOLO el administrador puede cambiarlos (admin_cambiar_plan).
 -- ============================================================================
 
 -- 1) Eventos de uso ----------------------------------------------------------
@@ -100,10 +102,126 @@ as $$
     select 1 from public.admins a
       join auth.users u on lower(u.email) = a.email
      where u.id = auth.uid()
+       and u.email_confirmed_at is not null  -- email verificado: nadie puede "hacerse pasar"
   );
 $$;
 revoke all on function public.soy_admin() from public, anon;
 grant execute on function public.soy_admin() to authenticated;
+
+-- 6) Planes: Gratis / Premium --------------------------------------------------
+-- Sin fila = Gratis. Premium "efectivo" = plan premium y sin caducar (hasta
+-- nulo o >= hoy). origen: manual (lo das tú), prueba (periodo de prueba),
+-- invitacion (beta, amigos), pago (cuando haya pasarela de pago, la misma
+-- tabla se rellenará sola). importe_mensual: lo que paga al mes (para los
+-- ingresos); una cuota anual de 48 € = 4 €/mes.
+create table if not exists public.planes (
+  usuario_id       text primary key,
+  plan             text not null default 'gratis' check (plan in ('gratis', 'premium')),
+  origen           text not null default 'manual' check (origen in ('manual', 'prueba', 'invitacion', 'pago')),
+  importe_mensual  numeric not null default 0 check (importe_mensual >= 0 and importe_mensual < 10000),
+  desde            date not null default current_date,
+  hasta            date,
+  nota             text check (char_length(nota) <= 300),
+  updated_at       timestamptz not null default now()
+);
+alter table public.planes enable row level security;
+drop policy if exists planes_sel on public.planes;
+-- El usuario puede LEER su plan (para la app y su descarga de datos). No hay
+-- políticas de insert/update/delete: nadie se puede poner Premium a sí mismo.
+create policy planes_sel on public.planes
+  for select to authenticated using (usuario_id = auth.uid()::text);
+
+create table if not exists public.planes_historial (
+  id               bigint generated always as identity primary key,
+  usuario_id       text not null,
+  plan             text not null,
+  origen           text not null,
+  importe_mensual  numeric not null,
+  hasta            date,
+  nota             text,
+  cambiado_por     text,
+  created_at       timestamptz not null default now()
+);
+create index if not exists planes_historial_fecha_idx on public.planes_historial (created_at desc);
+alter table public.planes_historial enable row level security;  -- sin políticas: solo vía funciones
+
+-- Plan efectivo del usuario conectado (para activar funciones Premium en la app).
+create or replace function public.mi_plan()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    (select jsonb_build_object(
+              'plan', case when p.plan = 'premium' and (p.hasta is null or p.hasta >= (now() at time zone 'Europe/Madrid')::date)
+                           then 'premium' else 'gratis' end,
+              'origen', p.origen,
+              'hasta', p.hasta)
+       from public.planes p where p.usuario_id = auth.uid()::text),
+    jsonb_build_object('plan', 'gratis')
+  );
+$$;
+revoke all on function public.mi_plan() from public, anon;
+grant execute on function public.mi_plan() to authenticated;
+
+-- Dar / quitar Premium (solo administradores). Guarda cada cambio en el historial.
+create or replace function public.admin_cambiar_plan(
+  p_usuario_id text,
+  p_plan text,
+  p_origen text default 'manual',
+  p_importe numeric default 0,
+  p_hasta date default null,
+  p_nota text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_quien text;
+  v_origen text := coalesce(p_origen, 'manual');
+  v_importe numeric := coalesce(p_importe, 0);
+  v_hasta date := p_hasta;
+  v_nota text := nullif(trim(coalesce(p_nota, '')), '');
+begin
+  if not public.soy_admin() then
+    raise exception 'Solo administradores';
+  end if;
+  if p_plan not in ('gratis', 'premium') then
+    raise exception 'Plan no válido';
+  end if;
+  if not exists (select 1 from auth.users where id::text = p_usuario_id) then
+    raise exception 'Usuario no encontrado';
+  end if;
+  if p_plan = 'gratis' then
+    v_importe := 0;
+    v_hasta := null;
+  end if;
+  select email into v_quien from auth.users where id = auth.uid();
+
+  insert into public.planes as pl (usuario_id, plan, origen, importe_mensual, desde, hasta, nota, updated_at)
+  values (p_usuario_id, p_plan, v_origen, v_importe, current_date, v_hasta, v_nota, now())
+  on conflict (usuario_id) do update
+     set plan = excluded.plan,
+         origen = excluded.origen,
+         importe_mensual = excluded.importe_mensual,
+         -- "desde" solo se reinicia al pasar de gratis a premium
+         desde = case when pl.plan = excluded.plan then pl.desde else excluded.desde end,
+         hasta = excluded.hasta,
+         nota = excluded.nota,
+         updated_at = now();
+
+  insert into public.planes_historial (usuario_id, plan, origen, importe_mensual, hasta, nota, cambiado_por)
+  values (p_usuario_id, p_plan, v_origen, v_importe, v_hasta, v_nota, v_quien);
+
+  return (select to_jsonb(pl) from public.planes pl where pl.usuario_id = p_usuario_id);
+end;
+$$;
+revoke all on function public.admin_cambiar_plan(text, text, text, numeric, date, text) from public, anon;
+grant execute on function public.admin_cambiar_plan(text, text, text, numeric, date, text) to authenticated;
 
 -- Día "activo" = el usuario abrió la app (evento) o apuntó algo o preguntó a
 -- Fulcro ese día (hora de Madrid). Así hay histórico desde el primer día,
@@ -177,8 +295,19 @@ begin
      where tipo like 'importacion%' group by usuario_id
   ),
   ahorro_u as (select usuario_id as uid, sum(ahorro_anual) as ahorrado from public.ahorros_negociados group by usuario_id),
+  plan_u as (
+    select usuario_id as uid, origen, importe_mensual, hasta,
+           case
+             when plan = 'premium' and (hasta is null or hasta >= v_hoy) and origen = 'prueba' then 'prueba'
+             when plan = 'premium' and (hasta is null or hasta >= v_hoy) then 'premium'
+             when plan = 'premium' then 'caducado'
+             else 'gratis'
+           end as tipo_plan
+      from public.planes
+  ),
   pu as (
     select u.uid, u.email, u.alta,
+           coalesce(pl.tipo_plan, 'gratis') as tipo_plan, pl.origen, coalesce(pl.importe_mensual, 0) as importe_mensual, pl.hasta as plan_hasta,
            a.ultima, coalesce(a.dias_total, 0) as dias_total, coalesce(a.dias30, 0) as dias30,
            a.primero30, a.ultimo30,
            coalesce(m.movs, 0) as movs, coalesce(m.movs30, 0) as movs30, coalesce(m.gastos30, 0) as gastos30,
@@ -191,6 +320,7 @@ begin
       left join fulcro_u fu on fu.uid = u.uid
       left join imp_u i on i.uid = u.uid
       left join ahorro_u ah on ah.uid = u.uid
+      left join plan_u pl on pl.uid = u.uid
   ),
   pu2 as (
     select pu.*,
@@ -270,8 +400,41 @@ begin
                     select e.tipo, count(*) n from public.eventos e join usuarios u on u.uid = e.usuario_id
                      where e.created_at > now() - interval '30 days' group by e.tipo) s),
     'ahorrado_total', (select coalesce(sum(ahorrado), 0) from pu2),
+    'planes', jsonb_build_object(
+      'gratis', (select count(*) from pu2 where tipo_plan = 'gratis'),
+      'premium', (select count(*) from pu2 where tipo_plan = 'premium'),
+      'prueba', (select count(*) from pu2 where tipo_plan = 'prueba'),
+      'caducado', (select count(*) from pu2 where tipo_plan = 'caducado'),
+      'ingresos_mes', (select coalesce(sum(importe_mensual), 0) from pu2 where tipo_plan = 'premium'),
+      'caducan7', (select count(*) from pu2 where tipo_plan in ('premium', 'prueba') and plan_hasta between v_hoy and v_hoy + 7),
+      'altas30', (select count(*) from public.planes_historial h join usuarios u on u.uid = h.usuario_id
+                   where h.plan = 'premium' and h.created_at > now() - interval '30 days'),
+      'bajas30', (select count(*) from public.planes_historial h join usuarios u on u.uid = h.usuario_id
+                   where h.plan = 'gratis' and h.created_at > now() - interval '30 days')
+    ),
+    'por_plan', (select coalesce(jsonb_agg(jsonb_build_object(
+                   'plan', tipo_plan, 'n', n, 'activos7', a7, 'activos30', a30,
+                   'cada_cuanto', cc, 'dias_activos', da, 'movs30', mv
+                 ) order by tipo_plan), '[]'::jsonb)
+                 from (
+                   select tipo_plan, count(*) n,
+                          count(*) filter (where ultima >= v_hoy - 6) a7,
+                          count(*) filter (where dias30 > 0) a30,
+                          round(avg(cada_cuanto), 1) cc,
+                          round(avg(dias30) filter (where dias30 > 0), 1) da,
+                          round(avg(movs30) filter (where dias30 > 0), 1) mv
+                     from pu2 group by tipo_plan
+                 ) x),
+    'cambios_plan', (select coalesce(jsonb_agg(c order by c->>'fecha' desc), '[]'::jsonb) from (
+                       select jsonb_build_object(
+                                'email', u.email, 'plan', h.plan, 'origen', h.origen,
+                                'importe_mensual', h.importe_mensual, 'hasta', h.hasta,
+                                'nota', h.nota, 'fecha', h.created_at) c
+                         from public.planes_historial h join usuarios u on u.uid = h.usuario_id
+                        order by h.created_at desc limit 20) z),
     'lista', (select coalesce(jsonb_agg(jsonb_build_object(
-                'email', email, 'alta', alta, 'ultima', ultima, 'estado', estado,
+                'uid', uid, 'email', email, 'alta', alta, 'ultima', ultima, 'estado', estado,
+                'plan', tipo_plan, 'plan_origen', origen, 'plan_hasta', plan_hasta, 'importe_mensual', importe_mensual,
                 'dias30', dias30, 'cada_cuanto', round(cada_cuanto, 1),
                 'movs', movs, 'movs30', movs30, 'fijos', fijos, 'fulcro', fulcro,
                 'importaciones', importaciones
