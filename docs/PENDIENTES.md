@@ -97,6 +97,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 ---
 
 ## Histórico de cosas terminadas que estaban aquí
+- ✔ 16-10-2026: arreglado el alta con el objetivo "Controlar suscripciones y recibos" (la BD no lo aceptaba y decía "No se ha podido crear tu cuenta"). Ahora se guarda como "planificacion" si la BD aún no lo admite; con `supabase-schema-objetivo-perfil.sql` se guarda tal cual.
 - ✔ 15-10-2026 (última hora): Fulcro como nuevo: desglose por concepto + total (gasolina moto/coche/furgoneta), "último año" y más periodos, 64/73 preguntas de Laura al momento, la IA recibe las cifras hechas del motor, panel con ficha de cifra y origen.
 - ✔ 15-10-2026 (noche): demo avanzada (18 pasos, 7 capítulos, Fulcro en directo) desde Tu cuenta y desde el final de la demo rápida.
 - ✔ 15-10-2026 (noche): Fulcro activado en la versión de prueba (clave solo en Preview), SQL de métricas aplicado en el proyecto palanca y panel de Métricas visible para el admin.

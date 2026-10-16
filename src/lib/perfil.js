@@ -16,6 +16,8 @@ export async function obtenerPerfil(usuarioId) {
   return data
 }
 
+const OBJETIVOS_ANTIGUOS = ['ahorro', 'jubilacion', 'planificacion', 'otro']
+
 export async function crearPerfil(usuarioId, objetivo, email, anioNacimiento, nombre) {
   const emailLimpio = email?.trim().toLowerCase() || null
   const anio = Number.isInteger(anioNacimiento) ? anioNacimiento : null
@@ -31,6 +33,10 @@ export async function crearPerfil(usuarioId, objetivo, email, anioNacimiento, no
     { ...base, email: emailLimpio },
     base,
   ]
+  // Si la BD aún no acepta un objetivo nuevo ("suscripciones", restricción
+  // antigua de perfiles.objetivo), se guarda como "planificacion": el alta
+  // nunca se bloquea por eso (supabase-schema-objetivo-perfil.sql lo amplía).
+  if (!OBJETIVOS_ANTIGUOS.includes(objetivo)) intentos.push(...intentos.map((f) => ({ ...f, objetivo: 'planificacion' })))
   let data = null
   let error = null
   for (const fila of intentos) {
