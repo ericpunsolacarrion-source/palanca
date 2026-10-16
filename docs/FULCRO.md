@@ -15,6 +15,14 @@ Las preguntas de DATOS se responden en el móvil con `src/lib/respuestasLocales.
 - Las respuestas al momento **entran en el historial** que ve la IA: si luego preguntas "¿y por qué?", parte de esas cifras.
 - **Panel**: cada respuesta dice su origen ("Motor · calculado al momento" o "Fulcro · análisis") y las del motor traen una **ficha**: la cifra grande, el detalle y el desglose alineado con una línea fina proporcional. Tests: `fulcroGasolina.test.js`, `clienteFulcro.test.js`.
 
+## Ronda 2 (16-10-2026): casi todo por el motor — 72 de 73 preguntas de Laura sin IA
+- **Consejo con datos, sin IA** (`consejoConDatos`): ¿ahorro suficiente? (en llano: "de cada 100 € que entran, apartas 36"; tendencia de 3 meses; objetivos con lo que falta y, si hay varios, que elija), colchón de emergencia (3–6 meses), qué suscripción quitar (coste al año; no decide por ti), renegociar un recibo (rebaja orientativa + plazos), ¿me puedo permitir X en <mes>? (ahorro hasta entonces, gasto/ingreso extra de ese mes, colchón que queda), cómo ahorrar más (palancas con € al año), límites (no recomienda valores, no ve datos bancarios, fuera de tema).
+- **Preguntas habituales** (`preguntasHabituales`): resumen del mes/año, cómo cerré el mes, mayores compras (sin repetir fijos), gastos hormiga, lo imprescindible para vivir, próximos cobros, cómo van mis inversiones (a coste), devoluciones, jubilación (regla del 4 %), cuánto tendré en N años, cuánto debería ahorrar, sueldo, saldo, deudas, cuántas veces he ido a X, cuántos movimientos.
+- **Subidas de precio** separadas: suscripciones (no se negocian: plan con anuncios, compartir, pausar), recibos negociables (móvil, luz, seguros) y otros (alquiler: revisa tu contrato).
+- **Botones**: "Añadirlos en Fijos", "Abrir Simuladores" (abre la subpestaña), "Ver en Análisis"… y, en respuestas de IA, botón automático cuando nombra una pantalla.
+- **Límite de IA blindado**: si el contador falla, no se responde (antes dejaba pasar sin límite); las capturas no gastan preguntas de Fulcro (`supabase-schema-fulcro-v3.sql`).
+- Prompt: como mucho 3 cifras, porcentajes traducidos, nada de "+171 %" de un recibo bimestral; con objetivos, plantear la elección.
+
 ## Reportes de Eric con Laura (16-10-2026) — arreglados
 - **Periodos con fechas**: cada respuesta dice "del dd/mm/aaaa al dd/mm/aaaa". "Estos 6 meses" = 6 meses completos + una línea con lo que va del actual y la suma; "incluido este mes / el mes en curso" lo suma directamente. Rangos libres: "del 1 al 15 de agosto", "entre el 25 de julio y el 20 de agosto de 2025", "del 01/08/2025 al 31/08/2025".
 - **Ingresos**: cuántos, de dónde (nómina, pagas extra, intereses… y quién paga), media al mes y qué NO cuenta (saldo inicial, traer de tu ahorro, devoluciones, retiradas). Botón "Ver en Análisis".

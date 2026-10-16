@@ -79,6 +79,8 @@ calendario, avisos) y el **rediseño visual v2** (ver DISENO.md). Además
 inicio) y **datos de ejemplo + demo rápida** para usuarios nuevos. Detalle en
 PANTALLAS.md §3 y §4b.
 
+**2026-10-16 (ronda 2) — Fulcro casi sin IA:** 72 de 73 preguntas de Laura las responde el motor (gratis, exactas), incluido el consejo con datos (¿ahorro suficiente?, colchón, ¿me lo puedo permitir?, cómo ahorrar más). Botones a Fijos/Simuladores/Análisis. Límite de IA que falla cerrado. Ver [FULCRO.md](FULCRO.md).
+
 **2026-10-16 — Fulcro afinado con los reportes de Eric (Laura):** fechas en cada respuesta, "6 meses" con o sin el mes en curso, rangos libres de fechas, ingresos por origen con "Ver en Análisis", media mensual real, comercios con su historial de precio, seguros con fecha de renovación y plazo para no renovar, luz cada 2 meses bien promediada, viajes agrupados. Ver [FULCRO.md](FULCRO.md).
 
 **2026-10-15 (última hora) — Fulcro como nuevo (en `develop`):** el motor calcula y la IA solo redacta. "Gasolina" junta gasolina moto/coche/furgoneta y gasolineras y responde con **desglose por concepto + total**; entiende "el último año", trimestres y "desde que uso la app"; 64 de las 73 preguntas de Laura van al momento (sin IA, gratis). Lo que va a la IA lleva las cifras ya calculadas (`hechosDelMotor`, `panorama`) y un prompt que prohíbe inventar o contradecir. Panel con origen de cada respuesta y ficha de cifra + desglose. Ver [FULCRO.md](FULCRO.md).

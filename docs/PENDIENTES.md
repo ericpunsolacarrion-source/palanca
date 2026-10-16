@@ -49,6 +49,8 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 - 🟩 Probar variantes de asunto de los emails cuando haya volumen.
 
 ### Importación y Fulcro
+- 🟥 **SQL `supabase-schema-fulcro-v3.sql`** (Eric, 1 minuto): que leer capturas no gaste preguntas de Fulcro. Proyecto **palanca**.
+- 🟧 **Abuso del límite con varias cuentas**: el cupo es por cuenta; alguien podría crear cuentas para tener más preguntas. Antes de abrir al público: límite también por dispositivo/IP o exigir email confirmado.
 - 🟧 **Aviso por email/notificación de renovación de seguros** (Eric, 16-10): hoy el aviso sale en el Inicio (si el seguro está en Fijos) y en Fulcro. Falta enviarlo por email (motor de emails dormido, `docs/RECORDATORIOS.md`) o como notificación push 45 días antes. Decidir canal.
 - 🟩 **Viaje entero**: hoy Fulcro agrupa los pagos de Viajes y propone preguntar por las fechas. Idea: marcar un viaje (fechas) y sumar todo lo de esas fechas (coche de alquiler, comidas…).
 - 🟩 Ampliar las **respuestas al momento** con lo que pregunte la gente: mirar en el panel qué va a la IA y debería ir local.
@@ -99,6 +101,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 ---
 
 ## Histórico de cosas terminadas que estaban aquí
+- ✔ 16-10-2026 (ronda 2): 72/73 preguntas de Laura por el motor, consejo con datos, preguntas habituales, subidas bien clasificadas, botones a pantallas, límite de IA que falla cerrado.
 - ✔ 16-10-2026: reportes de Eric con Laura (periodos con fechas, ingresos por origen, media, comercios con subidas de precio, seguros con renovación, viajes, rangos de fechas). Ver FULCRO.md.
 - ✔ 16-10-2026: arreglado el alta con el objetivo "Controlar suscripciones y recibos" (la BD no lo aceptaba y decía "No se ha podido crear tu cuenta"). Ahora se guarda como "planificacion" si la BD aún no lo admite; con `supabase-schema-objetivo-perfil.sql` se guarda tal cual.
 - ✔ 15-10-2026 (última hora): Fulcro como nuevo: desglose por concepto + total (gasolina moto/coche/furgoneta), "último año" y más periodos, 64/73 preguntas de Laura al momento, la IA recibe las cifras hechas del motor, panel con ficha de cifra y origen.

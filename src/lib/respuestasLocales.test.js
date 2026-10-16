@@ -103,8 +103,8 @@ describe('el estado del mes y el presupuesto se responden al momento', () => {
 
 describe('lo que va a la IA (null)', () => {
   for (const q of [
-    '¿Me conviene cambiar de compañía de luz?',
-    '¿Cómo puedo ahorrar más?',
+    '¿Debería invertir más?',
+    '¿Qué es un ETF?',
     '¿Cuánto debería ahorrar al mes?',
     '¿Qué es un fondo indexado?',
     '¿Por qué he gastado tanto en agosto?',

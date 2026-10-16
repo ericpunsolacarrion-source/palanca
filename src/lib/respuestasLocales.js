@@ -13,7 +13,7 @@ import { periodoDe, proximoCobro } from './periodicidad'
 import { buscarParecido, nombreComercio } from './comercios'
 import { detectarSuscripciones } from './suscripciones'
 import { resumenDelMes } from './inicio'
-import { tipoNegociable } from './negociables'
+import { PALANCAS, tipoNegociable } from './negociables'
 
 const sinAcentos = (s) =>
   String(s ?? '')
@@ -63,7 +63,7 @@ const VACIAS = new Set(
   proximo proxima siguiente le les
   media promedio normalmente habitualmente suele suelo suelen tengo tienes tiene tenemos uso usar usando app aplicacion palanca empece
   trimestre ejercicio doce semanal mensual anual diario
-  incluido incluida incluidos incluidas incluyendo contando sumando curso actual ademas tambien compre fui entre
+  incluido incluida incluidos incluidas incluyendo contando sumando curso actual ademas tambien compre fui entre veces ido vamos
   mucho poco demasiado bastante compensa conviene renegociar negociar quitar cancelar dar baja podria puedo permitir merece pena cambiar reducir bajar recortar ahorrar`.split(/\s+/),
 )
 
@@ -402,7 +402,7 @@ function historialDePrecio(movs) {
   })
 }
 
-function respuestaGasto({ objetivo, movs, devoluciones = [], p, hoyIso, verboPago, movimientos = [], filtro, pideMedia = false }) {
+function respuestaGasto({ objetivo, movs, devoluciones = [], p, hoyIso, verboPago, movimientos = [], filtro, pideMedia = false, veces = false }) {
   const devuelto = devoluciones.reduce((s, m) => s + centimosDe(m), 0)
   // Neto de devoluciones: mismo número que el resto de la app (MOTOR.md E6).
   const total = movs.reduce((s, m) => s + centimosDe(m), 0) - devuelto
@@ -420,7 +420,9 @@ function respuestaGasto({ objetivo, movs, devoluciones = [], p, hoyIso, verboPag
   const lineas =
     pideMedia && media != null
       ? [`De media ${objetivo ? `gastas${que}` : 'gastas'} **${eur(media)} al mes**: ${eur(total)} ${p.tipo === 'todo' ? `desde el ${formatearFecha(primera)}` : rango} (${nMeses} meses, ${movs.length} ${movs.length === 1 ? 'pago' : 'pagos'}).`]
-      : [`${cuando} ${verbo} **${eur(total)}**${que} (${movs.length} ${movs.length === 1 ? 'pago' : 'pagos'}).`]
+      : veces && objetivo
+        ? [`${cuando} has ido **${movs.length} ${movs.length === 1 ? 'vez' : 'veces'}**${que.replace(' en ', ' a ')} y has gastado **${eur(total)}** (${eur(total / movs.length)} de media cada vez).`]
+        : [`${cuando} ${verbo} **${eur(total)}**${que} (${movs.length} ${movs.length === 1 ? 'pago' : 'pagos'}).`]
 
   // El desglose: por concepto si preguntas por algo concreto; por categoría si es el total.
   let filas = []
@@ -801,31 +803,56 @@ function evolucionSueldo(movimientos, hoyIso) {
 // Qué ha subido de precio: cargos que se repiten, último importe frente al de
 // hace un año (o el primero que conste).
 function subidasDePrecio(movimientos, hoyIso, soloSuscripciones = false) {
-  const periodicos = detectarSuscripciones(movimientos, [], { hoy: hoyIso })
-    .filter((d) => CATEGORIAS_FIJAS.test(sinAcentos(d.categoriaNombre ?? '')))
-    .filter((d) => !soloSuscripciones || /suscrip/i.test(sinAcentos(d.categoriaNombre ?? '')))
+  const periodicos = detectarSuscripciones(movimientos, [], { hoy: hoyIso }).filter((d) => CATEGORIAS_FIJAS.test(sinAcentos(d.categoriaNombre ?? '')))
   const subidas = []
   for (const d of periodicos) {
     const pagos = movimientos.filter((m) => esConsumo(m) && nombreComercio(m) === d.nombre && m.fecha <= hoyIso).sort((a, b) => (a.fecha < b.fecha ? -1 : 1))
     if (pagos.length < 2) continue
-    const ultimo = pagos.at(-1)
-    const antes = pagos[0] // desde que hay datos
-    const a = centimosDe(antes)
-    const b = centimosDe(ultimo)
+    const a = centimosDe(pagos[0]) // desde que hay datos
+    const b = centimosDe(pagos.at(-1))
     if (b > a * 1.01) {
       const cuando = pagos.find((m) => centimosDe(m) === b)?.fecha // desde cuándo paga el precio actual
-      subidas.push({ nombre: d.nombre, a, b, cuando })
+      const tipo = tipoNegociable({ nombre: d.nombre, categoriaNombre: d.categoriaNombre ?? '' })
+      const digital = tipo === 'digital' || /suscrip/i.test(sinAcentos(d.categoriaNombre ?? ''))
+      const vecesAlAnio = 12 / (d.periodoMeses || 1)
+      subidas.push({ nombre: d.nombre, a, b, cuando, digital, tipo, extraAnual: (b - a) * vecesAlAnio })
     }
   }
-  if (!subidas.length) return `No veo subidas de precio en tus ${soloSuscripciones ? 'suscripciones' : 'cargos que se repiten'}.`
-  subidas.sort((x, z) => (z.b - z.a) * 12 - (x.b - x.a) * 12)
+  const lista = soloSuscripciones ? subidas.filter((x) => x.digital) : subidas
+  if (!lista.length) return `No veo subidas de precio en tus ${soloSuscripciones ? 'suscripciones' : 'cargos que se repiten'}.`
+  const linea = (x) => `- ${x.nombre}: ${eur(x.a)} → **${eur(x.b)}** (+${Math.round((x.b / x.a - 1) * 100)} %${x.cuando ? `, desde ${formatearFecha(x.cuando)}` : ''})`
+  const digitales = subidas.filter((x) => x.digital)
+  const negociables = subidas.filter((x) => !x.digital && ['energia', 'telefonia', 'seguro', 'banco', 'gimnasio'].includes(x.tipo))
+  const otros = subidas.filter((x) => !x.digital && !negociables.includes(x))
+  const extra = (soloSuscripciones ? digitales : subidas).reduce((s2, x) => s2 + x.extraAnual, 0)
+  const lineas = [`Te ${lista.length === 1 ? 'ha' : 'han'} subido **${lista.length} ${soloSuscripciones ? (lista.length === 1 ? 'suscripción' : 'suscripciones') : lista.length === 1 ? 'cargo' : 'cargos'}**: pagas **${eur(extra)} más al año** que al principio.`]
+  // Las suscripciones digitales tienen precio fijo: no se negocian.
+  if (digitales.length) {
+    if (!soloSuscripciones) lineas.push('Suscripciones (precio fijo, no se negocian):')
+    lineas.push(...digitales.map(linea))
+    lineas.push('- Qué puedes hacer: pasar al plan con anuncios o al familiar compartido, o pausarla los meses que no la uses (se reactiva cuando quieras).')
+  }
+  // Los recibos SÍ se negocian (móvil, luz, seguros…).
+  if (negociables.length) {
+    lineas.push(soloSuscripciones ? 'También han subido estos recibos, y estos sí se pueden negociar:' : 'Recibos que sí se pueden negociar:')
+    lineas.push(...negociables.map(linea))
+    lineas.push('- Llama con una oferta de otra compañía delante (en seguros, entre 45 y 30 días antes de renovar). En **Fijos → Tu plan de ahorro** tienes el guion.')
+  }
+  // Alquiler, cuotas…: no se negocian llamando a otra compañía.
+  if (otros.length && !soloSuscripciones) {
+    lineas.push('Otros que han subido:')
+    lineas.push(...otros.map(linea))
+    if (otros.some((x) => /alquiler|vivienda/i.test(sinAcentos(x.nombre)))) lineas.push('- Alquiler: comprueba que la subida es la que permite tu contrato.')
+  }
   return {
-    texto: [
-      `Desde que tengo tus datos te han subido el precio de ${subidas.length} ${soloSuscripciones ? (subidas.length === 1 ? 'suscripción' : 'suscripciones') : subidas.length === 1 ? 'cargo' : 'cargos'}:`,
-      ...subidas.map((x) => `- ${x.nombre}: ${eur(x.a)} → **${eur(x.b)}** (+${Math.round((x.b / x.a - 1) * 100)} %${x.cuando ? `, desde ${formatearFecha(x.cuando)}` : ''})`),
-      'En **Fijos → Tu plan de ahorro** tienes cuáles se pueden negociar y cuándo.',
-    ].join('\n'),
-    tarjeta: { etiqueta: 'Subidas de precio', cifra: null, cifraTexto: `${subidas.length}`, detalle: subidas.length === 1 ? 'cargo más caro' : 'cargos más caros', filas: subidas.map((x) => ({ nombre: x.nombre, valor: x.b / 100, extra: `antes ${eur(x.a)}` })) },
+    texto: lineas.join('\n'),
+    tarjeta: {
+      etiqueta: 'Subidas de precio',
+      cifra: extra / 100,
+      detalle: 'más al año que al principio',
+      filas: (soloSuscripciones ? [...digitales, ...negociables] : [...digitales, ...negociables, ...otros]).map((x) => ({ nombre: x.nombre, valor: x.b / 100, extra: `antes ${eur(x.a)} · ${x.digital ? 'no se negocia' : negociables.includes(x) ? 'negociable' : 'revisa el contrato'}` })),
+      accion: 'fijos',
+    },
   }
 }
 
@@ -938,7 +965,9 @@ function finalDeAnio(movimientos, hoy) {
 
 // Las preguntas "del conjunto": se miran ANTES que el filtro de criterio
 // (palabras como "voy bien" o "subido" no siempre piden opinión).
-function intencionGeneral(t, { movimientos, hoy, hoyIso, presupuesto }) {
+function intencionGeneral(t, { movimientos, recurrentes = [], hoy, hoyIso, presupuesto, objetivos = [], objetivoUsuario = null }) {
+  const consejo = consejoConDatos(t, { movimientos, recurrentes, hoy, hoyIso, presupuesto, objetivos, objetivoUsuario })
+  if (consejo) return consejo
   const pideOpinion = /\b(deberia|conviene|compensa|recomiend|aconsej|como (puedo|podria|hago|consigo|reduzco|ahorro|mejoro)|que hago|por que|porque)\b/.test(t)
   if (pideOpinion) return null
   if (/\b(presupuesto|cuanto me queda|cuanto puedo gastar|me queda para gastar|limite de gasto)\b/.test(t)) return respuestaPresupuesto(movimientos, hoy, presupuesto)
@@ -955,6 +984,511 @@ function intencionGeneral(t, { movimientos, hoy, hoyIso, presupuesto }) {
   if (/\b(voy|estoy|va|vamos)\b.*\b(mejor|peor)\b.*\b(pasado|anterior)\b/.test(t)) return comparativa(/\bano\b/.test(t) ? 'ano' : 'mes', movimientos, hoy, hoyIso)
   if (/\b(gasto|gastado|gastando|gasta)\b/.test(t) && /\b(mas|menos) que\b.*\b(ano|mes) (pasado|anterior)\b|\b(comparado|comparo|frente) (con|al)\b|\brespecto (al|a)\b/.test(t)) return comparativa(t, movimientos, hoy, hoyIso)
   if (/\b(categoria|en que)\b.*\b(aumentado|subido|crecido)\b/.test(t)) return comparativa('ano categoria', movimientos, hoy, hoyIso)
+  return null
+}
+
+
+// ══ CONSEJO CON DATOS (sin IA) ══════════════════════════════════════════════
+// Preguntas de criterio que se responden con SUS números y reglas claras
+// (colchón de 3–6 meses, referencia de ahorro del 20 %, recibos negociables…).
+// Lenguaje llano: "de cada 100 € que entran, apartas 36" mejor que "36 %".
+// Siempre con la opción de "Que lo analice Fulcro" (IA) debajo.
+
+const DISCRECIONAL = /restaurant|ocio|compras|ropa|caprichos|delivery|cuidado personal|regalos|bares|copas|tabaco|juegos/
+const eurR = (x) => formatearEuros(Math.round(x))
+const mesesTexto = (n) => `${String(Math.round(n * 10) / 10).replace('.', ',')} ${Math.round(n * 10) / 10 === 1 ? 'mes' : 'meses'}`
+const enFecha = (hoy, meses) => {
+  const f = new Date(hoy.getFullYear(), hoy.getMonth() + meses, 1)
+  return `${MESES[f.getMonth()]} de ${f.getFullYear()}`
+}
+
+// Gasto medio por categoría (€/mes) en una lista de meses completos.
+function porCategoriaMedia(movimientos, claves) {
+  const set = new Set(claves)
+  const mapa = gastoPorCategoria(movimientos.filter((m) => set.has(m.fecha.slice(0, 7))))
+  return new Map([...mapa.entries()].map(([c, v]) => [c, v / Math.max(1, claves.length)]))
+}
+
+// Objetivos de ahorro: cuánto falta, si llega a tiempo y, con varios, que elija.
+function lineasObjetivos(objetivos, ahorroMes, hoy) {
+  const pendientes = (objetivos ?? []).filter((o) => o.faltan > 0)
+  if (!pendientes.length) return []
+  const lineas = pendientes.slice(0, 3).map((o) => {
+    const meses = ahorroMes > 0 ? Math.ceil(o.faltan / ahorroMes) : null
+    let fechaTxt = ''
+    if (o.fecha && meses != null) {
+      const [y, m] = String(o.fecha).split('-').map(Number)
+      const hasta = (y - hoy.getFullYear()) * 12 + (m - 1 - hoy.getMonth())
+      if (hasta > 0 && meses > hasta) fechaTxt = ` Para llegar a tu fecha harían falta ${eurR(o.faltan / hasta)} al mes.`
+    }
+    return `- «${o.nombre}»: te faltan **${eurR(o.faltan)}**${meses != null ? `; a tu ritmo, en ${meses} ${meses === 1 ? 'mes' : 'meses'} (hacia ${enFecha(hoy, meses)})` : ''}.${fechaTxt}`
+  })
+  if (pendientes.length >= 2 && ahorroMes > 0) {
+    const total = pendientes.reduce((s2, o) => s2 + o.faltan, 0)
+    lineas.push(`- Para todos a la vez necesitas ${eurR(total)}: ¿cuál va primero? Dímelo y te digo cuándo llegas si le dedicas todo tu ahorro.`)
+  }
+  return lineas
+}
+
+function ahorroSuficiente({ movimientos, hoy, hoyIso, objetivos, objetivoUsuario }) {
+  const comp = mesesCompletos(movimientos, hoyIso).filter((x) => x.ingresos > 0 || x.gastos > 0)
+  const ult = comp.slice(-12)
+  if (ult.length < 3) return null
+  const ing = ult.reduce((s2, x) => s2 + x.ingresos, 0)
+  const aho = ult.reduce((s2, x) => s2 + x.ahorro, 0)
+  if (ing <= 0) return null
+  const tasa = (aho / ing) * 100
+  const mediaMes = aho / ult.length
+  const tres = comp.slice(-3)
+  const aho3 = tres.reduce((s2, x) => s2 + x.ahorro, 0) / tres.length
+  const veredicto = tasa >= 20 ? 'Sí, ahorras bien' : tasa >= 10 ? 'Vas bien, con margen para más' : tasa > 0 ? 'Ahorras poco' : 'Ahora mismo no: gastas lo que entra o más'
+  const lineas = [
+    `**${veredicto}**: de cada 100 € que entran, apartas **${Math.max(0, Math.round(tasa))}**. La referencia habitual es apartar 20.`,
+    `- Son **${eurR(mediaMes)} al mes** de media (${eurR(aho)} en los últimos ${ult.length} meses).`,
+  ]
+  // Tendencia: los 3 últimos meses frente a la media, y por qué.
+  if (tres.length === 3 && ult.length >= 6 && Math.abs(aho3 - mediaMes) > mediaMes * 0.2) {
+    const antes = porCategoriaMedia(movimientos, ult.map((x) => x.clave))
+    const ahora = porCategoriaMedia(movimientos, tres.map((x) => x.clave))
+    const sube = [...ahora.entries()].map(([c, v]) => ({ c, dif: v - (antes.get(c) ?? 0) })).sort((a, b) => b.dif - a.dif)[0]
+    lineas.push(
+      aho3 < mediaMes
+        ? `- Ojo: estos 3 últimos meses apartas menos, **${eurR(aho3)} al mes**${sube && sube.dif > 20 ? `; lo que más ha crecido es ${etiquetaCategoria(sube.c)} (unos ${eurR(sube.dif)} más al mes)` : ''}.`
+        : `- Vas a más: estos 3 últimos meses, **${eurR(aho3)} al mes**.`,
+    )
+  }
+  const obj = lineasObjetivos(objetivos, mediaMes, hoy)
+  if (obj.length) lineas.push(...obj)
+  else lineas.push('- Ponle nombre y cifra a lo que quieres (un piso, un viaje, jubilarte): con un objetivo te digo si llegas y cuándo. Créalo en **Plan → Simuladores**.')
+  if (/jubil/.test(sinAcentos(objetivoUsuario ?? ''))) lineas.push('- Para tu jubilación: en **Simuladores → Independencia financiera** ves cuánto necesitarías y cuándo podrías dejar de trabajar.')
+  return {
+    texto: lineas.join('\n'),
+    tarjeta: {
+      etiqueta: `Tu ahorro · últimos ${ult.length} meses`,
+      cifra: null,
+      cifraTexto: `${Math.max(0, Math.round(tasa))} de cada 100 €`,
+      detalle: `${eurR(mediaMes)}/mes de media · referencia: 20 de cada 100`,
+      filas: [],
+      accion: 'simuladores',
+    },
+  }
+}
+
+function colchon({ movimientos, hoyIso }) {
+  const ult = mesesCompletos(movimientos, hoyIso).filter((x) => x.gastos > 0).slice(-12)
+  if (ult.length < 2) return null
+  const gasto = ult.reduce((s2, x) => s2 + x.gastos, 0) / ult.length
+  const ahorro = ult.reduce((s2, x) => s2 + x.ahorro, 0) / ult.length
+  const liq = bolsas(movimientos, hoyIso).bolsaLiquidez
+  const cubre = gasto > 0 ? liq / gasto : 0
+  const veredicto = cubre < 1 ? 'Muy justo' : cubre < 3 ? 'Todavía corto' : cubre <= 6 ? 'Sí, tienes un buen colchón' : 'Sí, y de sobra'
+  const lineas = [
+    `**${veredicto}**: tu dinero disponible (${eurR(liq)}) cubre **${mesesTexto(cubre)}** de tus gastos.`,
+    `- Un buen colchón son de 3 a 6 meses de gastos: para ti, entre **${eurR(gasto * 3)} y ${eurR(gasto * 6)}** (gastas ${eurR(gasto)} al mes).`,
+  ]
+  if (cubre < 3) {
+    const falta = gasto * 3 - liq
+    lineas.push(ahorro > 0 ? `- Te faltan ${eurR(falta)} para el mínimo: apartando ${eurR(ahorro)} al mes, en unos ${Math.ceil(falta / ahorro)} meses.` : `- Te faltan ${eurR(falta)} para el mínimo. Primero, que cada mes sobre algo.`)
+    lineas.push('- Hasta tenerlo, mejor no invertir lo que podrías necesitar.')
+  } else if (cubre > 6) {
+    lineas.push(`- Lo que pasa de 6 meses (unos ${eurR(liq - gasto * 6)}) podría ir a tus objetivos o a largo plazo. En **Simuladores → Interés compuesto** ves qué daría con el tiempo.`)
+  }
+  lineas.push('- Es lo que tienes registrado en Palanca: si no cuadra con tu banco, usa «Ajustar saldo» en el Inicio.')
+  return {
+    texto: lineas.join('\n'),
+    tarjeta: { etiqueta: 'Colchón de emergencia', cifra: null, cifraTexto: mesesTexto(cubre), detalle: `${eurR(liq)} disponibles · objetivo ${eurR(gasto * 3)}–${eurR(gasto * 6)}`, filas: [], accion: 'simuladores' },
+  }
+}
+
+// Suscripciones (precio fijo): de Fijos o, si no hay, las detectadas.
+function suscripcionesDe(movimientos, recurrentes, hoyIso) {
+  const activos = recurrentes.filter((r) => r.activo !== false && r.tipo !== 'ingreso' && (/suscrip|ocio|digital/i.test(r.categoriaNombre ?? '') || tipoNegociable(r) === 'digital'))
+  if (activos.length) return activos.map((r) => ({ nombre: r.nombre, mensual: mensualDe(r), importe: Number(r.importe), meses: periodoDe(r).meses || 1 }))
+  return detectarSuscripciones(movimientos, [], { hoy: hoyIso })
+    .filter((d) => /suscrip/i.test(sinAcentos(d.categoriaNombre ?? '')))
+    .map((d) => ({ nombre: d.nombre, mensual: d.importe / (d.periodoMeses || 1), importe: d.importe, meses: d.periodoMeses || 1 }))
+}
+
+function queSuscripcionQuitar({ movimientos, recurrentes, hoyIso }) {
+  const subs = suscripcionesDe(movimientos, recurrentes, hoyIso).sort((a, b) => b.mensual - a.mensual)
+  if (!subs.length) return 'No veo suscripciones en tus movimientos ni en Fijos. Si tienes alguna, añádela en **Fijos** y te digo cuánto te cuestan al año.'
+  const anual = subs.reduce((s2, x) => s2 + x.mensual * 12, 0)
+  return {
+    texto: [
+      `Tus suscripciones te cuestan **${eurR(anual)} al año**. La decisión es tuya; esto es lo que pesa cada una:`,
+      ...subs.map((x) => `- ${x.nombre}: ${formatearEuros(x.importe)}${x.meses === 12 ? ' al año' : x.meses > 1 ? ` cada ${x.meses} meses` : ' al mes'} = **${eurR(x.mensual * 12)} al año**`),
+      '- La pregunta clave: ¿cuál has usado menos este último mes? Esa es la candidata.',
+      '- Sin quitarla del todo: plan con anuncios o familiar compartido, o pausarla y rotar (una plataforma cada mes).',
+    ].join('\n'),
+    tarjeta: { etiqueta: 'Suscripciones · al año', cifra: anual, detalle: `${subs.length} suscripciones · ${eurR(anual / 12)}/mes`, filas: subs.map((x) => ({ nombre: x.nombre, valor: Math.round(x.mensual * 1200) / 100, extra: 'al año' })), accion: 'fijos' },
+  }
+}
+
+function renegociar(t, { movimientos, hoyIso }) {
+  const obj = resolverObjetivo(t.replace(/\b(renegociar|negociar|cambiar|cambio|compania|compensa|conviene|merece|pena|tarifa|me|de|la|el)\b/g, ' ').replace(/\s+/g, ' ').trim(), movimientos)
+  if (obj.sin || !obj.filtro) return null
+  const suyos = movimientos.filter((m) => esConsumo(m) && obj.filtro(m) && m.fecha <= hoyIso)
+  if (!suyos.length) return null
+  const consejo = consejoNegociable(obj, suyos, hoyIso)
+  if (!consejo) return null
+  const tipo = tipoNegociable({ nombre: nombreComercio(suyos[0]) || obj.nombre, categoriaNombre: suyos[0].categoria?.nombre ?? '' }) ?? 'energia'
+  const pal = PALANCAS[tipo]
+  const anual = suyos.filter((m) => m.fecha > `${Number(hoyIso.slice(0, 4)) - 1}${hoyIso.slice(4)}`).reduce((s2, m) => s2 + centimosDe(m), 0) / 100
+  const rango = pal?.ahorro && anual > 0 ? ` Suele poder rebajarse entre un ${Math.round(pal.ahorro[0] * 100)} y un ${Math.round(pal.ahorro[1] * 100)} %: de **${eurR(anual * pal.ahorro[0])} a ${eurR(anual * pal.ahorro[1])} al año** para ti (es orientativo).` : ''
+  return {
+    texto: [`**Merece la pena intentarlo**: llamar no cuesta nada y pagas ${eurR(anual)} al año en ${obj.nombre}.${rango}`, ...consejo.lineas].join('\n'),
+    tarjeta: { etiqueta: `${capital(obj.nombre)} · renegociar`, cifra: anual, detalle: 'lo que pagas al año', filas: [], accion: 'fijos' },
+  }
+}
+
+function puedoPermitirme(t, { movimientos, hoy, hoyIso }) {
+  const cantidad = cantidadDe(t)
+  if (!cantidad || cantidad < 20) return null
+  const comp = mesesCompletos(movimientos, hoyIso).filter((x) => x.ingresos > 0 || x.gastos > 0)
+  const ult = comp.slice(-12)
+  if (ult.length < 2) return null
+  const ahorro = ult.reduce((s2, x) => s2 + x.ahorro, 0) / ult.length
+  const gasto = ult.reduce((s2, x) => s2 + x.gastos, 0) / ult.length
+  const liq = bolsas(movimientos, hoyIso).bolsaLiquidez
+  const mesIdx = MESES.findIndex((n) => new RegExp(`\\b${n}\\b`).test(t))
+  const hasta = mesIdx < 0 ? 0 : (mesIdx - hoy.getMonth() + 12) % 12
+  const cuando = mesIdx < 0 ? 'ahora' : `en ${MESES[mesIdx]}`
+  const ahorroHasta = Math.max(0, ahorro) * hasta
+  // Ese mes en tu historia: ¿suele costar o entrar más? (diciembre: regalos y paga extra)
+  const mismos = mesIdx < 0 ? [] : comp.filter((x) => Number(x.clave.slice(5, 7)) - 1 === mesIdx)
+  const extraGasto = mismos.length ? mismos.reduce((s2, x) => s2 + x.gastos, 0) / mismos.length - gasto : 0
+  const extraIngreso = mismos.length ? mismos.reduce((s2, x) => s2 + x.ingresos, 0) / mismos.length - ult.reduce((s2, x) => s2 + x.ingresos, 0) / ult.length : 0
+  const colchonMin = gasto * 3
+  const quedaria = liq + ahorroHasta - cantidad
+  const veredicto =
+    ahorroHasta >= cantidad ? `**Sí**: de aquí a ${MESES[mesIdx] ?? 'entonces'} ahorras más que eso, sin tocar lo que ya tienes`
+      : quedaria >= colchonMin ? `**Sí**: te quedaría un colchón de ${mesesTexto(quedaria / gasto)} de gastos`
+        : liq + ahorroHasta >= cantidad ? '**Podrías, pero justo**: te quedarías con menos de 3 meses de colchón'
+          : '**Ahora mismo no**: no te llega sin endeudarte'
+  const lineas = [
+    `${veredicto}.`,
+    `- Tienes ${eurR(liq)} disponibles${hasta ? ` y, a tu ritmo (${eurR(ahorro)} al mes), sumarás unos ${eurR(ahorroHasta)} hasta ${MESES[mesIdx]}` : ''}.`,
+    `- ${eurR(cantidad)} son ${ahorro > 0 ? `${mesesTexto(cantidad / ahorro)} de tu ahorro` : 'más de lo que te sobra al mes'}.`,
+  ]
+  if (mismos.length && Math.abs(extraGasto) > gasto * 0.1) lineas.push(`- Ojo: ${cuando} sueles gastar ${extraGasto > 0 ? 'más' : 'menos'} de lo normal (unos ${eurR(Math.abs(extraGasto))} ${extraGasto > 0 ? 'más' : 'menos'}).`)
+  if (mismos.length && extraIngreso > gasto * 0.3) lineas.push(`- A favor: ${cuando} suele entrar más dinero (unos ${eurR(extraIngreso)} más; paga extra o similar).`)
+  lineas.push(`- Después te quedarían unos ${eurR(Math.max(0, quedaria))}; tu colchón mínimo recomendado es ${eurR(colchonMin)} (3 meses de gastos).`)
+  return {
+    texto: lineas.join('\n'),
+    tarjeta: { etiqueta: `${eurR(cantidad)} ${cuando}`, cifra: null, cifraTexto: veredicto.replace(/\*\*/g, '').split(':')[0], detalle: `te quedarían ${eurR(Math.max(0, quedaria))} · colchón mínimo ${eurR(colchonMin)}`, filas: [] },
+  }
+}
+
+function comoAhorrarMas({ movimientos, recurrentes, hoyIso }) {
+  const comp = mesesCompletos(movimientos, hoyIso).filter((x) => x.gastos > 0)
+  const ult = comp.slice(-12)
+  if (ult.length < 2) return null
+  const palancas = []
+  // 1) Recibos negociables (lo que pagas al año × lo que se suele rebajar).
+  for (const d of cargosPeriodicos(movimientos, hoyIso)) {
+    const tipo = tipoNegociable({ nombre: d.nombre, categoriaNombre: d.categoriaNombre ?? '' })
+    const pal = PALANCAS[tipo]
+    if (!pal?.negociable || tipo === 'digital' || tipo === 'gimnasio') continue
+    const anual = (d.importe * 12) / (d.periodoMeses || 1)
+    palancas.push({ texto: `Renegociar ${d.nombre} (${eurR(anual)} al año)`, min: anual * pal.ahorro[0], max: anual * pal.ahorro[1] })
+  }
+  // 2) Suscripciones: quitar o pausar la que menos uses.
+  const subs = suscripcionesDe(movimientos, recurrentes, hoyIso).sort((a, b) => a.mensual - b.mensual)
+  if (subs.length >= 2) palancas.push({ texto: `Quitar o pausar una suscripción (tienes ${subs.length})`, min: subs[0].mensual * 12, max: subs.at(-1).mensual * 12 })
+  // 3) Gasto del día a día que depende de ti: recortar un 15–25 %.
+  const medias12 = porCategoriaMedia(movimientos, ult.map((x) => x.clave))
+  const disc = [...medias12.entries()].filter(([c]) => DISCRECIONAL.test(sinAcentos(c))).sort((a, b) => b[1] - a[1]).slice(0, 2)
+  for (const [c, v] of disc) palancas.push({ texto: `${etiquetaCategoria(c)}: ${eurR(v)} al mes; recortar un 20 %`, min: v * 12 * 0.15, max: v * 12 * 0.25 })
+  if (!palancas.length) return null
+  palancas.sort((a, b) => b.max - a.max)
+  const top = palancas.slice(0, 5)
+  const min = top.reduce((s2, x) => s2 + x.min, 0)
+  const max = top.reduce((s2, x) => s2 + x.max, 0)
+  return {
+    texto: [
+      `Con tus números, podrías ahorrar entre **${eurR(min)} y ${eurR(max)} más al año** (orientativo). Por dónde empezar:`,
+      ...top.map((x) => `- ${x.texto}: ${eurR(x.min)}–${eurR(x.max)} al año`),
+      '- Empieza por lo que menos te cueste: una llamada para renegociar un recibo no cambia tu día a día.',
+    ].join('\n'),
+    tarjeta: { etiqueta: 'Ahorro posible · al año', cifra: null, cifraTexto: `${eurR(min)}–${eurR(max)}`, detalle: 'orientativo, con tus gastos reales', filas: top.map((x) => ({ nombre: x.texto.split(' (')[0].split(':')[0], valor: Math.round(x.max), extra: `desde ${eurR(x.min)}` })), accion: 'fijos', accionTexto: 'Ver Tu plan de ahorro' },
+  }
+}
+
+// Lo que Fulcro no hace (gratis y al momento, sin gastar una pregunta de IA).
+function limites(t) {
+  if (/\b(numero de (la )?cuenta|iban|contrasena|pin|numero de (la )?tarjeta|cvv|clave de acceso|codigo de seguridad)\b/.test(t))
+    return 'No veo ni guardo tus datos bancarios (cuenta, tarjeta o claves): solo los movimientos que apuntas o importas. Nunca te los pediré. Tu número de cuenta lo tienes en la app de tu banco.'
+  if (/\b(en que|que|cual(es)?)\b.*\b(acciones?|fondos?|etf|criptos?|criptomonedas?|bitcoin|valores?)\b.*\b(invierto|compro|meto|recomiendas?|me compro|comprar|invertir)\b|\b(recomiendame|recomiendas?)\b.*\b(acciones?|fondos?|etf|criptos?|bitcoin)\b/.test(t))
+    return {
+      texto: [
+        'No te puedo recomendar acciones, fondos ni criptomonedas concretos: eso es asesoramiento financiero y depende de ti y de un profesional. Lo que sí te puedo dar es el criterio:',
+        '- Primero, un colchón de 3–6 meses de gastos (pregúntame «¿tengo un buen fondo de emergencia?»).',
+        '- Invierte solo dinero que no vayas a necesitar en años, y repartido (diversificado): mejor muchos valores que uno.',
+        '- Fíjate en las comisiones: a largo plazo pesan mucho.',
+        '- En **Simuladores → Interés compuesto** ves qué daría una aportación mensual con el tiempo.',
+      ].join('\n'),
+      tarjeta: { etiqueta: 'Invertir con criterio', cifra: null, cifraTexto: 'Sin recomendaciones concretas', detalle: 'orientación educativa', filas: [], accion: 'simuladores' },
+    }
+  if (/\b(que tiempo|el tiempo (que )?hara|tiempo hace|llovera|va a llover|futbol|partido|receta|chiste|horoscopo|quien gano|resultado del)\b/.test(t))
+    return 'Eso se me escapa: solo sé de tu dinero y de Palanca. Pregúntame, por ejemplo, «¿cómo voy este mes?» o «¿en qué gasto más?».'
+  return null
+}
+
+
+// ── Más preguntas habituales que el motor resuelve solo ──────────────────────
+// Resumen de un periodo: entró, salió, ahorro (en lenguaje llano) y dónde.
+function resumenPeriodo(per, { movimientos, hoyIso }) {
+  const dentro = movimientos.filter(enPeriodo(per, hoyIso))
+  const tot = totalesDe(dentro)
+  if (!(tot.gastos > 0) && !(tot.ingresos > 0)) return `No hay movimientos ${per.etiqueta}.`
+  const primera = dentro.reduce((a, m) => (m.fecha < a ? m.fecha : a), hoyIso)
+  const rango = rangoDe(per, primera, hoyIso)
+  const top = [...gastoPorCategoria(dentro).entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
+  const de100 = tot.ingresos > 0 ? Math.round((tot.ahorro / tot.ingresos) * 100) : null
+  return {
+    texto: [
+      `${per.explicito ? capital(per.etiqueta) : `${capital(per.etiqueta)} (${rango})`}: han entrado **${formatearEuros(tot.ingresos)}** y has gastado **${formatearEuros(tot.gastos)}**.`,
+      tot.ingresos > 0 ? `- ${tot.ahorro >= 0 ? `Has ahorrado **${formatearEuros(tot.ahorro)}**: de cada 100 € que entraron, apartaste ${de100}` : `Has gastado **${formatearEuros(-tot.ahorro)} más** de lo que entró`}.` : `- Aún no ha entrado ningún ingreso en este periodo${diaNomina(movimientos) ? `: tu nómina suele llegar hacia el día ${diaNomina(movimientos)}` : ''}.`,
+      ...(tot.invertido > 0 ? [`- Además invertiste ${formatearEuros(tot.invertido)} (cuenta como ahorro, no como gasto).`] : []),
+      ...(top.length ? [`- Donde más: ${top.map(([c, v]) => `${etiquetaCategoria(c)} ${formatearEuros(v)}`).join(' · ')}.`] : []),
+    ].join('\n'),
+    tarjeta: { etiqueta: `Resumen · ${per.etiqueta.replace(/^en /, '')}`, cifra: tot.ahorro, conSigno: true, detalle: `${rango} · entra ${formatearEuros(tot.ingresos)} · sale ${formatearEuros(tot.gastos)}`, filas: top.map(([c, v]) => ({ nombre: etiquetaCategoria(c), valor: v, pct: tot.gastos > 0 ? Math.round((v / tot.gastos) * 100) : null })), accion: 'analisis' },
+  }
+}
+
+const diaNomina = (movimientos) => {
+  const dias = movimientos.filter((m) => m.tipo === 'ingreso' && /nomina|salario|sueldo/.test(sinAcentos(`${m.categoria?.nombre} ${m.nota}`))).map((m) => Number(m.fecha.slice(8, 10)))
+  return dias.length ? dias.sort((a, b) => a - b)[Math.floor(dias.length / 2)] : null
+}
+
+// Los pagos más grandes (uno a uno) de un periodo.
+function mayoresGastos(per, { movimientos, hoyIso }) {
+  const dentro = movimientos.filter((m) => esConsumo(m) && enPeriodo(per, hoyIso)(m))
+  // El alquiler de cada mes no es "una compra": los fijos se dicen aparte.
+  const esFijo = (m) => CATEGORIAS_FIJAS.test(sinAcentos(m.categoria?.nombre ?? ''))
+  const fijo = dentro.filter(esFijo).sort((a, b) => centimosDe(b) - centimosDe(a))[0]
+  const movs = dentro.filter((m) => !esFijo(m)).sort((a, b) => centimosDe(b) - centimosDe(a)).slice(0, 5)
+  if (!movs.length && !fijo) return `No has apuntado gastos ${per.etiqueta}.`
+  if (!movs.length) return `${capital(per.etiqueta)} tu mayor pago es un fijo: ${nombreComercio(fijo) || 'sin concepto'}, ${eur(centimosDe(fijo))}.`
+  return {
+    texto: [`Tus compras más grandes ${per.etiqueta}${fijo ? ` (sin contar fijos; el mayor fijo es ${nombreComercio(fijo) || 'sin concepto'}, ${eur(centimosDe(fijo))})` : ''}:`, ...movs.map((m) => `- ${formatearFecha(m.fecha)} · ${nombreComercio(m) || etiquetaCategoria(m.categoria?.nombre ?? 'Sin categoría')}: **${eur(centimosDe(m))}**`)].join('\n'),
+    tarjeta: { etiqueta: `Mayores pagos · ${per.etiqueta.replace(/^en /, '')}`, cifra: centimosDe(movs[0]) / 100, detalle: `el mayor: ${nombreComercio(movs[0]) || 'sin concepto'} · ${formatearFecha(movs[0].fecha)}`, filas: movs.map((m) => ({ nombre: nombreComercio(m) || 'Sin concepto', valor: centimosDe(m) / 100, extra: formatearFecha(m.fecha) })) },
+  }
+}
+
+// Gastos hormiga: compras pequeñas (menos de 15 €) que se repiten.
+function gastosHormiga({ movimientos, hoy, hoyIso }) {
+  const tres = periodo('ultimos 3 meses', hoy)
+  const peq = movimientos.filter((m) => esConsumo(m) && enPeriodo(tres, hoyIso)(m) && centimosDe(m) < 1500 && !CATEGORIAS_FIJAS.test(sinAcentos(m.categoria?.nombre ?? '')))
+  if (peq.length < 3) return 'Apenas veo compras pequeñas (menos de 15 €) en los últimos 3 meses: no tienes gastos hormiga que preocupen.'
+  const grupos = desglosePorConcepto(peq).slice(0, 5)
+  const total = peq.reduce((s2, m) => s2 + centimosDe(m), 0)
+  return {
+    texto: [
+      `En los últimos 3 meses has hecho **${peq.length} compras de menos de 15 €**: suman **${eur(total)}**, unos ${eur(total / 3)} al mes (${eurR((total / 300) * 12)} al año).`,
+      ...grupos.map((g) => `- ${g.nombre}: ${eur(g.cent)} (${g.n} ${g.n === 1 ? 'vez' : 'veces'})`),
+      '- Si recortas la mitad, son unos ' + eurR((total / 300) * 6) + ' al año.',
+    ].join('\n'),
+    tarjeta: { etiqueta: 'Gastos hormiga · 3 meses', cifra: total / 100, detalle: `${peq.length} compras de menos de 15 €`, filas: grupos.map((g) => ({ nombre: g.nombre, valor: g.cent / 100, extra: `${g.n} veces` })) },
+  }
+}
+
+// Lo que necesitas al mes para vivir: lo imprescindible (casa, recibos,
+// comida, transporte, seguros, salud), media de 12 meses.
+const ESENCIAL = /vivienda|alquiler|hipoteca|suministro|comida|supermercado|alimenta|transporte|seguro|salud|farmacia|educaci|prestamo|impuesto|comunidad/
+function necesitoParaVivir({ movimientos, hoyIso }) {
+  const ult = mesesCompletos(movimientos, hoyIso).filter((x) => x.gastos > 0).slice(-12)
+  if (ult.length < 2) return null
+  const medias = porCategoriaMedia(movimientos, ult.map((x) => x.clave))
+  const esen = [...medias.entries()].filter(([c]) => ESENCIAL.test(sinAcentos(c))).sort((a, b) => b[1] - a[1])
+  const totalEsen = esen.reduce((s2, [, v]) => s2 + v, 0)
+  const gasto = ult.reduce((s2, x) => s2 + x.gastos, 0) / ult.length
+  return {
+    texto: [
+      `Para lo imprescindible necesitas unos **${eurR(totalEsen)} al mes** (media de ${ult.length} meses). Con todo lo demás, gastas ${eurR(gasto)}.`,
+      ...esen.slice(0, 6).map(([c, v]) => `- ${etiquetaCategoria(c)}: ${eurR(v)} al mes`),
+      `- Tu colchón de emergencia debería cubrir, como mínimo, 3 meses de esto: ${eurR(totalEsen * 3)}.`,
+    ].join('\n'),
+    tarjeta: { etiqueta: 'Lo imprescindible · al mes', cifra: Math.round(totalEsen), detalle: `con todo, ${eurR(gasto)}/mes`, filas: esen.slice(0, 6).map(([c, v]) => ({ nombre: etiquetaCategoria(c), valor: Math.round(v) })) },
+  }
+}
+
+// Próximos cobros (resto del mes o 30 días): de Fijos o, si no, detectados.
+function proximosCobros(t, { movimientos, recurrentes, hoy, hoyIso }) {
+  const finMes = /\beste mes\b|\bquedan?\b/.test(t)
+  const limite = finMes ? iso(new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0)) : iso(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 30))
+  const activos = recurrentes.filter((r) => r.activo !== false && r.tipo !== 'ingreso')
+  const lista = activos.length
+    ? activos.map((r) => ({ nombre: r.nombre, importe: Number(r.importe), p: proximoCobro(r, hoy) })).filter((x) => x.p && !x.p.sinDia).map((x) => ({ nombre: x.nombre, importe: x.importe, fecha: x.p.fecha }))
+    : cargosPeriodicos(movimientos, hoyIso).map((d) => ({ nombre: d.nombre, importe: d.importe, fecha: d.proximaFecha }))
+  const prox = lista.filter((x) => x.fecha >= hoyIso && x.fecha <= limite).sort((a, b) => (a.fecha < b.fecha ? -1 : 1))
+  const cuando = finMes ? 'de aquí a fin de mes' : 'en los próximos 30 días'
+  if (!prox.length) {
+    const sig = lista.filter((x) => x.fecha >= hoyIso).sort((a, b) => (a.fecha < b.fecha ? -1 : 1))[0]
+    return `No te queda ningún cobro fijo ${cuando}${activos.length ? '' : ' (según los cargos que se repiten en tus movimientos)'}.${sig ? ` El siguiente: **${sig.nombre}**, ${formatearEuros(sig.importe)} el ${formatearFecha(sig.fecha)}.` : ''}`
+  }
+  const total = prox.reduce((s2, x) => s2 + x.importe, 0)
+  return {
+    texto: [
+      `${capital(cuando)} te cobran **${formatearEuros(total)}** en ${prox.length} ${prox.length === 1 ? 'recibo' : 'recibos'}${activos.length ? '' : ' (deducidos de tus movimientos)'}:`,
+      ...prox.map((x) => `- ${formatearFecha(x.fecha)} · ${x.nombre}: ${formatearEuros(x.importe)}`),
+      ...(activos.length ? [] : ['- Añádelos en **Fijos** y te aviso el día de cada cobro.']),
+    ].join('\n'),
+    tarjeta: { etiqueta: `Próximos cobros · ${cuando.replace(/^en los |^de aquí a /, '')}`, cifra: total, detalle: `${prox.length} recibos`, filas: prox.map((x) => ({ nombre: x.nombre, valor: x.importe, extra: formatearFecha(x.fecha) })), accion: 'fijos' },
+  }
+}
+
+// Inversiones: Palanca las cuenta a coste (lo aportado), no a valor de mercado.
+function comoVanInversiones({ movimientos, hoyIso }) {
+  const b = bolsas(movimientos, hoyIso)
+  const inv = movimientos.filter((m) => esInversion(m) && m.fecha <= hoyIso)
+  if (!inv.length) return 'No tienes inversiones apuntadas. Si inviertes, apunta cada aportación como «Inversión» y te digo cuánto llevas.'
+  const porPlat = new Map()
+  for (const m of inv) {
+    const k = m.fuente?.nombre || 'Sin plataforma'
+    porPlat.set(k, (porPlat.get(k) ?? 0) + (m.tipo === 'ingreso' ? -centimosDe(m) : centimosDe(m)))
+  }
+  const ult = mesesCompletos(movimientos, hoyIso).slice(-12)
+  const aport12 = ult.reduce((s2, x) => s2 + Math.max(0, x.invertido), 0) / Math.max(1, ult.length)
+  return {
+    texto: [
+      `Llevas **${formatearEuros(b.bolsaInversion)} aportados** en neto (lo que metiste menos lo que sacaste).`,
+      ...[...porPlat.entries()].map(([k, c]) => `- ${k}: ${eur(c)}`),
+      `- De media inviertes ${eurR(aport12)} al mes (último año).`,
+      '- Lo que has ganado o perdido no lo sé: Palanca no conoce el valor de mercado. Míralo en tu plataforma; la diferencia con lo aportado es tu rentabilidad.',
+    ].join('\n'),
+    tarjeta: { etiqueta: 'Inversión · aportado neto', cifra: b.bolsaInversion, detalle: `${eurR(aport12)}/mes de media · a coste, sin rentabilidad`, filas: [...porPlat.entries()].map(([k, c]) => ({ nombre: k, valor: c / 100 })), accion: 'inversion' },
+  }
+}
+
+function devoluciones(per, { movimientos, hoyIso }) {
+  const devs = movimientos.filter((m) => esDevolucion(m) && enPeriodo(per, hoyIso)(m)).sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
+  if (!devs.length) return `No veo devoluciones ${per.etiqueta}.`
+  const total = devs.reduce((s2, m) => s2 + centimosDe(m), 0)
+  return {
+    texto: [`${capital(per.etiqueta)} te han devuelto **${eur(total)}** en ${devs.length} ${devs.length === 1 ? 'devolución' : 'devoluciones'} (restan del gasto, no cuentan como ingreso):`, ...devs.slice(0, 6).map((m) => `- ${formatearFecha(m.fecha)} · ${nombreComercio(m) || 'Devolución'}: ${eur(centimosDe(m))}`)].join('\n'),
+    tarjeta: { etiqueta: `Devoluciones · ${per.etiqueta.replace(/^en /, '')}`, cifra: total / 100, detalle: `${devs.length} devoluciones`, filas: devs.slice(0, 6).map((m) => ({ nombre: nombreComercio(m) || 'Devolución', valor: centimosDe(m) / 100, extra: formatearFecha(m.fecha) })) },
+  }
+}
+
+// Independencia financiera: la regla del 4 % (25 veces tu gasto de un año).
+function jubilacion({ movimientos, hoyIso }) {
+  const ult = mesesCompletos(movimientos, hoyIso).filter((x) => x.gastos > 0).slice(-12)
+  if (ult.length < 2) return null
+  const gasto = ult.reduce((s2, x) => s2 + x.gastos, 0) / ult.length
+  const ahorro = ult.reduce((s2, x) => s2 + x.ahorro, 0) / ult.length
+  const necesitas = gasto * 12 * 25
+  const b = bolsas(movimientos, hoyIso)
+  return {
+    texto: [
+      `Una referencia muy usada (la regla del 4 %): para vivir de tus ahorros necesitarías unas **25 veces lo que gastas en un año**: con tu gasto (${eurR(gasto)} al mes), unos **${eurR(necesitas)}**.`,
+      `- Hoy tienes ${eurR(b.patrimonio)}: el ${Math.round((b.patrimonio / necesitas) * 100)} % del camino.`,
+      `- Cuánto tardarías depende de cuánto ahorres (${eurR(ahorro)} al mes ahora) y de lo que rinda lo invertido: calcúlalo con tus cifras en **Simuladores → Independencia financiera**.`,
+      '- La pensión pública reduciría lo que necesitas; tu estimación oficial la ves en la web de la Seguridad Social.',
+    ].join('\n'),
+    tarjeta: { etiqueta: 'Independencia financiera', cifra: Math.round(necesitas), detalle: `25 × tu gasto anual · llevas ${eurR(b.patrimonio)}`, filas: [], accion: 'simuladores' },
+  }
+}
+
+// "¿Cuánto tendré en 10 años?": sin rentabilidad (lo seguro) y remite al simulador.
+function enNAnios(t, { movimientos, hoyIso }) {
+  const n = t.match(/\ben (\d+|[a-z]+) anos\b/)
+  const anios = n ? Number(n[1]) || NUMEROS[n[1]] : null
+  if (!anios || anios > 60) return null
+  const ult = mesesCompletos(movimientos, hoyIso).filter((x) => x.ingresos > 0 || x.gastos > 0).slice(-12)
+  if (ult.length < 2) return null
+  const ahorro = ult.reduce((s2, x) => s2 + x.ahorro, 0) / ult.length
+  const b = bolsas(movimientos, hoyIso)
+  const final = b.patrimonio + ahorro * 12 * anios
+  return {
+    texto: [
+      `Si sigues ahorrando como ahora (${eurR(ahorro)} al mes), en ${anios} ${anios === 1 ? 'año' : 'años'} tendrías unos **${eurR(final)}**, sin contar lo que rinda lo invertido.`,
+      `- Hoy tienes ${eurR(b.patrimonio)}; sumarías ${eurR(ahorro * 12 * anios)}.`,
+      '- Invertido a largo plazo podría ser bastante más (interés compuesto): pruébalo en **Simuladores → Interés compuesto**.',
+    ].join('\n'),
+    tarjeta: { etiqueta: `Dentro de ${anios} ${anios === 1 ? 'año' : 'años'}`, cifra: Math.round(final), detalle: `a tu ritmo · sin rentabilidad`, filas: [], accion: 'simuladores' },
+  }
+}
+
+function cuantoDeberiaAhorrar(ctx) {
+  const ult = mesesCompletos(ctx.movimientos, ctx.hoyIso).filter((x) => x.ingresos > 0).slice(-12)
+  if (ult.length < 2) return null
+  const ing = ult.reduce((s2, x) => s2 + x.ingresos, 0) / ult.length
+  const aho = ult.reduce((s2, x) => s2 + x.ahorro, 0) / ult.length
+  const ref = ing * 0.2
+  return {
+    texto: [
+      `Una referencia sencilla: apartar **20 de cada 100 €** que entran. Para ti, unos **${eurR(ref)} al mes**.`,
+      `- Ahora apartas ${eurR(aho)} al mes: ${aho >= ref ? 'ya estás por encima' : `te faltan ${eurR(ref - aho)} al mes`}.`,
+      ...lineasObjetivos(ctx.objetivos, aho, ctx.hoy),
+      ...(ctx.objetivos?.some((o) => o.faltan > 0) ? [] : ['- Con un objetivo concreto (cuánto y para cuándo) te digo la cifra exacta: créalo en **Plan → Simuladores**.']),
+    ].join('\n'),
+    tarjeta: { etiqueta: 'Cuánto ahorrar · al mes', cifra: Math.round(ref), detalle: `referencia 20 % · hoy apartas ${eurR(aho)}`, filas: [], accion: 'simuladores' },
+  }
+}
+
+function datosDeLaCuenta({ movimientos, hoyIso }) {
+  const movs = movimientos.filter((m) => m.fecha <= hoyIso)
+  if (!movs.length) return 'Aún no tienes movimientos. Apunta el primero o importa el extracto de tu banco en **Movimientos → Importar**.'
+  const primera = movs.reduce((a, m) => (m.fecha < a ? m.fecha : a), hoyIso)
+  return `Tienes **${movs.length} movimientos** desde el **${formatearFecha(primera)}** (${mesesEntre(primera, hoyIso)} meses de historia).`
+}
+
+function preguntasHabituales(t, ctx) {
+  const p = periodo(t, ctx.hoy)
+  if (/\b(resumen|como (cerre|acabe|termine|fue|ha ido|va))\b/.test(t) && /\b(mes|ano|trimestre|semana|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|20\d\d)\b/.test(t)) {
+    const per = p ?? (/\bano\b/.test(t) ? periodo('este ano', ctx.hoy) : /\b(cerre|acabe|termine|fue)\b/.test(t) ? periodo('mes pasado', ctx.hoy) : periodo('este mes', ctx.hoy))
+    return resumenPeriodo(per, ctx)
+  }
+  if (/\b(mayor|mas grande|mas caro|mas cara)\b/.test(t) && /\b(gasto|compra|pago|cargo)\b/.test(t) && !/\bmes mas caro\b/.test(t)) return mayoresGastos(p ?? periodo('ultimos 12 meses', ctx.hoy), ctx)
+  if (/\bgastos? hormiga\b|\bpequenos gastos\b|\bcompras pequenas\b/.test(t)) return gastosHormiga(ctx)
+  if (/\b(necesito|me hace falta|minimo)\b.*\b(vivir|al mes)\b|\bcuanto me cuesta vivir\b/.test(t) && !/\bjubil|\bahorrar\b/.test(t)) return necesitoParaVivir(ctx)
+  if (/\b(proximos? cobros?|que me (cobran|van a cobrar|pasan)|que recibos me quedan|recibos (pendientes|que quedan)|que me queda por pagar)\b/.test(t)) return proximosCobros(t, ctx)
+  if (/\bcuanto (invierto|aporto|meto)\b/.test(t) && !p) return comoVanInversiones(ctx)
+  if (/\b(como van|como va|cuanto (he )?ganado|rentabilidad|rinden|rentan|beneficio)\b.*\b(inversion|inversiones|fondo|fondos|invertido)\b/.test(t)) return comoVanInversiones(ctx)
+  if (/\b(devolucion|devoluciones|devuelto|reembolso)\b/.test(t) && /\b(cuant[oa]s?|que|cuales)\b/.test(t)) return devoluciones(p ?? { tipo: 'todo', etiqueta: 'desde el principio' }, ctx)
+  if (/\b(jubilar\w*|jubilacion|dejar de trabajar|independencia financiera|vivir de (mis )?(ahorros|rentas))\b/.test(t)) return jubilacion(ctx)
+  if (/\b(cuanto|que) (tendre|habre ahorrado|tendria)\b.*\ben (\d+|[a-z]+) anos\b/.test(t)) return enNAnios(t, ctx)
+  if (/\bcuanto (deberia|tendria que|tengo que|debo|necesito) ahorrar\b/.test(t)) return cuantoDeberiaAhorrar(ctx)
+  if (/\bcuanto ahorro al mes\b|\bcuanto ahorro de media\b/.test(t)) return ahorroSuficiente(ctx)
+  if (/\b(cuanto|cual es mi|cuanto es mi)\b.*\b(cobro al mes|cobro|sueldo|nomina|salario|gano al mes|gano)\b/.test(t) && !/\b(subido|subida|evolucion)\b/.test(t)) {
+    const ev = evolucionSueldo(ctx.movimientos, ctx.hoyIso)
+    if (typeof ev !== 'object') return ev
+    const ult = mesesCompletos(ctx.movimientos, ctx.hoyIso).filter((x) => x.ingresos > 0).slice(-12)
+    const medioMes = ult.reduce((s2, x) => s2 + x.ingresos, 0) / Math.max(1, ult.length)
+    return {
+      texto: [`Tu nómina es de **${formatearEuros(ev.tarjeta.cifra)} al mes**. Contando pagas extra y otros ingresos, te entran de media ${eurR(medioMes)} al mes (último año).`, ...ev.texto.split('\n').slice(1)].join('\n'),
+      tarjeta: { ...ev.tarjeta, accion: 'analisis' },
+    }
+  }
+  if (/\b(saldo|en el banco|en la cuenta|dinero disponible)\b/.test(t) && /\b(cuanto|cual|que)\b/.test(t)) {
+    const b = bolsas(ctx.movimientos, ctx.hoyIso)
+    return `Según lo registrado en Palanca, tienes **${formatearEuros(b.bolsaLiquidez)} disponibles** (y ${formatearEuros(b.bolsaInversion)} invertidos). Si no cuadra con tu banco, usa «Ajustar saldo» en el Inicio: Palanca no se conecta a tu banco.`
+  }
+  if (/\b(deuda|deudas|prestamo|prestamos|credito|hipoteca)\b/.test(t) && /\b(tengo|cuanto|debo|cuantas?)\b/.test(t)) {
+    const deudas = cargosPeriodicos(ctx.movimientos, ctx.hoyIso).filter((d) => /prestamo|hipoteca|credito|financiac/.test(sinAcentos(`${d.categoriaNombre} ${d.nombre}`)))
+    if (!deudas.length) return 'No veo préstamos ni deudas en tus movimientos (cuotas de préstamo, hipoteca o financiación). Si tienes alguna, apunta la cuota en **Fijos** como «Préstamo» y te digo cuánto pesa.'
+    return `Veo ${deudas.length} ${deudas.length === 1 ? 'cuota' : 'cuotas'} de deuda: ${deudas.map((d) => `${d.nombre} ${formatearEuros(d.importe)}`).join(', ')}. El capital pendiente no lo sé: míralo en tu banco.`
+  }
+  if (/\b(estoy gastando|gasto|he gastado|voy gastando)\b.*\b(mas|menos) de lo (normal|habitual)\b|\b(gastado|gasto) (mas|menos) este mes que\b/.test(t)) return comparativa('mes', ctx.movimientos, ctx.hoy, ctx.hoyIso)
+  if (/\b(cuantos movimientos|desde cuando (tengo|hay) datos|cuanta historia)\b/.test(t)) return datosDeLaCuenta(ctx)
+  return null
+}
+
+function consejoConDatos(t, ctx) {
+  const lim = limites(t)
+  if (lim) return lim
+  if (/\b(ahorr\w+)\b.*\b(suficiente|bastante|lo bastante|bien|poco|mucho)\b|\bestoy ahorrando\b/.test(t) && !/\bcuanto\b/.test(t)) return ahorroSuficiente(ctx)
+  if (/\b(fondo de emergencia|colchon|imprevistos?)\b/.test(t)) return colchon(ctx)
+  if (/\b(suscripcion\w*|plataformas?)\b/.test(t) && /\b(quitar|quito|cancelar|cancelo|dar de baja|sobra|sobran|eliminar|prescindir|recortar|dejar)\b/.test(t)) return queSuscripcionQuitar(ctx)
+  if (/\b(renegociar|negociar|cambiar de compania|cambio de compania|compensa cambiar|conviene cambiar)\b|\b(compensa|conviene|merece)\b.*\b(seguro|luz|movil|telefono|fibra|internet|gas|tarifa)\b/.test(t)) {
+    const r = renegociar(t, ctx)
+    if (r) return r
+  }
+  if (/\b(puedo permitir|me puedo permitir|permitirme|me llega para|puedo (gastar|pagar|comprar|gastarme))\b/.test(t)) return puedoPermitirme(t, ctx)
+  const habitual = preguntasHabituales(t, ctx)
+  if (habitual) return habitual
+  if (/\bcomo (puedo |podria )?(ahorrar|ahorro) mas\b|\b(quiero|necesito) ahorrar mas\b|\bdonde (puedo )?recortar\b|\b(gastar|gasto) menos\b.*\bcomo\b|\bcomo (gasto|gastar) menos\b/.test(t)) return comoAhorrarMas(ctx)
   return null
 }
 
@@ -975,11 +1509,11 @@ export function consultaLocal(pregunta, datos = {}) {
   return r == null ? null : typeof r === 'string' ? { texto: r } : r
 }
 
-function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Date(), presupuesto = null } = {}) {
+function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Date(), presupuesto = null, objetivos = [], objetivoUsuario = null } = {}) {
   const t = sinAcentos(pregunta).replace(/[¿?¡!.,;:()"«»]/g, ' ').replace(/\s+/g, ' ').trim()
   if (!t || t.length > 160) return null
   const hoyIso = iso(hoy)
-  const general = intencionGeneral(t, { movimientos, hoy, hoyIso, presupuesto })
+  const general = intencionGeneral(t, { movimientos, recurrentes, hoy, hoyIso, presupuesto, objetivos, objetivoUsuario })
   if (general) return general
   if (COMPLEJA.test(t)) return null
   const activos = recurrentes.filter((r) => r.activo !== false && r.tipo !== 'ingreso')
@@ -1013,6 +1547,8 @@ function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Dat
         etiqueta: `${que === 'suscripciones' ? 'Suscripciones' : 'Gastos fijos'} · al mes`,
         cifra: Math.round(mensual * 100) / 100,
         detalle: `≈ ${formatearEuros(Math.round(mensual * 12))} al año · ${usados.length} ${usados.length === 1 ? 'compromiso' : 'compromisos'}`,
+        accion: 'fijos',
+        ...(activos.length ? {} : { accionTexto: 'Añadirlos en Fijos' }),
         // Cada fila, prorrateada al mes (la barra compara lo que pesa cada una).
         filas: top.map((r) => ({ nombre: r.nombre, valor: Math.round(mensualDe(r) * 100) / 100, extra: cada(r) === 'al mes' ? null : `${formatearEuros(Number(r.importe))} ${cada(r)}` })),
       },
@@ -1033,7 +1569,15 @@ function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Dat
       const d = cargosPeriodicos(movimientos, hoyIso).find((x) => suyos.has(x.nombre))
       if (!d) return null
       const cada = d.periodoMeses === 12 ? 'una vez al año' : d.periodoMeses === 1 ? 'cada mes' : `cada ${d.periodoMeses} meses`
-      return `**${d.nombre}** se cobra ${cada}. El último cargo fue el ${formatearFecha(d.ultimaFecha)} (${formatearEuros(d.importe)}), así que el próximo será hacia el **${formatearFecha(d.proximaFecha)}**. Añádelo en **Fijos** y te aviso ese día.`
+      // Si se puede negociar (seguro, luz…), lo importante es llamar ANTES del cobro.
+      const consejo = consejoNegociable({ nombre: d.nombre }, movimientos.filter((m) => esConsumo(m) && suyos.has(nombreComercio(m)) && m.fecha <= hoyIso), hoyIso)
+      return {
+        texto: [
+          `**${d.nombre}** se cobra ${cada}. El último cargo fue el ${formatearFecha(d.ultimaFecha)} (${formatearEuros(d.importe)}), así que el próximo será hacia el **${formatearFecha(d.proximaFecha)}**.`,
+          ...(consejo?.lineas ?? ['- Añádelo en **Fijos** y te aviso ese día.']),
+        ].join('\n'),
+        tarjeta: { etiqueta: `${d.nombre} · próximo cobro`, cifra: null, cifraTexto: formatearFecha(d.proximaFecha), detalle: `${formatearEuros(d.importe)} · ${cada}`, filas: [], accion: 'fijos' },
+      }
     }
     const prox = proximoCobro(rec, hoy)
     if (!prox) return null
@@ -1108,7 +1652,7 @@ function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Dat
   const esIngreso = /\b(ingresado|ingrese|ingresos|cobrado|cobre|ganado|gane)\b/.test(t)
   const esAhorro = /\b(ahorrado|ahorre)\b/.test(t)
   const esInv = /\b(invertido|inverti|aportado)\b/.test(t)
-  const esGasto = implicita || /\b(gastado|gaste|gastos|pagado|pague|pagos|costado|dejado|gasto|pago|cuesta|cuestan|llevo|costar|vale)\b/.test(t)
+  const esGasto = implicita || /\b(gastado|gaste|gastos|pagado|pague|pagos|costado|dejado|gasto|pago|cuesta|cuestan|llevo|costar|vale|veces)\b/.test(t)
   if (!esIngreso && !esAhorro && !esInv && !esGasto) return null
 
   const objetivo = resolverObjetivo(t, movimientos)
@@ -1234,7 +1778,7 @@ function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Dat
     }
   }
   const movs = movimientos.filter((m) => esConsumo(m) && filtro(m) && enPeriodo(per, hoyIso)(m))
-  return respuestaGasto({ objetivo: objetivo.sin ? null : objetivo, movs, devoluciones: devolucionesEn(per), p: per, hoyIso, verboPago: /\bpag/.test(t), movimientos, filtro, pideMedia: /\b(media|promedio|al mes|mensual)\b/.test(t) })
+  return respuestaGasto({ objetivo: objetivo.sin ? null : objetivo, movs, devoluciones: devolucionesEn(per), p: per, hoyIso, verboPago: /\bpag/.test(t), movimientos, filtro, pideMedia: /\b(media|promedio|al mes|mensual)\b/.test(t), veces: /\bcuantas veces\b/.test(t) })
 }
 
 // ══ PARA LA IA: el motor calcula, la IA solo redacta ═══════════════════════

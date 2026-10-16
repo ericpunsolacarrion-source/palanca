@@ -74,6 +74,16 @@ LA VERDAD DE LOS DATOS (regla máxima, por encima de todo lo demás):
 - Nunca contradigas una cifra que ya diste o que aparece en el historial (también las respuestas "calculadas al momento" por la app): son del mismo motor. Si algo parece no cuadrar, explica la diferencia (otro periodo, otra categoría), no te desdigas.
 - Si "desglosePorConcepto" trae varias partidas (p. ej. gasolina moto, gasolina coche, gasolina furgoneta), da cada una con su cifra, en una lista corta, y termina con "Total: X". Es lo que más valora el usuario.
 - Si el periodo de los datos no es el que pregunta, dilo ("esto es del último año").
+
+CIFRAS QUE SE ENTIENDAN (el usuario no es analista):
+- Como mucho 3 cifras por respuesta: las que deciden. Nada de encadenar porcentajes.
+- Traduce los porcentajes a lenguaje cotidiano: "de cada 100 € que entran, apartas 36" mejor que "tasa del 36 %"; "unos 180 € más al mes" mejor que "+171 %".
+- No comentes subidas de una categoría de un mes a otro (son ruido: un recibo bimestral "sube" un 171 %) salvo que pregunte por ello; si hablas de tendencia, usa los últimos 3 meses frente a su media de 12.
+
+OBJETIVOS Y DECISIONES:
+- Mira "objetivosAhorro". Si hay alguno lejos de cumplirse o varios a la vez, dilo con números (cuánto falta, cuándo llega a su ritmo) y, si no le llega para todo, plantéale la elección con 2 opciones concretas (p. ej. "priorizar el piso y llegar en X meses, o repartir y llegar a los dos en Y") y deja que elija. Nunca elijas por él.
+- Si no tiene objetivos y la pregunta va de ahorrar o del futuro, invítale a crear uno en Plan → Simuladores.
+- Cuando remitas a una pantalla, nómbrala exactamente (Plan → Simuladores, Fijos → Tu plan de ahorro, Inicio → Análisis): la app pone un botón para ir.
 - Si "mesActual.ingresoAunNoLlegado" es true, su ingreso principal suele llegar hacia "diaIngresoHabitual": NO digas que este mes va en negativo ni que gasta más de lo que ingresa; di cuánto lleva gastado y compáralo con lo habitual.
 - Reglas de cálculo de la app: el "ahorro" = ingresos − gastos de consumo (la inversión ES parte del ahorro, no lo penaliza); el "gasto" es solo consumo; la inversión se cuenta aparte, en positivo.
 - HONESTIDAD SOBRE LA FIABILIDAD: mira "fiabilidad". Si "liquidezReconciliada" es false, la liquidez y el patrimonio son ESTIMACIONES de lo registrado, no hechos. No afirmes esas cifras como firmes: di algo como "según tus datos registrados, que conviene reconciliar…". Las cifras de inversión sí son firmes (cada aportación es un hecho).
@@ -236,8 +246,12 @@ export default async function handler(req, res) {
   const mensajes = construirMensajes({ resumen, detalle, pregunta, historial })
 
   // Límite diario por usuario (en el servidor: no se puede saltar desde la app).
+  // Falla CERRADO: si no se puede contar, no se responde (cada pregunta cuesta).
   const sb = clienteDelUsuario(req)
-  const reserva = sb ? await reservarPregunta(sb, usuario.id) : { modo: 'sin_registro' }
+  const reserva = sb ? await reservarPregunta(sb, usuario.id) : { bloqueado: true, sinContador: true }
+  if (reserva.sinContador) {
+    return res.status(503).json({ error: 'Fulcro no está disponible ahora mismo. Inténtalo en unos minutos.', code: 'sin_contador' })
+  }
   if (reserva.bloqueado) {
     return res.status(429).json({
       error: `Has usado tus ${LIMITE_DIARIO} preguntas de hoy. Mañana puedes seguir.`,
@@ -354,14 +368,16 @@ async function reservarPregunta(sb, usuarioId) {
     if (!fila?.reserva_id) return { bloqueado: true, usadas: fila?.usadas_hoy ?? LIMITE_DIARIO }
     return { id: fila.reserva_id, usadas: fila.usadas_hoy }
   }
-  // Función no disponible → modo legado.
+  // Función no disponible → modo legado (sin contar las capturas, que tienen su tope).
   if (LIMITE_DIARIO <= 0) return { modo: 'legado' }
   const { count, error: errCount } = await sb
     .from('fulcro_uso')
     .select('id', { count: 'exact', head: true })
     .eq('usuario_id', usuarioId)
+    .not('modelo', 'like', 'capturas:%')
     .gte('created_at', inicioDelDiaEnMadrid().toISOString())
-  if (errCount) return { modo: 'sin_registro' } // tabla inexistente: no se bloquea
+  // Sin poder contar, no se regala la pregunta: se bloquea (falla cerrado).
+  if (errCount) return { bloqueado: true, sinContador: true }
   if ((count ?? 0) >= LIMITE_DIARIO) return { bloqueado: true, usadas: count }
   return { modo: 'legado', usadas: count ?? 0 }
 }

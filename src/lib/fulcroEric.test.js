@@ -87,4 +87,57 @@ describe('reportes de Eric con Laura', () => {
     expect(preguntar('cuanto gaste entre el 25 de julio y el 20 de agosto de 2025').texto).toMatch(/^Del 25\/07\/2025 al 20\/08\/2025 has gastado/)
     expect(preguntar('¿en qué gasté más del 01/08/2025 al 31/08/2025?').texto).toMatch(/^Del 01\/08\/2025 al 31\/08\/2025 has gastado \*\*2\.043,08 €\*\*/)
   })
+  it('suscripciones sin fijos: botón para añadirlas en Fijos', () => {
+    const { tarjeta } = preguntar('¿Cuánto pago en suscripciones al mes?')
+    expect(tarjeta.accion).toBe('fijos')
+    expect(tarjeta.accionTexto).toBe('Añadirlos en Fijos')
+  })
+  it('cuándo me cobran el seguro: con la ventana para llamar antes', () => {
+    expect(preguntar('¿Cuándo me cobran el seguro del coche?').texto).toContain('El mejor momento para comparar: del 01/02/2027 al 16/02/2027')
+  })
+  it('subidas: Netflix no se negocia; Movistar y seguros sí; el alquiler aparte', () => {
+    const s = preguntar('¿Qué suscripciones me han subido de precio?').texto
+    expect(s).toContain('plan con anuncios')
+    expect(s).toMatch(/sí se pueden negociar:\n- Movistar/)
+    expect(s).not.toContain('Alquiler')
+    expect(preguntar('¿Qué recibos me han subido?').texto).toContain('Alquiler: comprueba que la subida es la que permite tu contrato')
+  })
+  it('consejo con datos, sin IA', () => {
+    expect(preguntar('¿Estoy ahorrando suficiente?').texto).toMatch(/^\*\*Sí, ahorras bien\*\*: de cada 100 € que entran, apartas \*\*36\*\*/)
+    expect(preguntar('¿Tengo un buen fondo de emergencia?').texto).toContain('entre **5.271 € y 10.542 €**')
+    expect(preguntar('¿Qué suscripción podría quitar?').texto).toContain('¿cuál has usado menos')
+    expect(preguntar('¿Me compensa renegociar el seguro del coche?').texto).toMatch(/^\*\*Merece la pena intentarlo\*\*/)
+    expect(preguntar('¿Me puedo permitir un viaje de 1.500 € en diciembre?').texto).toMatch(/^\*\*Sí\*\*/)
+    expect(preguntar('¿Cómo puedo ahorrar más?').texto).toMatch(/podrías ahorrar entre \*\*\d/)
+    expect(preguntar('¿En qué acciones invierto?').texto).toContain('No te puedo recomendar')
+    expect(preguntar('¿Qué tiempo hará mañana?').texto).toContain('solo sé de tu dinero')
+    expect(preguntar('Dame mi número de cuenta').texto).toContain('No veo ni guardo tus datos bancarios')
+  })
+  it('con objetivos: cuánto falta, y si son varios, que elija', () => {
+    const x = consultaLocal('¿Estoy ahorrando suficiente?', {
+      movimientos, hoy: HOY,
+      objetivos: [{ nombre: 'Piso', faltan: 8000, fecha: null }, { nombre: 'Coche', faltan: 6000, fecha: '2027-03-01' }],
+    }).texto.replace(/\u00a0/g, ' ')
+    expect(x).toContain('«Piso»: te faltan **8.000 €**')
+    expect(x).toContain('Para llegar a tu fecha harían falta')
+    expect(x).toContain('¿cuál va primero?')
+  })
+  it('preguntas habituales que ya no gastan IA', () => {
+    const casos = {
+      'cuanto cobro al mes': 'Tu nómina es de **2.400 € al mes**',
+      'cual es mi mayor gasto': 'el mayor fijo es Alquiler Piso, 900 €',
+      'resumen del mes': 'tu nómina suele llegar hacia el día 28',
+      'como cerre el mes pasado': 'Has ahorrado **668,90 €**',
+      'que me cobran este mes': 'El siguiente: **Alquiler Piso**',
+      'proximos cobros': 'En los próximos 30 días te cobran **1.067,86 €**',
+      'como van mis inversiones': 'Palanca no conoce el valor de mercado',
+      'cuanto me han devuelto': 'te han devuelto **69,94 €**',
+      'cuanto necesito para jubilarme': '25 veces lo que gastas en un año',
+      'cuanto tendre en 10 años': 'en 10 años tendrías unos **154.707 €**',
+      'cuantas veces he ido a mercadona este mes': 'has ido **2 veces** a **Mercadona**',
+      'cuanto dinero tengo en el banco': '**28.379,45 € disponibles**',
+      'cuantos movimientos tengo': '**931 movimientos**',
+    }
+    for (const [q, esperado] of Object.entries(casos)) expect(preguntar(q).texto, q).toContain(esperado)
+  })
 })

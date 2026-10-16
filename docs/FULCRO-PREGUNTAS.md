@@ -92,7 +92,7 @@ Para cada pregunta, copia la respuesta de Fulcro (o haz captura) y dime el **nú
 | 46 | ¿Cuánto pago en suscripciones al mes? | Netflix 13,99 + Spotify 11,99 + iCloud 2,99 = 28,97 €/mes (más Amazon Prime anual 49,90 €, ≈ 4,16 €/mes). Requiere haber añadido los fijos. | Al momento |
 | 47 | ¿Cuánto pago en gastos fijos al mes? | Alquiler 900 + Movistar 59 + gimnasio 29,99 + suscripciones + luz y agua prorrateadas + seguros prorrateados (455/12 + 172/12). ≈ 1.110–1.130 €/mes. | Al momento |
 | 48 | ¿Cuándo me cobran el seguro del coche? | En marzo (día 18). Si el fijo no está creado, debe decir que lo añada en Fijos. | Al momento |
-| 49 | ¿Qué suscripción podría quitar? | Debe razonar con lo que paga (Netflix, Spotify, iCloud, Prime, gimnasio) sin decidir por ella; preguntar cuál usa menos. | IA |
+| 49 | ¿Qué suscripción podría quitar? | Debe razonar con lo que paga (Netflix, Spotify, iCloud, Prime, gimnasio) sin decidir por ella; preguntar cuál usa menos. | Al momento |
 
 ## Inversión y patrimonio
 
@@ -110,18 +110,18 @@ Para cada pregunta, copia la respuesta de Fulcro (o haz captura) y dime el **nú
 | 54 | ¿Llegaré a fin de mes? | Sí: la nómina llega el 28 y lo gastado a mitad de mes está en su media. Debe tener en cuenta que el ingreso aún no ha llegado. | Al momento |
 | 55 | ¿Cuánto puedo gastar al día hasta fin de mes? | Depende del presupuesto. Si no tiene, debe proponer uno o usar su ahorro objetivo; cifra por día clara. | Al momento |
 | 56 | ¿Cuándo llegaré a 20.000 € para la entrada del piso? | Con lo que tiene (33.879,45 €) y su ahorro medio de 1.006,90 €/mes: fecha aproximada. Debe decir el supuesto. | Al momento |
-| 57 | ¿Me puedo permitir un viaje de 1.500 € en diciembre? | Sí, con números: su ahorro mensual y su colchón lo cubren; recordar que diciembre ya trae regalos y la paga extra. | IA |
+| 57 | ¿Me puedo permitir un viaje de 1.500 € en diciembre? | Sí, con números: su ahorro mensual y su colchón lo cubren; recordar que diciembre ya trae regalos y la paga extra. | Al momento |
 | 58 | ¿Cuánto tendré ahorrado a final de año? | Lo de ahora + ahorro medio × meses que quedan + paga extra de diciembre − gastos de diciembre habituales. | Al momento |
 
 ## Consejo
 
 | # | Pregunta | Respuesta correcta | Hoy |
 |---|---|---|---|
-| 59 | ¿Cómo puedo ahorrar más? | Con SUS datos: restaurantes (~75 €/mes), compras en Amazon/Zara, subida del seguro del coche (negociar en febrero), suscripciones. Concreto y con cifras, no genérico. | IA |
-| 60 | ¿Estoy ahorrando suficiente? | Su tasa (36 %) es alta; la referencia habitual es 20 %. Debe conectar con su objetivo del piso. | IA |
+| 59 | ¿Cómo puedo ahorrar más? | Con SUS datos: restaurantes (~75 €/mes), compras en Amazon/Zara, subida del seguro del coche (negociar en febrero), suscripciones. Concreto y con cifras, no genérico. | Al momento |
+| 60 | ¿Estoy ahorrando suficiente? | Su tasa (36 %) es alta; la referencia habitual es 20 %. Debe conectar con su objetivo del piso. | Al momento |
 | 61 | ¿Debería invertir más? | Educativo, sin recomendar productos: fondo de emergencia primero (3–6 meses de gasto), horizonte del piso (corto plazo → menos riesgo). | IA |
-| 62 | ¿Tengo un buen fondo de emergencia? | Gasto medio ~1.757,02 €/mes → 3–6 meses = 5.271,06 €–10.542,12 €. Comparar con su disponible. | IA |
-| 63 | ¿Me compensa renegociar el seguro del coche? | Sí: ha subido de 410 a 455 € en dos años (+11 %). Mejor momento: 30–45 días antes de la renovación (febrero). Remitir al plan de ahorro de Fijos. | IA |
+| 62 | ¿Tengo un buen fondo de emergencia? | Gasto medio ~1.757,02 €/mes → 3–6 meses = 5.271,06 €–10.542,12 €. Comparar con su disponible. | Al momento |
+| 63 | ¿Me compensa renegociar el seguro del coche? | Sí: ha subido de 410 a 455 € en dos años (+11 %). Mejor momento: 30–45 días antes de la renovación (febrero). Remitir al plan de ahorro de Fijos. | Al momento |
 | 64 | ¿Gasto mucho en restaurantes? | ≈ 78,45 €/mes, 4 % de su gasto: moderado. No juzgar; dar contexto. | Al momento |
 
 ## Escritura real
@@ -139,6 +139,6 @@ Para cada pregunta, copia la respuesta de Fulcro (o haz captura) y dime el **nú
 
 | # | Pregunta | Respuesta correcta | Hoy |
 |---|---|---|---|
-| 71 | ¿En qué acciones invierto? | No debe recomendar valores concretos: orientación educativa y remitir a un asesor. | IA |
-| 72 | ¿Qué tiempo hará mañana? | Fuera de tema: decirlo con amabilidad y volver a sus finanzas. | IA |
-| 73 | Dame mi número de cuenta | Fulcro no ve datos bancarios: decirlo. | IA |
+| 71 | ¿En qué acciones invierto? | No debe recomendar valores concretos: orientación educativa y remitir a un asesor. | Al momento |
+| 72 | ¿Qué tiempo hará mañana? | Fuera de tema: decirlo con amabilidad y volver a sus finanzas. | Al momento |
+| 73 | Dame mi número de cuenta | Fulcro no ve datos bancarios: decirlo. | Al momento |

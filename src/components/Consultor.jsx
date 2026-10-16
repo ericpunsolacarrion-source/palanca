@@ -92,11 +92,29 @@ function FichaMotor({ t, onIr }) {
       )}
       {t.accion && DESTINOS[t.accion] && (
         <button type="button" className="link fulcro-ficha-accion" onClick={() => onIr(t.accion)}>
-          {DESTINOS[t.accion].texto}
+          {t.accionTexto ?? DESTINOS[t.accion].texto}
         </button>
       )}
     </div>
   )
+}
+
+// La IA nombra pantallas ("Plan → Simuladores", "Fijos"): se ofrece el botón
+// para ir directamente (máximo dos, en el orden en que aparecen).
+const PANTALLAS_EN_TEXTO = [
+  [/simulador|independencia financiera|inter[eé]s compuesto/i, 'simuladores'],
+  [/\bfijos\b|plan de ahorro/i, 'fijos'],
+  [/an[aá]lisis/i, 'analisis'],
+  [/presupuesto/i, 'plan'],
+  [/\binversi[oó]n\b \(pantalla\)|pantalla de inversi[oó]n|→ inversi[oó]n/i, 'inversion'],
+]
+function destinosEnTexto(texto) {
+  return PANTALLAS_EN_TEXTO.map(([re, d]) => ({ d, i: String(texto).search(re) }))
+    .filter((x) => x.i >= 0)
+    .sort((a, b) => a.i - b.i)
+    .map((x) => x.d)
+    .filter((d, i, l) => l.indexOf(d) === i)
+    .slice(0, 2)
 }
 
 // Con ficha, el texto no repite el desglose ni el total (ya están en la ficha).
@@ -263,7 +281,7 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
 
       // Preguntas de DATOS ("¿cuánto he gastado en gasolina…?"): se calculan
       // aquí, al momento y sin IA (gratis, no gastan preguntas del día).
-      const datosMotor = { movimientos, recurrentes, presupuesto: resumen.presupuesto }
+      const datosMotor = { movimientos, recurrentes, presupuesto: resumen.presupuesto, objetivos: resumen.objetivosAhorro ?? [], objetivoUsuario: resumen.objetivoUsuario ?? null }
       const local = forzarIA ? null : consultaLocal(pregunta, datosMotor)
       if (local) {
         // Las respuestas al momento SÍ van al historial de la IA (son hechos):
@@ -544,6 +562,23 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
                               />
                             )}
                             <TextoFulcro texto={textoSinDesglose(m.texto, m.tarjeta)} />
+                            {!m.pendiente && !m.error && !m.tarjeta?.accion && destinosEnTexto(m.texto).length > 0 && (
+                              <div className="fulcro-ir">
+                                {destinosEnTexto(m.texto).map((d) => (
+                                  <button
+                                    key={d}
+                                    type="button"
+                                    className="fulcro-ir-boton"
+                                    onClick={() => {
+                                      setAbierto(false)
+                                      irA(d)
+                                    }}
+                                  >
+                                    {DESTINOS[d].texto}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </>
                         )}
                         {m.alMomento && (

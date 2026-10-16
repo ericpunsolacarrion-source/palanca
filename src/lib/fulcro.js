@@ -16,6 +16,7 @@ export const DESTINOS = {
   analisis: { pestana: 'dashboard', vista: 'analisis', texto: 'Ver en Análisis' },
   fijos: { pestana: 'suscripciones', texto: 'Ir a Fijos' },
   plan: { pestana: 'presupuesto', texto: 'Ir a Plan' },
+  simuladores: { pestana: 'presupuesto', clic: 'Simuladores', texto: 'Abrir Simuladores' },
   inversion: { pestana: 'inversiones', texto: 'Ir a Inversión' },
   movimientos: { pestana: 'movimientos', texto: 'Ver movimientos' },
 }

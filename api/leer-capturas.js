@@ -134,14 +134,17 @@ export default async function handler(req, res) {
 
   // Tope diario por usuario (registro en fulcro_uso con modelo "capturas:…").
   const sb = clienteDelUsuario(req)
-  if (sb && LIMITE_DIARIO > 0) {
+  if (!sb) return res.status(503).json({ error: 'No disponible ahora mismo. Inténtalo en unos minutos.', code: 'sin_contador' })
+  if (LIMITE_DIARIO > 0) {
     const { count, error } = await sb
       .from('fulcro_uso')
       .select('id', { count: 'exact', head: true })
       .eq('usuario_id', usuario.id)
       .like('modelo', 'capturas:%')
       .gte('created_at', inicioDelDiaEnMadrid().toISOString())
-    if (!error && (count ?? 0) >= LIMITE_DIARIO) {
+    // Falla cerrado: sin poder contar, no se procesa (cada lectura cuesta).
+    if (error) return res.status(503).json({ error: 'No disponible ahora mismo. Inténtalo en unos minutos.', code: 'sin_contador' })
+    if ((count ?? 0) >= LIMITE_DIARIO) {
       return res.status(429).json({ error: 'Has llegado al máximo de capturas por hoy. Mañana puedes seguir.', code: 'limite_diario' })
     }
   }

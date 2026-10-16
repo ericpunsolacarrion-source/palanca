@@ -145,6 +145,16 @@ function App() {
       irAPestana(e.detail.pestana)
       if (e.detail.vista) setVistaInicio(e.detail.vista)
       window.scrollTo?.({ top: 0 })
+      // Subpestaña ("Simuladores" dentro de Plan): se pulsa cuando ya está pintada.
+      if (e.detail.clic) {
+        let intentos = 0
+        const pulsar = () => {
+          const boton = [...document.querySelectorAll('[role="tab"], .sub-tabs button')].find((b) => b.textContent.trim().startsWith(e.detail.clic))
+          if (boton) boton.click()
+          else if (++intentos < 30) setTimeout(pulsar, 100) // la pantalla se carga bajo demanda
+        }
+        setTimeout(pulsar, 50)
+      }
     }
     window.addEventListener(EVENTO_IR, ir)
     return () => window.removeEventListener(EVENTO_IR, ir)
