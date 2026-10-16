@@ -1,4 +1,5 @@
 import { esAjuste, esInversion } from './categorias'
+import { nombreComercio } from './comercios'
 
 // Sugerencias para el alta rápida de movimientos, derivadas del histórico del
 // usuario. Objetivo: registrar en el mínimo de toques posible.
@@ -7,7 +8,7 @@ import { esAjuste, esInversion } from './categorias'
 function paraModo(movimientos, modo) {
   return movimientos.filter((m) => {
     if (modo === 'inversion') return m.tipo === 'gasto' && esInversion(m)
-    if (modo === 'ingreso') return m.tipo === 'ingreso'
+    if (modo === 'ingreso') return m.tipo === 'ingreso' && !esAjuste(m) // el saldo inicial no se repite
     return m.tipo === 'gasto' && !esInversion(m) && !esAjuste(m) // gasto (incluye traspasos a ahorro, para repetirlos)
   })
 }
@@ -40,6 +41,8 @@ export function frecuentesParaRepetir(movimientos, modo, max = 4) {
         categoriaNombre: m.categoria?.nombre ?? null,
         fuenteId: m.fuente_id ?? m.fuente?.id ?? null,
         fuenteNombre: m.fuente?.nombre ?? null,
+        // Cómo se llama de verdad (lo importado no tiene concepto: "Mercadona").
+        comercio: nombreComercio(m) || null,
         importe,
         esFijo: Boolean(m.es_fijo),
         veces: 0,

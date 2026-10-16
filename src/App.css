@@ -10197,3 +10197,373 @@ button.ih-grupo-nombre:focus-visible svg {
 .fulcro-ir-boton:hover {
   background: var(--card-bg-2);
 }
+
+/* ── Apuntar v3 (Movimientos → Nuevo): "45,90 € en Mercadona" ─────────────
+   Plano, sin tarjeta: el importe manda, el "¿dónde?" rellena el resto.
+   Un solo acento; el color del importe solo significa algo (ingreso/inversión). */
+.apunte {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 8px;
+}
+.apunte-tipo {
+  --i: 0;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+}
+.apunte-tipo-marca {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / 3);
+  border-radius: 9px;
+  background: var(--card-bg-2);
+  border: 1px solid var(--borde-fuerte);
+  transform: translateX(calc(var(--i) * 100%));
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.apunte-tipo button {
+  position: relative;
+  z-index: 1;
+  padding: 9px 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-s);
+  font-weight: 500;
+  border-radius: 9px;
+}
+.apunte-tipo button.activo {
+  color: var(--text-h);
+  font-weight: 600;
+}
+.apunte .gastos-rapidos {
+  gap: 8px;
+}
+.apunte .repetir-chips {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-inline: -2px;
+  padding: 2px;
+}
+.apunte .repetir-chip {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  min-height: 36px;
+  padding: 6px 12px;
+}
+.apunte .repetir-chip:hover:not(:disabled) {
+  border-color: var(--borde-fuerte);
+}
+.apunte .repetir-chip-icono {
+  color: var(--accent-2);
+}
+
+/* El importe: grande, centrado, con el € pegado a la cifra */
+.apunte-importe {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px 0 6px;
+  cursor: text;
+}
+.apunte-importe input {
+  max-width: 85%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: right;
+  font-size: 52px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  box-shadow: none;
+}
+.apunte-importe input::placeholder {
+  color: var(--text-3);
+  opacity: 0.6;
+}
+.apunte-euro {
+  font-size: 30px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+.apunte.modo-ingreso .apunte-importe input {
+  color: var(--ingreso);
+}
+.apunte.modo-inversion .apunte-importe input {
+  color: var(--inversion);
+}
+.apunte-importes {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: -8px;
+}
+.apunte-importe-chip {
+  padding: 5px 12px;
+  border-radius: var(--radio-pastilla);
+  border: 1px dashed var(--borde-fuerte);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-s);
+  font-variant-numeric: tabular-nums;
+}
+.apunte-importe-chip:hover {
+  color: var(--text-h);
+  border-style: solid;
+}
+
+/* "¿Dónde?" con autocompletado de tus sitios */
+.apunte-lugar {
+  position: relative;
+}
+.apunte-lugar-campo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+  border: 1px solid var(--borde-fuerte);
+  color: var(--text-3);
+  transition: border-color 0.15s ease;
+}
+.apunte-lugar-campo:focus-within {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+.apunte-lugar-campo input {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-h);
+  font-size: var(--fs-base);
+  font-weight: 450;
+  outline: none;
+  box-shadow: none;
+}
+.apunte-lugar-campo input::placeholder {
+  font-weight: 400;
+  color: var(--text-3);
+}
+.apunte-limpiar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--card-bg-2);
+  color: var(--text);
+}
+.apunte-sugerencias {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 4px;
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+  border: 1px solid var(--borde-fuerte);
+  box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.6);
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 5;
+}
+.apunte-sugerencias button {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+}
+.apunte-sugerencias button:hover,
+.apunte-sugerencias button:focus-visible {
+  background: var(--card-bg-2);
+}
+.apunte-sug-nombre {
+  color: var(--text-h);
+  font-size: var(--fs-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.apunte-sug-meta {
+  flex: none;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Categoría: una fila con la elegida delante */
+.apunte-cat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.apunte-cat-cab {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.apunte .over {
+  font-family: var(--fuente-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.apunte-cat-auto {
+  font-size: var(--fs-micro);
+  color: var(--accent-2);
+}
+.apunte-cat-fila {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-inline: -2px;
+  padding: 2px;
+}
+.apunte-cat-fila::-webkit-scrollbar,
+.apunte .repetir-chips::-webkit-scrollbar {
+  display: none;
+}
+.apunte-cat-todas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+.apunte-cat-rejilla,
+.apunte-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.apunte-cat-todas input {
+  width: 100%;
+}
+.apunte-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border-radius: var(--radio-pastilla);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: var(--fs-s);
+  white-space: nowrap;
+}
+.apunte-chip:hover {
+  border-color: var(--borde-fuerte);
+  color: var(--text-h);
+}
+.apunte-chip.activo {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--blanco, #fff);
+  font-weight: 550;
+}
+.apunte-chip-mas {
+  color: var(--text-3);
+  border-style: dashed;
+}
+
+/* Detalles en tres chips (sin "Más detalles" escondido) */
+.apunte-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.apunte-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: var(--radio-pastilla);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-xs);
+}
+.apunte-meta-chip .icono {
+  color: var(--text-3);
+}
+.apunte-meta-chip.puesto {
+  color: var(--text-h);
+  border-color: var(--borde-fuerte);
+  background: var(--card-bg);
+}
+.apunte-meta-chip.puesto .icono,
+.apunte-meta-chip.abierto .icono {
+  color: var(--accent-2);
+}
+.apunte-meta-chip.abierto {
+  border-color: var(--accent-2);
+  color: var(--text-h);
+}
+.apunte-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  margin-top: -8px;
+  border-radius: var(--radio-m);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  animation: fade-in 0.18s ease both;
+}
+.apunte-panel input {
+  width: 100%;
+}
+.apunte-ayuda {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  line-height: 1.45;
+}
+
+/* Guardar: dice exactamente lo que va a pasar */
+.apunte-guardar {
+  width: 100%;
+  min-height: 52px;
+  border-radius: var(--radio-m);
+  font-size: var(--fs-base);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+.apunte-guardar.listo {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .apunte-tipo-marca {
+    transition: none;
+  }
+}

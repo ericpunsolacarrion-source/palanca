@@ -13,6 +13,7 @@ export default function InputImporte({
   autoFocus = false,
   disabled = false,
   mostrarEuro = true,
+  ajustarAncho = false,
   id,
   'aria-label': ariaLabel,
 }) {
@@ -69,6 +70,8 @@ export default function InputImporte({
       aria-label={ariaLabel}
       value={texto}
       onChange={handleChange}
+      // Ancho a la medida de lo escrito (el € queda pegado a la cifra).
+      style={ajustarAncho ? { width: `${Math.max(String(texto || placeholder).length, 1) * 0.62 + 0.2}em` } : undefined}
     />
   )
 

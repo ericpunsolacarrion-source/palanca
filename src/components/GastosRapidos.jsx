@@ -1,3 +1,4 @@
+import Icono from './Icono'
 import { useState } from 'react'
 import { formatearEuros } from '../lib/categorias'
 import { useGastosRapidos } from '../lib/useGastosRapidos'
@@ -121,7 +122,7 @@ export default function GastosRapidos({
               onClick={() => onRegistrar(it)}
               disabled={registrandoId === it.id}
             >
-              <span className="repetir-chip-icono">＋</span>
+              <Icono nombre="mas" tam={14} className="repetir-chip-icono" />
               <span className="repetir-chip-texto">
                 {it.nombre} · {formatearEuros(Number(it.importe))}
               </span>
@@ -134,7 +135,7 @@ export default function GastosRapidos({
         <div className="repetir-chips">
           {repetibles.map((rep) => {
             const clave = `${rep.categoriaId}|${rep.fuenteId}|${rep.importe}`
-            const etiqueta = rep.fuenteNombre || rep.categoriaNombre || 'Movimiento'
+            const etiqueta = rep.fuenteNombre || rep.comercio || rep.categoriaNombre || 'Movimiento'
             return (
               <button
                 key={clave}
@@ -143,7 +144,7 @@ export default function GastosRapidos({
                 onClick={() => onRepetir?.(rep)}
                 disabled={duplicandoClave === clave}
               >
-                <span className="repetir-chip-icono">↻</span>
+                <Icono nombre="repetir" tam={14} className="repetir-chip-icono" />
                 <span className="repetir-chip-texto">
                   {etiqueta} · {formatearEuros(rep.importe)}
                 </span>

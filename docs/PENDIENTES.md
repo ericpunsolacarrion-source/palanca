@@ -103,6 +103,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 ---
 
 ## Histórico de cosas terminadas que estaban aquí
+- ✔ 16-10-2026: rediseño de Movimientos → Nuevo («45,90 € en Mercadona»): «¿Dónde?» con autocompletado y categoría automática, «Se repite» que crea el fijo, chips de fecha y nota, botón que dice lo que guarda. Corregido: «Repetir» proponía el saldo inicial.
 - ✔ 16-10-2026: SQL de renovaciones y de periodicidades de Fijos (faltaba en palanca: lo no mensual se guardaba como mensual) aplicados. Comprobación de la base de datos completa sin nada pendiente (`supabase-comprobar.sql`).
 - ✔ 16-10-2026: SQL `supabase-schema-fulcro-v3.sql` aplicado en palanca (las capturas ya no gastan preguntas de Fulcro).
 - ✔ 16-10-2026 (ronda 2): 72/73 preguntas de Laura por el motor, consejo con datos, preguntas habituales, subidas bien clasificadas, botones a pantallas, límite de IA que falla cerrado.
