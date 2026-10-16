@@ -50,7 +50,11 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 ### Importación y Fulcro
 - 🟥 **Antes de abrir Fulcro al público (decidido por Eric, 16-10):** confirmar el email antes de entrar (Supabase → Authentication → Sign In / Providers → Email → «Confirm email» activado) y una sola cuenta por email (Supabase ya lo impide). Hoy está desactivado: el alta entra directa.
-- 🟥 **Qué es Premium y qué es gratis — sesión de debate** (Eric, 16-10): sentarnos con la visión de cada área (CEO, marketing, pricing, producto/desarrollo, contabilidad). Claude prepara el documento con las posturas y una propuesta. Base: `docs/PREMIUM.md`, `docs/COSTES.md`.
+- 🟥 **Monetización — 4 decisiones de Eric (comité del 16-10, Eric lo está reflexionando).** Acta completa: https://claude.ai/artifact/AvxfiwnNv8nd48VLLTnKkg (privada). Recomendación del comité: beta gratuita de 8 semanas; si ≥ 25 % de los activados sigue en la semana 4, Premium con plan gratis permanente, 14 días de prueba sin tarjeta desde el momento de valor, 4,99 €/mes o 39,99 €/año, fundador 29,99 €/año durante 2 años. **Nada se construye hasta que Eric decida:**
+  1. **Precio:** ¿4,99 €/mes (39,99 €/año) como hipótesis, con test contra 3,99 €? (Eric había aprobado 3,99 € el 15-10; con 3,99 € el escenario central no cubre costes hasta el mes 18, con 4,99 € en el mes 10.)
+  2. **Forma jurídica:** ¿autónomo o sociedad? Condiciona la fecha del primer cobro y el coste fijo (≈ 180 €/mes con autónomo y gestoría).
+  3. **Beta testers:** ¿de dónde salen 150–300 personas del segmento inicial (25–40 años, nómina, 5+ recibos, «post-Excel»)?
+  4. **Abogado:** ¿presupuesto para una revisión única de consumo y privacidad antes de cobrar? (aviso 15 días antes de renovar, desistimiento, evaluación de impacto, contratos de encargo).
 - ✔ ~~Aviso de renovación de seguros~~ **Decidido y hecho 16-10** (email + aviso en la app, solo si el cliente lo activa; 6 semanas antes). SQL aplicado en palanca el 16-10. Push al móvil: cuando se monten las notificaciones push (`docs/RECORDATORIOS.md`).
 - 🟧 ~~Aviso por email/notificación de renovación de seguros~~ (sustituido por lo anterior) (Eric, 16-10): hoy el aviso sale en el Inicio (si el seguro está en Fijos) y en Fulcro. Falta enviarlo por email (motor de emails dormido, `docs/RECORDATORIOS.md`) o como notificación push 45 días antes. Decidir canal.
 - 🟩 **Viaje entero**: hoy Fulcro agrupa los pagos de Viajes y propone preguntar por las fechas. Idea: marcar un viaje (fechas) y sumar todo lo de esas fechas (coche de alquiler, comidas…).

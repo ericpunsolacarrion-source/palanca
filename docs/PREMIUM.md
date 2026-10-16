@@ -1,6 +1,6 @@
 # Premium: propuesta de precio y beneficios (para decidir)
 
-Estado: **propuesta en revisión**. Eric (15-10-2026): 3,99 €/mes le parece bien. La garantía de ahorro queda descartada. Referidos solo si el invitado paga. Costes y margen: **[COSTES.md](COSTES.md)**. La app ya cuenta y gestiona planes (panel de métricas), pero aún no bloquea nada.
+Estado: **propuesta en revisión**. ⚠ **El comité de monetización del 16-10 recomienda cambios** (4,99 €/mes · 39,99 €/año, prueba sin tarjeta que empieza en el momento de valor, fundador 29,99 €/año durante 2 años, beta gratuita antes de cobrar): acta en https://claude.ai/artifact/AvxfiwnNv8nd48VLLTnKkg. Pendiente de 4 decisiones de Eric (ver PENDIENTES.md). Eric (15-10-2026): 3,99 €/mes le parece bien. La garantía de ahorro queda descartada. Referidos solo si el invitado paga. Costes y margen: **[COSTES.md](COSTES.md)**. La app ya cuenta y gestiona planes (panel de métricas), pero aún no bloquea nada.
 
 ## Principio
 **Lo que crea el hábito es gratis.** Apuntar, importar el extracto, fijos y avisos, presupuesto, patrimonio y descargar tus datos. Con eso la gente se queda.
