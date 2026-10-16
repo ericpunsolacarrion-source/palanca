@@ -55,7 +55,7 @@ Para cada pregunta, copia la respuesta de Fulcro (o haz captura) y dime el **nú
 | 24 | ¿Cuánto gasto en gasolina? | **98,46 €**. Media de los 3 últimos meses completos. | Al momento |
 | 25 | ¿Cuánto me ha costado el gimnasio este año? | **299,90 €** | Al momento |
 | 26 | ¿Cuánto he gastado en Amazon el año pasado? | **420,94 €**. Compras + Prime − la devolución de 29,99 €. | Al momento |
-| 27 | ¿Cuánto pago de luz? | **29,08 €**. La luz es bimestral: la media de 3 meses mezcla meses con y sin recibo. Mejor si lo explica. | Al momento |
+| 27 | ¿Cuánto pago de luz? | **40,69 €**. La luz es bimestral: media de los últimos 12 meses y cuánto es cada recibo. | Al momento |
 | 28 | ¿Cuánto me cuesta el seguro del coche? | Mapfre, anual: 410 € (2024) → 432 € (2025) → 455 € (2026). Ideal: decir el último importe y que ha subido cada año (+11 %). | Al momento |
 | 29 | ¿Cuánto me gasto en La Tagliatella? | **33,47 €**. Media de los 3 últimos meses. | Al momento |
 | 30 | ¿Cuánto he gastado en Ikea? | No hay ningún gasto en Ikea: debe decirlo sin inventarse nada. | Al momento |

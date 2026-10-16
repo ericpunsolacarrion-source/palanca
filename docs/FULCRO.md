@@ -15,6 +15,17 @@ Las preguntas de DATOS se responden en el móvil con `src/lib/respuestasLocales.
 - Las respuestas al momento **entran en el historial** que ve la IA: si luego preguntas "¿y por qué?", parte de esas cifras.
 - **Panel**: cada respuesta dice su origen ("Motor · calculado al momento" o "Fulcro · análisis") y las del motor traen una **ficha**: la cifra grande, el detalle y el desglose alineado con una línea fina proporcional. Tests: `fulcroGasolina.test.js`, `clienteFulcro.test.js`.
 
+## Reportes de Eric con Laura (16-10-2026) — arreglados
+- **Periodos con fechas**: cada respuesta dice "del dd/mm/aaaa al dd/mm/aaaa". "Estos 6 meses" = 6 meses completos + una línea con lo que va del actual y la suma; "incluido este mes / el mes en curso" lo suma directamente. Rangos libres: "del 1 al 15 de agosto", "entre el 25 de julio y el 20 de agosto de 2025", "del 01/08/2025 al 31/08/2025".
+- **Ingresos**: cuántos, de dónde (nómina, pagas extra, intereses… y quién paga), media al mes y qué NO cuenta (saldo inicial, traer de tu ahorro, devoluciones, retiradas). Botón "Ver en Análisis".
+- **Media mensual**: la cifra grande es la media (12 meses completos; también los 3 últimos). Lo que no se paga cada mes (luz cada 2 meses, agua cada 3) se promedia en 12 meses y lo dice; lo anual responde con su pago anual.
+- **¿En qué gasto más?** sin periodo = lo habitual (12 meses, con €/mes por categoría); con periodo, ese.
+- **Mes que más ahorras / más caro**: el de cada año, el habitual del calendario y el porqué (paga extra).
+- **Comercios coherentes**: Netflix y Spotify igual: total, por meses (una línea si es la misma cuota) o por años, último pago y **cuándo subió el precio**. Último pago en todas sus formas ("última compra mercadona", "cuándo fui al MERCADONA").
+- **Más valor**: una categoría dice qué tiene dentro ("Transporte = Repsol + ITV"); compras sueltas con ticket medio, frecuencia y frente al mismo periodo del año anterior; viajes agrupados por viaje.
+- **Recibos negociables**: seguros con fecha de renovación, ventana para comparar (45–30 días antes), aviso de que para no renovar hay que comunicarlo por escrito al menos 1 mes antes (Ley de Contrato de Seguro, art. 22) y cuánto ha subido; luz/móvil: subida frente al año anterior y revisar tarifa cada 6–12 meses (comparador CNMC). Botón "Ir a Fijos".
+- Test: `src/lib/fulcroEric.test.js`.
+
 ## Estado
 En pruebas **solo en dev**: se enciende en los despliegues de prueba de Vercel
 (rama `develop` → "Preview"). En la app pública sigue en "Próximamente" hasta

@@ -102,9 +102,16 @@ function FichaMotor({ t, onIr }) {
 // Con ficha, el texto no repite el desglose ni el total (ya están en la ficha).
 function textoSinDesglose(texto, tarjeta) {
   if (!tarjeta?.filas?.length) return texto
+  // Solo las líneas que la ficha ya enseña (una por fila y el total); el
+  // resto (medias, lo que no cuenta, avisos) se queda en el texto.
+  const nombres = tarjeta.filas.map((f) => String(f.nombre).replace(/\*/g, ''))
   return texto
     .split('\n')
-    .filter((l) => !/^\s*[-•*]\s+/.test(l) && !/^\s*\*\*Total:/.test(l))
+    .filter((l) => {
+      const limpia = l.replace(/^\s*[-•*]\s+/, '').replace(/\*/g, '')
+      if (/^\s*[-•*]\s+\*{0,2}Total:/.test(l) || /^\s*\*\*Total:/.test(l)) return false
+      return !(/^\s*[-•*]\s+/.test(l) && nombres.some((n) => limpia.startsWith(`${n}:`)))
+    })
     .join('\n')
 }
 

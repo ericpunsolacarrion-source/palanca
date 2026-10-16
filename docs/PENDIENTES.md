@@ -49,6 +49,8 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 - 🟩 Probar variantes de asunto de los emails cuando haya volumen.
 
 ### Importación y Fulcro
+- 🟧 **Aviso por email/notificación de renovación de seguros** (Eric, 16-10): hoy el aviso sale en el Inicio (si el seguro está en Fijos) y en Fulcro. Falta enviarlo por email (motor de emails dormido, `docs/RECORDATORIOS.md`) o como notificación push 45 días antes. Decidir canal.
+- 🟩 **Viaje entero**: hoy Fulcro agrupa los pagos de Viajes y propone preguntar por las fechas. Idea: marcar un viaje (fechas) y sumar todo lo de esas fechas (coche de alquiler, comidas…).
 - 🟩 Ampliar las **respuestas al momento** con lo que pregunte la gente: mirar en el panel qué va a la IA y debería ir local.
 - 🟧 **Batería de preguntas a Fulcro con Laura** (`docs/FULCRO-PREGUNTAS.md`, 73 preguntas con su respuesta correcta; CSV en `docs/pruebas/`): Eric las prueba en una cuenta de prueba y reporta por número. 64 de las 73 ya se responden al momento con la cifra exacta (test `clienteFulcro.test.js`); quedan en la IA las de consejo (viaje, cómo ahorrar, límites). Eric: volver a probarlas, y su propia cuenta con "gasolina".
 - 🟧 **Calidad de las respuestas de Fulcro con IA**: rehecho el 15-10 (la IA recibe las cifras del motor y no puede inventarlas). Falta comprobarlo con la IA real en la versión de prueba y recoger ejemplos flojos que queden.
@@ -97,6 +99,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 ---
 
 ## Histórico de cosas terminadas que estaban aquí
+- ✔ 16-10-2026: reportes de Eric con Laura (periodos con fechas, ingresos por origen, media, comercios con subidas de precio, seguros con renovación, viajes, rangos de fechas). Ver FULCRO.md.
 - ✔ 16-10-2026: arreglado el alta con el objetivo "Controlar suscripciones y recibos" (la BD no lo aceptaba y decía "No se ha podido crear tu cuenta"). Ahora se guarda como "planificacion" si la BD aún no lo admite; con `supabase-schema-objetivo-perfil.sql` se guarda tal cual.
 - ✔ 15-10-2026 (última hora): Fulcro como nuevo: desglose por concepto + total (gasolina moto/coche/furgoneta), "último año" y más periodos, 64/73 preguntas de Laura al momento, la IA recibe las cifras hechas del motor, panel con ficha de cifra y origen.
 - ✔ 15-10-2026 (noche): demo avanzada (18 pasos, 7 capítulos, Fulcro en directo) desde Tu cuenta y desde el final de la demo rápida.

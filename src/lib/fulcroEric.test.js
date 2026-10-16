@@ -70,4 +70,21 @@ describe('reportes de Eric con Laura', () => {
     expect(texto).toContain('Mismo periodo del año anterior: 713,53 € (+2 %)')
     expect(texto).toContain('Ticket medio: 25,15 €')
   })
+  it('seguro del coche: anual, por años y cuándo renueva (con plazo para no renovar)', () => {
+    const { texto, tarjeta } = preguntar('¿Cuánto me cuesta el seguro del coche?')
+    expect(texto).toContain('Por años: 2024 410 € · 2025 432 € · 2026 455 €')
+    expect(texto).toContain('Renueva hacia el **18/03/2027**')
+    expect(texto).toContain('Te ha subido un **11 %** en 2 años')
+    expect(tarjeta.accion).toBe('fijos')
+  })
+  it('luz (cada 2 meses): media de 12 meses y consejo de revisar la tarifa', () => {
+    const { texto } = preguntar('¿Cuánto pago de luz?')
+    expect(texto).toContain('No es cada mes: 6 pagos al año')
+    expect(texto).toContain('comparador de la CNMC')
+  })
+  it('viajes: agrupados por viaje, y preguntas por fechas exactas', () => {
+    expect(preguntar('¿Cuánto me he gastado en viajes en 2025?').texto).toContain('Es 1 viaje: 05/07/2025–10/08/2025 (619,74 €)')
+    expect(preguntar('cuanto gaste entre el 25 de julio y el 20 de agosto de 2025').texto).toMatch(/^Del 25\/07\/2025 al 20\/08\/2025 has gastado/)
+    expect(preguntar('¿en qué gasté más del 01/08/2025 al 31/08/2025?').texto).toMatch(/^Del 01\/08\/2025 al 31\/08\/2025 has gastado \*\*2\.043,08 €\*\*/)
+  })
 })

@@ -13,6 +13,7 @@ import { periodoDe, proximoCobro } from './periodicidad'
 import { buscarParecido, nombreComercio } from './comercios'
 import { detectarSuscripciones } from './suscripciones'
 import { resumenDelMes } from './inicio'
+import { tipoNegociable } from './negociables'
 
 const sinAcentos = (s) =>
   String(s ?? '')
@@ -62,7 +63,7 @@ const VACIAS = new Set(
   proximo proxima siguiente le les
   media promedio normalmente habitualmente suele suelo suelen tengo tienes tiene tenemos uso usar usando app aplicacion palanca empece
   trimestre ejercicio doce semanal mensual anual diario
-  incluido incluida incluidos incluidas incluyendo contando sumando curso actual ademas tambien compre fui
+  incluido incluida incluidos incluidas incluyendo contando sumando curso actual ademas tambien compre fui entre
   mucho poco demasiado bastante compensa conviene renegociar negociar quitar cancelar dar baja podria puedo permitir merece pena cambiar reducir bajar recortar ahorrar`.split(/\s+/),
 )
 
@@ -99,6 +100,10 @@ function periodo(t, hoy) {
       return { desde: restarDias(dias), hasta: h, etiqueta: `en los últimos ${dias} días` }
     }
   }
+  // "del 1 al 15 de agosto", "entre el 3 de julio y el 20 de agosto de 2025",
+  // "del 01/08/2025 al 15/08/2025".
+  const r = rangoExplicito(t, hoy)
+  if (r) return r
   if (/\bhoy\b/.test(t)) return { desde: h, hasta: h, etiqueta: 'hoy' }
   if (/\bayer\b/.test(t)) {
     const a = iso(new Date(y, m, hoy.getDate() - 1))
@@ -130,6 +135,27 @@ function periodo(t, hoy) {
   }
   if (anio) return { desde: `${anio[1]}-01-01`, hasta: `${anio[1]}-12-31`, etiqueta: `en ${anio[1]}` }
   return null
+}
+
+function rangoExplicito(t, hoy) {
+  const mesN = (x) => (x ? (/^\d+$/.test(x) ? Number(x) - 1 : MESES.indexOf(x)) : -1)
+  const num = t.match(/\b(?:del|desde el|entre el)\s+(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\s+(?:al|hasta el|y el)\s+(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b/)
+  const txt = t.match(/\b(?:del|desde el|entre el)\s+(\d{1,2})(?:\s+de\s+([a-z]+))?(?:\s+(?:de\s+)?(20\d\d))?\s+(?:al|hasta el|y el)\s+(\d{1,2})\s+de\s+([a-z]+)(?:\s+(?:de\s+)?(20\d\d))?\b/)
+  let d1, m1, y1, d2, m2, y2
+  if (num) [, d1, m1, y1, d2, m2, y2] = num
+  else if (txt) [, d1, m1, y1, d2, m2, y2] = txt
+  else return null
+  const M2 = mesN(m2)
+  const M1 = m1 ? mesN(m1) : M2
+  if (M1 < 0 || M2 < 0) return null
+  const anioDe = (y) => (y ? (y.length === 2 ? 2000 + Number(y) : Number(y)) : null)
+  let Y2 = anioDe(y2) ?? anioDe(y1)
+  if (Y2 == null) Y2 = new Date(hoy.getFullYear(), M2, Number(d2)) > hoy ? hoy.getFullYear() - 1 : hoy.getFullYear()
+  const Y1 = anioDe(y1) ?? (M1 > M2 ? Y2 - 1 : Y2)
+  const desde = iso(new Date(Y1, M1, Number(d1)))
+  const hasta = iso(new Date(Y2, M2, Number(d2)))
+  if (desde > hasta) return null
+  return { desde, hasta, etiqueta: `del ${formatearFecha(desde)} al ${formatearFecha(hasta)}`, explicito: true }
 }
 
 const enPeriodo = (p, hoyIso) => (m) => (p.tipo === 'todo' ? m.fecha <= hoyIso : m.fecha >= p.desde && m.fecha <= p.hasta && m.fecha <= hoyIso)
@@ -243,7 +269,8 @@ function lineaMeses(movs, p) {
   if (filas.length > 12) return null
   if (filas.length < 2) return null
   // Lo mismo cada mes (una suscripción): una línea, no doce iguales.
-  if (filas.length >= 3 && filas.every(([, c]) => c === filas[0][1])) {
+  const consecutivos = filas.every(([k], i) => i === 0 || mesesEntre(filas[i - 1][0], k) === 2)
+  if (filas.length >= 3 && consecutivos && filas.every(([, c]) => c === filas[0][1])) {
     const nom = (k) => `${MESES[Number(k.slice(5, 7)) - 1]}${filas[0][0].slice(0, 4) !== filas.at(-1)[0].slice(0, 4) ? ` de ${k.slice(0, 4)}` : ''}`
     return `${eur(filas[0][1])} cada mes (de ${nom(filas[0][0])} a ${nom(filas.at(-1)[0])})`
   }
@@ -287,6 +314,57 @@ function queIncluye(objetivo, movimientos, hoyIso) {
   if (!grupos.length) return null
   const lista = grupos.slice(0, 5).map((g) => `${g.nombre} ${eur(g.cent)}`).join(' · ')
   return `- Qué entra en ${objetivo.nombre} (último año): ${lista}${grupos.length > 5 ? ` y ${grupos.length - 5} más` : ''}.`
+}
+
+// Recibos que se pueden NEGOCIAR (seguros, luz, móvil): cuándo renueva y qué
+// hacer, con los plazos de verdad. Seguros: para no renovar hay que avisar
+// por escrito al menos 1 mes antes del vencimiento (Ley de Contrato de
+// Seguro, art. 22); la mejor ventana para comparar, de 45 a 30 días antes.
+function consejoNegociable(objetivo, suyos, hoyIso) {
+  if (!objetivo || !suyos.length) return null
+  const orden = [...suyos].sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
+  const [u, prev] = orden
+  const tipo = tipoNegociable({ nombre: nombreComercio(u) || objetivo.nombre, categoriaNombre: u.categoria?.nombre ?? '' }) ?? (/luz|electric/i.test(objetivo.nombre) ? 'energia' : null)
+  if (!tipo || tipo === 'digital' || tipo === 'gimnasio' || tipo === 'agua') return null
+  const DIA = 86400000
+  const dias = (a, b) => Math.round((Date.parse(a) - Date.parse(b)) / DIA)
+  const lineas = []
+  if (tipo === 'seguro') {
+    const anual = !prev || dias(u.fecha, prev.fecha) > 300
+    if (!anual) return null
+    const renov = `${Number(u.fecha.slice(0, 4)) + 1}${u.fecha.slice(4)}`
+    const faltan = dias(renov, hoyIso)
+    const menos = (d) => iso(new Date(Date.parse(`${renov}T12:00:00`) - d * DIA))
+    // Lo que ha subido en los últimos años ("+11 % en 2 años").
+    const anios = orden.filter((m, i) => i === 0 || dias(orden[i - 1].fecha, m.fecha) > 300).slice(0, 3)
+    const subida = anios.length >= 2 && centimosDe(anios.at(-1)) > 0 ? Math.round((centimosDe(anios[0]) / centimosDe(anios.at(-1)) - 1) * 100) : 0
+    if (faltan <= 0 || faltan > 400) return null
+    if (faltan <= 45) {
+      lineas.push(`- **Renueva el ${formatearFecha(renov)}, en ${faltan} días.** Pide ahora 2 o 3 presupuestos con las mismas coberturas y llama a tu aseguradora para que lo igualen.`)
+      lineas.push(`- Si decides cambiar, comunícale por escrito que no renuevas **antes del ${formatearFecha(menos(30))}** (al menos 1 mes antes del vencimiento).`)
+    } else {
+      lineas.push(`- Renueva hacia el **${formatearFecha(renov)}** (en ${Math.round(faltan / 30)} ${Math.round(faltan / 30) === 1 ? 'mes' : 'meses'}). El mejor momento para comparar: del ${formatearFecha(menos(45))} al ${formatearFecha(menos(30))}; para no renovar, avisa por escrito al menos 1 mes antes.`)
+    }
+    if (subida >= 5) lineas.push(`- Te ha subido un **${subida} %** en ${anios.length - 1} ${anios.length === 2 ? 'año' : 'años'}: buen motivo para comparar.`)
+    lineas.push('- Guárdalo en **Fijos** y te avisamos en el Inicio cuando llegue el momento; en "Tu plan de ahorro" tienes el guion de la llamada.')
+    return { lineas, accion: 'fijos', urgente: faltan <= 45 }
+  }
+  // Luz, gas, móvil, internet: sin fecha de renovación; lo que cuenta es si
+  // ha subido y revisar la tarifa cada 6–12 meses (cambiar es gratis).
+  const haceUnAnio = `${Number(hoyIso.slice(0, 4)) - 1}${hoyIso.slice(4)}`
+  const haceDos = `${Number(hoyIso.slice(0, 4)) - 2}${hoyIso.slice(4)}`
+  const sum = (l) => l.reduce((s2, m) => s2 + centimosDe(m), 0)
+  const ultimoAnio = sum(suyos.filter((m) => m.fecha > haceUnAnio))
+  const anterior = suyos.filter((m) => m.fecha > haceDos && m.fecha <= haceUnAnio)
+  const dif = anterior.length && sum(anterior) > 0 ? Math.round((ultimoAnio / sum(anterior) - 1) * 100) : null
+  if (dif != null && Math.abs(dif) >= 3) lineas.push(`- En el último año has pagado ${eur(ultimoAnio)}: un **${Math.abs(dif)} % ${dif > 0 ? 'más' : 'menos'}** que el año anterior.`)
+  lineas.push(
+    tipo === 'energia'
+      ? '- Revisa tu tarifa cada 6–12 meses: compara con tu potencia y consumo en el comparador de la CNMC; cambiar de compañía es gratis y no te cortan la luz.'
+      : '- Revisa tu tarifa una vez al año: llama al departamento de bajas con una oferta delante; si no tienes permanencia, cambiar es gratis.',
+  )
+  lineas.push('- En **Fijos → Tu plan de ahorro** te guía paso a paso.')
+  return { lineas, accion: 'fijos', urgente: dif != null && dif >= 10 }
 }
 
 // Cuando en el periodo no hay nada: cuándo fue la última vez y cuánto en el
@@ -335,7 +413,7 @@ function respuestaGasto({ objetivo, movs, devoluciones = [], p, hoyIso, verboPag
   const verbo = verboPago ? 'has pagado' : 'has gastado'
   const primera = movs.reduce((a, m) => (m.fecha < a ? m.fecha : a), movs[0].fecha)
   const rango = rangoDe(p, primera, hoyIso)
-  const cuando = p.tipo === 'todo' ? `Desde el ${formatearFecha(primera)} hasta hoy` : `${capital(p.etiqueta)} (${rango})`
+  const cuando = p.tipo === 'todo' ? `Desde el ${formatearFecha(primera)} hasta hoy` : (p.explicito ? capital(p.etiqueta) : `${capital(p.etiqueta)} (${rango})`)
   const nMeses = p.tipo === 'todo' ? mesesEntre(primera, hoyIso) : mesesEntre(p.desde, p.hasta > hoyIso ? hoyIso : p.hasta)
   // Con el mes en curso a medias, una media al mes engañaría: no se da.
   const media = nMeses >= 2 && !p.conActual ? total / nMeses : null
@@ -355,6 +433,23 @@ function respuestaGasto({ objetivo, movs, devoluciones = [], p, hoyIso, verboPag
   }
   for (const f of filas) lineas.push(`- ${f.nombre}: **${eur(f.cent)}**${f.extra ? ` (${f.extra})` : ''}`)
   if (filas.length && objetivo) lineas.push(`- **Total: ${eur(total)}**`)
+  // Viajes: agrupados por viaje (pagos a menos de 45 días entre sí: el vuelo
+  // que reservas en julio y el hotel de agosto son el mismo viaje).
+  if (objetivo && /viaje|vacacion/i.test(sinAcentos(objetivo.nombre))) {
+    const orden = [...movs].sort((a, b) => (a.fecha < b.fecha ? -1 : 1))
+    const viajes = []
+    for (const m of orden) {
+      const v = viajes.at(-1)
+      if (v && (Date.parse(m.fecha) - Date.parse(v.hasta)) / 86400000 <= 45) {
+        v.hasta = m.fecha
+        v.movs.push(m)
+      } else viajes.push({ desde: m.fecha, hasta: m.fecha, movs: [m] })
+    }
+    if (viajes.length) {
+      lineas.push(`- ${viajes.length === 1 ? 'Es 1 viaje' : `Son ${viajes.length} viajes`}: ${viajes.map((v) => `${formatearFecha(v.desde)}${v.hasta !== v.desde ? `–${formatearFecha(v.hasta)}` : ''} (${eur(v.movs.reduce((s2, m) => s2 + centimosDe(m), 0))})`).join(' · ')}.`)
+      lineas.push('- Para el viaje entero (coche de alquiler, comidas allí…), pregúntame por esas fechas: «¿cuánto gasté del 1 al 15 de agosto?».')
+    }
+  }
   if (!filas.length) {
     const inc = queIncluye(objetivo, movimientos, hoyIso)
     if (inc) lineas.push(inc)
@@ -393,7 +488,8 @@ function respuestaGasto({ objetivo, movs, devoluciones = [], p, hoyIso, verboPag
     }
   }
   let ultimo = null
-  if (objetivo) {
+  const reciente = p.tipo === 'todo' || !p.hasta || Date.parse(hoyIso) - Date.parse(p.hasta) < 45 * 86400000
+  if (objetivo && reciente) {
     // El último de verdad (aunque sea de después del periodo preguntado).
     const suyos = movimientos.filter((m) => esConsumo(m) && filtro?.(m) && m.fecha <= hoyIso)
     ultimo = [...suyos, ...movs].reduce((a, m) => (m.fecha > a.fecha ? m : a), movs[0])
@@ -444,7 +540,7 @@ function respuestaIngresos(per, movimientos, hoyIso) {
   const reales = dentro.filter((m) => !esAjuste(m) && !esTraspaso(m) && !esDevolucion(m) && !esInversion(m))
   const primera = dentro.reduce((a, m) => (m.fecha < a ? m.fecha : a), hoyIso)
   const rango = rangoDe(per, primera, hoyIso)
-  const cuando = per.tipo === 'todo' ? `Desde el ${formatearFecha(primera)} hasta hoy` : `${capital(per.etiqueta)} (${rango})`
+  const cuando = per.tipo === 'todo' ? `Desde el ${formatearFecha(primera)} hasta hoy` : (per.explicito ? capital(per.etiqueta) : `${capital(per.etiqueta)} (${rango})`)
   if (!reales.length) {
     if (per.etiqueta !== 'este mes') return `${cuando} no han entrado ingresos.`
     // Este mes aún nada: cuándo suele llegar y cuánto entró el mes pasado.
@@ -995,7 +1091,7 @@ function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Dat
     const nM = per.meses && per.completos ? per.meses : null
     return {
       texto: [
-        `${capital(per.etiqueta)} (${rango}) has gastado **${formatearEuros(total)}**${nM ? `, ${formatearEuros(Math.round((total / nM) * 100) / 100)} al mes` : ''}. Donde más:`,
+        `${per.explicito ? capital(per.etiqueta) : `${capital(per.etiqueta)} (${rango})`} has gastado **${formatearEuros(total)}**${nM ? `, ${formatearEuros(Math.round((total / nM) * 100) / 100)} al mes` : ''}. Donde más:`,
         ...top.map(([c, v]) => `- **${etiquetaCategoria(c)}**: ${formatearEuros(v)}${nM ? ` (${formatearEuros(Math.round((v / nM) * 100) / 100)}/mes)` : ''} · ${Math.round((v / total) * 100)} %`),
         ...(habitual ? ['- Para un mes concreto, pregúntame «¿en qué gasto más este mes?».'] : []),
       ].join('\n'),
@@ -1073,9 +1169,20 @@ function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Dat
   const filtroDev = objetivo.sin ? () => true : (objetivo.filtroDevolucion ?? objetivo.filtro)
   const devolucionesEn = (periodoX) => movimientos.filter((m) => esDevolucion(m) && filtroDev(m) && enPeriodo(periodoX, hoyIso)(m))
   if (!per) {
-    // Presente sin periodo ("¿cuánto gasto en gasolina?"): media de los 3 últimos meses completos.
-    const tres = periodo('ultimos 3 meses', hoy)
-    const movs = movimientos.filter((m) => esConsumo(m) && filtro(m) && enPeriodo(tres, hoyIso)(m))
+    // Presente sin periodo ("¿cuánto gasto en gasolina?"): media de los 3
+    // últimos meses completos. Lo que NO se paga cada mes (luz cada 2 meses,
+    // agua cada 3) se promedia sobre 12 meses; lo anual, con su pago anual.
+    const doce = periodo('ultimos 12 meses', hoy)
+    const en12 = objetivo.sin ? [] : movimientos.filter((m) => esConsumo(m) && filtro(m) && enPeriodo(doce, hoyIso)(m))
+    const suyosDesc = objetivo.sin ? [] : movimientos.filter((m) => esConsumo(m) && filtro(m) && m.fecha <= hoyIso).sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
+    const espaciado = suyosDesc.length >= 2 && (Date.parse(suyosDesc[0].fecha) - Date.parse(suyosDesc[1].fecha)) / 86400000 > 150
+    // Solo con un año de historia se puede saber que algo no es mensual.
+    const conAnio = movimientos.some((m) => m.fecha <= doce.desde)
+    const anual = !objetivo.sin && en12.length <= 2 && espaciado
+    const salteado = !objetivo.sin && conAnio && en12.length >= 3 && en12.length <= 9
+    const tres = salteado ? doce : periodo('ultimos 3 meses', hoy)
+    const nRef = salteado ? 12 : 3
+    const movs = anual ? [] : movimientos.filter((m) => esConsumo(m) && filtro(m) && enPeriodo(tres, hoyIso)(m))
     const total = movs.reduce((s, m) => s + centimosDe(m), 0) - devolucionesEn(tres).reduce((s, m) => s + centimosDe(m), 0)
     if (!movs.length) {
       // Algo que se paga de vez en cuando (un seguro anual): el último pago y el de antes.
@@ -1084,24 +1191,45 @@ function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Dat
       const [u, prev] = anteriores
       const anual = prev && Math.abs(Date.parse(u.fecha) - Date.parse(prev.fecha)) / 86400000 > 300
       const cambio = prev && centimosDe(prev) !== centimosDe(u) ? ` (antes, ${eur(centimosDe(prev))}: ${centimosDe(u) > centimosDe(prev) ? 'ha subido' : 'ha bajado'} un ${Math.abs(Math.round((centimosDe(u) / centimosDe(prev) - 1) * 100))} %)` : ''
-      return `**${objetivo.nombre}** no es un gasto de cada mes${anual ? ': lo pagas una vez al año' : ''}. El último pago fue el ${formatearFecha(u.fecha)}: **${eur(centimosDe(u))}**${cambio}.`
+      const consejo = consejoNegociable(objetivo, anteriores, hoyIso)
+      // Lo pagado cada año ("2024 410 € · 2025 432 € · 2026 455 €").
+      const porAnio = lineaAnios(anteriores)
+      return {
+        texto: [
+          `**${objetivo.nombre}** no es un gasto de cada mes${anual ? ': lo pagas una vez al año' : ''}. El último pago fue el ${formatearFecha(u.fecha)}: **${eur(centimosDe(u))}**${cambio}.`,
+          ...(porAnio ? [`- Por años: ${porAnio}`] : []),
+          ...(anual ? [`- Equivale a ${eur(centimosDe(u) / 12)} al mes.`] : []),
+          ...(consejo?.lineas ?? []),
+        ].join('\n'),
+        tarjeta: {
+          etiqueta: `${capital(objetivo.nombre)} · ${anual ? 'pago anual' : 'último pago'}`,
+          cifra: centimosDe(u) / 100,
+          detalle: [`pagado el ${formatearFecha(u.fecha)}`, anual ? `≈ ${eur(centimosDe(u) / 12)}/mes` : null].filter(Boolean).join(' · '),
+          filas: [],
+          ...(consejo ? { accion: consejo.accion } : {}),
+        },
+      }
     }
     const linea = lineaMeses(movs, tres)
+    const consejoMedia = objetivo.sin ? null : consejoNegociable(objetivo, movimientos.filter((m) => esConsumo(m) && filtro(m) && m.fecha <= hoyIso), hoyIso)
     const sujeto = objetivo.sin ? 'En total' : `En **${objetivo.nombre}**`
     const grupos = objetivo.sin ? [] : desglosePorConcepto(movs, devolucionesEn(tres))
     const filas = grupos.length >= 2 ? grupos.slice(0, 6) : []
     return {
       texto: [
-        `${sujeto} gastas de media **${eur(total / 3)} al mes** (últimos 3 meses, ${rangoDe(tres, null, hoyIso)}: ${eur(total)}).`,
-        ...filas.map((g) => `- ${g.nombre}: **${eur(g.cent / 3)}/mes** (${eur(g.cent)} en 3 meses)`),
+        `${sujeto} gastas de media **${eur(total / nRef)} al mes** (últimos ${nRef} meses, ${rangoDe(tres, null, hoyIso)}: ${eur(total)}).`,
+        ...(salteado ? [`- No es cada mes: ${en12.length} pagos al año (uno cada ${Math.round(12 / en12.length)} meses, de unos ${eur(total / en12.length)}).`] : []),
+        ...filas.map((g) => `- ${g.nombre}: **${eur(g.cent / nRef)}/mes** (${eur(g.cent)} en ${nRef} meses)`),
         ...(linea ? [`- Por meses: ${linea}`] : []),
         ...(!filas.length && queIncluye(objetivo, movimientos, hoyIso) ? [queIncluye(objetivo, movimientos, hoyIso)] : []),
+        ...(consejoMedia?.lineas ?? []),
       ].join('\n'),
       tarjeta: {
-        etiqueta: `${objetivo.sin ? 'Gasto' : objetivo.nombre} · media mensual`,
-        cifra: total / 300,
+        etiqueta: `${objetivo.sin ? 'Gasto' : capital(objetivo.nombre)} · media mensual`,
+        cifra: Math.round(total / nRef) / 100,
         detalle: `${rangoDe(tres, null, hoyIso)} · total ${eur(total)}`,
-        filas: filas.map((g) => ({ nombre: g.nombre, valor: g.cent / 300, extra: '/mes', pct: total > 0 ? Math.round((g.cent / total) * 100) : null })),
+        filas: filas.map((g) => ({ nombre: g.nombre, valor: Math.round(g.cent / nRef) / 100, extra: '/mes', pct: total > 0 ? Math.round((g.cent / total) * 100) : null })),
+        ...(consejoMedia ? { accion: consejoMedia.accion } : {}),
       },
     }
   }
