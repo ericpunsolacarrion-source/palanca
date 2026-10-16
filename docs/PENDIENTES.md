@@ -2,7 +2,7 @@
 
 **Todo lo que se ha dejado para más adelante, en un solo sitio**, para poder rematarlo algún día.
 Se mantiene al día en cada sesión: lo terminado se marca ✔ con la fecha, lo nuevo se añade en su bloque.
-Última revisión: 15-10-2026 (Fulcro como nuevo).
+Última revisión: 16-10-2026 (comité de monetización).
 
 Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejora.
 
@@ -14,9 +14,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 |---|---|---|---|
 | 🟧 | **Frases motivadoras** de los recordatorios | Las de autores clásicos no convencieron. **Diseñar o extraer otras** (tono propio de Palanca, cercano; ¿frases propias en vez de citas?). La maquinaria está lista y **apagada** (`CON_FRASE = false`) | `src/lib/frases.js`, `src/lib/recordatorios.js` |
 | 🟧 | **Cada cuánto se envía un email** | Propuesta provisional: máximo 1 cada 3 días; a los 3-6 y a los 14-21 días sin entrar; alta sin apuntar a los 2-6 días; después, silencio | `docs/RECORDATORIOS.md` |
-| 🟥 | **Precio Premium** | Mensual **3,99 € ✔ (visto bueno)**. Falta el anual (29,99 € o 34,99 €) y si hay precio fundador | `docs/PREMIUM.md`, `docs/COSTES.md` |
-| 🟥 | **Qué incluye Premium** | Propuesta: Fulcro sin límite (Gratis: 5/mes), capturas sin límite, plan de ahorro completo, simuladores completos, banco en el futuro | `docs/PREMIUM.md` |
-| 🟧 | **Límite de Fulcro en Gratis** | Propuesta: 5 preguntas al mes | `docs/PREMIUM.md` |
+| 🟥 | **Precio, qué incluye Premium y límite de Fulcro en Gratis** | Replanteado por el comité del 16-10 (4,99 €/mes · 39,99 €/año; Gratis: 3 preguntas de IA al mes y motor sin límite). Ver las **4 decisiones** en C → Importación y Fulcro | Acta del comité, `docs/PREMIUM.md` |
 | ✔ | Invitar a un amigo | **Decidido:** 1 mes gratis al que invita solo si el invitado se da de alta **y paga** | `docs/PREMIUM.md` |
 | ✔ | Garantía "si no ahorras, te devolvemos" | **Descartada**: no se puede medir el ahorro | `docs/PREMIUM.md` |
 | 🟧 | **Fulcro "de datos" para todos** | Las respuestas al momento no usan IA: se podrían abrir ya en la app pública (también en Gratis, sin límite) aunque la IA siga en "Próximamente". ¿Sí? | `src/lib/respuestasLocales.js` |
@@ -56,10 +54,9 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
   3. **Beta testers:** ¿de dónde salen 150–300 personas del segmento inicial (25–40 años, nómina, 5+ recibos, «post-Excel»)?
   4. **Abogado:** ¿presupuesto para una revisión única de consumo y privacidad antes de cobrar? (aviso 15 días antes de renovar, desistimiento, evaluación de impacto, contratos de encargo).
 - ✔ ~~Aviso de renovación de seguros~~ **Decidido y hecho 16-10** (email + aviso en la app, solo si el cliente lo activa; 6 semanas antes). SQL aplicado en palanca el 16-10. Push al móvil: cuando se monten las notificaciones push (`docs/RECORDATORIOS.md`).
-- 🟧 ~~Aviso por email/notificación de renovación de seguros~~ (sustituido por lo anterior) (Eric, 16-10): hoy el aviso sale en el Inicio (si el seguro está en Fijos) y en Fulcro. Falta enviarlo por email (motor de emails dormido, `docs/RECORDATORIOS.md`) o como notificación push 45 días antes. Decidir canal.
 - 🟩 **Viaje entero**: hoy Fulcro agrupa los pagos de Viajes y propone preguntar por las fechas. Idea: marcar un viaje (fechas) y sumar todo lo de esas fechas (coche de alquiler, comidas…).
 - 🟩 Ampliar las **respuestas al momento** con lo que pregunte la gente: mirar en el panel qué va a la IA y debería ir local.
-- 🟧 **Batería de preguntas a Fulcro con Laura** (`docs/FULCRO-PREGUNTAS.md`, 73 preguntas con su respuesta correcta; CSV en `docs/pruebas/`): Eric las prueba en una cuenta de prueba y reporta por número. 64 de las 73 ya se responden al momento con la cifra exacta (test `clienteFulcro.test.js`); quedan en la IA las de consejo (viaje, cómo ahorrar, límites). Eric: volver a probarlas, y su propia cuenta con "gasolina".
+- 🟧 **Batería de preguntas a Fulcro con Laura** (`docs/FULCRO-PREGUNTAS.md`, 73 preguntas con su respuesta correcta; CSV en `docs/pruebas/`): Eric las prueba en una cuenta de prueba y reporta por número. 72 de las 73 ya las responde el motor (solo «¿Debería invertir más?» va a la IA). Eric ya las ha probado (16-10); quedan por repasar algunas de IA cuando tenga preguntas del día.
 - 🟧 **Calidad de las respuestas de Fulcro con IA**: rehecho el 15-10 (la IA recibe las cifras del motor y no puede inventarlas). Falta comprobarlo con la IA real en la versión de prueba y recoger ejemplos flojos que queden.
 - 🟩 Estudiar Cloudflare Pages en lugar de Vercel Pro (ahorro ≈ 20 $/mes; obliga a adaptar `/api`).
 - 🟧 Probar la **lectura de capturas con la API real**: hasta ahora solo se ha probado con datos simulados.
