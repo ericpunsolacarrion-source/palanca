@@ -44,7 +44,7 @@ describe('respuestas al momento (ejemplos de Eric)', () => {
   it('lo pagado hasta ahora de Spotify', () => {
     const t = r('Cuánto he pagado hasta ahora de Spotify')
     expect(t).toContain('**32,97 €**')
-    expect(t).toMatch(/^Desde el 05\/08\/2026 has pagado \*\*32,97 €\*\* en \*\*Spotify\*\*/)
+    expect(t).toMatch(/^Desde el 05\/08\/2026 hasta hoy has pagado \*\*32,97 €\*\* en \*\*Spotify\*\*/)
   })
   it('Shopify (comercio con asterisco)', () => {
     expect(r('¿cuánto he pagado de shopify?')).toContain('**39 €**')

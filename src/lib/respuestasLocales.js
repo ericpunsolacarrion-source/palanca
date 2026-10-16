@@ -8,7 +8,7 @@
 // gastar 0,05 céntimos que contestar mal.
 
 import { bolsas, categoriaDeDevolucion, centimosDe, esConsumo, etiquetaMes, formatearFecha, gastoPorCategoria, totalesDe } from './movimientosUtils'
-import { esDevolucion, esInversion, etiquetaCategoria, formatearEuros } from './categorias'
+import { esAjuste, esDevolucion, esInversion, esTraspaso, etiquetaCategoria, formatearEuros } from './categorias'
 import { periodoDe, proximoCobro } from './periodicidad'
 import { buscarParecido, nombreComercio } from './comercios'
 import { detectarSuscripciones } from './suscripciones'
@@ -62,10 +62,19 @@ const VACIAS = new Set(
   proximo proxima siguiente le les
   media promedio normalmente habitualmente suele suelo suelen tengo tienes tiene tenemos uso usar usando app aplicacion palanca empece
   trimestre ejercicio doce semanal mensual anual diario
+  incluido incluida incluidos incluidas incluyendo contando sumando curso actual ademas tambien compre fui
   mucho poco demasiado bastante compensa conviene renegociar negociar quitar cancelar dar baja podria puedo permitir merece pena cambiar reducir bajar recortar ahorrar`.split(/\s+/),
 )
 
 // ── Periodo ──────────────────────────────────────────────────────────────────
+const INCLUYE_ACTUAL = /\b(incluid[oa]s?|incluyendo|contando|sumando|con este mes|y este mes|mas este mes|mes en curso|mes actual|hasta hoy)\b/
+// "del 01/04/2026 al 30/09/2026": las fechas exactas de cualquier periodo.
+const rangoDe = (p, primera, hoyIso) => {
+  const desde = p.tipo === 'todo' ? primera : p.desde
+  const hasta = p.tipo === 'todo' || p.hasta > hoyIso ? hoyIso : p.hasta
+  if (!desde) return ''
+  return desde === hasta ? `el ${formatearFecha(desde)}` : `del ${formatearFecha(desde)} al ${formatearFecha(hasta)}`
+}
 function periodo(t, hoy) {
   const h = iso(hoy)
   const y = hoy.getFullYear()
@@ -75,12 +84,16 @@ function periodo(t, hoy) {
   const restarDias = (n) => iso(new Date(y, m, hoy.getDate() - n + 1))
 
   if (/\b(hasta ahora|en total|desde siempre|desde el principio|desde el inicio|historico|desde que (empece|uso|tengo|use|estoy))\b/.test(t)) return { tipo: 'todo', etiqueta: 'desde el principio' }
-  const n = t.match(/\b(?:ultim[oa]s?\s+(\d+|[a-z]+)\s+(dias|semanas|meses|anos)|(\d+|[a-z]+)\s+ultim[oa]s\s+(dias|semanas|meses|anos))\b/)
+  // "Los últimos 6 meses", "estos seis meses", "6 últimos meses", "en 6 meses".
+  const n = t.match(/\b(?:(?:ultim[oa]s?|estos|estas|los|las|en|durante)\s+(\d+|[a-z]+)\s+(?:ultim[oa]s\s+)?(dias|semanas|meses|anos)|(\d+|[a-z]+)\s+ultim[oa]s\s+(dias|semanas|meses|anos))\b/)
   if (n) {
     const cantidad = Number(n[1] ?? n[3]) || NUMEROS[n[1] ?? n[3]]
     const unidad = n[2] ?? n[4]
     if (cantidad > 0 && cantidad <= 120) {
-      if (unidad === 'meses') return { desde: primeroDe(y, m - cantidad), hasta: ultimoDe(y, m - 1), meses: cantidad, etiqueta: `en los últimos ${cantidad} meses (sin contar este)` }
+      // Meses COMPLETOS (comparables entre sí); con "incluido este mes / el mes
+      // en curso" se suma también lo que va del actual, hasta hoy.
+      if (unidad === 'meses' && INCLUYE_ACTUAL.test(t)) return { desde: primeroDe(y, m - cantidad), hasta: h, meses: cantidad + 1, conActual: true, etiqueta: `en los últimos ${cantidad} meses y lo que va de este` }
+      if (unidad === 'meses') return { desde: primeroDe(y, m - cantidad), hasta: ultimoDe(y, m - 1), meses: cantidad, completos: true, etiqueta: `en los últimos ${cantidad} meses completos` }
       if (unidad === 'anos') return { desde: primeroDe(y - cantidad, m), hasta: h, etiqueta: `en los últimos ${cantidad} años` }
       const dias = unidad === 'semanas' ? cantidad * 7 : cantidad
       return { desde: restarDias(dias), hasta: h, etiqueta: `en los últimos ${dias} días` }
@@ -108,7 +121,7 @@ function periodo(t, hoy) {
   }
   if (/\b(ano pasado)\b/.test(t)) return { desde: `${y - 1}-01-01`, hasta: `${y - 1}-12-31`, etiqueta: `en ${y - 1}` }
   if (/\b(este ano|lo que va de ano|en el ano)\b/.test(t)) return { desde: `${y}-01-01`, hasta: h, etiqueta: `en lo que va de ${y}` }
-  if (/\b(este mes|lo que va de mes)\b/.test(t)) return { desde: primeroDe(y, m), hasta: h, etiqueta: 'este mes' }
+  if (/\b(este mes|lo que va de mes|mes en curso|mes actual)\b/.test(t)) return { desde: primeroDe(y, m), hasta: h, etiqueta: 'este mes' }
   const anio = t.match(/\b(20\d\d)\b/)
   const mes = MESES.findIndex((nombre) => new RegExp(`\\b${nombre}\\b`).test(t))
   if (mes >= 0) {
@@ -151,6 +164,7 @@ function resolverObjetivo(t, movimientos) {
     if (!cat) return null
     return {
       nombre: etiquetaCategoria(cat),
+      esCategoria: true,
       filtro: (m) => m.categoria?.nombre === cat,
       // Las devoluciones van a la categoría del comercio que devuelve.
       filtroDevolucion: (d) => categoriaDeDevolucion(d, movimientos) === cat,
@@ -215,10 +229,24 @@ function porMeses(movs) {
   return [...mapa.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))
 }
 
+// Más de 12 meses: por años ("2024 155,88 € · 2025 164,88 €").
+function lineaAnios(movs) {
+  const mapa = new Map()
+  for (const m of movs) mapa.set(m.fecha.slice(0, 4), (mapa.get(m.fecha.slice(0, 4)) ?? 0) + centimosDe(m))
+  const filas = [...mapa.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))
+  return filas.length >= 2 ? filas.map(([a, c]) => `${a} ${eur(c)}`).join(' · ') : null
+}
+
 function lineaMeses(movs, p) {
-  if (p.tipo === 'todo' || !p.desde || p.desde.slice(0, 7) === p.hasta.slice(0, 7)) return null
+  if (!movs.length || (p.desde && p.desde.slice(0, 7) === p.hasta.slice(0, 7))) return null
   const filas = porMeses(movs)
-  if (filas.length < 2 || filas.length > 12) return null
+  if (filas.length > 12) return null
+  if (filas.length < 2) return null
+  // Lo mismo cada mes (una suscripción): una línea, no doce iguales.
+  if (filas.length >= 3 && filas.every(([, c]) => c === filas[0][1])) {
+    const nom = (k) => `${MESES[Number(k.slice(5, 7)) - 1]}${filas[0][0].slice(0, 4) !== filas.at(-1)[0].slice(0, 4) ? ` de ${k.slice(0, 4)}` : ''}`
+    return `${eur(filas[0][1])} cada mes (de ${nom(filas[0][0])} a ${nom(filas.at(-1)[0])})`
+  }
   // Si el periodo cruza de año, cada mes con su año ("dic 2025 · ene 2026").
   const variosAnios = new Set(filas.map(([k]) => k.slice(0, 4))).size > 1
   return filas
@@ -250,6 +278,17 @@ function desglosePorConcepto(movs, devoluciones = []) {
   return [...grupos.values()].sort((a, b) => b.cent - a.cent)
 }
 
+// Una CATEGORÍA agrupa varias cosas: qué tiene dentro (último año), para que
+// se entienda la cifra ("Transporte = Repsol + ITV").
+function queIncluye(objetivo, movimientos, hoyIso) {
+  if (!objetivo?.esCategoria) return null
+  const haceUnAnio = `${Number(hoyIso.slice(0, 4)) - 1}${hoyIso.slice(4)}`
+  const grupos = desglosePorConcepto(movimientos.filter((m) => esConsumo(m) && objetivo.filtro(m) && m.fecha > haceUnAnio && m.fecha <= hoyIso))
+  if (!grupos.length) return null
+  const lista = grupos.slice(0, 5).map((g) => `${g.nombre} ${eur(g.cent)}`).join(' · ')
+  return `- Qué entra en ${objetivo.nombre} (último año): ${lista}${grupos.length > 5 ? ` y ${grupos.length - 5} más` : ''}.`
+}
+
 // Cuando en el periodo no hay nada: cuándo fue la última vez y cuánto en el
 // último año (mejor que un "no veo nada" a secas).
 function sinGastosEn(objetivo, p, movimientos, filtro, hoyIso) {
@@ -266,7 +305,26 @@ function sinGastosEn(objetivo, p, movimientos, filtro, hoyIso) {
   ].join('\n')
 }
 
-function respuestaGasto({ objetivo, movs, devoluciones = [], p, hoyIso, verboPago, movimientos = [], filtro }) {
+// Historial de precio de un cargo que se repite (Netflix 12,99 → 13,99 €):
+// solo si casi todos los pagos son importes repetidos (es una cuota, no compras).
+function historialDePrecio(movs) {
+  if (movs.length < 4 || new Set(movs.map(nombreComercio)).size !== 1) return null
+  const orden = [...movs].sort((a, b) => (a.fecha < b.fecha ? -1 : 1))
+  const tramos = []
+  for (const m of orden) {
+    const c = centimosDe(m)
+    if (tramos.at(-1)?.cent === c) tramos.at(-1).n += 1
+    else tramos.push({ cent: c, desde: m.fecha, n: 1 })
+  }
+  if (tramos.length < 2 || tramos.length > 4 || tramos.some((x) => x.n < 2)) return null
+  return tramos.slice(1).map((x, i) => {
+    const antes = tramos[i].cent
+    const dif = Math.round((x.cent / antes - 1) * 1000) / 10
+    return `${x.cent > antes ? 'Subió' : 'Bajó'} de ${eur(antes)} a **${eur(x.cent)}** el ${formatearFecha(x.desde)} (${dif > 0 ? '+' : ''}${String(dif).replace('.', ',')} %)`
+  })
+}
+
+function respuestaGasto({ objetivo, movs, devoluciones = [], p, hoyIso, verboPago, movimientos = [], filtro, pideMedia = false }) {
   const devuelto = devoluciones.reduce((s, m) => s + centimosDe(m), 0)
   // Neto de devoluciones: mismo número que el resto de la app (MOTOR.md E6).
   const total = movs.reduce((s, m) => s + centimosDe(m), 0) - devuelto
@@ -276,8 +334,15 @@ function respuestaGasto({ objetivo, movs, devoluciones = [], p, hoyIso, verboPag
   }
   const verbo = verboPago ? 'has pagado' : 'has gastado'
   const primera = movs.reduce((a, m) => (m.fecha < a ? m.fecha : a), movs[0].fecha)
-  const cuando = p.tipo === 'todo' ? `Desde el ${formatearFecha(primera)}` : capital(p.etiqueta)
-  const lineas = [`${cuando} ${verbo} **${eur(total)}**${que} (${movs.length} ${movs.length === 1 ? 'pago' : 'pagos'}).`]
+  const rango = rangoDe(p, primera, hoyIso)
+  const cuando = p.tipo === 'todo' ? `Desde el ${formatearFecha(primera)} hasta hoy` : `${capital(p.etiqueta)} (${rango})`
+  const nMeses = p.tipo === 'todo' ? mesesEntre(primera, hoyIso) : mesesEntre(p.desde, p.hasta > hoyIso ? hoyIso : p.hasta)
+  // Con el mes en curso a medias, una media al mes engañaría: no se da.
+  const media = nMeses >= 2 && !p.conActual ? total / nMeses : null
+  const lineas =
+    pideMedia && media != null
+      ? [`De media ${objetivo ? `gastas${que}` : 'gastas'} **${eur(media)} al mes**: ${eur(total)} ${p.tipo === 'todo' ? `desde el ${formatearFecha(primera)}` : rango} (${nMeses} meses, ${movs.length} ${movs.length === 1 ? 'pago' : 'pagos'}).`]
+      : [`${cuando} ${verbo} **${eur(total)}**${que} (${movs.length} ${movs.length === 1 ? 'pago' : 'pagos'}).`]
 
   // El desglose: por concepto si preguntas por algo concreto; por categoría si es el total.
   let filas = []
@@ -290,25 +355,62 @@ function respuestaGasto({ objetivo, movs, devoluciones = [], p, hoyIso, verboPag
   }
   for (const f of filas) lineas.push(`- ${f.nombre}: **${eur(f.cent)}**${f.extra ? ` (${f.extra})` : ''}`)
   if (filas.length && objetivo) lineas.push(`- **Total: ${eur(total)}**`)
+  if (!filas.length) {
+    const inc = queIncluye(objetivo, movimientos, hoyIso)
+    if (inc) lineas.push(inc)
+  }
 
   // Con desglose, la fila de meses solo en periodos cortos (claridad antes que volumen).
   const meses = !filas.length || porMeses(movs).length <= 4 ? lineaMeses(movs, p) : null
+  const anios = !meses && porMeses(movs).length > 12 ? lineaAnios(movs) : null
   if (meses) lineas.push(`- Por meses: ${meses}`)
+  if (anios) lineas.push(`- Por años: ${anios}`)
   if (devuelto > 0) lineas.push(`- Ya descontadas las devoluciones: ${eur(devuelto)}.`)
-  const nMeses = p.tipo === 'todo' ? mesesEntre(primera, hoyIso) : mesesEntre(p.desde, p.hasta)
-  const media = nMeses >= 2 ? total / nMeses : null
-  if (media != null) lineas.push(`- De media, **${eur(media)} al mes**.`)
+  if (media != null && !pideMedia) lineas.push(`- De media, **${eur(media)} al mes**.`)
+  // Meses completos: también lo que va del mes en curso (y la suma con él).
+  if (p.completos && !pideMedia) {
+    const desdeMes = `${hoyIso.slice(0, 7)}-01`
+    const actual = movimientos.filter((m) => esConsumo(m) && (filtro ?? (() => true))(m) && m.fecha >= desdeMes && m.fecha <= hoyIso)
+    const devActual = movimientos.filter((m) => esDevolucion(m) && m.fecha >= desdeMes && m.fecha <= hoyIso && (!objetivo || (objetivo.filtroDevolucion ?? objetivo.filtro)(m)))
+    const cActual = actual.reduce((s, m) => s + centimosDe(m), 0) - devActual.reduce((s, m) => s + centimosDe(m), 0)
+    lineas.push(`- Con lo que va de ${MESES[Number(hoyIso.slice(5, 7)) - 1]} (${eur(cActual)} hasta el ${formatearFecha(hoyIso)}): **${eur(total + cActual)}**.`)
+  }
+  // Más valor con lo mismo: frente al mismo tramo del año anterior, y el
+  // ticket medio y la frecuencia (si son compras sueltas, no una cuota).
+  if (objetivo && p.desde && !pideMedia) {
+    const menosUnAnio = (f) => `${Number(f.slice(0, 4)) - 1}${f.slice(4)}`
+    const hasta = p.hasta > hoyIso ? hoyIso : p.hasta
+    const antes = movimientos.filter((m) => esConsumo(m) && filtro?.(m) && m.fecha >= menosUnAnio(p.desde) && m.fecha <= menosUnAnio(hasta))
+    const primeraDeTodas = movimientos.reduce((a, m) => (m.fecha < a ? m.fecha : a), hoyIso)
+    if (antes.length && primeraDeTodas <= menosUnAnio(p.desde)) {
+      const cAntes = antes.reduce((s2, m) => s2 + centimosDe(m), 0)
+      const dif = cAntes > 0 ? Math.round((total / cAntes - 1) * 100) : null
+      if (dif != null) lineas.push(`- Mismo periodo del año anterior: ${eur(cAntes)} (${dif === 0 ? 'igual' : `${dif > 0 ? '+' : '−'}${Math.abs(dif)} %`}).`)
+    }
+    if (movs.length >= 4 && new Set(movs.map(centimosDe)).size > 2) {
+      const porMes = nMeses >= 2 ? movs.length / nMeses : null
+      lineas.push(`- Ticket medio: ${eur(total / movs.length)}${porMes ? ` · unas ${String(Math.round(porMes * 10) / 10).replace('.', ',')} veces al mes` : ''}.`)
+    }
+  }
   let ultimo = null
   if (objetivo) {
-    ultimo = movs.reduce((a, m) => (m.fecha > a.fecha ? m : a), movs[0])
+    // El último de verdad (aunque sea de después del periodo preguntado).
+    const suyos = movimientos.filter((m) => esConsumo(m) && filtro?.(m) && m.fecha <= hoyIso)
+    ultimo = [...suyos, ...movs].reduce((a, m) => (m.fecha > a.fecha ? m : a), movs[0])
     lineas.push(`- Último: ${formatearFecha(ultimo.fecha)}, ${eur(centimosDe(ultimo))}.`)
+    for (const cambio of historialDePrecio(suyos) ?? []) lineas.push(`- ${cambio}.`)
   }
   return {
     texto: lineas.join('\n'),
     tarjeta: {
-      etiqueta: `${objetivo ? objetivo.nombre : 'Gasto'} · ${p.tipo === 'todo' ? 'desde el principio' : p.etiqueta.replace(/^en /, '')}`,
-      cifra: total / 100,
-      detalle: [`${movs.length} ${movs.length === 1 ? 'pago' : 'pagos'}`, media != null ? `${eur(media)}/mes de media` : null, ultimo ? `último ${formatearFecha(ultimo.fecha)}` : null].filter(Boolean).join(' · '),
+      etiqueta: `${objetivo ? capital(objetivo.nombre) : 'Gasto'}${pideMedia && media != null ? ' · media al mes' : ''} · ${p.tipo === 'todo' ? 'desde el principio' : p.etiqueta.replace(/^en /, '')}`,
+      cifra: pideMedia && media != null ? Math.round(media) / 100 : total / 100,
+      detalle: [
+        rango,
+        pideMedia && media != null ? `total ${eur(total)}` : `${movs.length} ${movs.length === 1 ? 'pago' : 'pagos'}`,
+        media != null && !pideMedia ? `${eur(media)}/mes de media` : null,
+        ultimo ? `último ${formatearFecha(ultimo.fecha)}` : null,
+      ].filter(Boolean).join(' · '),
       filas: filas.map((f) => ({ nombre: f.nombre, valor: f.cent / 100, extra: f.extra ?? null, pct: total > 0 ? Math.round((f.cent / total) * 100) : null })),
     },
   }
@@ -326,6 +428,68 @@ function cargosPeriodicos(movimientos, hoyIso) {
     .filter((d) => CATEGORIAS_FIJAS.test(sinAcentos(d.categoriaNombre)))
 }
 
+
+// ── Ingresos: cuánto, cuántos y de dónde ──────────────────────────────────────
+// Misma regla que totalesDe: no son ingreso el saldo inicial/ajustes, traer
+// dinero de tu ahorro, las devoluciones ni lo que sacas de una inversión.
+// Se dicen aparte para que la cifra se entienda.
+const tipoDeIngreso = (m) => {
+  const c = sinAcentos(m.categoria?.nombre ?? '')
+  const n = sinAcentos(m.nota ?? '')
+  if (/nomina|salario|sueldo/.test(c + ' ' + n)) return /extra/.test(n) ? 'Pagas extra' : 'Nómina'
+  return etiquetaCategoria(m.categoria?.nombre ?? 'Otros ingresos')
+}
+function respuestaIngresos(per, movimientos, hoyIso) {
+  const dentro = movimientos.filter((m) => m.tipo === 'ingreso' && enPeriodo(per, hoyIso)(m))
+  const reales = dentro.filter((m) => !esAjuste(m) && !esTraspaso(m) && !esDevolucion(m) && !esInversion(m))
+  const primera = dentro.reduce((a, m) => (m.fecha < a ? m.fecha : a), hoyIso)
+  const rango = rangoDe(per, primera, hoyIso)
+  const cuando = per.tipo === 'todo' ? `Desde el ${formatearFecha(primera)} hasta hoy` : `${capital(per.etiqueta)} (${rango})`
+  if (!reales.length) {
+    if (per.etiqueta !== 'este mes') return `${cuando} no han entrado ingresos.`
+    // Este mes aún nada: cuándo suele llegar y cuánto entró el mes pasado.
+    const ant = respuestaIngresos(periodo('el mes pasado', new Date(`${hoyIso}T12:00:00`)), movimientos, hoyIso)
+    const dias = movimientos.filter((m) => m.tipo === 'ingreso' && /nomina|salario|sueldo/i.test(sinAcentos(`${m.categoria?.nombre} ${m.nota}`))).map((m) => Number(m.fecha.slice(8, 10)))
+    const dia = dias.length ? dias.sort((a, b) => a - b)[Math.floor(dias.length / 2)] : null
+    return `${cuando} aún no han entrado ingresos.${dia ? ` Tu nómina suele llegar hacia el día **${dia}**.` : ''}${typeof ant === 'object' ? ` El mes pasado entraron **${formatearEuros(ant.tarjeta.cifra)}**.` : ''}`
+  }
+  const total = reales.reduce((s, m) => s + centimosDe(m), 0)
+  const grupos = new Map()
+  for (const m of reales) {
+    const k = tipoDeIngreso(m)
+    const g = grupos.get(k) ?? { nombre: k, cent: 0, n: 0, de: new Set() }
+    g.cent += centimosDe(m)
+    g.n += 1
+    // Quién paga, sin el concepto delante ("Nomina Consultora Levante" → "Consultora Levante").
+    const quien = (nombreComercio(m) ?? '').replace(/^(nomina|paga extra|intereses|transferencia( de)?|abono|ingreso)\s+/i, '').trim()
+    if (quien) g.de.add(quien)
+    grupos.set(k, g)
+  }
+  const filas = [...grupos.values()].sort((a, b) => b.cent - a.cent)
+  const nMeses = per.tipo === 'todo' ? mesesEntre(primera, hoyIso) : mesesEntre(per.desde, per.hasta > hoyIso ? hoyIso : per.hasta)
+  const fuera = [
+    ['saldo inicial y ajustes', dentro.filter(esAjuste)],
+    ['dinero traído de tu ahorro', dentro.filter(esTraspaso)],
+    ['devoluciones', dentro.filter(esDevolucion)],
+    ['lo retirado de inversiones', dentro.filter(esInversion)],
+  ].filter(([, l]) => l.length)
+  const lineas = [
+    `${cuando} han entrado **${eur(total)}** en ${reales.length} ${reales.length === 1 ? 'ingreso' : 'ingresos'}.`,
+    ...filas.map((g) => `- ${g.nombre}: **${eur(g.cent)}** (${g.n} ${g.n === 1 ? 'vez' : 'veces'}${g.de.size === 1 ? `, de ${[...g.de][0]}` : ''})`),
+    ...(nMeses >= 2 ? [`- De media, **${eur(total / nMeses)} al mes**.`] : []),
+    ...(fuera.length ? [`- No cuentan como ingreso: ${fuera.map(([q, l]) => `${q} (${eur(l.reduce((s, m) => s + centimosDe(m), 0))})`).join(', ')}.`] : []),
+  ]
+  return {
+    texto: lineas.join('\n'),
+    tarjeta: {
+      etiqueta: `Ingresos · ${per.tipo === 'todo' ? 'desde el principio' : per.etiqueta.replace(/^en /, '')}`,
+      cifra: total / 100,
+      detalle: [rango, `${reales.length} ${reales.length === 1 ? 'ingreso' : 'ingresos'}`, nMeses >= 2 ? `${eur(total / nMeses)}/mes de media` : null].filter(Boolean).join(' · '),
+      filas: filas.map((g) => ({ nombre: g.nombre, valor: g.cent / 100, extra: `${g.n} ${g.n === 1 ? 'vez' : 'veces'}${g.de.size === 1 ? ` · ${[...g.de][0]}` : ''}`, pct: Math.round((g.cent / total) * 100) })),
+      accion: 'analisis',
+    },
+  }
+}
 
 // ── Preguntas sobre el conjunto (sin IA) ──────────────────────────────────────
 // Meses COMPLETOS con datos (sin el actual), con sus totales del motor.
@@ -434,13 +598,37 @@ function mesRecord(t, movimientos, hoyIso) {
   const elegido = completos.reduce((a, m) => ((menos ? valor(m) < valor(a) : valor(m) > valor(a)) ? m : a), completos[0])
   const media = completos.reduce((s, m) => s + valor(m), 0) / completos.length
   const que = deAhorro ? (menos ? 'el mes que menos ahorraste' : 'el mes que más ahorraste') : menos ? 'tu mes más barato' : 'tu mes más caro'
-  const top = [...completos].sort((a, b) => (menos ? valor(a) - valor(b) : valor(b) - valor(a))).slice(0, 3)
+  const mejor = (lista) => lista.reduce((a, m) => ((menos ? valor(m) < valor(a) : valor(m) > valor(a)) ? m : a), lista[0])
+  // El mejor (o peor) de cada año…
+  const anios = [...new Set(completos.map((m) => m.clave.slice(0, 4)))].sort()
+  const porAnio = anios.map((a) => ({ anio: a, m: mejor(completos.filter((x) => x.clave.startsWith(a))), n: completos.filter((x) => x.clave.startsWith(a)).length }))
+  // …y el mes del calendario que suele serlo (media de ese mes en todos los años).
+  const porMes = new Map()
+  for (const m of completos) {
+    const k = Number(m.clave.slice(5, 7)) - 1
+    const x = porMes.get(k) ?? { s: 0, n: 0 }
+    x.s += valor(m)
+    x.n += 1
+    porMes.set(k, x)
+  }
+  const habituales = [...porMes.entries()].filter(([, x]) => x.n >= 2).map(([k, x]) => ({ k, media: x.s / x.n })).sort((a, b) => (menos ? a.media - b.media : b.media - a.media))
+  // Por qué: entró bastante más de lo normal (paga extra) o se gastó mucho más.
+  const ingMedio = completos.reduce((s, m) => s + m.ingresos, 0) / completos.length
+  const gasMedio = completos.reduce((s, m) => s + m.gastos, 0) / completos.length
+  const porQue = (m) => (deAhorro && !menos && m.ingresos > ingMedio * 1.3 ? ', entró más dinero de lo normal' : !deAhorro && !menos && m.gastos > gasMedio * 1.15 ? '' : deAhorro && menos && m.gastos > gasMedio * 1.2 ? ', gastaste más de lo normal' : '')
+  const linHab = habituales.length >= 2 ? `- Normalmente, ${menos ? 'el que menos' : 'el que más'}: **${MESES[habituales[0].k]}** (${formatearEuros(Math.round(habituales[0].media))} de media)${habituales[1] ? ` y después ${MESES[habituales[1].k]} (${formatearEuros(Math.round(habituales[1].media))})` : ''}.` : null
   return {
     texto: [
-      `${capital(que)} fue **${nombreMes(elegido.clave)}**: ${formatearEuros(valor(elegido))} ${deAhorro ? 'ahorrados' : 'gastados'} (tu media: ${formatearEuros(Math.round(media))}).`,
-      ...top.slice(1).map((m) => `- Después: ${nombreMes(m.clave)}, ${formatearEuros(valor(m))}.`),
+      `${capital(que)} fue **${nombreMes(elegido.clave)}**: ${formatearEuros(valor(elegido))} ${deAhorro ? 'ahorrados' : 'gastados'} (tu media: ${formatearEuros(Math.round(media))} al mes)${porQue(elegido) ? `: ${porQue(elegido).slice(2)}${deAhorro ? ' (paga extra o similar)' : ''}` : ''}.`,
+      ...(anios.length > 1 ? porAnio.map((x) => `- En ${x.anio}: ${MESES[Number(x.m.clave.slice(5, 7)) - 1]}, ${formatearEuros(valor(x.m))}${x.n < 12 ? ` (${x.n} meses con datos)` : ''}`) : []),
+      ...(linHab ? [linHab] : []),
     ].join('\n'),
-    tarjeta: { etiqueta: capital(que), cifra: valor(elegido), detalle: `${capital(nombreMes(elegido.clave))} · media ${formatearEuros(Math.round(media))}`, filas: top.map((m) => ({ nombre: capital(nombreMes(m.clave)), valor: valor(m) })) },
+    tarjeta: {
+      etiqueta: capital(que),
+      cifra: valor(elegido),
+      detalle: `${capital(nombreMes(elegido.clave))} · media ${formatearEuros(Math.round(media))}/mes`,
+      filas: porAnio.map((x) => ({ nombre: `${x.anio} · ${MESES[Number(x.m.clave.slice(5, 7)) - 1]}`, valor: valor(x.m) })),
+    },
   }
 }
 
@@ -758,13 +946,20 @@ function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Dat
   }
 
   // Último pago: "¿cuándo pagué el gimnasio por última vez?"
-  if (/\b(ultimo pago|ultima vez|cuando pague|cuando fue el ultimo)\b/.test(t)) {
-    const obj = resolverObjetivo(t, movimientos)
+  if (/\b(ultimo (pago|cargo|recibo|gasto)|ultima (vez|compra)|cuando pague|cuando compre|cuando fui|cuando fue (el|la) ultim[oa])\b/.test(t)) {
+    // "compra/compré/fui" no son el qué ("última compra en Mercadona").
+    const obj = resolverObjetivo(t.replace(/\b(compra|compras|compre|fui|ultim[oa]s?|cargo|recibo)\b/g, ' ').replace(/\s+/g, ' ').trim(), movimientos)
     if (obj.sin || !obj.filtro) return null
-    const movs = movimientos.filter((m) => esConsumo(m) && obj.filtro(m) && m.fecha <= hoyIso)
+    const movs = movimientos.filter((m) => esConsumo(m) && obj.filtro(m) && m.fecha <= hoyIso).sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
     if (!movs.length) return `No veo pagos de **${obj.nombre}** en tus movimientos.`
-    const u = movs.reduce((a, m) => (m.fecha > a.fecha ? m : a), movs[0])
-    return `El último pago de **${obj.nombre}** fue el **${formatearFecha(u.fecha)}**: ${eur(centimosDe(u))}.`
+    const [u, ...antes] = movs
+    const dias = Math.round((Date.parse(hoyIso) - Date.parse(u.fecha)) / 86400000)
+    const hace = dias === 0 ? 'hoy' : dias === 1 ? 'ayer' : `hace ${dias} días`
+    const previos = antes.slice(0, 3).map((m) => `${formatearFecha(m.fecha)} (${eur(centimosDe(m))})`)
+    return [
+      `El último pago de **${obj.nombre}** fue el **${formatearFecha(u.fecha)}** (${hace}): **${eur(centimosDe(u))}**.`,
+      ...(previos.length ? [`- Antes: ${previos.join(' · ')}.`] : []),
+    ].join('\n')
   }
 
   // "¿Cuánto dinero tengo?" → patrimonio de hoy (mismas bolsas que el inicio).
@@ -784,14 +979,34 @@ function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Dat
 
   // ¿En qué gasto más?
   if (/\b(en que|donde|a que)\b/.test(t) && /\b(mas|se me va|se va|se me fue|se fue|se me ha ido|se ha ido)\b/.test(t)) {
-    const per = p ?? periodo('este mes', hoy)
+    // Sin periodo y en presente ("¿en qué gasto más?") = lo habitual: los
+    // últimos 12 meses completos. En pasado ("¿en qué se me fue?") = este mes.
+    const habitual = !p && /\b(gasto|se me va|se va|suelo)\b/.test(t)
+    const nCompletos = Math.min(12, mesesCompletos(movimientos, hoyIso).filter((x) => x.gastos > 0).length)
+    const per = p ?? (habitual && nCompletos >= 2 ? periodo(`ultimos ${nCompletos} meses`, hoy) : periodo('este mes', hoy))
     // Mismas funciones del motor que Inicio y Presupuesto (neto de devoluciones).
     const dentro = movimientos.filter(enPeriodo(per, hoyIso))
     const mapa = gastoPorCategoria(dentro)
     const total = totalesDe(dentro).gastos
     if (!(total > 0) || mapa.size === 0) return `No has apuntado gastos ${per.etiqueta}.`
     const top = [...mapa.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
-    return [`${capital(per.etiqueta)} has gastado **${formatearEuros(total)}**. Donde más:`, ...top.map(([c, v]) => `- **${etiquetaCategoria(c)}**: ${formatearEuros(v)} (${Math.round((v / total) * 100)} %)`)].join('\n')
+    const primera = dentro.reduce((a, m) => (m.fecha < a ? m.fecha : a), hoyIso)
+    const rango = rangoDe(per, primera, hoyIso)
+    const nM = per.meses && per.completos ? per.meses : null
+    return {
+      texto: [
+        `${capital(per.etiqueta)} (${rango}) has gastado **${formatearEuros(total)}**${nM ? `, ${formatearEuros(Math.round((total / nM) * 100) / 100)} al mes` : ''}. Donde más:`,
+        ...top.map(([c, v]) => `- **${etiquetaCategoria(c)}**: ${formatearEuros(v)}${nM ? ` (${formatearEuros(Math.round((v / nM) * 100) / 100)}/mes)` : ''} · ${Math.round((v / total) * 100)} %`),
+        ...(habitual ? ['- Para un mes concreto, pregúntame «¿en qué gasto más este mes?».'] : []),
+      ].join('\n'),
+      tarjeta: {
+        etiqueta: `En qué gastas más · ${per.etiqueta.replace(/^en /, '')}`,
+        cifra: total,
+        detalle: rango,
+        filas: top.map(([c, v]) => ({ nombre: etiquetaCategoria(c), valor: v, extra: nM ? `${formatearEuros(Math.round((v / nM) * 100) / 100)}/mes` : null, pct: Math.round((v / total) * 100) })),
+        accion: 'analisis',
+      },
+    }
   }
 
   const esIngreso = /\b(ingresado|ingrese|ingresos|cobrado|cobre|ganado|gane)\b/.test(t)
@@ -805,6 +1020,21 @@ function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Dat
   // Sin "qué", la media solo si se pide ("¿cuánto gasto al mes de media?").
   const mediaTotal = objetivo.sin && /\b(media|promedio|al mes|normalmente|suelo|habitualmente)\b/.test(t)
   // Sin periodo: "he pagado de X" → desde el principio; presente → media; si no, este mes.
+  // "¿Cuánto gasto al mes de media?": los últimos 12 meses completos (o los que haya).
+  if (mediaTotal && !p && esGasto && !esIngreso && !esAhorro && !esInv) {
+    const completos = mesesCompletos(movimientos, hoyIso).filter((x) => x.gastos > 0)
+    const n = Math.min(12, completos.length)
+    if (n >= 2) {
+      const per12 = periodo(`ultimos ${n} meses`, hoy)
+      const movs = movimientos.filter((m) => esConsumo(m) && enPeriodo(per12, hoyIso)(m))
+      const r = respuestaGasto({ objetivo: null, movs, devoluciones: movimientos.filter((m) => esDevolucion(m) && enPeriodo(per12, hoyIso)(m)), p: per12, hoyIso, movimientos, pideMedia: true })
+      if (typeof r === 'object' && n >= 6) {
+        const tres = completos.slice(-3).reduce((s, x) => s + x.gastos, 0) / 3
+        r.texto += `\n- Los 3 últimos meses, ${formatearEuros(Math.round(tres * 100) / 100)} al mes.`
+      }
+      return r
+    }
+  }
   const per = p ?? ((presente && !objetivo.sin) || mediaTotal ? null : /\bpagad/.test(t) && !objetivo.sin ? { tipo: 'todo', etiqueta: 'desde el principio' } : periodo('este mes', hoy))
 
   if (esAhorro || esIngreso || esInv) {
@@ -813,7 +1043,7 @@ function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Dat
     const dentro = movimientos.filter(enPeriodo(perUsado, hoyIso))
     // La regla única del motor (totalesDe): sin ajustes, traspasos ni devoluciones como ingreso.
     const tot = totalesDe(dentro)
-    if (esIngreso) return `${capital(perUsado.etiqueta)} han entrado **${formatearEuros(tot.ingresos)}**.`
+    if (esIngreso) return respuestaIngresos(perUsado, movimientos, hoyIso)
     if (esAhorro) {
       return tot.ingresos > 0
         ? `${capital(perUsado.etiqueta)} has ahorrado **${formatearEuros(tot.ahorro)}**: el ${Math.round(tot.ratioAhorro)} % de lo que ha entrado (${formatearEuros(tot.ingresos)} de ingresos y ${formatearEuros(tot.gastos)} de gastos).`
@@ -862,20 +1092,21 @@ function consultar(pregunta, { movimientos = [], recurrentes = [], hoy = new Dat
     const filas = grupos.length >= 2 ? grupos.slice(0, 6) : []
     return {
       texto: [
-        `${sujeto} gastas de media **${eur(total / 3)} al mes** (últimos 3 meses: ${eur(total)}).`,
+        `${sujeto} gastas de media **${eur(total / 3)} al mes** (últimos 3 meses, ${rangoDe(tres, null, hoyIso)}: ${eur(total)}).`,
         ...filas.map((g) => `- ${g.nombre}: **${eur(g.cent / 3)}/mes** (${eur(g.cent)} en 3 meses)`),
         ...(linea ? [`- Por meses: ${linea}`] : []),
+        ...(!filas.length && queIncluye(objetivo, movimientos, hoyIso) ? [queIncluye(objetivo, movimientos, hoyIso)] : []),
       ].join('\n'),
       tarjeta: {
         etiqueta: `${objetivo.sin ? 'Gasto' : objetivo.nombre} · media mensual`,
         cifra: total / 300,
-        detalle: `últimos 3 meses: ${eur(total)}`,
+        detalle: `${rangoDe(tres, null, hoyIso)} · total ${eur(total)}`,
         filas: filas.map((g) => ({ nombre: g.nombre, valor: g.cent / 300, extra: '/mes', pct: total > 0 ? Math.round((g.cent / total) * 100) : null })),
       },
     }
   }
   const movs = movimientos.filter((m) => esConsumo(m) && filtro(m) && enPeriodo(per, hoyIso)(m))
-  return respuestaGasto({ objetivo: objetivo.sin ? null : objetivo, movs, devoluciones: devolucionesEn(per), p: per, hoyIso, verboPago: /\bpag/.test(t), movimientos, filtro })
+  return respuestaGasto({ objetivo: objetivo.sin ? null : objetivo, movs, devoluciones: devolucionesEn(per), p: per, hoyIso, verboPago: /\bpag/.test(t), movimientos, filtro, pideMedia: /\b(media|promedio|al mes|mensual)\b/.test(t) })
 }
 
 // ══ PARA LA IA: el motor calcula, la IA solo redacta ═══════════════════════

@@ -5,7 +5,7 @@ import { contextoParaPregunta, respuestaDeCortesia } from '../lib/contextoFulcro
 import { useObjetivosCompartidos, usePresupuestoCompartido } from '../lib/DatosCompartidos'
 import { supabase } from '../lib/supabaseClient'
 import { leerDescartadas } from '../lib/suscripciones'
-import { EVENTO_FULCRO, EVENTO_FULCRO_CERRAR } from '../lib/fulcro'
+import { DESTINOS, EVENTO_FULCRO, EVENTO_FULCRO_CERRAR, irA } from '../lib/fulcro'
 import { consultaLocal, hechosParaIA, panoramaParaIA } from '../lib/respuestasLocales'
 import { registrarEvento } from '../lib/analitica'
 import { formatearEuros } from '../lib/categorias'
@@ -61,7 +61,7 @@ function enLinea(texto) {
 // Ficha de una respuesta calculada por el motor: la cifra manda, el desglose
 // alineado y con una línea fina proporcional (precisión de instrumento).
 const conSignoEur = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${formatearEuros(Math.abs(v))}`
-function FichaMotor({ t }) {
+function FichaMotor({ t, onIr }) {
   const filas = (t.filas ?? []).slice(0, 8)
   const max = Math.max(...filas.map((f) => Math.abs(f.valor ?? 0)), 0)
   const cifra = t.cifraTexto ?? (typeof t.cifra === 'number' ? (t.conSigno ? conSignoEur(t.cifra) : formatearEuros(t.cifra)) : null)
@@ -89,6 +89,11 @@ function FichaMotor({ t }) {
             </li>
           ))}
         </ul>
+      )}
+      {t.accion && DESTINOS[t.accion] && (
+        <button type="button" className="link fulcro-ficha-accion" onClick={() => onIr(t.accion)}>
+          {DESTINOS[t.accion].texto}
+        </button>
       )}
     </div>
   )
@@ -522,7 +527,15 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
                             <span className={`fulcro-origen ${m.alMomento ? 'motor' : ''}`}>
                               {m.alMomento ? 'Motor · calculado al momento' : 'Fulcro · análisis'}
                             </span>
-                            {m.tarjeta && <FichaMotor t={m.tarjeta} />}
+                            {m.tarjeta && (
+                              <FichaMotor
+                                t={m.tarjeta}
+                                onIr={(destino) => {
+                                  setAbierto(false)
+                                  irA(destino)
+                                }}
+                              />
+                            )}
                             <TextoFulcro texto={textoSinDesglose(m.texto, m.tarjeta)} />
                           </>
                         )}

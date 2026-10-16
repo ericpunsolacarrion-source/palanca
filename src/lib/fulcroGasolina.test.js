@@ -18,7 +18,7 @@ const movimientos = [
 describe('gasolina moto / coche / furgoneta', () => {
   it('"cuanto he gastado en gasolina este ultimo año?" → desglose + total del último año', () => {
     const r = respuestaLocal('cuanto he gastado en gasolina este ultimo año?', { movimientos, hoy: HOY }).replace(/\u00a0/g, ' ')
-    expect(r).toMatch(/En el último año has gastado \*\*347,90 €\*\* en \*\*gasolina\*\*/)
+    expect(r).toMatch(/En el último año \(del 17\/10\/2025 al 16\/10\/2026\) has gastado \*\*347,90 €\*\* en \*\*gasolina\*\*/)
     expect(r).toContain('Gasolina coche: **180,40 €**')
     expect(r).toContain('Gasolina furgoneta: **90 €**')
     expect(r).toContain('Repsol: **50 €**')

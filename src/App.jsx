@@ -4,6 +4,7 @@ import { supabase } from './lib/supabaseClient'
 import { useAuth } from './lib/useAuth'
 import { cerrarSesionAuth } from './lib/auth'
 import { iniciarAnalitica, registrarEvento } from './lib/analitica'
+import { EVENTO_IR } from './lib/fulcro'
 import Auth from './components/Auth'
 import PantallaCarga from './components/PantallaCarga'
 import CuentaPanel from './components/CuentaPanel'
@@ -137,6 +138,17 @@ function App() {
     setModoRegistro(null)
     setPestana(destino)
   }, [])
+  // Desde Fulcro: "Ver en Análisis", "Ir a Fijos"…
+  useEffect(() => {
+    const ir = (e) => {
+      if (!e.detail?.pestana) return
+      irAPestana(e.detail.pestana)
+      if (e.detail.vista) setVistaInicio(e.detail.vista)
+      window.scrollTo?.({ top: 0 })
+    }
+    window.addEventListener(EVENTO_IR, ir)
+    return () => window.removeEventListener(EVENTO_IR, ir)
+  }, [irAPestana])
 
   const verMovimientos = useCallback((tipo) => {
     setFiltroMov(tipo)
