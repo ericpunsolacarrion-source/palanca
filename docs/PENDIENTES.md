@@ -51,8 +51,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 ### Importación y Fulcro
 - 🟥 **Antes de abrir Fulcro al público (decidido por Eric, 16-10):** confirmar el email antes de entrar (Supabase → Authentication → Sign In / Providers → Email → «Confirm email» activado) y una sola cuenta por email (Supabase ya lo impide). Hoy está desactivado: el alta entra directa.
 - 🟥 **Qué es Premium y qué es gratis — sesión de debate** (Eric, 16-10): sentarnos con la visión de cada área (CEO, marketing, pricing, producto/desarrollo, contabilidad). Claude prepara el documento con las posturas y una propuesta. Base: `docs/PREMIUM.md`, `docs/COSTES.md`.
-- 🟥 **SQL `supabase-schema-renovaciones.sql`** (Eric, 1 minuto, proyecto palanca): activa la opción «Avisarme antes de renovar un seguro» en Tu cuenta y el email de renovación.
-- ✔ ~~Aviso de renovación de seguros~~ **Decidido y hecho 16-10** (email + aviso en la app, solo si el cliente lo activa; 6 semanas antes). Falta el SQL de arriba. Push al móvil: cuando se monten las notificaciones push (`docs/RECORDATORIOS.md`).
+- ✔ ~~Aviso de renovación de seguros~~ **Decidido y hecho 16-10** (email + aviso en la app, solo si el cliente lo activa; 6 semanas antes). SQL aplicado en palanca el 16-10. Push al móvil: cuando se monten las notificaciones push (`docs/RECORDATORIOS.md`).
 - 🟧 ~~Aviso por email/notificación de renovación de seguros~~ (sustituido por lo anterior) (Eric, 16-10): hoy el aviso sale en el Inicio (si el seguro está en Fijos) y en Fulcro. Falta enviarlo por email (motor de emails dormido, `docs/RECORDATORIOS.md`) o como notificación push 45 días antes. Decidir canal.
 - 🟩 **Viaje entero**: hoy Fulcro agrupa los pagos de Viajes y propone preguntar por las fechas. Idea: marcar un viaje (fechas) y sumar todo lo de esas fechas (coche de alquiler, comidas…).
 - 🟩 Ampliar las **respuestas al momento** con lo que pregunte la gente: mirar en el panel qué va a la IA y debería ir local.
@@ -103,6 +102,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 ---
 
 ## Histórico de cosas terminadas que estaban aquí
+- ✔ 16-10-2026: SQL de renovaciones y de periodicidades de Fijos (faltaba en palanca: lo no mensual se guardaba como mensual) aplicados. Comprobación de la base de datos completa sin nada pendiente (`supabase-comprobar.sql`).
 - ✔ 16-10-2026: SQL `supabase-schema-fulcro-v3.sql` aplicado en palanca (las capturas ya no gastan preguntas de Fulcro).
 - ✔ 16-10-2026 (ronda 2): 72/73 preguntas de Laura por el motor, consejo con datos, preguntas habituales, subidas bien clasificadas, botones a pantallas, límite de IA que falla cerrado.
 - ✔ 16-10-2026: reportes de Eric con Laura (periodos con fechas, ingresos por origen, media, comercios con subidas de precio, seguros con renovación, viajes, rangos de fechas). Ver FULCRO.md.
