@@ -49,8 +49,11 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 - 🟩 Probar variantes de asunto de los emails cuando haya volumen.
 
 ### Importación y Fulcro
-- 🟧 **Abuso del límite con varias cuentas**: el cupo es por cuenta; alguien podría crear cuentas para tener más preguntas. Antes de abrir al público: límite también por dispositivo/IP o exigir email confirmado.
-- 🟧 **Aviso por email/notificación de renovación de seguros** (Eric, 16-10): hoy el aviso sale en el Inicio (si el seguro está en Fijos) y en Fulcro. Falta enviarlo por email (motor de emails dormido, `docs/RECORDATORIOS.md`) o como notificación push 45 días antes. Decidir canal.
+- 🟥 **Antes de abrir Fulcro al público (decidido por Eric, 16-10):** confirmar el email antes de entrar (Supabase → Authentication → Sign In / Providers → Email → «Confirm email» activado) y una sola cuenta por email (Supabase ya lo impide). Hoy está desactivado: el alta entra directa.
+- 🟥 **Qué es Premium y qué es gratis — sesión de debate** (Eric, 16-10): sentarnos con la visión de cada área (CEO, marketing, pricing, producto/desarrollo, contabilidad). Claude prepara el documento con las posturas y una propuesta. Base: `docs/PREMIUM.md`, `docs/COSTES.md`.
+- 🟥 **SQL `supabase-schema-renovaciones.sql`** (Eric, 1 minuto, proyecto palanca): activa la opción «Avisarme antes de renovar un seguro» en Tu cuenta y el email de renovación.
+- ✔ ~~Aviso de renovación de seguros~~ **Decidido y hecho 16-10** (email + aviso en la app, solo si el cliente lo activa; 6 semanas antes). Falta el SQL de arriba. Push al móvil: cuando se monten las notificaciones push (`docs/RECORDATORIOS.md`).
+- 🟧 ~~Aviso por email/notificación de renovación de seguros~~ (sustituido por lo anterior) (Eric, 16-10): hoy el aviso sale en el Inicio (si el seguro está en Fijos) y en Fulcro. Falta enviarlo por email (motor de emails dormido, `docs/RECORDATORIOS.md`) o como notificación push 45 días antes. Decidir canal.
 - 🟩 **Viaje entero**: hoy Fulcro agrupa los pagos de Viajes y propone preguntar por las fechas. Idea: marcar un viaje (fechas) y sumar todo lo de esas fechas (coche de alquiler, comidas…).
 - 🟩 Ampliar las **respuestas al momento** con lo que pregunte la gente: mirar en el panel qué va a la IA y debería ir local.
 - 🟧 **Batería de preguntas a Fulcro con Laura** (`docs/FULCRO-PREGUNTAS.md`, 73 preguntas con su respuesta correcta; CSV en `docs/pruebas/`): Eric las prueba en una cuenta de prueba y reporta por número. 64 de las 73 ya se responden al momento con la cifra exacta (test `clienteFulcro.test.js`); quedan en la IA las de consejo (viaje, cómo ahorrar, límites). Eric: volver a probarlas, y su propia cuenta con "gasolina".

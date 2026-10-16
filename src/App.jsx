@@ -576,6 +576,7 @@ function App() {
                 {vistaInicio === 'resumen' && (
                   <Inicio
                     usuarioId={usuarioId}
+                    avisosRenovacion={perfil?.avisos_renovacion ?? null}
                     movimientos={movimientos}
                     recurrentes={recurrentes}
                     cargandoRecurrentes={cargandoRecurrentes}

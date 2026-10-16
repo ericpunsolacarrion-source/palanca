@@ -250,6 +250,7 @@ export default function Inicio({
   onConfirmarCobro,
   onIrA,
   onVerAnalisis,
+  avisosRenovacion = null,
 }) {
   return (
     <div className="ini">
@@ -268,6 +269,7 @@ export default function Inicio({
         movimientos={movimientos}
         onVerSuscripciones={() => onIrA('suscripciones')}
         onConfirmar={onConfirmarCobro}
+        avisosRenovacion={avisosRenovacion}
       />
       <MesEnCurso movimientos={movimientos} onVerAnalisis={onVerAnalisis} onVerPresupuesto={() => onIrA('presupuesto')} />
       <UltimosMovimientos movimientos={movimientos} onVerTodos={() => onRegistrar('historial')} />

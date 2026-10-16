@@ -346,7 +346,7 @@ function consejoNegociable(objetivo, suyos, hoyIso) {
       lineas.push(`- Renueva hacia el **${formatearFecha(renov)}** (en ${Math.round(faltan / 30)} ${Math.round(faltan / 30) === 1 ? 'mes' : 'meses'}). El mejor momento para comparar: del ${formatearFecha(menos(45))} al ${formatearFecha(menos(30))}; para no renovar, avisa por escrito al menos 1 mes antes.`)
     }
     if (subida >= 5) lineas.push(`- Te ha subido un **${subida} %** en ${anios.length - 1} ${anios.length === 2 ? 'año' : 'años'}: buen motivo para comparar.`)
-    lineas.push('- Guárdalo en **Fijos** y te avisamos en el Inicio cuando llegue el momento; en "Tu plan de ahorro" tienes el guion de la llamada.')
+    lineas.push('- Guárdalo en **Fijos** y te avisamos en el Inicio cuando llegue el momento (y por email, si lo activas en Tu cuenta); en "Tu plan de ahorro" tienes el guion de la llamada.')
     return { lineas, accion: 'fijos', urgente: faltan <= 45 }
   }
   // Luz, gas, móvil, internet: sin fecha de renovación; lo que cuenta es si

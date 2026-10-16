@@ -24,6 +24,7 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
   const [verMetricas, setVerMetricas] = useState(false)
   const [analitica, setAnalitica] = useState(perfil?.analitica !== false)
   const [recordatorios, setRecordatorios] = useState(perfil?.recordatorios !== false)
+  const [renovaciones, setRenovaciones] = useState(perfil?.avisos_renovacion === true)
 
   useEffect(() => {
     let vivo = true
@@ -57,6 +58,18 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
       toast(valor ? 'Recordatorios activados' : 'No te enviaremos más recordatorios')
     } else {
       setRecordatorios(!valor)
+      toast('No se ha podido guardar. Inténtalo de nuevo.', 'error')
+    }
+  }
+
+  async function handleRenovaciones(valor) {
+    setRenovaciones(valor)
+    const actualizado = await actualizarPerfil(usuarioId, { avisos_renovacion: valor })
+    if (actualizado && 'avisos_renovacion' in actualizado) {
+      onPerfilActualizado?.(actualizado)
+      toast(valor ? 'Te avisaremos antes de cada renovación' : 'Sin avisos de renovación')
+    } else {
+      setRenovaciones(!valor)
       toast('No se ha podido guardar. Inténtalo de nuevo.', 'error')
     }
   }
@@ -192,6 +205,15 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
               <span>
                 <strong>Recordatorios por email</strong>
                 <span className="ayuda-mini">Un aviso si llevas unos días sin apuntar nada, con una frase para animarte. Pocos: como mucho uno cada 3 días.</span>
+              </span>
+            </label>
+          )}
+          {perfil && 'avisos_renovacion' in perfil && (
+            <label className="cuenta-interruptor">
+              <input type="checkbox" checked={renovaciones} onChange={(e) => handleRenovaciones(e.target.checked)} />
+              <span>
+                <strong>Avisarme antes de renovar un seguro</strong>
+                <span className="ayuda-mini">Unas 6 semanas antes, por email y en el Inicio: con tiempo para comparar y, si cambias, avisar por escrito con un mes de antelación. Solo los seguros que tengas en Fijos.</span>
               </span>
             </label>
           )}

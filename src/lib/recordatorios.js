@@ -13,12 +13,19 @@ import { fraseDelDia, firmaDe } from './frases.js'
 
 export const CON_FRASE = false
 
-export const TIPOS = ['prueba_termina', 'sin_empezar', 'inactivo', 'te_echamos', 'invitacion_premium']
+export const TIPOS = ['renovacion', 'prueba_termina', 'sin_empezar', 'inactivo', 'te_echamos', 'invitacion_premium']
 
 const dia = (iso) => Date.parse(`${String(iso).slice(0, 10)}T00:00:00Z`) / 86400000
 const diasEntre = (desde, hasta) => Math.round(dia(hasta) - dia(desde))
 // Fecha (Madrid) de un timestamp del registro de envíos.
 const diaDe = (ts) => (ts ? new Date(ts).toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }) : null)
+
+// La renovación que toca avisar hoy: entre 38 y 45 días antes (el margen
+// cubre los días en que la regla de "1 email cada 3 días" no deja enviar).
+export function renovacionQueToca(f, hoy) {
+  if (f.avisos_renovacion !== true || !Array.isArray(f.renovaciones)) return null
+  return f.renovaciones.filter((r) => r?.fecha && diasEntre(hoy, r.fecha) >= 38 && diasEntre(hoy, r.fecha) <= 45).sort((a, b) => (a.fecha < b.fecha ? -1 : 1))[0] ?? null
+}
 
 /**
  * Devuelve el tipo de recordatorio que toca hoy a esta persona, o null.
@@ -35,6 +42,14 @@ export function elegirRecordatorio(f, hoy, { premiumActivo = false } = {}) {
     return d != null && (desdeIso == null || d >= desdeIso)
   }
   const haceDias = (iso) => (iso ? diasEntre(iso, hoy) : null)
+
+  // 0. Renovación de un seguro (solo si lo ha pedido en Tu cuenta): unas 6
+  //    semanas antes, para que le dé tiempo a comparar Y a avisar por escrito
+  //    con 1 mes de antelación si decide no renovar (Ley de Contrato de Seguro).
+  if (renovacionQueToca(f, hoy)) {
+    const hace60 = new Date((dia(hoy) - 60) * 86400000).toISOString().slice(0, 10)
+    if (!enviadoDesde('renovacion', hace60)) return 'renovacion'
+  }
 
   // 1. Fin de la prueba de Premium (1-2 días antes).
   if (f.plan === 'prueba' && f.plan_hasta) {
@@ -82,6 +97,21 @@ function contenido(tipo, f, hoy) {
   const hola = nombre ? `Hola, ${nombre}:` : 'Hola:'
   const inactivo = f.ultima ? diasEntre(f.ultima, hoy) : null
   switch (tipo) {
+    case 'renovacion': {
+      const r = renovacionQueToca(f, hoy)
+      const limite = new Date((dia(r.fecha) - 31) * 86400000).toISOString().slice(0, 10)
+      return {
+        asunto: `«${r.nombre}» se renueva el ${fechaCorta(r.fecha)}`,
+        previa: 'Buen momento para comparar precios, con tiempo para avisar.',
+        parrafos: [
+          hola,
+          `Tu «${r.nombre}» se renueva el ${fechaCorta(r.fecha)}. Si quieres pagar menos, ahora es el momento: pide dos o tres presupuestos con las mismas coberturas y llama a tu compañía para que te mejore el precio.`,
+          `Si decides cambiar, avísales por escrito antes del ${fechaCorta(limite)}: hay que hacerlo al menos un mes antes de la renovación.`,
+          'En Palanca tienes los pasos y el guion de la llamada.',
+        ],
+        boton: 'Preparar la llamada',
+      }
+    }
     case 'inactivo':
       return {
         asunto: nombre ? `${nombre}, dos minutos para ponerte al día` : 'Dos minutos para ponerte al día',

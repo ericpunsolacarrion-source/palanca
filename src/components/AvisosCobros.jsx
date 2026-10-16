@@ -47,7 +47,7 @@ async function notificar(titulo, cuerpo, tag) {
 
 const ICONO = { cobro: 'fijos', renovacion: 'calendario', subida: 'sube', ingreso: 'baja', negociar: 'presupuesto' }
 
-export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimientos, onVerSuscripciones, onConfirmar }) {
+export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimientos, onVerSuscripciones, onConfirmar, avisosRenovacion = null }) {
   const [cerrados, setCerrados] = useState(() => leerSet(claveCerrados(usuarioId)))
   const [permiso, setPermiso] = useState(() => (soportaNotificaciones() ? Notification.permission : 'unsupported'))
 
@@ -60,8 +60,8 @@ export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimie
   }, [usuarioId])
 
   const avisos = useMemo(
-    () => calcularAvisos(recurrentes, movimientos, new Date(), { descartadas }).filter((a) => !cerrados.has(a.id)),
-    [recurrentes, movimientos, cerrados, descartadas],
+    () => calcularAvisos(recurrentes, movimientos, new Date(), { descartadas, avisosRenovacion }).filter((a) => !cerrados.has(a.id)),
+    [recurrentes, movimientos, cerrados, descartadas, avisosRenovacion],
   )
 
   // Notificación del sistema: una sola vez por aviso.

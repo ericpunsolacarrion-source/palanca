@@ -20,7 +20,7 @@ const DIAS_SUBIDA = 45 // una subida de precio es noticia ~1,5 meses
  * @returns [{ id, tipo: 'cobro'|'renovacion'|'subida', titulo, detalle, importe, dias, urgente }]
  *          ordenados por urgencia.
  */
-export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Date(), { descartadas = new Set() } = {}) {
+export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Date(), { descartadas = new Set(), avisosRenovacion = null } = {}) {
   const avisos = []
   const gastos = recurrentes.filter((r) => r.tipo === 'gasto')
 
@@ -62,18 +62,26 @@ export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Dat
     }
   }
 
-  // Momento de NEGOCIAR (seguros y otros anuales negociables): de 45 a 30 días
-  // antes de la renovación, con tiempo de pedir presupuestos y avisar.
-  for (const c of cobrosProximos(gastos, 45, hoy)) {
+  // Momento de NEGOCIAR (seguros y otros anuales negociables): desde 45 días
+  // antes de la renovación (tiempo de comparar y de avisar por escrito con 1
+  // mes si no renueva) hasta que entra el aviso normal de renovación (14 días).
+  // El cliente decide en Tu cuenta: false = sin estos avisos.
+  for (const c of avisosRenovacion === false ? [] : cobrosProximos(gastos, 45, hoy)) {
     const tipo = tipoNegociable(c.rec)
-    if (!tipo || !PALANCAS[tipo]?.negociable || periodoDe(c.rec).meses < 6 || c.dias <= 30) continue
+    if (!tipo || !PALANCAS[tipo]?.negociable || periodoDe(c.rec).meses < 6 || c.dias <= DIAS_RENOVACION) continue
+    const fechaRenov = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + c.dias)
+    const limite = new Date(fechaRenov.getFullYear(), fechaRenov.getMonth() - 1, fechaRenov.getDate())
+    const fmt = (d) => d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })
     avisos.push({
       id: `negociar:${c.rec.id}:${c.mes}`,
       tipo: 'negociar',
       recId: c.rec.id,
       porConfirmar: false,
       titulo: `Momento de negociar ${c.rec.nombre}`,
-      detalle: `Renueva ${c.texto}. Pide presupuestos y que te mejoren el precio.`,
+      detalle:
+        (c.dias > 30
+          ? `Renueva ${c.texto}. Pide presupuestos y que te mejoren el precio; si cambias, avisa por escrito antes del ${fmt(limite)}.`
+          : `Renueva ${c.texto}. Aún puedes pedir que te mejoren el precio.`) + (avisosRenovacion == null ? ' Actívalo en Tu cuenta para recibirlo también por email.' : ''),
       importe: c.importe,
       dias: c.dias,
       urgente: false,

@@ -84,9 +84,19 @@ describe('aviso del momento de negociar', () => {
     const a = calcularAvisos([seguro(11, 24)], [], hoy).find((x) => x.tipo === 'negociar')
     expect(a.titulo).toBe('Momento de negociar Seguro del coche')
   })
-  it('fuera de la ventana (a 20 o a 70 días), no', () => {
-    expect(calcularAvisos([seguro(11, 4)], [], hoy).some((x) => x.tipo === 'negociar')).toBe(false)
+  it('a 40 días dice hasta cuándo avisar por escrito; si no ha decidido, le invita a activarlo', () => {
+    const a = calcularAvisos([seguro(11, 24)], [], hoy).find((x) => x.tipo === 'negociar')
+    expect(a.detalle).toContain('avisa por escrito antes del 24 de octubre')
+    expect(a.detalle).toContain('Actívalo en Tu cuenta')
+    expect(calcularAvisos([seguro(11, 24)], [], hoy, { avisosRenovacion: true }).find((x) => x.tipo === 'negociar').detalle).not.toContain('Tu cuenta')
+  })
+  it('a 20 días aún se puede negociar; a 10 (aviso de renovación) o a 70, no', () => {
+    expect(calcularAvisos([seguro(11, 4)], [], hoy).find((x) => x.tipo === 'negociar').detalle).toContain('Aún puedes pedir')
+    expect(calcularAvisos([seguro(10, 25)], [], hoy).some((x) => x.tipo === 'negociar')).toBe(false)
     expect(calcularAvisos([seguro(12, 24)], [], hoy).some((x) => x.tipo === 'negociar')).toBe(false)
+  })
+  it('si el cliente los desactivó en Tu cuenta, no aparecen', () => {
+    expect(calcularAvisos([seguro(11, 24)], [], hoy, { avisosRenovacion: false }).some((x) => x.tipo === 'negociar')).toBe(false)
   })
   it('un recibo mensual no negociable (alquiler), nunca', () => {
     const alquiler = { id: 'a', activo: true, tipo: 'gasto', nombre: 'Alquiler', importe: 750, periodoMeses: 1, diaMes: 20, mesesAplicados: [] }
