@@ -12,6 +12,16 @@
 PWA de finanzas personales (React 19 + Vite + Supabase). Estética oscura,
 premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](ESTADO-PLATAFORMA.md)**.
 
+## 🚀 Beta lanzada (2026-10-23)
+Eric dijo «lánzalo»: `develop` → `main` (fast-forward), todo lo de la sección
+«Pendiente de lanzar» de abajo ya está en la app pública
+(https://palanca-zeta.vercel.app). Beta cerrada de ≤ 30 testers: Fulcro con IA,
+**3 preguntas de IA por usuario en total** (las de datos, sin límite), capturas
+15 envíos/día, «Confirm email» apagado hasta tener SMTP propio. Antes de lanzar:
+473 tests, build y e2e (16 pasos) en verde. Apagado de emergencia de la IA:
+`FULCRO_PUBLICO=false` en Vercel (Production) + redeploy; volver atrás entera:
+Vercel → Deployments → «Instant Rollback».
+
 ## Qué está vivo en producción (verificado)
 - **Motor con precisión al céntimo (Fase 1):** todo el dinero se guarda y se
   calcula en **céntimos enteros** (patrimonio exacto, sin deriva de float).
@@ -69,7 +79,7 @@ como miles, importes negativos y columna `tipo` opcional (el signo decide).
 **Decidido:** la categoría `Ahorro` (tipo gasto) es un **traspaso neutro**
 (`esTraspaso`): ni gasto ni cambio de patrimonio. Ya no se crea de serie.
 
-## ⏳ Pendiente de lanzar (en `develop`, NO en `main`)
+## ✅ Lanzado el 2026-10-23 (antes «Pendiente de lanzar»)
 Decisión del usuario (2026-10-14): **no lanzar aún**; se publica cuando él lo
 diga ("lánzalo" → fast-forward de `develop` a `main`). Incluye: Ahorro como
 traspaso, detector de suscripciones, pestaña Fijos (periodicidades,

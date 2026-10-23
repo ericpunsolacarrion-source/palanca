@@ -19,7 +19,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 | ✔ | Garantía "si no ahorras, te devolvemos" | **Descartada**: no se puede medir el ahorro | `docs/PREMIUM.md` |
 | 🟧 | **Fulcro "de datos" para todos** | Las respuestas al momento no usan IA: se podrían abrir ya en la app pública (también en Gratis, sin límite) aunque la IA siga en "Próximamente". ¿Sí? | `src/lib/respuestasLocales.js` |
 | 🟩 | Historial de Fulcro de 8 → 4 mensajes | Ahorra ≈ 20–30 % en charlas largas; puede restar algo de memoria | `api/consultor.js` |
-| 🟥 | **Cuándo lanzar** a la app pública | Cuando Eric diga "lánzalo": `develop` → `main` | `docs/ESTADO.md` |
+| ✔ | ~~Cuándo lanzar~~ **Lanzado el 23-10** (beta cerrada, ≤ 30 testers) | `develop` → `main` | `docs/ESTADO.md` |
 
 ## B. Pasos que solo puede hacer Eric (accesos)
 
@@ -29,7 +29,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 | ✔ | ~~Límite de gasto en Anthropic~~ **Hecho 15-10**: 5 $ de saldo sin recarga automática (tope natural). Opcional: límite mensual en Gasto → Límites | Que nunca haya un susto en la factura de IA | `docs/COSTES.md` §5 |
 | ✔ | ~~Clave de Anthropic en Vercel (solo Preview) + Redeploy~~ **Hecho 15-10**. Versión de prueba: palanca-git-develop-palanca-mac.vercel.app | Fulcro e importar por capturas en la versión de prueba | `docs/FULCRO.md` |
 | ✔ | ~~SQL v2 de `supabase-schema-fulcro.sql`~~ **Hecho 15-10** en palanca | Registro de uso de Fulcro más robusto | `docs/FULCRO.md` |
-| 🟥 | **Beta con Fulcro (decidido 23-10: 3 preguntas de IA por usuario en total, máx. 30 testers)**: 1) ~~ejecutar `supabase-schema-fulcro-beta.sql` en palanca~~ ✔ hecho 23-10; 2) en Vercel, editar la variable `ANTHROPIC_API_KEY` y marcar también **Production** (el resto ya va en el código: en producción, 3 preguntas en total y 15 envíos de capturas al día; apagado de emergencia: `FULCRO_PUBLICO=false`); 3) Supabase → «Confirm email» **desactivado** para la beta de 30 (el correo por defecto de Supabase solo envía a los miembros del equipo y ~2/hora): se activa con dominio + Resend (SMTP propio) antes de abrir al público; 4) Eric dice «lánzalo» | Abrir la app pública a la beta con IA limitada | `docs/FULCRO.md` |
+| 🟥 | **Beta con Fulcro (decidido 23-10: 3 preguntas de IA por usuario en total, máx. 30 testers)**: 1) ~~ejecutar `supabase-schema-fulcro-beta.sql` en palanca~~ ✔ hecho 23-10; 2) en Vercel, editar la variable `ANTHROPIC_API_KEY` y marcar también **Production** (el resto ya va en el código: en producción, 3 preguntas en total y 15 envíos de capturas al día; apagado de emergencia: `FULCRO_PUBLICO=false`); 3) Supabase → «Confirm email» **desactivado** para la beta de 30 (el correo por defecto de Supabase solo envía a los miembros del equipo y ~2/hora): se activa con dominio + Resend (SMTP propio) antes de abrir al público; 4) ~~Eric dice «lánzalo»~~ ✔ lanzado 23-10 | Abrir la app pública a la beta con IA limitada | `docs/FULCRO.md` |
 | 🟧 | Comprar dominio + cuenta Resend + variables | Encender los emails | `docs/RECORDATORIOS.md` |
 | 🟥 | Supabase Pro y Vercel Pro **antes de cobrar** | El plan gratis de Supabase se pausa sin actividad; Vercel Hobby es de uso no comercial (verificar) | `docs/COSTES.md` |
 | 🟥 | Alta de autónomo o sociedad, gestoría, IVA | Poder cobrar legalmente | `docs/COSTES.md` §2 |
