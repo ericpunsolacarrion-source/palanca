@@ -35,10 +35,10 @@ Las preguntas de DATOS se responden en el móvil con `src/lib/respuestasLocales.
 - Test: `src/lib/fulcroEric.test.js`.
 
 ## Estado
-En pruebas **solo en dev**: se enciende en los despliegues de prueba de Vercel
-(rama `develop` → "Preview"). En la app pública sigue en "Próximamente" hasta
-poner `FULCRO_PUBLICO=true`. Requiere `ANTHROPIC_API_KEY` en Vercel (solo
-Preview) y la tabla `fulcro_uso` (`supabase-schema-fulcro.sql`, ya ejecutado).
+Desde la beta (23-10) se enciende también en la app pública en cuanto
+`ANTHROPIC_API_KEY` está disponible para Production (apagado de emergencia:
+`FULCRO_PUBLICO=false`); en producción el cupo es de 3 preguntas en total.
+Requiere `ANTHROPIC_API_KEY` en Vercel y la tabla `fulcro_uso` (`supabase-schema-fulcro.sql`, ya ejecutado).
 
 ## Activarlo (5 minutos, una sola vez)
 1. console.anthropic.com → **API Keys** → crear clave. En **Limits**, poner un
@@ -97,7 +97,7 @@ angustia por dinero.
 - **Topes**: 10 preguntas/usuario/día (`FULCRO_LIMITE_DIARIO`), registro de
   tokens en `fulcro_uso`, y límite de gasto mensual en console.anthropic.com.
 - Variables: `CONSULTOR_MODELO`, `CONSULTOR_ESFUERZO`, `FULCRO_LIMITE_DIARIO`,
-  `FULCRO_PUBLICO`.
+  `FULCRO_LIMITE_TOTAL` (3 por defecto en Production), `FULCRO_PUBLICO=false` (apagar).
 
 Consulta de coste real en Supabase (SQL Editor):
 ```sql
@@ -137,7 +137,7 @@ ayuda de verdad y no rompe otra cosa.
 
 ## Cupo de la beta (23-10-2026)
 
-- `FULCRO_LIMITE_TOTAL=N` (solo en Production) cambia el tope de **N preguntas al día** a **N preguntas en total** por usuario; las de datos (motor) no cuentan nunca, las capturas tampoco.
+- `FULCRO_LIMITE_TOTAL=N` (en Production vale 3 sin poner nada) cambia el tope de **N preguntas al día** a **N preguntas en total** por usuario; las de datos (motor) no cuentan nunca, las capturas tampoco.
 - Función atómica `fulcro_reservar_total` (`supabase-schema-fulcro-beta.sql`); si no existe, cuenta sin fecha y, si no puede contar, bloquea (falla cerrado).
 - El panel muestra «Te quedan N preguntas con IA en la beta». Preview sigue con 10 al día (sin la variable).
 - Coste estimado con Haiku 5.5: ≈ 0,002 $ por pregunta → 50 personas × 3 = 150 preguntas ≈ **0,30 $** (peor caso ≈ 0,60 $).

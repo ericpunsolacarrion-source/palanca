@@ -28,14 +28,14 @@ const MAX_RESUMEN = 30000 // caracteres del resumen (corta payloads abusivos)
 const LIMITE_DIARIO = Number(process.env.FULCRO_LIMITE_DIARIO ?? 10)
 // Beta pública: tope de preguntas por usuario en TOTAL (no se renueva cada día).
 // Si es > 0 sustituye al diario. Se pone solo en Production (p. ej. 3).
-const LIMITE_TOTAL = Number(process.env.FULCRO_LIMITE_TOTAL ?? 0)
+// En Production, por defecto 3 (beta decidida el 23-10); en pruebas, sin tope total.
+const LIMITE_TOTAL = Number(process.env.FULCRO_LIMITE_TOTAL ?? ((process.env.VERCEL_ENV || 'development') === 'production' ? 3 : 0))
 const PERIODO = LIMITE_TOTAL > 0 ? 'total' : 'dia'
 const LIMITE = PERIODO === 'total' ? LIMITE_TOTAL : LIMITE_DIARIO
-// Fase de pruebas: Fulcro solo se enciende en los despliegues de prueba de
-// Vercel (rama develop → "Preview") y en local. En producción (la app pública)
-// sigue en "Próximamente" aunque exista la API key, hasta poner FULCRO_PUBLICO=true.
+// Beta abierta (23-10): en producción Fulcro se enciende en cuanto la API key
+// está disponible para Production. Interruptor de apagado: FULCRO_PUBLICO=false.
 const ENTORNO = process.env.VERCEL_ENV || 'development'
-const PERMITIDO_AQUI = ENTORNO !== 'production' || process.env.FULCRO_PUBLICO === 'true'
+const PERMITIDO_AQUI = ENTORNO !== 'production' || process.env.FULCRO_PUBLICO !== 'false'
 const ACTIVO = Boolean(process.env.ANTHROPIC_API_KEY) && PERMITIDO_AQUI
 // Respaldo automático ante rechazos: solo existe en los modelos grandes.
 const CON_RESPALDO = /^claude-(opus-5|opus-5-5|fable-5|fable-5-1|sonnet-5-5)$/.test(MODELO)

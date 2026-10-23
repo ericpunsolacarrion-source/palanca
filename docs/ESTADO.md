@@ -152,8 +152,8 @@ Supabase/Vercel):** clave de Anthropic en Vercel (Preview) para Fulcro; el
 SQL v2 de `supabase-schema-fulcro.sql` es opcional (sin él, modo respaldo).
 
 ## Fulcro (consultor IA) — en pruebas SOLO en dev (en `develop`)
-- **Solo en dev**: el servidor lo enciende fuera de producción (`VERCEL_ENV`);
-  en la app pública sigue "Próximamente" hasta `FULCRO_PUBLICO=true`.
+- **Beta**: en la app pública se enciende con la API key en Production, con
+  3 preguntas de IA por usuario en total (apagado: `FULCRO_PUBLICO=false`).
 - **Modo ahorro**: `claude-haiku-5-5` (~0,04 céntimos/pregunta; cambiable con
   `CONSULTOR_MODELO`), esfuerzo `low`, ≤4000 tokens (incluye su razonamiento), system prompt cacheado,
   **10 preguntas/usuario/día** en el servidor (`FULCRO_LIMITE_DIARIO`) y

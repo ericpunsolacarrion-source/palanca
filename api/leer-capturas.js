@@ -21,14 +21,15 @@ import { inicioDelDiaEnMadrid } from './consultor.js'
 const MODELO = process.env.CAPTURAS_MODELO || 'claude-haiku-5-5'
 const MAX_IMAGENES = 4 // por petición (el cliente envía en lotes)
 const MAX_BYTES_IMAGEN = 1_500_000 // base64 por imagen (el cliente las reduce a ~300 KB)
-const LIMITE_DIARIO = Number(process.env.CAPTURAS_LIMITE_DIARIO ?? 25) // peticiones/usuario/día
+// Peticiones/usuario/día: 15 en Production (un año entero cabe) y 25 en pruebas.
+const LIMITE_DIARIO = Number(process.env.CAPTURAS_LIMITE_DIARIO ?? ((process.env.VERCEL_ENV || 'development') === 'production' ? 15 : 25))
 const TIPOS = ['image/jpeg', 'image/png', 'image/webp']
 
-// Mismo criterio que Fulcro: en pruebas solo fuera de producción, salvo que se
-// abra al público con IA_PUBLICA=true (o FULCRO_PUBLICO=true).
+// Mismo criterio que Fulcro: en producción, activo con la API key salvo que se
+// apague con IA_PUBLICA=false (o FULCRO_PUBLICO=false).
 const ENTORNO = process.env.VERCEL_ENV || 'development'
 const PERMITIDO_AQUI =
-  ENTORNO !== 'production' || process.env.IA_PUBLICA === 'true' || process.env.FULCRO_PUBLICO === 'true'
+  ENTORNO !== 'production' || (process.env.IA_PUBLICA !== 'false' && process.env.FULCRO_PUBLICO !== 'false')
 const ACTIVO = Boolean(process.env.ANTHROPIC_API_KEY) && PERMITIDO_AQUI
 
 export const config = { maxDuration: 60 }
