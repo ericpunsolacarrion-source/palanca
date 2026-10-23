@@ -26,6 +26,11 @@ const MAX_TOKENS = 4000
 const MAX_RESUMEN = 30000 // caracteres del resumen (corta payloads abusivos)
 // Preguntas por usuario y día (se cuenta en la tabla fulcro_uso). 0 = sin límite.
 const LIMITE_DIARIO = Number(process.env.FULCRO_LIMITE_DIARIO ?? 10)
+// Beta pública: tope de preguntas por usuario en TOTAL (no se renueva cada día).
+// Si es > 0 sustituye al diario. Se pone solo en Production (p. ej. 3).
+const LIMITE_TOTAL = Number(process.env.FULCRO_LIMITE_TOTAL ?? 0)
+const PERIODO = LIMITE_TOTAL > 0 ? 'total' : 'dia'
+const LIMITE = PERIODO === 'total' ? LIMITE_TOTAL : LIMITE_DIARIO
 // Fase de pruebas: Fulcro solo se enciende en los despliegues de prueba de
 // Vercel (rama develop → "Preview") y en local. En producción (la app pública)
 // sigue en "Próximamente" aunque exista la API key, hasta poner FULCRO_PUBLICO=true.
@@ -207,7 +212,7 @@ export default async function handler(req, res) {
   // Solo depende de que exista la API key en el servidor: activarlo es poner
   // ANTHROPIC_API_KEY en Vercel y redesplegar.
   if (req.method === 'GET') {
-    return res.status(200).json({ activo: ACTIVO })
+    return res.status(200).json({ activo: ACTIVO, periodo: PERIODO, limite: LIMITE })
   }
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'GET, POST')
@@ -254,8 +259,12 @@ export default async function handler(req, res) {
   }
   if (reserva.bloqueado) {
     return res.status(429).json({
-      error: `Has usado tus ${LIMITE_DIARIO} preguntas de hoy. Mañana puedes seguir.`,
+      error:
+        PERIODO === 'total'
+          ? `Has usado tus ${LIMITE} preguntas de la beta. Las preguntas sobre tus datos siguen funcionando al momento.`
+          : `Has usado tus ${LIMITE} preguntas de hoy. Mañana puedes seguir.`,
       code: 'limite_diario',
+      periodo: PERIODO,
       restantes: 0,
     })
   }
@@ -297,8 +306,8 @@ export default async function handler(req, res) {
   }
   // Con la reserva atómica, usadasHoy ya incluye esta pregunta.
   const restantes =
-    LIMITE_DIARIO > 0 && usadasHoy !== null
-      ? Math.max(0, LIMITE_DIARIO - usadasHoy - (reserva.id ? 0 : 1))
+    LIMITE > 0 && usadasHoy !== null
+      ? Math.max(0, LIMITE - usadasHoy - (reserva.id ? 0 : 1))
       : null
   const textoDe = (respuesta) =>
     (respuesta.content || [])
@@ -323,7 +332,7 @@ export default async function handler(req, res) {
       const final = await flujo.finalMessage()
       await registrarUso(final)
       if (final.stop_reason === 'refusal') enviar({ t: 'rechazo', d: MENSAJE_RECHAZO })
-      enviar({ t: 'fin', restantes })
+      enviar({ t: 'fin', restantes, periodo: PERIODO })
     } catch (e) {
       registrarError(e)
       enviar({ t: 'error', d: mensajeDeError(e) })
@@ -338,10 +347,10 @@ export default async function handler(req, res) {
     await registrarUso(respuesta)
 
     if (respuesta.stop_reason === 'refusal') {
-      return res.status(200).json({ respuesta: MENSAJE_RECHAZO, restantes })
+      return res.status(200).json({ respuesta: MENSAJE_RECHAZO, restantes, periodo: PERIODO })
     }
     const texto = textoDe(respuesta)
-    return res.status(200).json({ respuesta: texto || 'No he sabido qué responder. Prueba a reformular.', restantes })
+    return res.status(200).json({ respuesta: texto || 'No he sabido qué responder. Prueba a reformular.', restantes, periodo: PERIODO })
   } catch (e) {
     registrarError(e)
     if (e instanceof Anthropic.AuthenticationError) {
@@ -354,7 +363,7 @@ export default async function handler(req, res) {
   }
 }
 
-// Reserva una pregunta del cupo diario.
+// Reserva una pregunta del cupo (diario o, en la beta, total).
 //  1) Atómica (SQL v2 `fulcro_reservar`): bloqueo por usuario + día de Madrid;
 //     imposible de saltar con peticiones en paralelo.
 //  2) Legado (si la función aún no existe): cuenta las de hoy (día de Madrid)
@@ -362,23 +371,25 @@ export default async function handler(req, res) {
 // Si falla la llamada al modelo, la pregunta reservada cuenta igualmente
 // (así nadie puede vaciar su contador provocando errores).
 async function reservarPregunta(sb, usuarioId) {
-  const { data, error } = await sb.rpc('fulcro_reservar', { p_limite: LIMITE_DIARIO, p_modelo: MODELO })
+  const funcion = PERIODO === 'total' ? 'fulcro_reservar_total' : 'fulcro_reservar'
+  const { data, error } = await sb.rpc(funcion, { p_limite: LIMITE, p_modelo: MODELO })
   if (!error) {
     const fila = Array.isArray(data) ? data[0] : data
-    if (!fila?.reserva_id) return { bloqueado: true, usadas: fila?.usadas_hoy ?? LIMITE_DIARIO }
+    if (!fila?.reserva_id) return { bloqueado: true, usadas: fila?.usadas_hoy ?? LIMITE }
     return { id: fila.reserva_id, usadas: fila.usadas_hoy }
   }
   // Función no disponible → modo legado (sin contar las capturas, que tienen su tope).
-  if (LIMITE_DIARIO <= 0) return { modo: 'legado' }
-  const { count, error: errCount } = await sb
+  if (LIMITE <= 0) return { modo: 'legado' }
+  let consulta = sb
     .from('fulcro_uso')
     .select('id', { count: 'exact', head: true })
     .eq('usuario_id', usuarioId)
     .not('modelo', 'like', 'capturas:%')
-    .gte('created_at', inicioDelDiaEnMadrid().toISOString())
+  if (PERIODO === 'dia') consulta = consulta.gte('created_at', inicioDelDiaEnMadrid().toISOString())
+  const { count, error: errCount } = await consulta
   // Sin poder contar, no se regala la pregunta: se bloquea (falla cerrado).
   if (errCount) return { bloqueado: true, sinContador: true }
-  if ((count ?? 0) >= LIMITE_DIARIO) return { bloqueado: true, usadas: count }
+  if ((count ?? 0) >= LIMITE) return { bloqueado: true, usadas: count }
   return { modo: 'legado', usadas: count ?? 0 }
 }
 

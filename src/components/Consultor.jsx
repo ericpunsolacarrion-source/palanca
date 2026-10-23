@@ -192,7 +192,8 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
   const [mensajes, setMensajes] = useState(() => leerConversacion(usuarioId))
   const [entrada, setEntrada] = useState('')
   const [enviando, setEnviando] = useState(false)
-  const [restantes, setRestantes] = useState(null) // preguntas que quedan hoy (null = sin dato)
+  const [restantes, setRestantes] = useState(null) // preguntas con IA que quedan (null = sin dato)
+  const [periodo, setPeriodo] = useState('dia') // 'dia' = cupo diario · 'total' = cupo de la beta
   const [preguntaPendiente, setPreguntaPendiente] = useState(null)
   const { objetivos } = useObjetivosCompartidos()
   const presupuesto = usePresupuestoCompartido()
@@ -243,7 +244,11 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
     let vigente = true
     fetch('/api/consultor')
       .then((r) => (r.ok ? r.json() : { activo: false }))
-      .then((d) => vigente && setActivo(Boolean(d.activo)))
+      .then((d) => {
+        if (!vigente) return
+        setActivo(Boolean(d.activo))
+        if (d.periodo) setPeriodo(d.periodo)
+      })
       .catch(() => vigente && setActivo(false))
     return () => {
       vigente = false
@@ -302,7 +307,7 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
           {
             rol: 'consultor',
             local: true,
-            texto: 'Has usado tus preguntas de hoy. Las de **datos** siguen funcionando al momento: por ejemplo, «¿cuánto he gastado en gasolina los últimos 3 meses?» o «¿cuánto pago en fijos al mes?».',
+            texto: `Has usado tus preguntas ${periodo === 'total' ? 'de la beta' : 'de hoy'}. Las de **datos** siguen funcionando al momento: por ejemplo, «¿cuánto he gastado en gasolina los últimos 3 meses?» o «¿cuánto pago en fijos al mes?».`,
           },
         ])
         setEntrada('')
@@ -348,6 +353,7 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
                 : datos.error || 'Ahora mismo no puedo responder. Inténtalo en un momento.'
           actualizarUltimo(() => ({ texto: aviso, error: true, pendiente: false }))
           if (datos.code === 'limite_diario') setRestantes(0)
+          if (datos.periodo) setPeriodo(datos.periodo)
           return
         }
 
@@ -372,7 +378,10 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
             if (ev.t === 'texto') actualizarUltimo((m) => ({ texto: m.texto + ev.d }))
             else if (ev.t === 'rechazo') actualizarUltimo(() => ({ texto: ev.d }))
             else if (ev.t === 'error') actualizarUltimo((m) => ({ texto: m.texto || ev.d, error: !m.texto }))
-            else if (ev.t === 'fin' && typeof ev.restantes === 'number') setRestantes(ev.restantes)
+            else if (ev.t === 'fin') {
+              if (typeof ev.restantes === 'number') setRestantes(ev.restantes)
+              if (ev.periodo) setPeriodo(ev.periodo)
+            }
           }
         }
         actualizarUltimo((m) => ({
@@ -385,7 +394,7 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
         setEnviando(false)
       }
     },
-    [enviando, mensajes, resumen, movimientos, recurrentes, restantes],
+    [enviando, mensajes, resumen, movimientos, recurrentes, restantes, periodo],
   )
 
   // Abrir con una pregunta desde otra pantalla (evento global).
@@ -624,8 +633,8 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
                   {restantes !== null && restantes <= 5 && (
                     <span className="consultor-restantes">
                       {restantes === 0
-                        ? 'Sin preguntas por hoy · '
-                        : `Te ${restantes === 1 ? 'queda 1 pregunta' : `quedan ${restantes} preguntas`} hoy · `}
+                        ? `Sin preguntas con IA ${periodo === 'total' ? 'en la beta' : 'por hoy'} · `
+                        : `Te ${restantes === 1 ? 'queda 1 pregunta' : `quedan ${restantes} preguntas`} con IA ${periodo === 'total' ? 'en la beta' : 'hoy'} · `}
                     </span>
                   )}
                   Orientación educativa, no asesoramiento financiero.

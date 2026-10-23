@@ -29,6 +29,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 | ✔ | ~~Límite de gasto en Anthropic~~ **Hecho 15-10**: 5 $ de saldo sin recarga automática (tope natural). Opcional: límite mensual en Gasto → Límites | Que nunca haya un susto en la factura de IA | `docs/COSTES.md` §5 |
 | ✔ | ~~Clave de Anthropic en Vercel (solo Preview) + Redeploy~~ **Hecho 15-10**. Versión de prueba: palanca-git-develop-palanca-mac.vercel.app | Fulcro e importar por capturas en la versión de prueba | `docs/FULCRO.md` |
 | ✔ | ~~SQL v2 de `supabase-schema-fulcro.sql`~~ **Hecho 15-10** en palanca | Registro de uso de Fulcro más robusto | `docs/FULCRO.md` |
+| 🟥 | **Beta con Fulcro (decidido 23-10: 3 preguntas de IA por usuario en total, máx. 30 testers)**: 1) ejecutar `supabase-schema-fulcro-beta.sql` en palanca; 2) en Vercel → Settings → Environment Variables, **solo Production**: `ANTHROPIC_API_KEY` (la misma), `FULCRO_PUBLICO=true`, `FULCRO_LIMITE_TOTAL=3`, `CAPTURAS_LIMITE_DIARIO=15`; 3) Supabase → «Confirm email» activado; 4) Eric dice «lánzalo» | Abrir la app pública a la beta con IA limitada | `docs/FULCRO.md` |
 | 🟧 | Comprar dominio + cuenta Resend + variables | Encender los emails | `docs/RECORDATORIOS.md` |
 | 🟥 | Supabase Pro y Vercel Pro **antes de cobrar** | El plan gratis de Supabase se pausa sin actividad; Vercel Hobby es de uso no comercial (verificar) | `docs/COSTES.md` |
 | 🟥 | Alta de autónomo o sociedad, gestoría, IVA | Poder cobrar legalmente | `docs/COSTES.md` §2 |

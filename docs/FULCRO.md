@@ -134,3 +134,10 @@ ANTHROPIC_API_KEY=sk-ant-... node scripts/probar-fulcro.mjs
 
 Úsalo tras cada cambio del system prompt: es la forma de ver si una mejora
 ayuda de verdad y no rompe otra cosa.
+
+## Cupo de la beta (23-10-2026)
+
+- `FULCRO_LIMITE_TOTAL=N` (solo en Production) cambia el tope de **N preguntas al día** a **N preguntas en total** por usuario; las de datos (motor) no cuentan nunca, las capturas tampoco.
+- Función atómica `fulcro_reservar_total` (`supabase-schema-fulcro-beta.sql`); si no existe, cuenta sin fecha y, si no puede contar, bloquea (falla cerrado).
+- El panel muestra «Te quedan N preguntas con IA en la beta». Preview sigue con 10 al día (sin la variable).
+- Coste estimado con Haiku 5.5: ≈ 0,002 $ por pregunta → 50 personas × 3 = 150 preguntas ≈ **0,30 $** (peor caso ≈ 0,60 $).
