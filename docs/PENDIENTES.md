@@ -69,6 +69,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 - 🟧 **Demo avanzada, segunda vuelta** (Eric, 15-10: "después ya trabajaremos con más profundidad"): la versión 1 recorre cada pantalla. Ideas: enseñar acciones en vivo (renombrar un "ALIPAM", confirmar un fijo, retirar de una inversión), un capítulo de importación con un extracto de ejemplo, y medir en el panel en qué paso se sale la gente.
 
 ### Diseño y marca
+- 🟧 **Rediseño profesional (29-10)**: Eric quiere quitar el «look IA». Propuestas en capturas: A · Cristal (vidrio + tarjeta sólida verde, de su referencia de Instagram), B · Papel (editorial, serif, sin cajas, apuntar como frase), C · Bloque (azul a sangre, bloques, teclado propio). **Pendiente: Eric elige (o mezcla) con el equipo**; después se rediseña toda la app y se actualiza `docs/DISENO.md`.
 - 🟩 **Mascota** de Fulcro (aparcada; ver `docs/marca/`).
 - 🟩 Pulir pantallas secundarias (simuladores, cuenta, onboarding, logros) con el sistema visual v2.
 
