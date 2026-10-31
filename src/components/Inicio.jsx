@@ -1,13 +1,14 @@
 import { etiquetaCategoria } from '../lib/categorias'
 import { useMemo } from 'react'
 import { esInversion, esTraspaso, formatearEuros } from '../lib/categorias'
-import { etiquetaMes, formatearPorcentaje, limiteGastoPresupuesto } from '../lib/movimientosUtils'
+import { agregarPorMes, etiquetaMes, formatearFecha, formatearPorcentaje, limiteGastoPresupuesto } from '../lib/movimientosUtils'
 import { conceptoDe, fechaRelativa, resumenDelMes } from '../lib/inicio'
 import { usePresupuestoCompartido } from '../lib/DatosCompartidos'
 import Patrimonio from './Patrimonio'
 import AvisosCobros from './AvisosCobros'
 import Icono from './Icono'
 import { preguntarAFulcro } from '../lib/fulcro'
+import { esV3 } from '../lib/diseno'
 
 // INICIO: lo esencial de un vistazo, en orden de importancia.
 //   1. Lo que tienes (patrimonio, cómo ha cambiado, evolución).
@@ -238,6 +239,77 @@ function UltimosMovimientos({ movimientos, onVerTodos }) {
   )
 }
 
+// Diseño v3: el mes en cuatro tarjetas. La del ahorro es la sólida (la que
+// manda); las cifras salen de las mismas utilidades que el resto de Inicio.
+function Rejilla({ movimientos }) {
+  const presupuesto = usePresupuestoCompartido()
+  const r = useMemo(() => resumenDelMes(movimientos), [movimientos])
+  const serie = useMemo(() => agregarPorMes(movimientos, 6).map((m) => m.ahorro), [movimientos])
+  const t = r.totales
+  const max = Math.max(1, ...serie.map((v) => Math.max(0, v)))
+  const limite = presupuesto.configurado ? limiteGastoPresupuesto(presupuesto, t.ingresos) : null
+  const restante = limite != null ? limite - t.gastos : null
+
+  const ingresoMayor = useMemo(() => {
+    const delMes = movimientos.filter((m) => m.tipo === 'ingreso' && m.fecha.slice(0, 7) === r.clave && !esInversion(m) && !esTraspaso(m))
+    return delMes.sort((a, b) => Number(b.importe) - Number(a.importe))[0] ?? null
+  }, [movimientos, r.clave])
+  const plataformas = useMemo(
+    () => new Set(movimientos.filter((m) => esInversion(m) && m.fuente_id).map((m) => m.fuente_id)).size,
+    [movimientos],
+  )
+
+  const gastoNota =
+    restante != null
+      ? restante >= 0
+        ? `${formatearEuros(Math.round(restante))} libres · ${formatearEuros(Math.floor(restante / Math.max(1, r.diasRestantes)))}/día`
+        : `Te has pasado ${formatearEuros(Math.round(-restante))}`
+      : r.ritmo
+        ? Math.abs(r.ritmo.difPct) <= 5
+          ? 'Como siempre'
+          : `${r.ritmo.difPct > 0 ? '+' : '−'}${Math.round(Math.abs(r.ritmo.difPct))} % que de costumbre`
+        : `Quedan ${r.diasRestantes} días`
+
+  return (
+    <section className="v3-rejilla fade-in-up" aria-label="Así va el mes">
+      <div className="v3-tarjeta solida">
+        <span className="v3-tarjeta-cab">
+          {t.ahorro >= 0 ? `Ahorrado en ${etiquetaMes(r.clave, { month: 'short' }).toLowerCase().replace('.', '')}.` : 'Este mes vas en'}
+          <Icono nombre="sube" tam={14} />
+        </span>
+        <span className="v3-tarjeta-cifra">
+          {t.ahorro < 0 ? '−' : ''}
+          {formatearEuros(redondoSiGrande(Math.abs(t.ahorro)))}
+        </span>
+        <span className="v3-barritas" aria-hidden="true">
+          {serie.map((v, i) => (
+            <i key={i} style={{ height: `${Math.max(8, (Math.max(0, v) / max) * 100)}%` }} />
+          ))}
+        </span>
+      </div>
+      <div className="v3-tarjeta">
+        <span className="v3-tarjeta-cab">Gastado<Icono nombre="menos" tam={14} /></span>
+        <span className="v3-tarjeta-cifra">{formatearEuros(redondoSiGrande(t.gastos))}</span>
+        <span className={`v3-pastilla ${restante != null && restante < 0 ? 'mal' : 'neutra'}`}>{gastoNota}</span>
+      </div>
+      <div className="v3-tarjeta">
+        <span className="v3-tarjeta-cab">Ingresos<Icono nombre="mas" tam={14} /></span>
+        <span className="v3-tarjeta-cifra">{formatearEuros(redondoSiGrande(t.ingresos))}</span>
+        <span className="v3-pastilla">
+          {ingresoMayor ? `${conceptoDe(ingresoMayor)} · ${formatearFecha(ingresoMayor.fecha).slice(0, 5)}` : 'Aún sin ingresos'}
+        </span>
+      </div>
+      <div className="v3-tarjeta">
+        <span className="v3-tarjeta-cab">Invertido este mes<Icono nombre="inversion" tam={14} /></span>
+        <span className="v3-tarjeta-cifra">{formatearEuros(redondoSiGrande(t.invertido))}</span>
+        <span className="v3-pastilla laton">
+          {plataformas === 1 ? '1 plataforma' : plataformas > 1 ? `${plataformas} plataformas` : 'Sin plataformas'}
+        </span>
+      </div>
+    </section>
+  )
+}
+
 export default function Inicio({
   usuarioId,
   movimientos,
@@ -261,6 +333,7 @@ export default function Inicio({
         onVerInversion={() => onIrA('inversiones')}
         soloLectura={soloLectura}
       />
+      {esV3() && <Rejilla movimientos={movimientos} />}
       <AccionesRapidas usuarioId={soloLectura ? null : usuarioId} onRegistrar={onRegistrar} diasSinRegistrar={soloLectura ? 0 : diasSinRegistrar} />
       <AvisosCobros
         cargando={cargandoRecurrentes}

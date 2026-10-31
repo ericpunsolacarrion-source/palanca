@@ -1,4 +1,5 @@
 import Icono from './Icono'
+import { esV3 } from '../lib/diseno'
 
 const PESTANAS = [
   { id: 'dashboard', etiqueta: 'Inicio', icono: 'inicio' },
@@ -11,12 +12,14 @@ const PESTANAS = [
 
 // `avisos`: { [idPestaña]: número } → globo de pendientes (p. ej. cobros por
 // confirmar este mes en Suscripciones).
-export default function BottomNav({ activa, onCambiar, avisos = {} }) {
+export default function BottomNav({ activa, onCambiar, onApuntar, avisos = {} }) {
+  // Diseño v3: barra flotante con el «+» de apuntar en el centro.
+  const conMas = esV3() && onApuntar
   return (
     <nav className="bottom-nav">
-      {PESTANAS.map((p) => {
+      {PESTANAS.flatMap((p, i) => {
         const esActiva = activa === p.id || p.tambien?.includes(activa)
-        return (
+        const boton = (
         <button
           key={p.id}
           type="button"
@@ -24,6 +27,7 @@ export default function BottomNav({ activa, onCambiar, avisos = {} }) {
           className={esActiva ? 'nav-item activo' : 'nav-item'}
           onClick={() => onCambiar(p.id)}
           aria-current={esActiva ? 'page' : undefined}
+          aria-label={p.etiqueta}
         >
           <span className="nav-icono">
             <Icono nombre={p.icono} tam={22} />
@@ -32,6 +36,14 @@ export default function BottomNav({ activa, onCambiar, avisos = {} }) {
           <span className="nav-etiqueta">{p.etiqueta}</span>
         </button>
         )
+        return conMas && i === 2
+          ? [
+              <button key="mas" type="button" className="nav-mas" onClick={onApuntar} aria-label="Apuntar un gasto">
+                <Icono nombre="mas" tam={24} />
+              </button>,
+              boton,
+            ]
+          : [boton]
       })}
     </nav>
   )

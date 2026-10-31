@@ -4,7 +4,8 @@ import { supabase } from './lib/supabaseClient'
 import { useAuth } from './lib/useAuth'
 import { cerrarSesionAuth } from './lib/auth'
 import { iniciarAnalitica, registrarEvento } from './lib/analitica'
-import { EVENTO_IR } from './lib/fulcro'
+import { EVENTO_IR, preguntarAFulcro } from './lib/fulcro'
+import { esV3 } from './lib/diseno'
 import Auth from './components/Auth'
 import PantallaCarga from './components/PantallaCarga'
 import CuentaPanel from './components/CuentaPanel'
@@ -53,6 +54,7 @@ import { esAjuste } from './lib/categorias'
 import { estadoCobro } from './lib/periodicidad'
 import TourRapido from './components/TourRapido'
 import './App.css'
+import './diseno-v3.css'
 
 // Pestañas no iniciales cargadas bajo demanda (code-splitting): aligeran el
 // arranque del dashboard. Cada una se descarga al entrar en su pestaña.
@@ -496,6 +498,11 @@ function App() {
         >
           <Icono nombre={ocultos ? 'ojoOculto' : 'ojo'} tam={18} />
         </button>
+        {esV3() && (
+          <button type="button" className="app-cuenta app-fulcro" onClick={() => preguntarAFulcro()} aria-label="Preguntar a Fulcro" title="Preguntar a Fulcro">
+            <Icono nombre="consultor" tam={18} />
+          </button>
+        )}
         <button
           className="app-cuenta"
           onClick={() => setVerCuenta(true)}
@@ -705,7 +712,7 @@ function App() {
         </Suspense>
       </main>
 
-      <BottomNav activa={pestana} onCambiar={irAPestana} avisos={{ suscripciones: nPendientesFijos }} />
+      <BottomNav activa={pestana} onCambiar={irAPestana} onApuntar={() => irARegistrar('gasto')} avisos={{ suscripciones: nPendientesFijos }} />
       <Toaster />
       <Confirmador />
       {verCuenta && (

@@ -1,0 +1,407 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   DISEÑO v3 «VIDRIO» (docs/DISENO.md). Solo se aplica con
+   <html data-diseno="v3"> (src/lib/diseno.js): versión de pruebas y local.
+   Fondo cálido con luz, tarjetas de cristal claro, UNA tarjeta sólida verde
+   por pantalla, verde pino para la marca y latón solo para la inversión.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:root[data-diseno='v3'] {
+  /* Marca */
+  --pino: #14332c;
+  --verde: #1f6b57;
+  --laton: #c9973f;
+
+  /* Superficies: cristal claro sobre el fondo cálido */
+  --bg: #ede6da;
+  --card-bg: rgba(255, 253, 249, 0.74);
+  --card-bg-2: rgba(255, 255, 255, 0.9);
+  --card-solida: #fbf8f2;
+  --border: rgba(22, 32, 28, 0.08);
+  --borde-fuerte: rgba(22, 32, 28, 0.16);
+  --borde-brillo: linear-gradient(var(--border), var(--border));
+
+  /* Texto */
+  --text: #56615c;
+  --text-h: #16201c;
+  --text-3: #7f8a84;
+
+  /* Acento: verde Palanca (rellenos con texto blanco 5,9:1; texto sobre papel 5,6:1) */
+  --accent: #1f6b57;
+  --accent-2: #1f6b57;
+  --accent-glow: rgba(31, 107, 87, 0.16);
+
+  /* Semánticos */
+  --ingreso: #23794f;
+  --gasto: #a9502c;
+  --inversion: #9c7224;
+  --inversion-glow: rgba(201, 151, 63, 0.16);
+
+  /* Gráficos por categoría */
+  --cat-1: #1f6b57;
+  --cat-2: #c9973f;
+  --cat-3: #14332c;
+  --cat-4: #8db3a5;
+  --cat-5: #a9502c;
+  --cat-6: #b6ad9c;
+
+  /* Tinta sobre rellenos de color */
+  --tinta-accent: #ffffff;
+  --tinta-cian: #ffffff;
+  --tinta-pildora: #ffffff;
+  --tinta-ingreso: #ffffff;
+  --tinta-gasto: #ffffff;
+  --tinta-inversion: #1c1303;
+  --tinta-inversion-palida: #1c1303;
+  --gasto-claro: #c4704d;
+
+  /* Forma y elevación: tarjetas redondeadas que flotan un poco */
+  --radio-s: 12px;
+  --radio-m: 20px;
+  --radio-l: 26px;
+  --sombra-card: 0 12px 28px -18px rgba(40, 30, 20, 0.35);
+
+  --fuente: 'Plus Jakarta Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  color-scheme: light;
+  font-feature-settings: normal;
+  letter-spacing: -0.01em;
+}
+
+/* Fondo: papel cálido con luz verde y latón (no es un degradado de marca: es la
+   «luz» sobre la que se ve el cristal; muy suave y fija). */
+:root[data-diseno='v3'] body {
+  background:
+    radial-gradient(60% 34% at 92% 4%, rgba(31, 107, 87, 0.30) 0%, transparent 70%),
+    radial-gradient(55% 32% at 0% 46%, rgba(201, 151, 63, 0.26) 0%, transparent 70%),
+    radial-gradient(70% 34% at 90% 96%, rgba(31, 107, 87, 0.20) 0%, transparent 70%),
+    linear-gradient(180deg, #f0eadf 0%, #e6ddce 100%);
+  background-attachment: fixed;
+}
+
+/* Cristal: superficies con sombra suave y borde claro */
+:root[data-diseno='v3'] .ini-card,
+:root[data-diseno='v3'] .hp,
+:root[data-diseno='v3'] .card {
+  border-color: rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--sombra-card);
+}
+
+/* Etiquetas de sección: sin mono ni mayúsculas espaciadas (señal de «hecho con IA») */
+:root[data-diseno='v3'] .tb-hero-label,
+:root[data-diseno='v3'] .cc-titulo,
+:root[data-diseno='v3'] .cc-subtitulo,
+:root[data-diseno='v3'] .av-titulo,
+:root[data-diseno='v3'] .tb-bio-clave,
+:root[data-diseno='v3'] .logros-grupo-titulo,
+:root[data-diseno='v3'] .consultor-insights-titulo,
+:root[data-diseno='v3'] .presu-cards .etiqueta,
+:root[data-diseno='v3'] .presupuesto .balance-item .etiqueta,
+:root[data-diseno='v3'] .cuenta-peligro-titulo,
+:root[data-diseno='v3'] .saludo-fecha {
+  font-family: var(--fuente);
+  font-size: var(--fs-s);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Cabecera transparente, marca en verde pino */
+:root[data-diseno='v3'] .app-header {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 0;
+  padding: 12px 16px 4px;
+}
+:root[data-diseno='v3'] .app-header h1.app-logo,
+:root[data-diseno='v3'] .marca {
+  color: var(--pino);
+  font-weight: 800;
+}
+:root[data-diseno='v3'] .app-cuenta {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: rgba(255, 253, 249, 0.72);
+  color: var(--text-h);
+}
+
+:root[data-diseno='v3'] .saludo .saludo-usuario {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+/* Navegación flotante de cristal con el «+» en el centro */
+:root[data-diseno='v3'] .app {
+  position: relative;
+}
+:root[data-diseno='v3'] main {
+  padding-bottom: calc(104px + env(safe-area-inset-bottom));
+}
+:root[data-diseno='v3'] .bottom-nav {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  height: 66px;
+  padding: 0 8px;
+  align-items: center;
+  border-radius: 33px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: rgba(255, 253, 249, 0.72);
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  box-shadow: inset 0 1px 0 #fff, 0 14px 30px -14px rgba(40, 30, 20, 0.4);
+  z-index: 40;
+}
+:root[data-diseno='v3'] .nav-item {
+  flex: 1 1 0;
+  flex-direction: row;
+  justify-content: center;
+  gap: 6px;
+  height: 48px;
+  padding: 0 6px;
+  border-radius: 24px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+}
+:root[data-diseno='v3'] .nav-item .nav-etiqueta {
+  display: none;
+}
+:root[data-diseno='v3'] .nav-item.activo {
+  flex: 1.25 1 0;
+  background: var(--pino);
+  color: #fff;
+}
+:root[data-diseno='v3'] .nav-item.activo .icono {
+  color: #fff;
+}
+:root[data-diseno='v3'] .nav-item.activo::before {
+  display: none;
+}
+:root[data-diseno='v3'] .nav-mas {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--verde);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  margin: 0 4px;
+  box-shadow: 0 8px 18px -6px rgba(31, 107, 87, 0.7);
+}
+
+/* Sin mayúsculas espaciadas ni letra mono en las etiquetas (generado desde App.css) */
+:root[data-diseno='v3'] {
+  --fuente-mono: var(--fuente);
+}
+:root[data-diseno='v3'] .apunte .over,
+:root[data-diseno='v3'] .av-titulo,
+:root[data-diseno='v3'] .badge-fijo,
+:root[data-diseno='v3'] .cc-subtitulo,
+:root[data-diseno='v3'] .cc-titulo,
+:root[data-diseno='v3'] .celebracion-badge,
+:root[data-diseno='v3'] .consultor-insights-titulo,
+:root[data-diseno='v3'] .consultor-teaser-badge,
+:root[data-diseno='v3'] .cuenta-peligro-titulo,
+:root[data-diseno='v3'] .cuenta-seccion,
+:root[data-diseno='v3'] .fulcro-ficha-etiqueta,
+:root[data-diseno='v3'] .fulcro-origen,
+:root[data-diseno='v3'] .fulcro-privacidad summary,
+:root[data-diseno='v3'] .hp-etiqueta,
+:root[data-diseno='v3'] .ini-subtitulo,
+:root[data-diseno='v3'] .logros-grupo-titulo,
+:root[data-diseno='v3'] .objetivo-tipo-badge,
+:root[data-diseno='v3'] .pa-etiqueta,
+:root[data-diseno='v3'] .pa-guion-cab,
+:root[data-diseno='v3'] .periodo-hoy,
+:root[data-diseno='v3'] .pm-kpi-etq,
+:root[data-diseno='v3'] .pm-tabla th,
+:root[data-diseno='v3'] .pp-badge,
+:root[data-diseno='v3'] .presu-cards .etiqueta,
+:root[data-diseno='v3'] .presupuesto .balance-item .etiqueta,
+:root[data-diseno='v3'] .rec-badge,
+:root[data-diseno='v3'] .tb-bio-clave,
+:root[data-diseno='v3'] .tb-hero-label,
+:root[data-diseno='v3'] .ini-meta,
+:root[data-diseno='v3'] .saludo-fecha {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+/* Fulcro: píldora de cristal encima de la barra, con su latón */
+:root[data-diseno='v3'] .consultor-fab {
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  right: 18px;
+  background: rgba(255, 253, 249, 0.82);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 10px 24px -12px rgba(40, 30, 20, 0.45);
+  font-weight: 700;
+}
+:root[data-diseno='v3'] .consultor-fab-icono {
+  color: var(--inversion);
+}
+
+/* ── Inicio: el mes en cuatro tarjetas (una sólida) ──────────────────────── */
+.v3-rejilla {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.v3-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 118px;
+  padding: 14px 15px;
+  border-radius: 24px;
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--sombra-card);
+  min-width: 0;
+}
+.v3-tarjeta-cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.v3-tarjeta-cab .icono {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text-h);
+}
+.v3-tarjeta-cifra {
+  margin-top: auto;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.v3-pastilla {
+  align-self: flex-start;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(31, 107, 87, 0.12);
+  color: var(--verde);
+}
+.v3-pastilla.neutra {
+  background: rgba(22, 32, 28, 0.07);
+  color: var(--text);
+}
+.v3-pastilla.mal {
+  background: rgba(169, 80, 44, 0.12);
+  color: var(--gasto);
+}
+.v3-pastilla.laton {
+  background: rgba(201, 151, 63, 0.18);
+  color: var(--inversion);
+}
+.v3-tarjeta.solida {
+  background: var(--verde);
+  border-color: var(--verde);
+  box-shadow: 0 16px 30px -14px rgba(31, 107, 87, 0.75);
+}
+.v3-tarjeta.solida .v3-tarjeta-cab,
+.v3-tarjeta.solida .v3-tarjeta-cifra {
+  color: #fff;
+}
+.v3-tarjeta.solida .v3-tarjeta-cab .icono {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.v3-barritas {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 22px;
+}
+.v3-barritas i {
+  flex: 1;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.35);
+}
+.v3-barritas i:last-child {
+  background: #fff;
+}
+/* El mes ya está en las tarjetas: «Así va…» se queda con el presupuesto,
+   el ritmo y en qué se va. */
+:root[data-diseno='v3'] .ini-mes-ahorro,
+:root[data-diseno='v3'] .ini-trio {
+  display: none;
+}
+
+/* Patrimonio más compacto: la cifra manda y el mes vive en las tarjetas */
+:root[data-diseno='v3'] .hp-etiqueta {
+  font-family: var(--fuente);
+  font-size: var(--fs-s);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+}
+:root[data-diseno='v3'] .hp-cifra {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+:root[data-diseno='v3'] .hp-linea-meses,
+:root[data-diseno='v3'] .hp-reparto {
+  display: none;
+}
+:root[data-diseno='v3'] .hp-linea {
+  margin: 10px 0 2px;
+  height: 48px;
+}
+:root[data-diseno='v3'] .hp-linea svg {
+  height: 48px;
+}
+
+/* Fulcro: botón en la cabecera (el flotante se retira en v3) */
+:root[data-diseno='v3'] .consultor-fab {
+  display: none;
+}
+:root[data-diseno='v3'] .app-header {
+  gap: 8px;
+}
+:root[data-diseno='v3'] .app-header h1.app-logo {
+  margin-right: auto;
+}
+:root[data-diseno='v3'] .app-fulcro .icono {
+  color: var(--inversion);
+}
+
+/* Escritorio: la misma barra flotante, sin las píldoras con borde de v2 */
+@media (min-width: 860px) {
+  :root[data-diseno='v3'] .bottom-nav {
+    left: 50%;
+    right: auto;
+    width: 440px;
+    transform: translateX(-50%);
+  }
+  :root[data-diseno='v3'] .nav-item:not(.activo) {
+    border: 0;
+    background: transparent;
+  }
+}
