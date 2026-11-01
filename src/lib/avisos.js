@@ -36,7 +36,7 @@ export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Dat
         tipo: 'renovacion',
         recId: c.rec.id,
         porConfirmar,
-        titulo: porConfirmar ? `${c.rec.nombre} se renueva ${c.dias === 0 ? 'hoy' : c.texto}` : `${c.rec.nombre} se renueva ${c.texto}`,
+        titulo: c.dias === 0 ? `${c.rec.nombre} se renueva hoy` : c.dias < 0 ? `${c.rec.nombre} se renovó ${c.texto}` : `${c.rec.nombre} se renueva ${c.texto}`,
         detalle: `${formatearEuros(c.importe)} · ${periodoDe(c.rec).etiqueta.toLowerCase()}. Buen momento para ver si te compensa.`,
         importe: c.importe,
         dias: c.dias,

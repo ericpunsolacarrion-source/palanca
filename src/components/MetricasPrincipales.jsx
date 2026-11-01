@@ -122,7 +122,7 @@ export default function MetricasPrincipales({
 
       <div className="ratio-ahorro-linea">
         <span>Ratio de ahorro</span>
-        <span>{formatearPorcentaje(ratioAhorro)}</span>
+        <span>{formatearPorcentaje(ratioAhorro, 0)}</span>
       </div>
       <div className="ratio-barra">
         <div className="ratio-barra-relleno" style={{ width: `${Math.min(Math.max(ratioAhorro, 0), 100)}%` }} />

@@ -120,6 +120,9 @@ export function momentoParaNegociar(rec, tipo, hoy = new Date()) {
       const desde = new Date(renov.getTime() - 45 * DIA)
       const hasta = new Date(renov.getTime() - 30 * DIA)
       const fmt = (d) => d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }).replace('.', '')
+      // Ya se renovó (pendiente de confirmar): no tiene sentido «aún puedes».
+      if (p.dias < 0) return { texto: `Se renovó el ${fmt(renov)}: apúntate negociarlo antes de la próxima renovación`, urgente: false, fecha: null }
+      if (p.dias === 0) return { texto: 'Renueva hoy: aún puedes llamar y pedir que te mejoren el precio', urgente: true, fecha: p.fecha }
       if (p.dias < 30) return { texto: `Renueva el ${fmt(renov)}: aún puedes pedir que te mejoren el precio`, urgente: true, fecha: p.fecha }
       if (p.dias <= 45) return { texto: `Es el momento: renueva el ${fmt(renov)}. Actúa antes del ${fmt(hasta)}`, urgente: true, fecha: iso(hasta) }
       return { texto: `Apúntalo: el mejor momento es del ${fmt(desde)} al ${fmt(hasta)}`, urgente: false, fecha: iso(desde) }

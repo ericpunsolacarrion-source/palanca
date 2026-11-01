@@ -102,7 +102,12 @@ describe.each(PERFILES)('cliente $id ($banco)', (perfil) => {
   it('Fijos: el gimnasio y Netflix de este mes ya están pagados (sin doble cobro)', () => {
     const rec = (id, nombre, importe, diaMes) => ({ id, tipo: 'gasto', nombre, importe, diaMes, activo: true, periodoMeses: 1, mesesAplicados: [] })
     const r = conciliarFijos([rec('a', 'Netflix', 13.99, 3), rec('b', 'Gimnasio', 39.9, 6), rec('c', 'Spotify', 10.99, 5)], imp.movs)
-    for (const x of r) expect(`${x.nombre}: ${x.detectado?.importe}`).toBe(`${x.nombre}: ${x.importe}`)
+    // Los que aún no han llegado este mes (p. ej. hoy es día 1) no pueden estar pagados.
+    const dia = new Date().getDate()
+    for (const x of r) {
+      const esperado = x.diaMes <= dia ? x.importe : undefined
+      expect(`${x.nombre}: ${x.detectado?.importe}`).toBe(`${x.nombre}: ${esperado}`)
+    }
   })
 })
 
