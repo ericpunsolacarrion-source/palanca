@@ -533,8 +533,8 @@ export default function Recurrentes({ usuarioId, movimientos, onRegistrado, abri
 
   return (
     <div className="tubase vista fade-in-up">
-      <Hero gastoMes={gastoMes} gastoAnual={gastoAnual} nActivos={nActivos} estado={estado} />
-
+      {/* Dos columnas en el ordenador (v3); en el móvil se intercalan con «order». */}
+      <div className="col-b">
       <PlanAhorro usuarioId={usuarioId} recurrentes={items} onActualizar={actualizar} />
 
       {items.some((r) => r.activo) && <CalendarioCobros items={items} onAbrir={setDetalle} />}
@@ -547,6 +547,9 @@ export default function Recurrentes({ usuarioId, movimientos, onRegistrado, abri
           onAnadir={crear}
         />
       )}
+      </div>
+      <div className="col-a">
+      <Hero gastoMes={gastoMes} gastoAnual={gastoAnual} nActivos={nActivos} estado={estado} />
 
       {cargando && items.length === 0 && (
         <div className="skeleton skeleton-linea" style={{ width: '70%', height: 44, marginTop: 24 }} />
@@ -578,6 +581,7 @@ export default function Recurrentes({ usuarioId, movimientos, onRegistrado, abri
       <button type="button" className="tb-add" onClick={() => setForm({})}>
         <span aria-hidden="true">+</span> Añadir compromiso
       </button>
+      </div>
 
       {detalle && (
         <DetalleSheet

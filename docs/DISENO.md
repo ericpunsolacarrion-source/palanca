@@ -48,6 +48,25 @@ van en frase normal.
 - **Fulcro en la cabecera** (icono en latón), en lugar del botón flotante.
 - Lo que sigue igual que en v2: sin emojis, iconos de `Icono.jsx` y el color siempre significa algo.
 
+### Pantalla grande (v3, 03-11)
+El **ancho de la pantalla** decide la distribución, no el tipo de aparato (`src/diseno-v3.css`, bloque «PANTALLA GRANDE»):
+
+| Ancho | Distribución |
+|---|---|
+| < 600 px (móvil) | Una columna; barra flotante abajo con el «+». |
+| 600–1023 px (tablet) | Una columna de hasta 760 px centrada; barra flotante centrada. |
+| ≥ 1024 px (ordenador) | Cabecera a todo el ancho con la marca encima del **menú lateral** («Apuntar» arriba y pestañas con nombre); contenido hasta 1.280 px (1.520 px desde 1.600 px). |
+
+En el ordenador cada pantalla reparte su contenido:
+- **Inicio:** dos columnas (7/5): a la izquierda patrimonio, acciones y el mes; a la derecha las cuatro tarjetas, los avisos y los últimos movimientos.
+- **Fijos:** la lista a la izquierda; el plan de ahorro, el calendario y las detectadas a la derecha.
+- **Plan:** presupuesto y planificación, uno al lado del otro.
+- **Inversión:** lo invertido y su historia a la izquierda; «Aportar/Retirar» a la derecha y fijo al hacer scroll.
+- **Apuntar:** el formulario centrado, a 760 px.
+- **Fulcro:** panel lateral derecho a toda la altura.
+
+Las columnas son contenedores (`.ini-col`, `.col-a`/`.col-b`) que en el móvil desaparecen (`display: contents`) y se intercalan con `order`, así que el móvil mantiene el orden de siempre.
+
 ### Inicio (v3)
 1. Saludo.
 2. Patrimonio en cristal, compacto: cifra, variación del mes y línea.

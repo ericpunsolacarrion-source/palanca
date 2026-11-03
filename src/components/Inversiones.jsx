@@ -303,7 +303,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
   }
 
   return (
-    <div className="vista">
+    <div className="vista inv-vista">
       <div className="balance fade-in-up">
         <span className="balance-etiqueta-principal">Total invertido</span>
         <Cifra valor={totalInvertido} className="balance-hero inversion" />

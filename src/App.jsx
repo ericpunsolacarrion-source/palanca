@@ -683,7 +683,7 @@ function App() {
         )}
 
         {pestana === 'presupuesto' && (
-          <div key="presupuesto" className="vista">
+          <div key="presupuesto" className="vista plan-vista">
             <Presupuesto usuarioId={usuarioId} movimientos={movimientosMes} gastoEstimado={gastoEstimado} />
             <PlanificacionFutura usuarioId={usuarioId} movimientos={movimientos} />
           </div>

@@ -40,6 +40,7 @@ export default function BottomNav({ activa, onCambiar, onApuntar, avisos = {} })
           ? [
               <button key="mas" type="button" className="nav-mas" onClick={onApuntar} aria-label="Apuntar un gasto">
                 <Icono nombre="mas" tam={24} />
+                <span className="nav-mas-texto">Apuntar</span>
               </button>,
               boton,
             ]

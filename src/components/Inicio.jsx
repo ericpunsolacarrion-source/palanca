@@ -204,7 +204,7 @@ function MesEnCurso({ movimientos, onVerAnalisis, onVerPresupuesto }) {
 function UltimosMovimientos({ movimientos, onVerTodos }) {
   const ultimos = movimientos.slice(0, 5)
   return (
-    <section className="ini-card fade-in-up" aria-label="Últimos movimientos">
+    <section className="ini-card ini-ultimos fade-in-up" aria-label="Últimos movimientos">
       <header className="ini-card-cab">
         <h2 className="ini-titulo">Últimos movimientos</h2>
         <button type="button" className="link" onClick={onVerTodos}>
@@ -326,6 +326,8 @@ export default function Inicio({
 }) {
   return (
     <div className="ini">
+      {/* Dos columnas en el ordenador (v3); en el móvil se intercalan con «order». */}
+      <div className="ini-col ini-col-a">
       <Patrimonio
         usuarioId={usuarioId}
         movimientos={movimientos}
@@ -333,8 +335,11 @@ export default function Inicio({
         onVerInversion={() => onIrA('inversiones')}
         soloLectura={soloLectura}
       />
-      {esV3() && <Rejilla movimientos={movimientos} />}
       <AccionesRapidas usuarioId={soloLectura ? null : usuarioId} onRegistrar={onRegistrar} diasSinRegistrar={soloLectura ? 0 : diasSinRegistrar} />
+      <MesEnCurso movimientos={movimientos} onVerAnalisis={onVerAnalisis} onVerPresupuesto={() => onIrA('presupuesto')} />
+      </div>
+      <div className="ini-col ini-col-b">
+      {esV3() && <Rejilla movimientos={movimientos} />}
       <AvisosCobros
         cargando={cargandoRecurrentes}
         usuarioId={usuarioId}
@@ -344,8 +349,8 @@ export default function Inicio({
         onConfirmar={onConfirmarCobro}
         avisosRenovacion={avisosRenovacion}
       />
-      <MesEnCurso movimientos={movimientos} onVerAnalisis={onVerAnalisis} onVerPresupuesto={() => onIrA('presupuesto')} />
       <UltimosMovimientos movimientos={movimientos} onVerTodos={() => onRegistrar('historial')} />
+      </div>
     </div>
   )
 }

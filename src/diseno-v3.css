@@ -405,3 +405,260 @@
     background: transparent;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   PANTALLA GRANDE (v3). El ancho decide la distribución, no el aparato:
+   - móvil (< 600 px): una columna y barra flotante abajo;
+   - tablet (600–1023 px): una columna más ancha y centrada;
+   - ordenador (≥ 1024 px): menú lateral, cabecera a todo el ancho y el
+     contenido repartido en retícula usando toda la pantalla.
+   ════════════════════════════════════════════════════════════════════════════ */
+.nav-mas-texto {
+  display: none;
+}
+/* Inicio en el móvil: las dos columnas se deshacen y se intercalan en el orden
+   de siempre (patrimonio, mes en tarjetas, acciones, avisos, el mes, últimos). */
+.ini-col {
+  display: contents;
+}
+.ini-col-a > .hp { order: 1; }
+.ini-col-b > .v3-rejilla { order: 2; }
+.ini-col-a > .ini-acciones { order: 3; }
+.ini-col-b > .av,
+.ini-col-b > .av-invitacion { order: 4; }
+.ini-col-a > .ini-mes { order: 5; }
+.ini-col-b > .ini-ultimos { order: 6; }
+/* Fijos en el móvil: mismo truco (las columnas solo existen en el ordenador) */
+.tubase > .col-a,
+.tubase > .col-b {
+  display: contents;
+}
+.tubase .tb-hero { order: 1; }
+.tubase .pa { order: 2; }
+.tubase .cc { order: 3; }
+.tubase .tb-detectadas { order: 4; }
+.tubase .col-a > * { order: 5; }
+.tubase .col-a > .tb-hero { order: 1; }
+
+@media (min-width: 600px) and (max-width: 1023px) {
+  :root[data-diseno='v3'] .app {
+    max-width: 760px;
+  }
+  :root[data-diseno='v3'] .bottom-nav {
+    left: 50%;
+    right: auto;
+    width: min(560px, calc(100% - 28px));
+    transform: translateX(-50%);
+  }
+  :root[data-diseno='v3'] .nav-item:not(.activo) {
+    border: 0;
+    background: transparent;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root[data-diseno='v3'] .app {
+    max-width: none;
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  /* Cabecera a todo el ancho: la marca queda encima del menú lateral */
+  :root[data-diseno='v3'] .app-header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    padding: 18px 32px 14px 28px;
+    border-bottom: 1px solid rgba(22, 32, 28, 0.08);
+  }
+  :root[data-diseno='v3'] main {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 24px 40px 48px;
+  }
+  :root[data-diseno='v3'] main > * {
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Menú lateral: «Apuntar» arriba y las pestañas con su nombre */
+  :root[data-diseno='v3'] .bottom-nav {
+    position: static;
+    grid-column: 1;
+    grid-row: 2;
+    transform: none;
+    width: auto;
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 24px 16px;
+    border: 0;
+    border-right: 1px solid rgba(22, 32, 28, 0.08);
+    border-radius: 0;
+    background: rgba(255, 253, 249, 0.5);
+    box-shadow: none;
+  }
+  :root[data-diseno='v3'] .nav-item,
+  :root[data-diseno='v3'] .nav-item.activo {
+    flex: none;
+    justify-content: flex-start;
+    gap: 12px;
+    height: 46px;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  :root[data-diseno='v3'] .nav-item .nav-etiqueta {
+    display: inline;
+  }
+  :root[data-diseno='v3'] .nav-item:not(.activo):hover {
+    background: rgba(22, 32, 28, 0.05);
+  }
+  :root[data-diseno='v3'] .nav-mas {
+    order: -1;
+    width: auto;
+    height: 50px;
+    margin: 0 0 14px;
+    border-radius: 14px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 800;
+  }
+  :root[data-diseno='v3'] .nav-mas-texto {
+    display: inline;
+  }
+
+  /* Segmentados de cabecera (Resumen | Análisis, Nuevo | Historial…): ancho fijo y cómodo */
+  :root[data-diseno='v3'] .sub-tabs {
+    align-self: flex-start;
+    width: 360px;
+    max-width: 100%;
+  }
+  :root[data-diseno='v3'] .sub-tabs > button {
+    flex: 1;
+  }
+  /* Las vistas dejan de ser la rejilla de 2 de v2: cada pantalla decide */
+  :root[data-diseno='v3'] .vista {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  :root[data-diseno='v3'] .vista > * {
+    grid-column: auto;
+  }
+
+  /* Apuntar: el formulario centrado y a un ancho cómodo de leer */
+  :root[data-diseno='v3'] .vista > .apunte,
+  :root[data-diseno='v3'] .vista > .registro-movimiento:not(.inv-vista > *) {
+    width: 100%;
+    max-width: 760px;
+    align-self: center;
+  }
+
+  /* Fijos: la lista a la izquierda; plan de ahorro, calendario y detectadas a la derecha */
+  :root[data-diseno='v3'] .tubase {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 16px 24px;
+    align-items: start;
+  }
+  :root[data-diseno='v3'] .tubase > .col-a,
+  :root[data-diseno='v3'] .tubase > .col-b {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+  :root[data-diseno='v3'] .tubase > .col-a { grid-column: 1; grid-row: 1; }
+  :root[data-diseno='v3'] .tubase > .col-b { grid-column: 2; grid-row: 1; }
+
+  /* Plan: presupuesto y planificación, uno al lado del otro */
+  :root[data-diseno='v3'] .plan-vista {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 24px;
+    align-items: start;
+  }
+
+  /* Inversión: lo invertido y su historia a la izquierda; aportar o retirar a la derecha */
+  :root[data-diseno='v3'] .inv-vista {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 16px 24px;
+    align-items: start;
+  }
+  :root[data-diseno='v3'] .inv-vista > * {
+    grid-column: 1;
+  }
+  :root[data-diseno='v3'] .inv-vista > .registro-movimiento {
+    grid-column: 2;
+    grid-row: 1 / span 6;
+    position: sticky;
+    top: 0;
+  }
+
+  /* Inicio: dos columnas que fluyen cada una a su ritmo (sin huecos): lo tuyo
+     a la izquierda (≈58 %), el mes y lo que pide atención a la derecha. */
+  :root[data-diseno='v3'] .ini {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 16px;
+    align-items: start;
+  }
+  :root[data-diseno='v3'] .ini-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+  :root[data-diseno='v3'] .v3-tarjeta {
+    min-height: 150px;
+  }
+
+  /* Fulcro: panel lateral derecho a toda la altura, no una hoja que sube */
+  :root[data-diseno='v3'] .consultor-overlay {
+    justify-content: flex-end;
+    align-items: stretch;
+  }
+  :root[data-diseno='v3'] .consultor-panel {
+    max-width: 440px;
+    height: 100%;
+    border-radius: 0;
+    border: 0;
+    border-left: 1px solid var(--borde-fuerte);
+    animation: v3-entrar-derecha 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes v3-entrar-derecha {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+@media (min-width: 1600px) {
+  :root[data-diseno='v3'] .app {
+    grid-template-columns: 272px minmax(0, 1fr);
+  }
+  :root[data-diseno='v3'] main {
+    padding: 28px 56px 56px;
+  }
+  :root[data-diseno='v3'] main > * {
+    max-width: 1520px;
+  }
+}
+
+/* v2 (app pública) en escritorio: sus vistas son una rejilla de 2 en la que todo
+   ocupa el ancho; las columnas de Fijos no existen allí (display: contents). */
+@media (min-width: 860px) {
+  :root:not([data-diseno='v3']) .tubase > .col-a > *,
+  :root:not([data-diseno='v3']) .tubase > .col-b > * {
+    grid-column: span 2;
+  }
+}
