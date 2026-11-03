@@ -27,7 +27,7 @@ Al terminar: datos de ejemplo + demo rápida (ver §3). El saldo inicial NO cuen
 
 ## Navegación
 
-> **Diseño v3 (versión de pruebas):** barra flotante de cristal con solo iconos (la activa en píldora pino) y un «+» verde en el centro que abre Movimientos → Nuevo (gasto). Fulcro se abre desde el icono de la cabecera. En Inicio, tras el patrimonio, una cuadrícula de 4 tarjetas (ahorrado sólida, gastado, ingresos, invertido este mes). Ver `docs/DISENO.md`.
+> **Diseño v4 (versión de pruebas):** Inicio · Dinero · Apuntar · Fijos · Futuro (Futuro = Presupuesto · Inversión · Simuladores). Barra sólida con nombres y «Apuntar» en el centro; menú lateral en el ordenador. Inicio v4 con balance del mes contra tu media (días 1–3 cierra el mes anterior), el Fiel, lo apartado por mes y en qué se fue. Apuntar ya no marca categoría antes del importe. Ver `docs/DISENO.md`.
 
 Cabecera con la **marca**, el **ojo** (modo discreto) y el acceso a la cuenta. Barra inferior **siempre visible** (solo el contenido central hace scroll), con **iconos SVG propios** (`Icono.jsx`), indicador del activo y **5 pestañas**: Inicio · Movimientos · **Fijos** (con globo de cobros por confirmar) · **Plan** (segmentado Presupuesto | Simuladores; internamente pestañas `presupuesto` y `simulador`) · Inversión. En escritorio (≥860 px) se convierte en píldoras horizontales.
 

@@ -12,12 +12,19 @@
 PWA de finanzas personales (React 19 + Vite + Supabase). Estética oscura,
 premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](ESTADO-PLATAFORMA.md)**.
 
-## 🎨 Diseño v3 «Vidrio» en pruebas (2026-10-31)
-En develop (la versión de pruebas) la app ya se ve con el diseño nuevo:
-papel cálido con luz, cristal, una tarjeta sólida verde, verde pino y latón,
-Plus Jakarta Sans y navegación flotante con «+». La app pública sigue en v2
-(`src/lib/diseno.js` decide por dominio; `?diseno=v2|v3` para forzar). Detalle
-en `docs/DISENO.md`.
+## 🎨 Diseño v4 «El punto de apoyo» en pruebas (2026-11-03)
+En develop la app ya se ve con el diseño definitivo:
+- tinta sobre papel, latón como firma y logo «La P de apoyo»;
+- serifa en las cifras;
+- navegación Inicio · Dinero · Apuntar · Fijos · Futuro;
+- Inicio con lógica: cierre de mes, el Fiel y cifras contra tu media;
+- versión de ordenador a pantalla completa.
+
+La app pública sigue en v2 (`?diseno=v2|v4` para forzar).
+
+**Calidad automática:** `npm run e2e` (recorrido completo + auditoría visual de 11 pantallas × 3 anchos), y GitHub Actions («Revisión») en cada subida a develop/main.
+
+Detalle en `docs/DISENO.md`.
 
 ## 🚀 Beta lanzada (2026-10-23)
 Eric dijo «lánzalo»: `develop` → `main` (fast-forward), todo lo de la sección

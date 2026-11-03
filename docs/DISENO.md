@@ -1,83 +1,104 @@
 # Sistema visual de Palanca
 
-> **Estado (31-10-2026):** conviven dos diseños.
-> - **v3 «Vidrio»**, el nuevo, elegido por Eric: se ve en la versión de pruebas y en local.
+> **Estado (03-11-2026):** conviven dos diseños.
+> - **v4 «El punto de apoyo»**, el definitivo, elegido por Eric: se ve en la versión de pruebas y en local.
 > - **v2**, el oscuro de abajo: sigue en la app pública hasta que Eric diga «lánzalo» con el diseño.
 >
-> Interruptor: `src/lib/diseno.js` (`<html data-diseno="v3">`). Se fuerza con
-> `?diseno=v3` o `?diseno=v2` y el navegador lo recuerda. Estilos v3:
-> `src/diseno-v3.css`, que se carga después de `App.css` y solo actúa con
-> `data-diseno="v3"`.
+> Interruptor: `src/lib/diseno.js` (`<html data-diseno="v4">`). Se fuerza con `?diseno=v4` o `?diseno=v2`. El v3 «Vidrio» se retiró: quien lo tuviera guardado pasa a v4.
+> Estilos v4: `src/diseno-v4.css`, que se carga después de `App.css` y solo actúa con `data-diseno="v4"`.
+> Manual de marca con maquetas: capturas v4.1 / v4.2 enviadas a Eric (01-11).
 
-## v3 «Vidrio» (el nuevo)
+## v4 «El punto de apoyo»
 
-**Idea:** papel cálido con luz, tarjetas de cristal claro y **una sola tarjeta
-sólida verde por pantalla** (la que manda). Sereno, preciso y cercano. Nunca
-neón-fintech, banco corporativo ni app de juguete.
+**Idea:** Palanca es el punto fijo desde el que mueves tu dinero. Es un instrumento de precisión: tinta sobre papel, el latón como firma y una barra (el Fiel) que se equilibra con tus datos.
 
-### Color
-| Token | Valor | Uso |
+**Nunca:**
+- cristal, degradados, sombras ni resplandores;
+- gasto en rojo ni mensajes que culpan;
+- más de un camino para apuntar;
+- iconos sin nombre en la navegación;
+- latón en algo que no trabaje para ti.
+
+### Color (60 papel · 30 tinta · 7 ahorro/gasto · 3 latón y teja)
+| Token | Valor | Significa |
 |---|---|---|
-| `--pino` | `#14332C` | Marca: logo, menú activo, textos de marca. |
-| `--verde` / `--accent` | `#1F6B57` | Acción principal, la tarjeta sólida, el «+», enlaces y selección. Texto blanco encima. |
-| `--laton` | `#C9973F` | Solo **inversión y Fulcro** (el punto de apoyo). En texto, `--inversion` `#9C7224`. |
-| `--gasto` | `#A9502C` | Terracota: vencimientos, pasarse del presupuesto, gasto. |
-| `--ingreso` | `#23794F` | Ingresos y cifras que mejoran. |
-| Fondo | `#F0EADF → #E6DDCE` | Papel con 3 luces suaves (verde arriba a la derecha, latón a la izquierda y verde abajo). Es fijo y no es un degradado de marca. |
-| Cristal | blanco al 74 % | Tarjetas, con borde blanco y sombra suave. Para cifras, nunca menos de un 70 % de opacidad. |
-| Texto | `#16201C` · `#56615C` · `#7F8A84` | Principal · secundario · metadatos. |
+| `--papel` | `#F4EFE6` | Fondo: el lugar estable. |
+| `--hoja` | `#FBF9F4` | Tarjetas, con filete `--filete` `#DDD5C6` de 1 px y radio 8. |
+| `--tinta` | `#1A1A17` | Lo tuyo: texto, cifras, botón principal y logo. |
+| `--laton` / `--laton-texto` | `#B8873A` / `#7F5C1E` | Lo que trabaja: inversión, el ▲ del logo y del Fiel. El latón claro nunca va como texto sobre papel. |
+| `--ahorro-v4` | `#2F6B4F` | Lo que apartas (y los ingresos). |
+| `--gasto` | `#4A4A45` | Consumo: neutro, **nunca rojo** (el rojo hace que la gente deje de mirar su dinero). |
+| `--teja` | `#A4462E` | Actuar ahora: una renovación negociable, pasarse del presupuesto. |
 
-### Logo
-**«La P que crece»** (el mismo dibujo, `Marca` en `Icono.jsx`) en **verde
-pino**. El icono de la app y el favicon pasarán a P blanca sobre pino cuando
-el diseño v3 se lance al público. Hasta entonces se mantienen en índigo,
-porque se ven también en la app pública.
+Todo el texto pasa AA (≥ 4,5:1); lo comprueba la auditoría automática.
+
+### Logo «La P de apoyo»
+P maciza con el fulcro (▲ latón) como contraforma, sobre una rejilla de 24:
+- fuste de 4;
+- panza de radio 5,5;
+- ▲ con base de 5,8 a 1,7 del borde.
+
+Componente `Marca` (`Icono.jsx`). El logotipo es «palanca» en minúsculas, en serifa.
+
+Icono de la app y favicon: P en papel sobre tinta. **Pendiente de cambiar al lanzar**, porque ahora se ven también en la app pública.
 
 ### Letra
-**Plus Jakarta Sans** (autoalojada, `@fontsource-variable/plus-jakarta-sans`),
-en peso 800 para cifras y títulos y 600–700 para el resto. Cifras con
-dígitos tabulares. **Sin mayúsculas espaciadas ni letra mono**: las etiquetas
-van en frase normal.
+- **Source Serif 4** para las cifras y los títulos.
+- **Instrument Sans** para la interfaz.
+- Las dos van autoalojadas (`@fontsource-variable/*`).
+- Cifras tabulares; sin mayúsculas espaciadas ni letra mono.
 
-### Reglas
-- **Una tarjeta sólida por pantalla.** En Inicio es «Ahorrado en oct.»; las demás son de cristal.
-- **El cristal, sobre el fondo con luz.** Nunca cristal sobre cristal ni texto pequeño sobre cristal transparente.
-- **Navegación flotante de cristal** con el **«+» verde** en el centro (apuntar un gasto).
-  - La pestaña activa es una píldora pino.
-  - Los iconos tienen nombre accesible (`aria-label`).
-- **Fulcro en la cabecera** (icono en latón), en lugar del botón flotante.
-- Lo que sigue igual que en v2: sin emojis, iconos de `Icono.jsx` y el color siempre significa algo.
+### La firma: el Fiel (`Fiel` en `InicioV4.jsx`)
+- Barra con el apoyo (▲) al 25 %.
+- Su inclinación es el ratio de ahorro del mes ÷ 30 × 6°, con un tope de ±6°:
+  - sube si ahorras;
+  - queda plana si te quedas igual;
+  - baja si gastas más de lo que entra.
+- Al cambiar el dato se asienta como una balanza (600 ms). No se anima nada más.
 
-### Pantalla grande (v3, 03-11)
-El **ancho de la pantalla** decide la distribución, no el tipo de aparato (`src/diseno-v3.css`, bloque «PANTALLA GRANDE»):
+### Navegación
+**Inicio · Dinero · Apuntar · Fijos · Futuro.** «Futuro» agrupa Presupuesto, Inversión y Simuladores con subpestañas.
 
-| Ancho | Distribución |
-|---|---|
-| < 600 px (móvil) | Una columna; barra flotante abajo con el «+». |
-| 600–1023 px (tablet) | Una columna de hasta 760 px centrada; barra flotante centrada. |
-| ≥ 1024 px (ordenador) | Cabecera a todo el ancho con la marca encima del **menú lateral** («Apuntar» arriba y pestañas con nombre); contenido hasta 1.280 px (1.520 px desde 1.600 px). |
+- **Móvil:** barra sólida abajo, con el nombre bajo cada icono y «Apuntar» (bloque de tinta) en el centro.
+- **Ordenador** (≥ 1024 px): menú lateral, con «Apuntar» arriba.
+- **Fulcro:** se abre desde la cabecera. En el ordenador es un panel lateral.
 
-En el ordenador cada pantalla reparte su contenido:
-- **Inicio:** dos columnas (7/5): a la izquierda patrimonio, acciones y el mes; a la derecha las cuatro tarjetas, los avisos y los últimos movimientos.
-- **Fijos:** la lista a la izquierda; el plan de ahorro, el calendario y las detectadas a la derecha.
-- **Plan:** presupuesto y planificación, uno al lado del otro.
-- **Inversión:** lo invertido y su historia a la izquierda; «Aportar/Retirar» a la derecha y fijo al hacer scroll.
-- **Apuntar:** el formulario centrado, a 760 px.
-- **Fulcro:** panel lateral derecho a toda la altura.
+### Inicio (`Inicio.jsx` + `InicioV4.jsx`; cálculo en `balanceInicio`, `lib/inicio.js`)
+1. **Patrimonio.**
+2. **Balance del mes:**
+   - los días 1–3, «Octubre, cerrado»;
+   - del día 4 en adelante, «Noviembre en curso»;
+   - incluye el Fiel y 4 cifras (entró, se fue, apartaste, invertido), cada una **contra tu media** de los meses previos con datos;
+   - la etiqueta «tu mejor mes» solo aparece si supera a todos.
+3. **«Noviembre empieza»** (días 1–3): propuesta de meta con tu media. Es el único bloque en tinta.
+4. Avisos (lo próximo).
+5. **Lo que apartas cada mes:** barras con la línea de tu media.
+6. **En qué se fue:** cada categoría frente a su media; se destaca **lo que más sube**, no lo más grande.
+7. Últimos movimientos.
 
-Las columnas son contenedores (`.ini-col`, `.col-a`/`.col-b`) que en el móvil desaparecen (`display: contents`) y se intercalan con `order`, así que el móvil mantiene el orden de siempre.
+En el ordenador, los bloques 1, 2, 5 y 6 van a la izquierda y el resto a la derecha.
 
-### Inicio (v3)
-1. Saludo.
-2. Patrimonio en cristal, compacto: cifra, variación del mes y línea.
-3. **Cuadrícula de 4 tarjetas:**
-   - ahorrado (sólida, con barritas de los 6 meses);
-   - gastado (presupuesto libre o ritmo);
-   - ingresos (el mayor del mes);
-   - invertido este mes (plataformas).
-4. Acciones, avisos y el resto de Inicio.
+### Pantalla grande
+El ancho decide la distribución, no el tipo de aparato:
+- **menos de 600 px:** móvil;
+- **600–1023 px:** columna centrada de 760 px;
+- **1024 px o más:** menú lateral y dos columnas.
 
-Todas las cifras salen de `resumenDelMes` y `agregarPorMes`, como siempre.
+Las columnas son contenedores (`.ini-col`, `.col-a`/`.col-b`) que en el móvil desaparecen (`display: contents`) y se ordenan con `order`.
+
+### Calidad: auditoría automática (`npm run e2e`, y en GitHub en cada subida)
+La app real con datos simulados (`tests/e2e`) pasa por:
+- el **recorrido completo** (16 pasos), en móvil y en ordenador;
+- la **auditoría visual**: 11 pantallas × 3 anchos.
+
+Falla si encuentra:
+- scroll lateral;
+- textos cortados;
+- contraste por debajo de 4,5:1;
+- botones sin nombre;
+- errores de la app.
+
+Las capturas quedan en `tests/e2e/salida/` (y como artefacto en GitHub).
 
 ---
 
