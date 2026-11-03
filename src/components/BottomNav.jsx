@@ -1,5 +1,5 @@
 import Icono from './Icono'
-import { esV3 } from '../lib/diseno'
+import { esV4 } from '../lib/diseno'
 
 const PESTANAS = [
   { id: 'dashboard', etiqueta: 'Inicio', icono: 'inicio' },
@@ -10,14 +10,24 @@ const PESTANAS = [
   { id: 'inversiones', etiqueta: 'Inversión', icono: 'inversion' },
 ]
 
+// v4: Inicio · Dinero · [Apuntar] · Fijos · Futuro. «Futuro» agrupa
+// Presupuesto, Inversión y Simuladores (subpestañas en App.jsx).
+const PESTANAS_V4 = [
+  { id: 'dashboard', etiqueta: 'Inicio', icono: 'inicio' },
+  { id: 'movimientos', etiqueta: 'Dinero', icono: 'movimientos' },
+  { id: 'suscripciones', etiqueta: 'Fijos', icono: 'fijos' },
+  { id: 'presupuesto', etiqueta: 'Futuro', icono: 'presupuesto', tambien: ['simulador', 'inversiones'] },
+]
+
 // `avisos`: { [idPestaña]: número } → globo de pendientes (p. ej. cobros por
 // confirmar este mes en Suscripciones).
 export default function BottomNav({ activa, onCambiar, onApuntar, avisos = {} }) {
-  // Diseño v3: barra flotante con el «+» de apuntar en el centro.
-  const conMas = esV3() && onApuntar
+  // Diseño v4: «Apuntar» en el centro de la barra (o arriba del menú lateral).
+  const v4 = esV4()
+  const conMas = v4 && onApuntar
   return (
     <nav className="bottom-nav">
-      {PESTANAS.flatMap((p, i) => {
+      {(v4 ? PESTANAS_V4 : PESTANAS).flatMap((p, i) => {
         const esActiva = activa === p.id || p.tambien?.includes(activa)
         const boton = (
         <button

@@ -63,7 +63,19 @@ const MARCA_SVG = {
   pBucle: 'M14.6 3.5h2.6a4.5 4.5 0 0 1 0 9h-2.6v-3.2h2.6a1.3 1.3 0 0 0 0-2.6h-2.6Z',
 }
 
+// v4 «La P de apoyo»: P maciza con el fulcro (▲, latón) como contraforma.
+// Construcción en docs/DISENO.md (rejilla de 24: fuste 4, panza de radio 5,5).
+const MARCA_V4 = { p: 'M5 3H13.5A5.5 5.5 0 0 1 13.5 14H9V21H5Z', fulcro: 'M10.6 12.3H16.4L13.5 6.9Z' }
+
 export function Marca({ tam = 22, color = 'var(--accent-2)', className = '' }) {
+  if (document.documentElement.dataset.diseno === 'v4') {
+    return (
+      <svg viewBox="0 0 24 24" width={tam} height={tam} className={`marca ${className}`} aria-hidden="true">
+        <path d={MARCA_V4.p} fill="var(--tinta)" />
+        <path d={MARCA_V4.fulcro} fill="var(--laton)" />
+      </svg>
+    )
+  }
   const { barras, pAsta, pBucle } = MARCA_SVG
   return (
     <svg viewBox="0 0 24 24" width={tam} height={tam} className={`marca ${className}`} aria-hidden="true">
