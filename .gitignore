@@ -35,3 +35,4 @@ backup_*.sql
 *.sln
 *.sw?
 .Rhistory
+tests/e2e/salida/

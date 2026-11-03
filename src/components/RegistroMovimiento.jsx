@@ -95,7 +95,9 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
     [lugar, modo, movimientos, categoriasOrdenadas, lugares, esInversion],
   )
   const categoriaPorImporte = useMemo(
-    () => (esInversion ? null : categoriaProbable(movimientos, modo, importe)),
+    // Sin importe no se adivina nada: antes salía «Ocio» marcado de serie y se
+    // guardaban gastos mal sin darse cuenta (simulación de usuarios, 01-11).
+    () => (esInversion || !(Number(importe) > 0) ? null : categoriaProbable(movimientos, modo, importe)),
     [movimientos, modo, importe, esInversion],
   )
   useEffect(() => {

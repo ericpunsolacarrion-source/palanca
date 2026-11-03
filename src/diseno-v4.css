@@ -59,6 +59,9 @@
   --tinta-inversion: #1a1a17;
   --tinta-inversion-palida: #1a1a17;
   --gasto-claro: #6f6b62;
+  --inversion-claro: var(--laton);
+  --inversion-palido: #efe0bf;
+  --inversion-oscuro: var(--laton-texto);
 
   /* Forma: instrumento de precisión */
   --radio-s: 6px;
@@ -158,6 +161,15 @@
   box-shadow: none;
 }
 
+/* Subpestañas de tres (Futuro: Presupuesto · Inversión · Simuladores) en una fila */
+:root[data-diseno='v4'] .ini-vistas {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 0;
+  padding: 0;
+}
+
 /* Barra inferior (móvil): sólida, con NOMBRE bajo cada icono y «Apuntar» en el centro */
 :root[data-diseno='v4'] main {
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
@@ -174,7 +186,7 @@
   flex: 1 1 0;
   gap: 3px;
   padding: 4px 2px;
-  color: #77736a;
+  color: #67635a;
   font-size: 11.5px;
   font-weight: 600;
   border-radius: 6px;
@@ -311,7 +323,6 @@
   display: contents;
 }
 .ini-col-a > .hp { order: 1; }
-.ini-col-b > .v3-rejilla { order: 2; }
 .ini-col-a > .ini-acciones { order: 3; }
 .ini-col-b > .av,
 .ini-col-b > .av-invitacion { order: 4; }
@@ -516,9 +527,6 @@
     flex-direction: column;
     gap: 16px;
     min-width: 0;
-  }
-  :root[data-diseno='v4'] .v3-tarjeta {
-    min-height: 150px;
   }
 
   /* Fulcro: panel lateral derecho a toda la altura, no una hoja que sube */

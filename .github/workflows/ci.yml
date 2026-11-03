@@ -1,0 +1,37 @@
+# Revisión automática en cada subida a develop y main (y en cada PR):
+# pruebas del motor, compilación, recorrido completo en el navegador y
+# auditoría visual (móvil, tablet y ordenador). Si algo falla, se ve en GitHub
+# y las capturas quedan como artefacto descargable.
+name: Revisión
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Pruebas del motor
+        run: npx vitest run
+      - name: Compilación
+        run: npx vite build
+      - name: Navegador para las pruebas
+        run: npx playwright install --with-deps chromium
+      - name: Recorrido completo y auditoría visual
+        run: npm run e2e
+      - name: Capturas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas
+          path: tests/e2e/salida
+          retention-days: 7
