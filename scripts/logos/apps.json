@@ -1,0 +1,290 @@
+{
+ "temu": [
+  "Temu",
+  "(^| )temu( |$)"
+ ],
+ "burgerking": [
+  "Burger King",
+  "burger king"
+ ],
+ "gopro": [
+  "GoPro",
+  "(^| )gopro( |$)"
+ ],
+ "perplexity": [
+  "Perplexity",
+  "(^| )perplexity( |$)"
+ ],
+ "binance": [
+  "Binance",
+  "(^| )binance( |$)"
+ ],
+ "whatsapp": [
+  "WhatsApp",
+  "(^| )whatsapp( |$)"
+ ],
+ "buscounchollo": [
+  "BuscoUnChollo",
+  "busco ?un ?chollo"
+ ],
+ "tripcom": [
+  "Trip.com",
+  "(^| )trip com( |$)"
+ ],
+ "ticketmaster": [
+  "Ticketmaster",
+  "(^| )ticketmaster( |$)"
+ ],
+ "infojobs": [
+  "InfoJobs",
+  "(^| )infojobs( |$)"
+ ],
+ "cochesnet": [
+  "coches.net",
+  "(^| )coches net( |$)"
+ ],
+ "caixabank": [
+  "CaixaBank",
+  null
+ ],
+ "lineadirecta": [
+  "Línea Directa",
+  null
+ ],
+ "tradeinn": [
+  "Tradeinn",
+  "(^| )tradeinn( |$)"
+ ],
+ "alsa": [
+  "Alsa",
+  "(^| )alsa( |$)"
+ ],
+ "etoro": [
+  "eToro",
+  "(^| )etoro( |$)"
+ ],
+ "googlegemini": [
+  "Gemini",
+  null
+ ],
+ "lefties": [
+  "Lefties",
+  "(^| )lefties( |$)"
+ ],
+ "terabox": [
+  "TeraBox",
+  "(^| )terabox( |$)"
+ ],
+ "easyjet": [
+  "easyJet",
+  "(^| )easyjet( |$)"
+ ],
+ "wix": [
+  "Wix",
+  "^wix$|(^| )wix com( |$)"
+ ],
+ "googlesheets": [
+  "Google Sheets",
+  "google sheets|hojas de calculo de google"
+ ],
+ "shopify": [
+  "Shopify",
+  "(^| )shopify( |$)"
+ ],
+ "bereal": [
+  "BeReal",
+  "(^| )bereal( |$)"
+ ],
+ "clickandboat": [
+  "Click&Boat",
+  "click ?(and|y)? ?boat"
+ ],
+ "disneyplus": [
+  "Disney+",
+  null
+ ],
+ "mediaset": [
+  "Mediaset",
+  "(^| )mediaset( |$)|mitele"
+ ],
+ "primevideo": [
+  "Prime Video",
+  null
+ ],
+ "coursera": [
+  "Coursera",
+  "(^| )coursera( |$)"
+ ],
+ "check24": [
+  "CHECK24",
+  "(^| )check ?24( |$)"
+ ],
+ "glovo": [
+  "Glovo",
+  "(^| )glovo( |$)"
+ ],
+ "mango": [
+  "Mango",
+  null
+ ],
+ "zara": [
+  "Zara",
+  null
+ ],
+ "zoom": [
+  "Zoom",
+  "^zoom$|(^| )zoom (us|video|com)( |$)"
+ ],
+ "wetransfer": [
+  "WeTransfer",
+  "(^| )wetransfer( |$)"
+ ],
+ "cabify": [
+  "Cabify",
+  null
+ ],
+ "camscanner": [
+  "CamScanner",
+  "(^| )camscanner( |$)"
+ ],
+ "quironsalud": [
+  "Quirónsalud",
+  "quironsalud|(^| )quiron( |$)"
+ ],
+ "playtomic": [
+  "Playtomic",
+  "(^| )playtomic( |$)"
+ ],
+ "amazon": [
+  "Amazon",
+  null
+ ],
+ "upwork": [
+  "Upwork",
+  "(^| )upwork( |$)"
+ ],
+ "fiverr": [
+  "Fiverr",
+  "(^| )fiverr( |$)"
+ ],
+ "uber": [
+  "Uber",
+  null
+ ],
+ "tricount": [
+  "Tricount",
+  "(^| )tricount( |$)"
+ ],
+ "googledrive": [
+  "Google Drive",
+  null
+ ],
+ "googledocs": [
+  "Google Docs",
+  "google docs"
+ ],
+ "mcdonalds": [
+  "McDonald's",
+  null
+ ],
+ "aeat": [
+  "Agencia Tributaria",
+  "(^| )aeat( |$)|agencia tributaria|agencia estatal de administracion tributaria"
+ ],
+ "paypal": [
+  "PayPal",
+  null
+ ],
+ "dgt": [
+  "DGT",
+  "(^| )dgt( |$)|direccion general de trafico"
+ ],
+ "vinted": [
+  "Vinted",
+  "(^| )vinted( |$)"
+ ],
+ "hbomax": [
+  "HBO Max",
+  null
+ ],
+ "sumup": [
+  "SumUp",
+  null
+ ],
+ "wallapop": [
+  "Wallapop",
+  null
+ ],
+ "strava": [
+  "Strava",
+  "(^| )strava( |$)"
+ ],
+ "freedom24": [
+  "Freedom24",
+  "freedom ?24|freedom finance"
+ ],
+ "alvaromoreno": [
+  "Álvaro Moreno",
+  "alvaro moreno"
+ ],
+ "netflix": [
+  "Netflix",
+  null
+ ],
+ "spotify": [
+  "Spotify",
+  null
+ ],
+ "coinbase": [
+  "Coinbase",
+  "(^| )coinbase( |$)"
+ ],
+ "imagin": [
+  "imagin",
+  "(^| )imagin( |$)|imaginbank"
+ ],
+ "getquin": [
+  "getquin",
+  "(^| )getquin( |$)"
+ ],
+ "traderepublic": [
+  "Trade Republic",
+  null
+ ],
+ "myinvestor": [
+  "MyInvestor",
+  null
+ ],
+ "investing": [
+  "Investing.com",
+  "(^| )investing com( |$)"
+ ],
+ "mintos": [
+  "Mintos",
+  "(^| )mintos( |$)"
+ ],
+ "openai": [
+  "ChatGPT",
+  null
+ ],
+ "grok": [
+  "Grok",
+  "(^| )grok( |$)|(^| )xai( |$)"
+ ],
+ "ibkr": [
+  "Interactive Brokers",
+  "interactive brokers|(^| )ibkr( |$)"
+ ],
+ "claude": [
+  "Claude",
+  null
+ ],
+ "americanexpress": [
+  "American Express",
+  null
+ ],
+ "klarna": [
+  "Klarna",
+  null
+ ]
+}

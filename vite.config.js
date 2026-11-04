@@ -14,7 +14,10 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // Los dibujos de logos (≈5 MB en total) no se precargan: se guardan al usarse.
         globIgnores: ['**/dibujos-*.js'],
-        runtimeCaching: [{ urlPattern: /\/assets\/dibujos-.*\.js$/, handler: 'CacheFirst', options: { cacheName: 'logos', expiration: { maxEntries: 40 } } }],
+        runtimeCaching: [
+          { urlPattern: /\/assets\/dibujos-.*\.js$/, handler: 'CacheFirst', options: { cacheName: 'logos', expiration: { maxEntries: 40 } } },
+          { urlPattern: /\/logos\/apps\/.*\.webp$/, handler: 'CacheFirst', options: { cacheName: 'logos-apps', expiration: { maxEntries: 200 } } },
+        ],
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,

@@ -51,6 +51,23 @@ export default function Avatar({ nombre, movimiento, tam = 36 }) {
     )
   }
 
+  // Icono real de la app (recortado de capturas, public/logos/apps/): el más fiel.
+  if (logo?.img) {
+    return (
+      <img
+        className="v5-avatar marca v5-avatar-img"
+        src={`/logos/apps/${logo.k}.webp`}
+        width={tam}
+        height={tam}
+        style={estilo}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        decoding="async"
+        data-logo={logo.k}
+      />
+    )
+  }
   if (logo && !logo.pendiente && dibujo) {
     const g = Math.round(tam * logo.e)
     return (

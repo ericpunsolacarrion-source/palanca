@@ -124,7 +124,7 @@ export function cargarLogos() {
   if (logos) return Promise.resolve(logos)
   if (!cargando) {
     cargando = import('./logos/indice.js').then((m) => {
-      logos = m.INDICE.map(([k, n, re, bg, fg, e, g, mono]) => ({ k, n, re, bg, fg, e, g, mono, pendiente: !g, rx: new RegExp(re) }))
+      logos = m.INDICE.map(([k, n, re, bg, fg, e, g, mono, img]) => ({ k, n, re, bg, fg, e, g, mono, img: img === 1, pendiente: !g && img !== 1, rx: new RegExp(re) }))
       avisar.forEach((f) => f())
       return logos
     })

@@ -90,6 +90,21 @@ for x in si:
     indice.append([k, x['title'], patron, bg, fg, 0.56, g, ''])
     vistos.add(k)
 
+# 3) Iconos reales de app (recortados de capturas de Eric, public/logos/apps/):
+#    tienen prioridad sobre el vector. Campo 9 = 1 si hay imagen.
+APPS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apps.json')))
+por_k = {f[0]: f for f in indice}
+for f in indice: f.append(0)
+for k, (n, pat) in APPS.items():
+    if not os.path.exists(f'{RAIZ}/public/logos/apps/{k}.webp'):
+        continue
+    if k in por_k:
+        por_k[k][8] = 1
+        if pat: por_k[k][2] = pat
+    else:
+        if not pat: raise SystemExit(f'falta patrón para {k}')
+        indice.append([k, n, pat, '#000000', '#FFFFFF', 0.56, '', '', 1])
+
 # Prioridad: patrones más largos primero (lo específico gana); a igualdad, las revisadas.
 orden = {f[0]: i for i, f in enumerate(indice)}
 indice.sort(key=lambda f: (-len(f[2]), orden[f[0]]))
@@ -97,9 +112,9 @@ indice.sort(key=lambda f: (-len(f[2]), orden[f[0]]))
 cab = ('// LOGOS DE MARCAS — generado por scripts/logos/catalogo.py; no editar a mano.\n'
        '// Simple Icons y SVG Logos (CC0), Streamline (CC BY 4.0, Disney+). Las marcas\n'
        '// son de sus dueños: aquí solo identifican en qué gastas.\n')
-open(f'{OUT}/indice.js', 'w').write(cab + '// [clave, nombre, patrón, fondo, símbolo, escala, grupo de dibujo, monograma si no hay logo]\n'
+open(f'{OUT}/indice.js', 'w').write(cab + '// [clave, nombre, patrón, fondo, símbolo, escala, grupo de dibujo, monograma si no hay logo, 1 si hay icono de app]\n'
     'export const INDICE = ' + json.dumps(indice, ensure_ascii=False, separators=(',', ':')) + '\n')
 for f in glob.glob(f'{OUT}/dibujos-*.js'): os.remove(f)
 for g, m in dibujos.items():
     open(f'{OUT}/dibujos-{g}.js', 'w').write(cab + 'export default ' + json.dumps(m, ensure_ascii=False, separators=(',', ':')) + '\n')
-con = sum(1 for f in indice if f[6]); print(f'{len(indice)} marcas · {con} con logo oficial · {len(indice)-con} con monograma · {n_curadas} revisadas a mano · {saltadas} descartadas por nombre corto')
+con = sum(1 for f in indice if f[6] or f[8]); print(f'{sum(1 for f in indice if f[8])} con icono de app · ', end=''); print(f'{len(indice)} marcas · {con} con logo oficial · {len(indice)-con} con monograma · {n_curadas} revisadas a mano · {saltadas} descartadas por nombre corto')

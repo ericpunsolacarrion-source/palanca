@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { INDICE } from './logos/indice'
 import { logoDe } from './marcas'
 
-const lista = INDICE.map(([k, n, re, bg, fg, e, g, mono]) => ({ k, n, re, bg, fg, e, g, mono, pendiente: !g, rx: new RegExp(re) }))
+const lista = INDICE.map(([k, n, re, bg, fg, e, g, mono, img]) => ({ k, n, re, bg, fg, e, g, mono, img: img === 1, pendiente: !g && img !== 1, rx: new RegExp(re) }))
 const k = (t) => logoDe(t, lista)?.k ?? null
 
 describe('logos de marcas', () => {
@@ -34,6 +34,10 @@ describe('logos de marcas', () => {
     expect(k('SUMUP *BAR PACO')).toBeNull()
     expect(k('Bar Delta')).toBeNull()
     expect(k('WhatsApp')).toBe('whatsapp')
+    expect(k('CAIXABANK TRANSF')).toBe('caixabank')
+    expect(k('Pago AEAT modelo 130')).toBe('aeat')
+    expect(k('TRADE REPUBLIC BANK')).toBe('traderepublic')
+    expect(lista.find((l) => l.k === 'netflix').img).toBe(true)
     expect(k('Netflix')).toBe('netflix')
     for (const l of lista) expect(l.bg).toMatch(/^#/)
   })

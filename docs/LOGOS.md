@@ -1,5 +1,7 @@
 # Logos de marcas (comercios y servicios)
 
+**Iconos de app (05-11):** 72 iconos reales recortados de las capturas del móvil de Eric (`public/logos/apps/*.webp`, 128 px, ≈180 KB en total, no se precargan). Tienen prioridad sobre el vector. Incluyen españolas que no tenían logo libre: CaixaBank, Línea Directa, Cabify, Wallapop, Mango, Lefties, Trade Republic, MyInvestor, Alsa, InfoJobs, coches.net, Quirónsalud, Agencia Tributaria, DGT, imagin… Se declaran en `scripts/logos/apps.json` (clave → nombre y patrón). Para añadir más: captura del móvil → recorte → webp con el mismo nombre que la clave.
+
 **Catálogo (04-11, ampliado):** 3.481 marcas, 3.432 con logo oficial (todo Simple Icons + las revisadas a mano). Índice ligero `src/lib/logos/indice.js` (≈69 KB comprimido, se carga tras el primer pintado) y dibujos por inicial `src/lib/logos/dibujos-*.js`, que solo se descargan si hacen falta (no se precargan en la PWA; quedan en caché al usarse). Se regenera con `scripts/logos/catalogo.py`. Reconocimiento estricto: si el nombre de la marca es una sola palabra corriente (diccionarios de inglés y español) o una pasarela de pago (SumUp, Stripe, Klarna…), solo cuenta si es todo el texto («Bar Delta» no lleva el logo de Delta). Colores como el icono de la app en el móvil para las principales (Netflix negro con N roja, Spotify negro con verde, YouTube blanco con rojo…).
 
 Dónde viven (versión anterior, solo revisadas):

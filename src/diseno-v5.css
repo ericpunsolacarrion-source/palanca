@@ -2779,3 +2779,8 @@
 :root[data-diseno='v5'] .apunte-importe input:focus-visible {
   outline: none;
 }
+.v5-avatar-img {
+  display: inline-block;
+  object-fit: cover;
+  background: var(--card-bg-2);
+}
