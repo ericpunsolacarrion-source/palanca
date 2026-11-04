@@ -12,6 +12,9 @@ export default defineConfig({
       workbox: {
         // Incluye las fuentes autoalojadas (Geist): la PWA mantiene su tipografía sin conexión.
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // Los dibujos de logos (≈5 MB en total) no se precargan: se guardan al usarse.
+        globIgnores: ['**/dibujos-*.js'],
+        runtimeCaching: [{ urlPattern: /\/assets\/dibujos-.*\.js$/, handler: 'CacheFirst', options: { cacheName: 'logos', expiration: { maxEntries: 40 } } }],
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,

@@ -1,6 +1,8 @@
 # Logos de marcas (comercios y servicios)
 
-Dónde viven:
+**Catálogo (04-11, ampliado):** 3.481 marcas, 3.432 con logo oficial (todo Simple Icons + las revisadas a mano). Índice ligero `src/lib/logos/indice.js` (≈69 KB comprimido, se carga tras el primer pintado) y dibujos por inicial `src/lib/logos/dibujos-*.js`, que solo se descargan si hacen falta (no se precargan en la PWA; quedan en caché al usarse). Se regenera con `scripts/logos/catalogo.py`. Reconocimiento estricto: si el nombre de la marca es una sola palabra corriente (diccionarios de inglés y español) o una pasarela de pago (SumUp, Stripe, Klarna…), solo cuenta si es todo el texto («Bar Delta» no lleva el logo de Delta). Colores como el icono de la app en el móvil para las principales (Netflix negro con N roja, Spotify negro con verde, YouTube blanco con rojo…).
+
+Dónde viven (versión anterior, solo revisadas):
 - **Datos:** `src/lib/logosMarcas.js`, generado; no se edita a mano.
 - **Reconocimiento:** `src/lib/marcas.js` (`logoDe`).
 - **Dibujo:** `src/components/v5/Avatar.jsx`.

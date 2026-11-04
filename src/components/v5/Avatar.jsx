@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { alCargarLogos, cargarLogos, identidadVisual, logoDe, logosCargados } from '../../lib/marcas'
+import { alCargarLogos, cargarDibujos, cargarLogos, dibujoDe, identidadVisual, logoDe, logosCargados } from '../../lib/marcas'
 import { esAjuste, esInversion, esTraspaso } from '../../lib/categorias'
 import Icono from '../Icono'
 
@@ -15,15 +15,33 @@ function useLogos() {
   return logosCargados()
 }
 
+// El dibujo del logo llega aparte (archivo de su inicial); hasta entonces, monograma.
+function useDibujo(logo) {
+  const [, setVersion] = useState(0)
+  const g = logo?.g
+  useEffect(() => {
+    if (!g || dibujoDe(logo)) return
+    let vivo = true
+    cargarDibujos(g).then(() => vivo && setVersion((v) => v + 1))
+    return () => {
+      vivo = false
+    }
+  }, [g]) // eslint-disable-line react-hooks/exhaustive-deps
+  return dibujoDe(logo)
+}
+
 // Logo de comercio/servicio (v5):
-//  1. logo oficial de la marca (lib/logosMarcas.js), centrado en su color;
+//  1. logo oficial de la marca (lib/logos/), centrado en su color;
 //  2. si la marca aún no tiene logo libre, su color y su monograma;
 //  3. si no es una marca, un tono estable y la inicial.
 // Los movimientos propios del motor (inversión, traspaso, ajuste) llevan su icono.
 export default function Avatar({ nombre, movimiento, tam = 36 }) {
   const logos = useLogos()
+  const propio = movimiento && (esInversion(movimiento) || esTraspaso(movimiento) || esAjuste(movimiento))
+  const logo = logos && !propio ? logoDe(nombre, logos) : null
+  const dibujo = useDibujo(logo)
   const estilo = { width: tam, height: tam, borderRadius: Math.round(tam * 0.28) }
-  if (movimiento && (esInversion(movimiento) || esTraspaso(movimiento) || esAjuste(movimiento))) {
+  if (propio) {
     const clase = esInversion(movimiento) ? 'inversion' : 'neutro'
     const icono = esInversion(movimiento) ? 'inversion' : esAjuste(movimiento) ? 'check' : 'repetir'
     return (
@@ -33,22 +51,21 @@ export default function Avatar({ nombre, movimiento, tam = 36 }) {
     )
   }
 
-  const logo = logos ? logoDe(nombre, logos) : null
-  if (logo && !logo.pendiente) {
+  if (logo && !logo.pendiente && dibujo) {
     const g = Math.round(tam * logo.e)
     return (
       <span className="v5-avatar marca" style={{ ...estilo, background: logo.bg, color: logo.fg }} aria-hidden="true" data-logo={logo.k}>
-        {logo.d ? (
-          <svg width={g} height={g} viewBox={logo.vb} fill="currentColor">
-            <path d={logo.d} />
+        {dibujo.d ? (
+          <svg width={g} height={g} viewBox={dibujo.vb} fill="currentColor">
+            <path d={dibujo.d} />
           </svg>
         ) : (
-          <svg width={g} height={g} viewBox={logo.vb} dangerouslySetInnerHTML={{ __html: logo.body }} />
+          <svg width={g} height={g} viewBox={dibujo.vb} dangerouslySetInnerHTML={{ __html: dibujo.body }} />
         )}
       </span>
     )
   }
-  if (logo) {
+  if (logo && logo.pendiente) {
     const largo = logo.mono.length
     return (
       <span

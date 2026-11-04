@@ -65,5 +65,5 @@ js='''// LOGOS DE MARCAS (v5) — generado por scripts de diseño; no editar a m
 // Campos: k clave, n nombre, re patrón sobre el texto normalizado, bg/fg
 // colores, vb viewBox, d (path) o body (SVG interior), e escala del símbolo.
 export const LOGOS = '''+json.dumps(ent,ensure_ascii=False,separators=(',',':'))+'\n'
-open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../src/lib/logosMarcas.js'),'w').write(js)
+json.dump(ent, open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'curadas.json'),'w'), ensure_ascii=False, indent=0)
 print(len(ent), sum(1 for e in ent if not e.get('pendiente')), len(js))

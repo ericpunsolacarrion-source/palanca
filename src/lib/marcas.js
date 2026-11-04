@@ -113,16 +113,18 @@ export function identidadVisual(nombre) {
 
 export const esMarcaConocida = (nombre) => identidadVisual(nombre).marca !== null
 
-// ── Logos oficiales (lib/logosMarcas.js, ~150 KB): se cargan aparte, tras el
-// primer pintado. Mientras tanto se ve el monograma; nada cambia de sitio.
+// ── Logos oficiales (src/lib/logos/): un índice ligero que se carga tras el
+// primer pintado y los dibujos por inicial, solo los que hacen falta.
+// Mientras tanto se ve el monograma; nada cambia de sitio.
 let logos = null
 let cargando = null
 const avisar = new Set()
+const cache = new Map()
 export function cargarLogos() {
   if (logos) return Promise.resolve(logos)
   if (!cargando) {
-    cargando = import('./logosMarcas.js').then((m) => {
-      logos = m.LOGOS.map((l) => ({ ...l, rx: new RegExp(l.re) }))
+    cargando = import('./logos/indice.js').then((m) => {
+      logos = m.INDICE.map(([k, n, re, bg, fg, e, g, mono]) => ({ k, n, re, bg, fg, e, g, mono, pendiente: !g, rx: new RegExp(re) }))
       avisar.forEach((f) => f())
       return logos
     })
@@ -135,21 +137,47 @@ export function alCargarLogos(f) {
   return () => avisar.delete(f)
 }
 
+// Dibujos por grupo (inicial de la clave): cada grupo es un archivo aparte.
+const GRUPOS = import.meta.glob('./logos/dibujos-*.js')
+const dibujos = new Map()
+const pidiendo = new Map()
+export function dibujoDe(logo) {
+  if (!logo?.g) return null
+  return dibujos.get(logo.g)?.[logo.k] ?? null
+}
+export function cargarDibujos(g) {
+  if (dibujos.has(g)) return Promise.resolve(dibujos.get(g))
+  if (!pidiendo.has(g)) {
+    const cargar = GRUPOS[`./logos/dibujos-${g}.js`]
+    if (!cargar) return Promise.resolve(null)
+    pidiendo.set(g, cargar().then((m) => {
+      dibujos.set(g, m.default)
+      return m.default
+    }))
+  }
+  return pidiendo.get(g)
+}
+
 /**
  * Logo de una marca a partir del nombre (o del texto del banco). Primero los
- * patrones de cada logo; si no, la marca que reconoce el directorio de
- * comercios. Patrones (los más específicos antes: «youtube music» gana a «youtube»).
- * Los medios de pago (Visa, Apple Pay…) solo cuentan si son todo el texto.
- * @returns entrada de LOGOS o null
+ * patrones de cada logo (los más específicos antes: «youtube music» gana a
+ * «youtube»; las palabras corrientes y las pasarelas de pago solo si son todo
+ * el texto); si no, la marca que reconoce el directorio de comercios.
+ * @returns entrada del índice o null
  */
 export function logoDe(nombre, lista = logos) {
   if (!lista) return null
   const t = normalizarTexto(nombre)
   if (!t) return null
-  const directo = lista.find((l) => l.rx.test(t))
-  if (directo) return directo
-  const marca = marcaDe(nombre)
-  if (!marca) return null
-  const m = normalizarTexto(marca)
-  return lista.find((l) => normalizarTexto(l.n) === m) ?? lista.find((l) => l.rx.test(m)) ?? null
+  if (lista === logos && cache.has(t)) return cache.get(t)
+  let r = lista.find((l) => l.rx.test(t)) ?? null
+  if (!r) {
+    const marca = marcaDe(nombre)
+    if (marca) {
+      const m = normalizarTexto(marca)
+      r = lista.find((l) => normalizarTexto(l.n) === m) ?? lista.find((l) => l.rx.test(m)) ?? null
+    }
+  }
+  if (lista === logos) cache.set(t, r)
+  return r
 }

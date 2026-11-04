@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { LOGOS } from './logosMarcas'
+import { INDICE } from './logos/indice'
 import { logoDe } from './marcas'
 
-const lista = LOGOS.map((l) => ({ ...l, rx: new RegExp(l.re) }))
+const lista = INDICE.map(([k, n, re, bg, fg, e, g, mono]) => ({ k, n, re, bg, fg, e, g, mono, pendiente: !g, rx: new RegExp(re) }))
 const k = (t) => logoDe(t, lista)?.k ?? null
 
 describe('logos de marcas', () => {
@@ -29,11 +29,12 @@ describe('logos de marcas', () => {
     expect(k('Visa')).toBe('visa')
     expect(k('')).toBeNull()
   })
-  it('todas las entradas tienen colores y, si no están pendientes, dibujo', () => {
-    for (const l of LOGOS) {
-      expect(l.bg).toMatch(/^#/)
-      if (!l.pendiente) expect(Boolean(l.d || l.body)).toBe(true)
-      expect(() => new RegExp(l.re)).not.toThrow()
-    }
+  it('más de 3.000 marcas con logo, y las pasarelas de pago no tapan al comercio', () => {
+    expect(lista.filter((l) => !l.pendiente).length).toBeGreaterThan(3000)
+    expect(k('SUMUP *BAR PACO')).toBeNull()
+    expect(k('Bar Delta')).toBeNull()
+    expect(k('WhatsApp')).toBe('whatsapp')
+    expect(k('Netflix')).toBe('netflix')
+    for (const l of lista) expect(l.bg).toMatch(/^#/)
   })
 })
