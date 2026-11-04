@@ -8,8 +8,6 @@ import Patrimonio from './Patrimonio'
 import AvisosCobros from './AvisosCobros'
 import Icono from './Icono'
 import { preguntarAFulcro } from '../lib/fulcro'
-import { esV4 } from '../lib/diseno'
-import { ApartadoMeses, BalanceMes, EnQueSeFue, MesNuevo } from './InicioV4'
 
 // INICIO: lo esencial de un vistazo, en orden de importancia.
 //   1. Lo que tienes (patrimonio, cómo ha cambiado, evolución).
@@ -254,40 +252,6 @@ export default function Inicio({
   onVerAnalisis,
   avisosRenovacion = null,
 }) {
-  if (esV4()) {
-    // v4: lo tuyo y tu mes a la izquierda; lo que pide atención a la derecha.
-    // En el móvil las columnas se deshacen y se ordenan con «order» (diseno-v4.css).
-    return (
-      <div className="ini ini-v4">
-        <div className="ini-col ini-col-a">
-          <Patrimonio
-            usuarioId={usuarioId}
-            movimientos={movimientos}
-            onGuardado={onGuardado}
-            onVerInversion={() => onIrA('inversiones')}
-            soloLectura={soloLectura}
-          />
-          <BalanceMes movimientos={movimientos} onVerAnalisis={onVerAnalisis} onIrA={onIrA} />
-          <ApartadoMeses movimientos={movimientos} />
-          <EnQueSeFue movimientos={movimientos} onVerAnalisis={onVerAnalisis} />
-        </div>
-        <div className="ini-col ini-col-b">
-          {!soloLectura && <MesNuevo movimientos={movimientos} onIrA={onIrA} />}
-          <AccionesRapidas usuarioId={soloLectura ? null : usuarioId} onRegistrar={onRegistrar} diasSinRegistrar={soloLectura ? 0 : diasSinRegistrar} />
-          <AvisosCobros
-            cargando={cargandoRecurrentes}
-            usuarioId={usuarioId}
-            recurrentes={recurrentes}
-            movimientos={movimientos}
-            onVerSuscripciones={() => onIrA('suscripciones')}
-            onConfirmar={onConfirmarCobro}
-            avisosRenovacion={avisosRenovacion}
-          />
-          <UltimosMovimientos movimientos={movimientos} onVerTodos={() => onRegistrar('historial')} />
-        </div>
-      </div>
-    )
-  }
   return (
     <div className="ini">
       {/* Dos columnas en el ordenador (v3); en el móvil se intercalan con «order». */}

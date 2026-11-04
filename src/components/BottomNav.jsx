@@ -1,5 +1,5 @@
 import Icono from './Icono'
-import { esV4 } from '../lib/diseno'
+import { esV5 } from '../lib/diseno'
 
 const PESTANAS = [
   { id: 'dashboard', etiqueta: 'Inicio', icono: 'inicio' },
@@ -10,24 +10,25 @@ const PESTANAS = [
   { id: 'inversiones', etiqueta: 'Inversión', icono: 'inversion' },
 ]
 
-// v4: Inicio · Dinero · [Apuntar] · Fijos · Futuro. «Futuro» agrupa
-// Presupuesto, Inversión y Simuladores (subpestañas en App.jsx).
-const PESTANAS_V4 = [
+// v5 (móvil): Inicio · Movimientos · [+] · Base · Plan. «Plan» agrupa
+// Presupuesto, Patrimonio y Objetivos (subpestañas en App.jsx). En el
+// ordenador manda el menú lateral (NavLateral) y esta barra se oculta.
+const PESTANAS_V5 = [
   { id: 'dashboard', etiqueta: 'Inicio', icono: 'inicio' },
-  { id: 'movimientos', etiqueta: 'Dinero', icono: 'movimientos' },
-  { id: 'suscripciones', etiqueta: 'Fijos', icono: 'fijos' },
-  { id: 'presupuesto', etiqueta: 'Futuro', icono: 'presupuesto', tambien: ['simulador', 'inversiones'] },
+  { id: 'movimientos', etiqueta: 'Movimientos', icono: 'movimientos' },
+  { id: 'suscripciones', etiqueta: 'Base', icono: 'fijos' },
+  { id: 'presupuesto', etiqueta: 'Plan', icono: 'presupuesto', tambien: ['simulador', 'inversiones'] },
 ]
 
 // `avisos`: { [idPestaña]: número } → globo de pendientes (p. ej. cobros por
 // confirmar este mes en Suscripciones).
 export default function BottomNav({ activa, onCambiar, onApuntar, avisos = {} }) {
-  // Diseño v4: «Apuntar» en el centro de la barra (o arriba del menú lateral).
-  const v4 = esV4()
-  const conMas = v4 && onApuntar
+  // Diseño v5: «+» (nuevo movimiento) en el centro de la barra.
+  const v5 = esV5()
+  const conMas = v5 && onApuntar
   return (
     <nav className="bottom-nav">
-      {(v4 ? PESTANAS_V4 : PESTANAS).flatMap((p, i) => {
+      {(v5 ? PESTANAS_V5 : PESTANAS).flatMap((p, i) => {
         const esActiva = activa === p.id || p.tambien?.includes(activa)
         const boton = (
         <button
@@ -48,7 +49,7 @@ export default function BottomNav({ activa, onCambiar, onApuntar, avisos = {} })
         )
         return conMas && i === 2
           ? [
-              <button key="mas" type="button" className="nav-mas" onClick={onApuntar} aria-label="Apuntar un gasto">
+              <button key="mas" type="button" className="nav-mas" onClick={onApuntar} aria-label="Nuevo movimiento">
                 <Icono nombre="mas" tam={24} />
                 <span className="nav-mas-texto">Apuntar</span>
               </button>,

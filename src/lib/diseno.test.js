@@ -3,24 +3,24 @@ import { disenoActivo } from './diseno'
 
 const almacen = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) } }
 
-describe('diseño v4 solo fuera de la app pública', () => {
+describe('diseño v5 solo fuera de la app pública', () => {
   it('la app pública sigue con v2 por defecto', () => {
     expect(disenoActivo({ hostname: 'palanca-zeta.vercel.app', search: '' }, almacen())).toBe('v2')
   })
-  it('la versión de pruebas y local ven v4', () => {
-    expect(disenoActivo({ hostname: 'palanca-git-develop-palanca-mac.vercel.app', search: '' }, almacen())).toBe('v4')
-    expect(disenoActivo({ hostname: 'localhost', search: '' }, almacen())).toBe('v4')
+  it('la versión de pruebas y local ven v5', () => {
+    expect(disenoActivo({ hostname: 'palanca-git-develop-palanca-mac.vercel.app', search: '' }, almacen())).toBe('v5')
+    expect(disenoActivo({ hostname: 'localhost', search: '' }, almacen())).toBe('v5')
   })
   it('?diseno= lo fuerza y se recuerda', () => {
     const a = almacen()
-    expect(disenoActivo({ hostname: 'palanca-zeta.vercel.app', search: '?diseno=v4' }, a)).toBe('v4')
-    expect(disenoActivo({ hostname: 'palanca-zeta.vercel.app', search: '' }, a)).toBe('v4')
+    expect(disenoActivo({ hostname: 'palanca-zeta.vercel.app', search: '?diseno=v5' }, a)).toBe('v5')
+    expect(disenoActivo({ hostname: 'palanca-zeta.vercel.app', search: '' }, a)).toBe('v5')
     expect(disenoActivo({ hostname: 'localhost', search: '?diseno=v2' }, a)).toBe('v2')
   })
-  it('el v3 retirado se convierte en v4', () => {
+  it('los diseños retirados (v3, v4) se convierten en v5', () => {
     const a = almacen()
-    a.setItem('palanca_diseno', 'v3')
-    expect(disenoActivo({ hostname: 'localhost', search: '' }, a)).toBe('v4')
-    expect(disenoActivo({ hostname: 'localhost', search: '?diseno=v3' }, almacen())).toBe('v4')
+    a.setItem('palanca_diseno', 'v4')
+    expect(disenoActivo({ hostname: 'localhost', search: '' }, a)).toBe('v5')
+    expect(disenoActivo({ hostname: 'localhost', search: '?diseno=v3' }, almacen())).toBe('v5')
   })
 })

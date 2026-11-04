@@ -25,6 +25,9 @@ const TRAZOS = {
   repetir: 'M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4',
   nota: 'M4.5 19.5l1-4.5 9.7-9.7a1.5 1.5 0 0 1 2.1 0l1.4 1.4a1.5 1.5 0 0 1 0 2.1L9 18.5zM13.5 7l3.5 3.5',
   lugar: 'M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11ZM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z',
+  lupa: 'M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM15.5 15.5 20 20',
+  monedas: 'M12 9.5c4.1 0 7.5-1.3 7.5-3s-3.4-3-7.5-3-7.5 1.3-7.5 3 3.4 3 7.5 3ZM4.5 6.5v5c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-5M4.5 11.5v5c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-5',
+  objetivo: 'M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17ZM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM12 12h.01',
   consultor: 'M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-7.5L7 20v-3.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5ZM8 10.5h.01M12 10.5h.01M16 10.5h.01',
 }
 
@@ -63,19 +66,7 @@ const MARCA_SVG = {
   pBucle: 'M14.6 3.5h2.6a4.5 4.5 0 0 1 0 9h-2.6v-3.2h2.6a1.3 1.3 0 0 0 0-2.6h-2.6Z',
 }
 
-// v4 «La P de apoyo»: P maciza con el fulcro (▲, latón) como contraforma.
-// Construcción en docs/DISENO.md (rejilla de 24: fuste 4, panza de radio 5,5).
-const MARCA_V4 = { p: 'M5 3H13.5A5.5 5.5 0 0 1 13.5 14H9V21H5Z', fulcro: 'M10.6 12.3H16.4L13.5 6.9Z' }
-
 export function Marca({ tam = 22, color = 'var(--accent-2)', className = '' }) {
-  if (document.documentElement.dataset.diseno === 'v4') {
-    return (
-      <svg viewBox="0 0 24 24" width={tam} height={tam} className={`marca ${className}`} aria-hidden="true">
-        <path d={MARCA_V4.p} fill="var(--tinta)" />
-        <path d={MARCA_V4.fulcro} fill="var(--laton)" />
-      </svg>
-    )
-  }
   const { barras, pAsta, pBucle } = MARCA_SVG
   return (
     <svg viewBox="0 0 24 24" width={tam} height={tam} className={`marca ${className}`} aria-hidden="true">
