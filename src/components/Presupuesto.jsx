@@ -8,6 +8,7 @@ import InputImporte from './InputImporte'
 import { esV5 } from '../lib/diseno'
 import { claveMesActual, etiquetaMes } from '../lib/movimientosUtils'
 import { categoriasFrenteAMedia } from '../lib/presupuesto'
+import { resumenDelMes } from '../lib/inicio'
 import { etiquetaCategoria } from '../lib/categorias'
 import { preguntarAFulcro } from '../lib/fulcro'
 import { Anillo } from './v5/Graficos'
@@ -314,8 +315,14 @@ function PresupuestoV5({ metodo, tasaAhorroObjetivo, gastoMaximoFijo, presupuest
   const diasMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate()
   const pctMes = ((hoy.getDate() - 0.5) / diasMes) * 100
   const pct = presupuestoGasto > 0 ? (totalGastos / presupuestoGasto) * 100 : 0
-  const deberias = presupuestoGasto * (pctMes / 100)
-  const estado = pct > 100 ? { t: 'Te has pasado', c: 'critico' } : pct > pctMes + 5 ? { t: 'Vas más rápido de lo previsto', c: 'aviso' } : { t: 'Vas bien', c: 'bien' }
+  // Referencia «a estas alturas»: lo que SUELES llevar gastado a este día del
+  // mes (como el Inicio: el alquiler del día 2 no es «ir rápido»). Sin
+  // historia, el reparto lineal del presupuesto.
+  const ritmo = useMemo(() => resumenDelMes(historico).ritmo, [historico])
+  const deberias = ritmo ? Math.min(ritmo.habitual, presupuestoGasto) : presupuestoGasto * (pctMes / 100)
+  const pctReferencia = presupuestoGasto > 0 ? Math.min(100, (deberias / presupuestoGasto) * 100) : pctMes
+  const rapido = totalGastos > deberias * 1.05 + 1
+  const estado = pct > 100 ? { t: 'Te has pasado', c: 'critico' } : rapido ? { t: 'Vas más rápido de lo habitual', c: 'aviso' } : { t: 'Vas bien', c: 'bien' }
   const cats = useMemo(() => categoriasFrenteAMedia(historico, clave), [historico, clave])
   const maximo = Math.max(1, ...cats.map((c) => Math.max(c.gastado, c.media ?? 0)))
   const colores = ['var(--cat-1)', 'var(--cat-2)', 'var(--cat-3)', 'var(--cat-4)', 'var(--cat-5)', 'var(--cat-6)']
@@ -334,7 +341,7 @@ function PresupuestoV5({ metodo, tasaAhorroObjetivo, gastoMaximoFijo, presupuest
         ) : (
           <>
             <div className="v5-presu-cuerpo">
-              <Anillo pct={pct} tam={156} grosor={14} etiqueta={`Has gastado el ${Math.round(pct)} % del presupuesto`}>
+              <Anillo pct={pct} tam={156} grosor={14} color={rapido ? 'var(--aviso)' : 'var(--accent)'} etiqueta={`Has gastado el ${Math.round(pct)} % del presupuesto`}>
                 <span className="v5-anillo-pct">
                   <b>{Math.round(pct)} %</b>
                   <small>gastado</small>
@@ -359,17 +366,17 @@ function PresupuestoV5({ metodo, tasaAhorroObjetivo, gastoMaximoFijo, presupuest
               <div className="v5-presu-ritmo-cab">
                 <span className={`v5-insignia ${estado.c}`}>{estado.t}</span>
                 <span className="v5-tenue">
-                  A día {hoy.getDate()} lo previsto era llevar <b className="num">{formatearEuros(Math.round(deberias))}</b>
+                  {ritmo ? `A día ${hoy.getDate()} sueles llevar` : `A día ${hoy.getDate()}, a ritmo constante, llevarías`} <b className="num">{formatearEuros(Math.round(deberias))}</b>
                 </span>
               </div>
               <span className="v5-barra grande" role="img" aria-label={`Gastado ${Math.round(pct)} % con el ${Math.round(pctMes)} % del mes recorrido`}>
-                <span className={`v5-barra-relleno ${pct > 100 ? 'pasado' : pct > pctMes + 5 ? 'rapido' : ''}`} style={{ width: `${Math.min(100, pct)}%` }} />
-                <span className="v5-barra-hoy" style={{ left: `${pctMes}%` }} />
+                <span className={`v5-barra-relleno ${pct > 100 ? 'pasado' : rapido ? 'rapido' : ''}`} style={{ width: `${Math.min(100, pct)}%` }} />
+                <span className="v5-barra-hoy" style={{ left: `${pctReferencia}%` }} title={ritmo ? 'Lo habitual a estas alturas' : 'A ritmo constante'} />
               </span>
               <div className="v5-presu-ritmo-pie v5-tenue">
-                <span>Día 1</span>
-                <span>Hoy</span>
-                <span>Día {diasMes}</span>
+                <span>0 €</span>
+                <span>La raya: {ritmo ? 'lo habitual a hoy' : 'a ritmo constante'}</span>
+                <span className="num">{formatearEuros(presupuestoGasto)}</span>
               </div>
             </div>
             <p className="v5-presu-frase">

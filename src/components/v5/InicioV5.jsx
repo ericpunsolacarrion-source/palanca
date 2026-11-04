@@ -152,6 +152,11 @@ function ElMes({ movimientos, onRegistrar, onIrA }) {
   const pctGastado = limite > 0 ? (t.gastos / limite) * 100 : 0
   const pctMes = ((r.dia - 0.5) / r.diasMes) * 100
   const restante = limite != null ? limite - t.gastos : null
+  // Ritmo contra lo que SUELES llevar a estas alturas (el alquiler del día 2
+  // no es «ir rápido»); sin historia, reparto lineal del presupuesto.
+  const habitual = r.ritmo ? Math.min(r.ritmo.habitual, limite ?? Infinity) : null
+  const rapido = habitual != null ? t.gastos > habitual * 1.05 + 1 : pctGastado > pctMes + 5
+  const pctRef = limite > 0 && habitual != null ? Math.min(100, (habitual / limite) * 100) : pctMes
   const ahorroPos = t.ahorro >= 0
 
   return (
@@ -201,8 +206,8 @@ function ElMes({ movimientos, onRegistrar, onIrA }) {
             </span>
           </span>
           <span className="v5-barra" role="presentation">
-            <span className={`v5-barra-relleno ${pctGastado > 100 ? 'pasado' : pctGastado > pctMes + 5 ? 'rapido' : ''}`} style={{ width: `${Math.min(100, pctGastado)}%` }} />
-            <span className="v5-barra-hoy" style={{ left: `${pctMes}%` }} title="Hoy" />
+            <span className={`v5-barra-relleno ${pctGastado > 100 ? 'pasado' : rapido ? 'rapido' : ''}`} style={{ width: `${Math.min(100, pctGastado)}%` }} />
+            <span className="v5-barra-hoy" style={{ left: `${pctRef}%` }} title={habitual != null ? 'Lo habitual a estas alturas' : 'A ritmo constante'} />
           </span>
         </button>
       ) : (
