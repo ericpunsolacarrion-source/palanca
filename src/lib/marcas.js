@@ -112,3 +112,44 @@ export function identidadVisual(nombre) {
 }
 
 export const esMarcaConocida = (nombre) => identidadVisual(nombre).marca !== null
+
+// ── Logos oficiales (lib/logosMarcas.js, ~150 KB): se cargan aparte, tras el
+// primer pintado. Mientras tanto se ve el monograma; nada cambia de sitio.
+let logos = null
+let cargando = null
+const avisar = new Set()
+export function cargarLogos() {
+  if (logos) return Promise.resolve(logos)
+  if (!cargando) {
+    cargando = import('./logosMarcas.js').then((m) => {
+      logos = m.LOGOS.map((l) => ({ ...l, rx: new RegExp(l.re) }))
+      avisar.forEach((f) => f())
+      return logos
+    })
+  }
+  return cargando
+}
+export const logosCargados = () => logos
+export function alCargarLogos(f) {
+  avisar.add(f)
+  return () => avisar.delete(f)
+}
+
+/**
+ * Logo de una marca a partir del nombre (o del texto del banco). Primero los
+ * patrones de cada logo; si no, la marca que reconoce el directorio de
+ * comercios. Patrones (los más específicos antes: «youtube music» gana a «youtube»).
+ * Los medios de pago (Visa, Apple Pay…) solo cuentan si son todo el texto.
+ * @returns entrada de LOGOS o null
+ */
+export function logoDe(nombre, lista = logos) {
+  if (!lista) return null
+  const t = normalizarTexto(nombre)
+  if (!t) return null
+  const directo = lista.find((l) => l.rx.test(t))
+  if (directo) return directo
+  const marca = marcaDe(nombre)
+  if (!marca) return null
+  const m = normalizarTexto(marca)
+  return lista.find((l) => normalizarTexto(l.n) === m) ?? lista.find((l) => l.rx.test(m)) ?? null
+}

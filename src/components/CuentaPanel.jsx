@@ -256,6 +256,10 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
             {borrando ? 'Borrando…' : 'Borrar mi cuenta y todos mis datos'}
           </button>
         </div>
+        <p className="cuenta-creditos">
+          Logos de marcas: Simple Icons y SVG Logos (CC0), Streamline (CC BY 4.0). Las marcas pertenecen a sus dueños y solo
+          sirven para reconocer en qué gastas.
+        </p>
       </section>
       {verMetricas && (
         <Suspense fallback={null}>
