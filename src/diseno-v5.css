@@ -2589,10 +2589,180 @@
 
 /* Todo lo que se pinta en menta lleva tinta oscura (blanco sobre menta no
    pasa AA). Lista sacada de App.css: botones y estados activos en acento. */
-:root[data-diseno='v5'] :is(.acceso-boton, .pp-cta, .captura-email-fila button, .onboarding .continuar, .sub-tab-badge, .recordatorio button, .celebracion-icono, .celebracion-cerrar, .logro-fila.conseguido .logro-icono, .proyeccion-horizontes button.activo, .proyeccion-cta, .objetivo-inversion-fila button, .estado-vacio button, .consultor-burbuja.usuario, .consultor-entrada button, .tb-confirmar-btn, .tb-form-guardar, .consultor-teaser-icono, .ini-accion.principal, .av-confirmar, .demo-banner-empezar, .tour-siguiente, .ob-continuar, .ih-boton, .ih-importar, .pp-importar, .tb-detectadas-todos, .pm-plan.premium, .pm-segmento button.activo, .periodo-selector button.activo, [class*='rango'] button.activo) {
+:root[data-diseno='v5'] :is(.acceso-boton, .pp-cta, .captura-email-fila button, .onboarding .continuar, .sub-tab-badge, .recordatorio button, .celebracion-icono, .celebracion-cerrar, .logro-fila.conseguido .logro-icono, .proyeccion-horizontes button.activo, .proyeccion-cta, .objetivo-inversion-fila button, .estado-vacio button, .consultor-burbuja.usuario, .consultor-entrada button, .tb-confirmar-btn, .tb-form-guardar, .consultor-teaser-icono, .ini-accion.principal, .av-confirmar, .demo-banner-empezar, .tour-siguiente, .ob-continuar, .ih-boton:not(.secundario), .ih-importar, .pp-importar, .tb-detectadas-todos, .pm-plan.premium, .pm-segmento button.activo, .periodo-selector button.activo, [class*='rango'] button.activo) {
   color: var(--tinta-accent);
 }
 :root[data-diseno='v5'] .consultor-entrada button:disabled {
   background: var(--superficie-4);
   color: var(--text-3);
+}
+/* Inicio en el ordenador: primero dónde estás y el mes; luego lo que pide
+   atención (avisos), la tendencia y el detalle. */
+@media (min-width: 1024px) {
+  .v5-ini-patrimonio { order: 1; }
+  .v5-ini-mes { order: 2; }
+  .v5-ini-avisos { order: 3; }
+  .v5-ini-flujo { order: 4; }
+  .v5-ini-cobros { order: 5; }
+  .v5-ini-cats { order: 6; }
+  .v5-ini-ultimos { order: 7; }
+}
+:root[data-diseno='v5'] .ih-boton.secundario {
+  color: var(--text-h);
+}
+
+/* Restos del índigo de v2 → menta (generado a partir de App.css) */
+:root[data-diseno='v5'] .acceso-tabs button.activo {
+  background: rgba(61, 214, 140, 0.18);
+}
+:root[data-diseno='v5'] .pp-badge {
+  background: rgba(61, 214, 140, 0.12);
+}
+:root[data-diseno='v5'] .rec-cl-fila.abierto {
+  border-color: rgba(61, 214, 140, 0.4);
+}
+:root[data-diseno='v5'] .plan-referencia {
+  background: rgba(61, 214, 140, 0.06);
+}
+:root[data-diseno='v5'] .objetivo-tipo-badge.liquidez {
+  border-color: rgba(61, 214, 140, 0.4);
+}
+:root[data-diseno='v5'] .objetivo-tipo-badge.patrimonio {
+  border-color: rgba(61, 214, 140, 0.4);
+}
+:root[data-diseno='v5'] .presupuesto .balance-item:hover {
+  border-color: rgba(61, 214, 140, 0.35);
+}
+:root[data-diseno='v5'] .presupuesto .presupuesto-diario {
+  background: rgba(61, 214, 140, 0.06);
+  border: 1px solid rgba(61, 214, 140, 0.16);
+}
+:root[data-diseno='v5'] .lista-movimientos li:hover {
+  border-color: rgba(61, 214, 140, 0.4);
+}
+:root[data-diseno='v5'] .grafico-columna.activa {
+  background: rgba(61, 214, 140, 0.07);
+}
+:root[data-diseno='v5'] .leyenda-mes-btn.activo {
+  background: rgba(61, 214, 140, 0.08);
+}
+:root[data-diseno='v5'] .pildora {
+  border: 1px solid rgba(61, 214, 140, 0.25);
+  background: rgba(61, 214, 140, 0.05);
+}
+:root[data-diseno='v5'] .logro-fila.proximo {
+  border-color: rgba(61, 214, 140, 0.4);
+}
+:root[data-diseno='v5'] .metrica-card:hover {
+  border-color: rgba(61, 214, 140, 0.35);
+}
+:root[data-diseno='v5'] .btn-guardar-sim {
+  border: 1px solid rgba(61, 214, 140, 0.45);
+  background: rgba(61, 214, 140, 0.12);
+}
+:root[data-diseno='v5'] .btn-guardar-sim:hover {
+  background: rgba(61, 214, 140, 0.2);
+}
+:root[data-diseno='v5'] .periodo-hoy {
+  border: 1px solid rgba(61, 214, 140, 0.3);
+}
+:root[data-diseno='v5'] .periodo-hoy:hover {
+  background: rgba(61, 214, 140, 0.14);
+}
+:root[data-diseno='v5'] .hp-linea-area {
+  fill: rgba(61, 214, 140, 0.07);
+}
+
+/* Campos dentro de un envoltorio con borde propio: sin doble borde */
+:root[data-diseno='v5'] :is(.apunte-importe, .apunte-lugar-campo, .importe-hero, .acceso-campo-pass, .fila-doble) input {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+:root[data-diseno='v5'] .apunte-lugar-campo {
+  background: var(--bg);
+  border: 1px solid var(--borde-fuerte);
+}
+:root[data-diseno='v5'] .apunte-lugar-campo:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-suave);
+}
+:root[data-diseno='v5'] .acceso-tabs .activo {
+  background: var(--superficie-4);
+  color: var(--text-h);
+}
+:root[data-diseno='v5'] .acceso-caja {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-xl);
+  box-shadow: var(--sombra-flotante);
+}
+
+/* ── Tu cuenta: panel lateral en el ordenador, botones a escala ── */
+:root[data-diseno='v5'] .cuenta-overlay {
+  background: rgba(3, 6, 5, 0.5);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+:root[data-diseno='v5'] .cuenta-caja {
+  background: var(--card-bg);
+  border: 1px solid var(--borde-fuerte);
+}
+:root[data-diseno='v5'] .cuenta-boton {
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: var(--radio-m);
+  border: 1px solid var(--borde-fuerte);
+  background: var(--card-bg-2);
+  color: var(--text-h);
+  font-size: 14px;
+  font-weight: 600;
+}
+:root[data-diseno='v5'] .cuenta-boton:hover:not(:disabled) {
+  background: var(--superficie-3);
+}
+:root[data-diseno='v5'] .cuenta-form button[type='submit'] {
+  min-height: 40px;
+  font-size: 14px;
+}
+:root[data-diseno='v5'] .cuenta-interruptor input[type='checkbox'] {
+  accent-color: var(--accent);
+}
+@media (min-width: 1024px) {
+  :root[data-diseno='v5'] .cuenta-overlay {
+    display: flex;
+    justify-content: flex-end;
+    align-items: stretch;
+    padding: 0;
+  }
+  :root[data-diseno='v5'] .cuenta-caja {
+    width: 440px;
+    max-width: 440px;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    border-radius: 0;
+    border: 0;
+    border-left: 1px solid var(--borde-fuerte);
+    padding: 20px 22px 28px;
+    overflow-y: auto;
+    animation: v5-entrar-dcha var(--medio) var(--curva) both;
+  }
+}
+@media (max-width: 599px) {
+  .v5-kpi-fila {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .v5-kpi {
+    padding: 12px 14px;
+  }
+  .v5-kpi b,
+  .v5-kpi.destacado b {
+    font-size: 19px;
+  }
+  .v5-kpi-de {
+    display: block;
+    font-size: 12px;
+  }
 }

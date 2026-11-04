@@ -25,6 +25,8 @@ const COLORES_PLATAFORMA = ['#e2b85c', '#c99a3a', '#ecc97c', '#a77c2c', '#f1d79c
 export default function PatrimonioV5({ usuarioId, movimientos, cargando, onGuardado, soloLectura = false }) {
   const [meses, setMeses] = useState(12)
   const [ajustando, setAjustando] = useState(false)
+  // En el ordenador la evolución ocupa el alto de las dos tarjetas de al lado.
+  const grande = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches
   const { ultimaReconciliacion: ultimaMeta } = useSaldo(usuarioId)
   const b = useMemo(() => bolsas(movimientos, hoyIso()), [movimientos])
   const cambioMes = useMemo(() => cambioPatrimonioMes(movimientos), [movimientos])
@@ -101,7 +103,7 @@ export default function PatrimonioV5({ usuarioId, movimientos, cargando, onGuard
             </div>
           </header>
           {conDatos ? (
-            <GraficoArea serie={serie} alto={260} titulo={`Patrimonio al cierre de cada mes, últimos ${meses} meses`} />
+            <GraficoArea serie={serie} alto={grande ? 360 : 240} titulo={`Patrimonio al cierre de cada mes, últimos ${meses} meses`} />
           ) : (
             <p className="v5-nota-vacia">La evolución aparece en cuanto tengas dos meses con datos.</p>
           )}

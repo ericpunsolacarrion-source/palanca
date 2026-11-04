@@ -26,6 +26,15 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
   const [recordatorios, setRecordatorios] = useState(perfil?.recordatorios !== false)
   const [renovaciones, setRenovaciones] = useState(perfil?.avisos_renovacion === true)
 
+  // Escape cierra «Tu cuenta» (salvo con una confirmación abierta encima).
+  useEffect(() => {
+    const tecla = (e) => {
+      if (e.key === 'Escape' && !document.querySelector('.modal-fondo')) onCerrar()
+    }
+    document.addEventListener('keydown', tecla)
+    return () => document.removeEventListener('keydown', tecla)
+  }, [onCerrar])
+
   useEffect(() => {
     let vivo = true
     supabase.rpc('soy_admin').then(

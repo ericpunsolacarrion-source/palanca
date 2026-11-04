@@ -207,13 +207,15 @@ await paso('Fulcro: saludo local, pregunta con streaming y nueva', async () => {
   await p.getByText('Donde más se te va').waitFor({ timeout: 3000 })
   await desborde('Fulcro')
   await p.getByRole('button', { name: 'Nueva', exact: true }).click(); await p.waitForTimeout(300)
-  await p.getByRole('button', { name: 'Cerrar' }).click()
+  await p.keyboard.press('Escape'); await p.waitForTimeout(300)
+  if (await p.locator('.consultor-panel').count()) throw new Error('Fulcro no se cierra con Escape')
 })
 
 await paso('Cuenta: panel abre y cierra', async () => {
   await p.locator('.app-cuenta:not(.app-ojo):not(.app-fulcro)').click(); await p.waitForTimeout(500)
   await desborde('Cuenta')
-  await p.keyboard.press('Escape'); await p.waitForTimeout(200)
+  await p.keyboard.press('Escape'); await p.waitForTimeout(300)
+  if (await p.locator('.cuenta-overlay').count()) throw new Error('Tu cuenta no se cierra con Escape')
 })
 
 await b.close()

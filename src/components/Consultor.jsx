@@ -199,6 +199,17 @@ export default function Consultor({ movimientos, objetivo, recurrentes = [], eje
   const presupuesto = usePresupuestoCompartido()
   const finRef = useRef(null)
 
+  // Escape cierra el panel (como cualquier diálogo), salvo con una
+  // confirmación abierta encima.
+  useEffect(() => {
+    if (!abierto) return
+    const tecla = (e) => {
+      if (e.key === 'Escape' && !document.querySelector('.modal-fondo')) setAbierto(false)
+    }
+    document.addEventListener('keydown', tecla)
+    return () => document.removeEventListener('keydown', tecla)
+  }, [abierto])
+
   // Resumen anónimo y agregado del motor (fuente única: movimientosUtils). Solo
   // se calcula con el panel ABIERTO (recorre todo el histórico: no tiene sentido
   // hacerlo en cada render de la app) y con dependencias estables (primitivos).

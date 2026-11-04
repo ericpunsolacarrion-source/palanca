@@ -12,17 +12,20 @@
 PWA de finanzas personales (React 19 + Vite + Supabase). Estética oscura,
 premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](ESTADO-PLATAFORMA.md)**.
 
-## 🎨 Diseño v4 «El punto de apoyo» en pruebas (2026-11-03)
-En develop la app ya se ve con el diseño definitivo:
-- tinta sobre papel, latón como firma y logo «La P de apoyo»;
-- serifa en las cifras;
-- navegación Inicio · Dinero · Apuntar · Fijos · Futuro;
-- Inicio con lógica: cierre de mes, el Fiel y cifras contra tu media;
-- versión de ordenador a pantalla completa.
+## 🎨 Diseño v5 «Bosque» en pruebas (2026-11-04)
+Rediseño completo con prioridad en el ordenador, tras rechazar v4 («hemos ido a peor») y con Finerd como referencia:
+- verde profundo casi negro y un solo acento menta;
+- Geist con cifras tabulares;
+- menú lateral por secciones: Inicio · Movimientos · Patrimonio · Base · Presupuesto · Objetivos, y Fulcro;
+- logos de comercio por color y monograma;
+- calendario de cobros en Base;
+- tabla de movimientos con detalle;
+- pantalla de Patrimonio nueva;
+- presupuesto con anillo y ritmo.
 
-La app pública sigue en v2 (`?diseno=v2|v4` para forzar).
+Está en la rama `claude/capabilities-overview-m3ry1u` (preview de Vercel de esa rama). La app pública sigue en v2 (`?diseno=v2|v5` para forzar). Auditoría de partida: `docs/AUDITORIA-V5.md`; sistema: `docs/DISENO.md`.
 
-**Calidad automática:** `npm run e2e` (recorrido completo + auditoría visual de 11 pantallas × 3 anchos), y GitHub Actions («Revisión») en cada subida a develop/main.
+**Calidad automática:** `npm run e2e` (recorrido de 19 pasos en 390/1280/1920 + auditoría de 12 vistas × 5 anchos), y GitHub Actions («Revisión») en cada subida a develop/main.
 
 Detalle en `docs/DISENO.md`.
 

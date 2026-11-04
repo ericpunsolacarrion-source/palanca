@@ -61,6 +61,29 @@ try {
         errores.push(`${nombre}@${w}: ${e.message.split('\n')[0]}`)
       }
     }
+    // Estados y pantallas secundarias (una vez por tamaño)
+    const extra = async (nombre, accion, cerrar) => {
+      try {
+        await accion()
+        await p.waitForTimeout(700)
+        await p.screenshot({ path: path.join(carpeta, `${nombre}-${w}.png`) })
+        if (cerrar) await cerrar()
+      } catch (e) {
+        errores.push(`${nombre}@${w}: ${e.message.split('\n')[0]}`)
+      }
+    }
+    await extra('analisis', async () => { await ir('dashboard')(p); await p.getByRole('tab', { name: 'Análisis' }).click() }, () => p.getByRole('tab', { name: 'Resumen' }).click())
+    await extra('nuevo', () => p.getByRole('button', { name: 'Nuevo movimiento' }).locator('visible=true').first().click(), () => p.keyboard.press('Escape'))
+    await extra('detalle', async () => { await ir('movimientos')(p); await p.locator('.v5-tabla-fila').first().click() }, () => p.keyboard.press('Escape'))
+    await extra('cuenta', () => p.locator('.app-cuenta:not(.app-ojo):not(.app-fulcro)').click(), () => p.keyboard.press('Escape'))
+    for (const [nombre, flag] of [['acceso', 'mock_sin_sesion'], ['bienvenida', 'mock_sin_perfil']]) {
+      await extra(nombre, async () => {
+        await p.evaluate((f) => localStorage.setItem(f, '1'), flag)
+        await p.reload({ waitUntil: 'networkidle' })
+      }, async () => {
+        await p.evaluate((f) => localStorage.removeItem(f), flag)
+      })
+    }
     await p.close()
   }
 } finally {
