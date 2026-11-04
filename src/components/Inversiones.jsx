@@ -1,9 +1,10 @@
+import { aportadoPorPlataforma } from '../lib/patrimonio'
 import { AVISO_DEMO, esDemo } from '../lib/datosDemo'
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { CATEGORIA_INVERSION, esInversion, formatearEuros } from '../lib/categorias'
-import { SELECT_MOVIMIENTO, agregarPorMes, bolsas, claveMes, formatearCompacto, formatearFecha, hoyIso, centimosDe } from '../lib/movimientosUtils'
+import { SELECT_MOVIMIENTO, agregarPorMes, bolsas, claveMes, formatearCompacto, formatearFecha, hoyIso } from '../lib/movimientosUtils'
 import { useCountUp } from '../lib/useCountUp'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
@@ -132,14 +133,7 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
   // Lo que tienes invertido (a coste): aportaciones − retiradas, nunca negativo.
   const totalInvertido = useMemo(() => bolsas(aportaciones, hoyIso()).bolsaInversion, [aportaciones])
 
-  const porPlataforma = useMemo(() => {
-    const mapa = new Map()
-    for (const a of aportaciones) {
-      const nombre = a.fuente?.nombre ?? 'Sin especificar'
-      mapa.set(nombre, (mapa.get(nombre) ?? 0) + (a.tipo === 'ingreso' ? -1 : 1) * centimosDe(a))
-    }
-    return [...mapa.entries()].filter(([, c]) => c > 0).map(([n, c]) => [n, c / 100]).sort((a, b) => b[1] - a[1])
-  }, [aportaciones])
+  const porPlataforma = useMemo(() => aportadoPorPlataforma(aportaciones), [aportaciones])
 
   // Meses a mostrar en el gráfico: desde el primer mes con inversión hasta hoy,
   // para poder deslizar hacia atrás sin llegar antes de la primera aportación.

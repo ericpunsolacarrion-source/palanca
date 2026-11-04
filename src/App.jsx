@@ -5,7 +5,7 @@ import { useAuth } from './lib/useAuth'
 import { cerrarSesionAuth } from './lib/auth'
 import { iniciarAnalitica, registrarEvento } from './lib/analitica'
 import { EVENTO_IR, preguntarAFulcro } from './lib/fulcro'
-import { esV4 } from './lib/diseno'
+import { esV5 } from './lib/diseno'
 import Auth from './components/Auth'
 import PantallaCarga from './components/PantallaCarga'
 import CuentaPanel from './components/CuentaPanel'
@@ -54,7 +54,10 @@ import { esAjuste } from './lib/categorias'
 import { estadoCobro } from './lib/periodicidad'
 import TourRapido from './components/TourRapido'
 import './App.css'
-import './diseno-v4.css'
+import './diseno-v5.css'
+import NavLateral, { seccionV5 } from './components/v5/NavLateral'
+import Panel from './components/v5/Panel'
+import InicioV5 from './components/v5/InicioV5'
 
 // Pestañas no iniciales cargadas bajo demanda (code-splitting): aligeran el
 // arranque del dashboard. Cada una se descarga al entrar en su pestaña.
@@ -65,6 +68,9 @@ const Inversiones = lazy(() => import('./components/Inversiones'))
 const Simulador = lazy(() => import('./components/Simulador'))
 const Recurrentes = lazy(() => import('./components/Recurrentes'))
 const Consultor = lazy(() => import('./components/Consultor'))
+const RegistroMovimiento = lazy(() => import('./components/RegistroMovimiento'))
+const MovimientosV5 = lazy(() => import('./components/v5/MovimientosV5'))
+const PatrimonioV5 = lazy(() => import('./components/v5/PatrimonioV5'))
 
 const CargandoVista = () => (
   <div className="vista" aria-busy="true">
@@ -168,7 +174,14 @@ function App() {
   }, [])
 
   // Ir a registrar un movimiento con un modo ya seleccionado (primeros pasos).
+  // v5: apuntar no cambia de pantalla: abre el panel «Nuevo movimiento»
+  // encima de lo que estés viendo (historial e importar sí van a Movimientos).
+  const [nuevoAbierto, setNuevoAbierto] = useState(null) // modo inicial | null
   const irARegistrar = useCallback((modo) => {
+    if (esV5() && (!modo || modo === 'gasto' || modo === 'ingreso' || modo === 'inversion')) {
+      setNuevoAbierto(modo || 'gasto')
+      return
+    }
     setFiltroMov(null)
     setModoRegistro(modo)
     setPestana('movimientos')
@@ -480,14 +493,32 @@ function App() {
     )
   }
 
+  const v5 = esV5()
+  const saludo = perfil.nombre?.trim() ? `Hola, ${nombrePropio(perfil.nombre).split(' ')[0]}` : 'Hola'
+
   return (
     <DatosCompartidosProvider presupuesto={presupuestoData} objetivos={objetivosData} comercios={comerciosData}>
     <div className="app">
+      {v5 && (
+        <NavLateral
+          activa={pestana}
+          onCambiar={irAPestana}
+          onNuevo={() => irARegistrar('gasto')}
+          onFulcro={() => preguntarAFulcro()}
+          avisos={{ suscripciones: nPendientesFijos }}
+        />
+      )}
       <header className="app-header">
         <h1 className="app-logo">
-          <Marca tam={24} />
+          <Marca tam={24} color={v5 ? 'var(--accent)' : undefined} />
           Palanca
         </h1>
+        {v5 && (
+          <div className="v5-cab-titulo">
+            <h1>{pestana === 'dashboard' ? saludo : seccionV5(pestana).titulo}</h1>
+            <p>{pestana === 'dashboard' ? capitalizar(FMT_HOY.format(new Date())) : seccionV5(pestana).sub}</p>
+          </div>
+        )}
         <button
           type="button"
           className="app-cuenta app-ojo"
@@ -498,7 +529,7 @@ function App() {
         >
           <Icono nombre={ocultos ? 'ojoOculto' : 'ojo'} tam={18} />
         </button>
-        {esV4() && (
+        {v5 && (
           <button type="button" className="app-cuenta app-fulcro" onClick={() => preguntarAFulcro()} aria-label="Preguntar a Fulcro" title="Preguntar a Fulcro">
             <Icono nombre="consultor" tam={18} />
           </button>
@@ -525,7 +556,7 @@ function App() {
 
         {pestana === 'dashboard' && (
           <div key="dashboard" className="vista">
-            <div className="saludo">
+            <div className="saludo v5-solo-movil">
               <p className="saludo-usuario">{perfil.nombre?.trim() ? `Hola, ${nombrePropio(perfil.nombre).split(' ')[0]}` : 'Hola'}</p>
               <p className="saludo-fecha">{capitalizar(FMT_HOY.format(new Date()))}</p>
             </div>
@@ -580,7 +611,23 @@ function App() {
                   </button>
                 </div>
 
-                {vistaInicio === 'resumen' && (
+                {vistaInicio === 'resumen' && v5 && (
+                  <InicioV5
+                    usuarioId={usuarioId}
+                    avisosRenovacion={perfil?.avisos_renovacion ?? null}
+                    movimientos={movimientos}
+                    recurrentes={recurrentes}
+                    cargandoRecurrentes={cargandoRecurrentes}
+                    diasSinRegistrar={diasDesdeUltimoMovimiento}
+                    soloLectura={enDemo}
+                    onGuardado={onGuardado}
+                    onRegistrar={irARegistrar}
+                    onConfirmarCobro={confirmarDesdeInicio}
+                    onIrA={irAPestana}
+                    onVerAnalisis={() => setVistaInicio('analisis')}
+                  />
+                )}
+                {vistaInicio === 'resumen' && !v5 && (
                   <Inicio
                     usuarioId={usuarioId}
                     avisosRenovacion={perfil?.avisos_renovacion ?? null}
@@ -642,7 +689,24 @@ function App() {
         )}
 
         <Suspense fallback={<CargandoVista />}>
-        {pestana === 'movimientos' && (
+        {pestana === 'movimientos' && v5 && (
+          <MovimientosV5
+            key="movimientos"
+            usuarioId={usuarioId}
+            movimientos={movimientos}
+            cargando={cargando}
+            onGuardado={onGuardado}
+            filtro={filtroMov}
+            onLimpiarFiltro={() => setFiltroMov(null)}
+            modoInicial={modoRegistro}
+            movimientosReales={movimientosReales}
+            recurrentes={recurrentesConciliados}
+            onIrA={irAPestana}
+            onNuevo={(modo) => setNuevoAbierto(modo || 'gasto')}
+            soloLectura={enDemo}
+          />
+        )}
+        {pestana === 'movimientos' && !v5 && (
           <MovimientosTab
             key="movimientos"
             usuarioId={usuarioId}
@@ -671,30 +735,40 @@ function App() {
           />
         )}
 
-        {(pestana === 'presupuesto' || pestana === 'simulador' || (esV4() && pestana === 'inversiones')) && (
-          <div className="sub-tabs ini-vistas plan-vistas" role="tablist" aria-label={esV4() ? 'Futuro' : 'Plan'}>
+        {(pestana === 'presupuesto' || pestana === 'simulador' || (v5 && pestana === 'inversiones')) && (
+          <div className={`sub-tabs ini-vistas plan-vistas ${v5 ? 'v5-solo-movil' : ''}`} role="tablist" aria-label="Plan">
             <button type="button" role="tab" aria-selected={pestana === 'presupuesto'} className={pestana === 'presupuesto' ? 'activo' : ''} onClick={() => setPestana('presupuesto')}>
               Presupuesto
             </button>
-            {esV4() && (
+            {v5 && (
               <button type="button" role="tab" aria-selected={pestana === 'inversiones'} className={pestana === 'inversiones' ? 'activo' : ''} onClick={() => setPestana('inversiones')}>
-                Inversión
+                Patrimonio
               </button>
             )}
             <button type="button" role="tab" aria-selected={pestana === 'simulador'} className={pestana === 'simulador' ? 'activo' : ''} onClick={() => setPestana('simulador')}>
-              Simuladores
+              {v5 ? 'Objetivos' : 'Simuladores'}
             </button>
           </div>
         )}
 
         {pestana === 'presupuesto' && (
           <div key="presupuesto" className="vista plan-vista">
-            <Presupuesto usuarioId={usuarioId} movimientos={movimientosMes} gastoEstimado={gastoEstimado} />
-            <PlanificacionFutura usuarioId={usuarioId} movimientos={movimientos} />
+            <Presupuesto usuarioId={usuarioId} movimientos={movimientosMes} gastoEstimado={gastoEstimado} historico={movimientos} />
+            {!v5 && <PlanificacionFutura usuarioId={usuarioId} movimientos={movimientos} />}
           </div>
         )}
 
-        {pestana === 'inversiones' && (
+        {pestana === 'inversiones' && v5 && (
+          <PatrimonioV5
+            key="patrimonio"
+            usuarioId={usuarioId}
+            movimientos={movimientos}
+            cargando={cargando}
+            onGuardado={onGuardado}
+            soloLectura={enDemo}
+          />
+        )}
+        {pestana === 'inversiones' && !v5 && (
           <Inversiones
             key="inversiones"
             usuarioId={usuarioId}
@@ -704,7 +778,19 @@ function App() {
           />
         )}
 
-        {pestana === 'simulador' && (
+        {pestana === 'simulador' && v5 && (
+          <div key="objetivos" className="vista v5-objetivos">
+            <Simulador
+              usuarioId={usuarioId}
+              movimientos={movimientos}
+              ahorroMensual={totalesMes.ahorro}
+              gastoMensual={gastoEstimado.estimacion || totalesMes.gastos}
+              diasConHistorial={diasConHistorial}
+            />
+            <PlanificacionFutura usuarioId={usuarioId} movimientos={movimientos} />
+          </div>
+        )}
+        {pestana === 'simulador' && !v5 && (
           <Simulador
             key="simulador"
             usuarioId={usuarioId}
@@ -718,6 +804,13 @@ function App() {
       </main>
 
       <BottomNav activa={pestana} onCambiar={irAPestana} onApuntar={() => irARegistrar('gasto')} avisos={{ suscripciones: nPendientesFijos }} />
+      {nuevoAbierto && (
+        <Panel titulo="Nuevo movimiento" subtitulo="Se guarda al momento; puedes apuntar varios seguidos" onCerrar={() => setNuevoAbierto(null)} ancho={520}>
+          <Suspense fallback={<CargandoVista />}>
+            <RegistroMovimiento usuarioId={usuarioId} movimientos={movimientos} onGuardado={onGuardado} modoInicial={nuevoAbierto} />
+          </Suspense>
+        </Panel>
+      )}
       <Toaster />
       <Confirmador />
       {verCuenta && (

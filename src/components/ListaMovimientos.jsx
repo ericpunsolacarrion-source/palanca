@@ -16,7 +16,7 @@ import { useComerciosCompartidos } from '../lib/DatosCompartidos'
 import { claveComercio, directorio, mismaEtiqueta, nombreParaComercio } from '../lib/comercios'
 import { esAjuste } from '../lib/categorias'
 
-function FilaEdicion({ movimiento, usuarioId, todos = [], onCancelar, onGuardado }) {
+export function FilaEdicion({ movimiento, usuarioId, todos = [], onCancelar, onGuardado }) {
   const [importe, setImporte] = useState(Number(movimiento.importe))
   const [fecha, setFecha] = useState(movimiento.fecha)
   const [esFijo, setEsFijo] = useState(movimiento.es_fijo)

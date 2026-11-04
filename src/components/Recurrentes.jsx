@@ -15,6 +15,9 @@ import InputImporte from './InputImporte'
 import SuscripcionesDetectadas from './SuscripcionesDetectadas'
 import { conciliarFijos } from '../lib/conciliarFijos'
 import { useComerciosCompartidos } from '../lib/DatosCompartidos'
+import { esV5 } from '../lib/diseno'
+import Avatar from './v5/Avatar'
+import CalendarioBase, { RepartoAnual } from './v5/CalendarioBase'
 
 const signo = (tipo) => (tipo === 'ingreso' ? '+' : '−')
 
@@ -78,6 +81,18 @@ const diaValido = (v) => {
 }
 
 // ── Fila de compromiso: nombre + biografía + importe + anillo de estado ──────
+// v5: el estado del cobro como etiqueta clara (Pagado, Hoy, Mañana, en 9 días…).
+function EstadoV5({ rec, estado, bio }) {
+  if (!rec.activo) return <span className="v5-insignia">En pausa</span>
+  if (estado === 'hecho') return <span className="v5-insignia bien">{rec.tipo === 'ingreso' ? 'Cobrado' : 'Pagado'}</span>
+  if (estado === 'confirmar') return <span className="v5-insignia aviso">Por confirmar</span>
+  if (estado === 'sin-dia') return <span className="v5-insignia aviso">Falta el día</span>
+  const p = bio.proximo
+  if (!p) return null
+  const t = p.texto.charAt(0).toUpperCase() + p.texto.slice(1)
+  return <span className={`v5-insignia ${p.dias <= 1 ? 'info' : ''}`}>{t}</span>
+}
+
 function CompromisoRow({ rec, registrando, recien, onAbrir, onConfirmarRapido, onDesmarcar }) {
   const bio = useMemo(() => biografiaRecurrente(rec), [rec])
   const esIngreso = rec.tipo === 'ingreso'
@@ -126,8 +141,12 @@ function CompromisoRow({ rec, registrando, recien, onAbrir, onConfirmarRapido, o
         </svg>
       </button>
 
+      {esV5() && <Avatar nombre={rec.nombre} tam={36} />}
       <div className="tb-row-main">
-        <span className="tb-row-nombre">{rec.nombre}</span>
+        <span className="tb-row-nombre">
+          {rec.nombre}
+          {esV5() && rec.detectado && <span className="v5-insignia info v5-mini">Detectado</span>}
+        </span>
         {partes.length > 0 && (
           <span className={`tb-row-bio ${estado === 'confirmar' || estado === 'sin-dia' ? 'atencion' : ''}`}>
             {partes.join('  ·  ')}
@@ -139,6 +158,7 @@ function CompromisoRow({ rec, registrando, recien, onAbrir, onConfirmarRapido, o
         {signo(rec.tipo)}
         {formatearEuros(Number(rec.importe))}
         {periodo.meses > 1 && <span className="tb-row-periodo">{periodo.corta}</span>}
+        {esV5() && <EstadoV5 rec={rec} estado={estado} bio={bio} />}
       </span>
     </div>
   )
@@ -530,6 +550,150 @@ export default function Recurrentes({ usuarioId, movimientos, onRegistrado, abri
     if (prox) return { tono: 'ok', texto: `Al día · próximo: ${prox.r.nombre}, ${prox.p.texto}` }
     return { tono: 'ok', texto: 'Todo al día este mes' }
   }, [items])
+
+  const v5 = esV5()
+  const resumenMes = useMemo(() => {
+    const toca = items.filter((r) => r.activo && r.tipo === 'gasto' && estadoCobro(r) !== 'no-toca')
+    const cent = (r) => Math.round((Number(r.importe) || 0) * 100)
+    return {
+      total: toca.reduce((s, r) => s + cent(r), 0) / 100,
+      pagado: toca.filter((r) => estadoCobro(r) === 'hecho').reduce((s, r) => s + cent(r), 0) / 100,
+      nPagados: toca.filter((r) => estadoCobro(r) === 'hecho').length,
+      n: toca.length,
+      porConfirmar: items.filter((r) => r.activo && ['confirmar', 'sin-dia'].includes(estadoCobro(r))).length,
+    }
+  }, [items])
+
+  const lista = (
+    <>
+      {cargando && items.length === 0 && (
+        <div className="skeleton skeleton-linea" style={{ width: '70%', height: 44, marginTop: 24 }} />
+      )}
+
+      {!cargando && items.length === 0 && (
+        <div className="tb-vacio">
+          <p>Aún no has añadido tus gastos fijos.</p>
+          <span>Alquiler, suscripciones, nómina… Empieza por uno, o importa el extracto de tu banco y los detectamos por ti.</span>
+        </div>
+      )}
+
+      {ordenados.length > 0 && (
+        <div className="tb-lista">
+          {ordenados.map((rec) => (
+            <CompromisoRow
+              key={rec.id}
+              rec={rec}
+              registrando={registrandoId === rec.id}
+              recien={recienId === rec.id}
+              onAbrir={setDetalle}
+              onConfirmarRapido={confirmarRapido}
+              onDesmarcar={desmarcarRec}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  )
+
+  const hojas = (
+    <>
+      {detalle && (
+        <DetalleSheet
+          rec={items.find((r) => r.id === detalle.id) ?? detalle}
+          mesActual={mesActual}
+          registrando={registrandoId === detalle.id}
+          onCerrar={() => setDetalle(null)}
+          onConfirmar={registrar}
+          onGuardarDia={guardarDia}
+          onEditar={(rec) => { setDetalle(null); setForm({ rec }) }}
+          onPausar={pausarOReactivar}
+          onBorrar={borrar}
+          onDesmarcar={desmarcarRec}
+        />
+      )}
+
+      {reactivar && (
+        <ReactivarSheet
+          rec={reactivar}
+          onCancelar={() => setReactivar(null)}
+          onGuardar={async (rec, campos) => {
+            setReactivar(null)
+            await actualizar(rec.id, campos)
+            toast(`${rec.nombre} reactivado: se cobra el día ${campos.diaMes}`)
+          }}
+        />
+      )}
+
+      {form && (
+        <FormularioRecurrente
+          inicial={form.rec}
+          categoriasGasto={categoriasGasto}
+          categoriasIngreso={categoriasIngreso}
+          onGuardar={(datos) => {
+            if (form.rec) actualizar(form.rec.id, datos)
+            else crear(datos)
+            setForm(null)
+          }}
+          onCancelar={() => setForm(null)}
+        />
+      )}
+    </>
+  )
+
+  if (v5) {
+    return (
+      <div className="vista v5-base">
+        <div className="v5-kpi-fila">
+          <div className="v5-kpi destacado">
+            <span className="v5-etq">Fijos al mes</span>
+            <b className="num">{formatearEuros(gastoMes)}</b>
+            <small className="v5-tenue">{nActivos} {nActivos === 1 ? 'compromiso' : 'compromisos'} de gasto, prorrateados</small>
+          </div>
+          <div className="v5-kpi">
+            <span className="v5-etq">Al año</span>
+            <b className="num">{formatearEuros(Math.round(gastoAnual))}</b>
+            <small className="v5-tenue">Lo que suman en 12 meses</small>
+          </div>
+          <div className="v5-kpi">
+            <span className="v5-etq">Este mes</span>
+            <b className="num">
+              {formatearEuros(resumenMes.pagado)} <span className="v5-kpi-de">de {formatearEuros(resumenMes.total)}</span>
+            </b>
+            <small className="v5-tenue">{resumenMes.nPagados} de {resumenMes.n} cobros ya pagados</small>
+          </div>
+          <div className="v5-kpi">
+            <span className="v5-etq">Pide atención</span>
+            <b className={`num ${resumenMes.porConfirmar ? 'v5-aviso-texto' : 'v5-positivo'}`}>{resumenMes.porConfirmar || 'Todo al día'}</b>
+            <small className="v5-tenue">{resumenMes.porConfirmar ? (resumenMes.porConfirmar === 1 ? 'Cobro por confirmar o sin día' : 'Cobros por confirmar o sin día') : estado?.texto ?? 'Sin compromisos activos'}</small>
+          </div>
+        </div>
+
+        <div className="v5-base-rejilla">
+          <div className="v5-base-a">
+            {items.some((r) => r.activo) && <CalendarioBase items={items} onAbrir={setDetalle} />}
+            <RepartoAnual items={items} />
+            <PlanAhorro usuarioId={usuarioId} recurrentes={items} onActualizar={actualizar} />
+          </div>
+          <div className="v5-base-b">
+            <section className="v5-tarjeta v5-base-lista" aria-label="Tus compromisos">
+              <header className="v5-tarjeta-cab">
+                <h2>Compromisos</h2>
+                <button type="button" className="v5-boton" onClick={() => setForm({})}>
+                  <span aria-hidden="true">+</span> Añadir compromiso
+                </button>
+              </header>
+              <p className="v5-tenue v5-base-ayuda">Toca el círculo para confirmar un cobro; tócalo otra vez para deshacerlo.</p>
+              {lista}
+            </section>
+            {!cargando && (
+              <SuscripcionesDetectadas usuarioId={usuarioId} movimientos={movimientos} recurrentes={items} onAnadir={crear} />
+            )}
+          </div>
+        </div>
+        {hojas}
+      </div>
+    )
+  }
 
   return (
     <div className="tubase vista fade-in-up">
