@@ -11,19 +11,30 @@ import { chromium } from 'playwright'
 const ANCHOS = [
   { nombre: 'movil', w: 390, h: 844 },
   { nombre: 'tablet', w: 820, h: 1100 },
+  { nombre: 'portatil', w: 1280, h: 800 },
   { nombre: 'ordenador', w: 1440, h: 900 },
+  { nombre: 'monitor', w: 1920, h: 1080 },
 ]
+// Navegación: menú lateral (ordenador) o barra inferior + subpestañas (móvil).
+const ir = (id, sub) => async (p) => {
+  const b = p.locator(`[data-pestana="${id}"]:visible`).first()
+  if (await b.count()) return b.click()
+  await p.locator('[data-pestana="presupuesto"]:visible').first().click()
+  await p.waitForTimeout(250)
+  await p.getByRole('tab', { name: sub, exact: true }).click()
+}
 const PANTALLAS = [
   { nombre: 'inicio', ir: async () => {} },
   { nombre: 'analisis', ir: async (p) => p.getByRole('tab', { name: 'Análisis' }).click() },
-  { nombre: 'dinero', ir: async (p) => p.locator('.bottom-nav [data-pestana="movimientos"]').click() },
-  { nombre: 'historial', ir: async (p) => p.getByRole('button', { name: 'Historial', exact: true }).click() },
-  { nombre: 'importar', ir: async (p) => p.getByRole('button', { name: 'Importar', exact: true }).click() },
-  { nombre: 'fijos', ir: async (p) => p.locator('.bottom-nav [data-pestana="suscripciones"]').click() },
-  { nombre: 'presupuesto', ir: async (p) => p.locator('.bottom-nav [data-pestana="presupuesto"]').click() },
-  { nombre: 'inversion', ir: async (p) => (await p.locator('.bottom-nav [data-pestana="inversiones"]').count()) ? p.locator('.bottom-nav [data-pestana="inversiones"]').click() : p.getByRole('tab', { name: 'Inversión', exact: true }).click() },
-  { nombre: 'simuladores', ir: async (p) => p.getByRole('tab', { name: 'Simuladores', exact: true }).click() },
-  { nombre: 'fulcro', ir: async (p) => p.getByRole('button', { name: /Preguntar a Fulcro|Abrir Fulcro/ }).first().click(), cerrar: async (p) => p.getByRole('button', { name: 'Cerrar' }).first().click() },
+  { nombre: 'movimientos', ir: ir('movimientos') },
+  { nombre: 'movimiento-detalle', ir: async (p) => p.locator('.v5-tabla-fila').first().click(), cerrar: async (p) => p.keyboard.press('Escape') },
+  { nombre: 'importar', ir: async (p) => p.getByRole('button', { name: 'Importar', exact: true }).click(), cerrar: async (p) => p.getByRole('button', { name: /Volver a movimientos/ }).click() },
+  { nombre: 'nuevo', ir: async (p) => p.getByRole('button', { name: 'Nuevo movimiento' }).locator('visible=true').first().click(), cerrar: async (p) => p.keyboard.press('Escape') },
+  { nombre: 'patrimonio', ir: ir('inversiones', 'Patrimonio') },
+  { nombre: 'base', ir: ir('suscripciones') },
+  { nombre: 'presupuesto', ir: ir('presupuesto') },
+  { nombre: 'objetivos', ir: ir('simulador', 'Objetivos') },
+  { nombre: 'fulcro', ir: async (p) => p.getByRole('button', { name: /Preguntar a Fulcro|Abrir Fulcro/ }).locator('visible=true').first().click(), cerrar: async (p) => p.getByRole('button', { name: 'Cerrar' }).first().click() },
   { nombre: 'cuenta', ir: async (p) => p.locator('.app-cuenta:not(.app-ojo):not(.app-fulcro)').click(), cerrar: async (p) => p.keyboard.press('Escape') },
 ]
 
@@ -54,9 +65,9 @@ function revisar() {
       const lg = g && lum(g[1])
       if (lg && lg.a > 0.9) return lg
     }
-    return lum('rgb(244,239,230)')
+    return lum('rgb(10,16,13)')
   }
-  for (const el of document.querySelectorAll('main *, .app-header *, .bottom-nav *')) {
+  for (const el of document.querySelectorAll('main *, .app-header *, .bottom-nav *, .v5-lateral *, .v5-panel *, .consultor-panel *')) {
     if (!visible(el)) continue
     const cs = getComputedStyle(el)
     const texto = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join('')

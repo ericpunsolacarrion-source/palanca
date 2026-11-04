@@ -1,4 +1,4 @@
-// RECORRIDO COMPLETO en el navegador (16 pasos): la app real con Supabase y la
+// RECORRIDO COMPLETO en el navegador (diseño v5, 19 pasos): la app real con Supabase y la
 // IA simulados. Lo lanza tests/e2e/ejecutar.mjs. Cada paso que falla deja una
 // captura en tests/e2e/salida/.
 import { chromium } from 'playwright'
@@ -6,7 +6,7 @@ import { chromium } from 'playwright'
 export async function recorrido({ url, ancho = 390, salida, navegador }) {
 const out = salida
 const b = await chromium.launch(navegador)
-const p = await b.newPage({ viewport: { width: ancho, height: 800 }, deviceScaleFactor: 1 })
+const p = await b.newPage({ viewport: { width: ancho, height: ancho >= 1900 ? 1080 : 800 }, deviceScaleFactor: 1 })
 const errores = []
 const fallos = []
 p.on('pageerror', (e) => errores.push(`pageerror: ${e.message}`))
@@ -33,27 +33,31 @@ const desborde = async (donde) => {
   })
   if (r.scroll || r.anchos.length) fallos.push(`desborde horizontal en ${donde}: ${r.anchos.join(' | ')}`)
 }
-// Pestañas por su id (no por el texto, que cambia entre diseños). En v4,
-// «Inversión» vive dentro de «Futuro».
-const IDS = { Movimientos: 'movimientos', Fijos: 'suscripciones', Plan: 'presupuesto', 'Inversión': 'inversiones', Inicio: 'dashboard' }
+// Pestañas por su id (no por el texto, que cambia entre diseños). En el
+// ordenador hay menú lateral; en el móvil, la barra inferior y, para lo que
+// vive dentro de «Plan», sus subpestañas.
+const IDS = { Movimientos: 'movimientos', Fijos: 'suscripciones', Plan: 'presupuesto', 'Inversión': 'inversiones', Objetivos: 'simulador', Inicio: 'dashboard' }
+const SUB = { 'Inversión': 'Patrimonio', Objetivos: 'Objetivos' }
 const tab = async (n) => {
   const id = IDS[n]
-  const directa = p.locator(`.bottom-nav [data-pestana="${id}"]`)
+  const directa = p.locator(`[data-pestana="${id}"]:visible`).first()
   if (await directa.count()) return directa.click()
-  await p.locator('.bottom-nav [data-pestana="presupuesto"]').click()
+  await p.locator('[data-pestana="presupuesto"]:visible').first().click()
   await p.waitForTimeout(300)
-  await p.getByRole('tab', { name: n, exact: true }).click()
+  await p.getByRole('tab', { name: SUB[n] ?? n, exact: true }).click()
 }
+const visible = (sel) => p.locator(`${sel}:visible`).first()
+const nuevo = () => p.getByRole('button', { name: 'Nuevo movimiento' }).locator('visible=true').first()
 
 await p.goto(url, { waitUntil: 'networkidle' })
 await p.waitForTimeout(1200)
 await cerrarModales()
 
-await paso('Inicio carga con avisos y marca', async () => {
-  await p.getByText('Hola, Eric').waitFor({ timeout: 4000 })
-  await p.locator('.app-logo svg').waitFor()
-  await p.getByText('Tu patrimonio').waitFor()
-  await p.locator('.b4-balance, .ini-mes').first().waitFor()
+await paso('Inicio carga con avisos, patrimonio y el mes', async () => {
+  await visible(':text("Hola, Eric")').waitFor({ timeout: 4000 })
+  await p.getByText('Patrimonio neto').waitFor()
+  await p.locator('.v5-ini-mes').waitFor()
+  await p.locator('.v5-ini-flujo .v5-graf svg').waitFor()
   await desborde('Inicio')
 })
 
@@ -70,16 +74,17 @@ await paso('Inicio: ocultar y mostrar importes', async () => {
   await p.getByRole('button', { name: 'Mostrar importes' }).click(); await p.waitForTimeout(600)
 })
 
-await paso('Movimientos: registrar un gasto', async () => {
-  await tab('Movimientos'); await p.waitForTimeout(500)
-  await p.locator('.importe-grande input, input[inputmode="decimal"]').first().fill('23,45')
+await paso('Nuevo movimiento: registrar un gasto desde el panel', async () => {
+  await nuevo().click(); await p.waitForTimeout(500)
+  await p.getByRole('dialog', { name: 'Nuevo movimiento' }).waitFor()
+  await p.locator('#importe').fill('23,45')
   await p.getByRole('button', { name: 'Comida', exact: true }).first().click()
   await p.locator('.apunte-guardar').click()
   await p.waitForTimeout(600)
-  await desborde('Movimientos/Nuevo')
+  await desborde('Nuevo movimiento')
 })
 
-await paso('Movimientos: apuntar con sitio y «Se repite» crea el fijo', async () => {
+await paso('Nuevo movimiento: con sitio y «Se repite» crea el fijo', async () => {
   await p.locator('#importe').fill('13,99')
   await p.locator('#apunte-lugar').fill('Academia de inglés'); await p.locator('#importe').click(); await p.waitForTimeout(300)
   await p.locator('.apunte-meta-chip', { hasText: 'Se repite' }).click()
@@ -88,23 +93,54 @@ await paso('Movimientos: apuntar con sitio y «Se repite» crea el fijo', async 
   if (!/13,99/.test(texto)) throw new Error('botón sin importe: ' + texto)
   await p.locator('.apunte-guardar').click(); await p.waitForTimeout(900)
   await p.getByText(/añadido a Fijos/).first().waitFor({ timeout: 3000 })
+  await p.keyboard.press('Escape'); await p.waitForTimeout(300)
+  if (await p.getByRole('dialog', { name: 'Nuevo movimiento' }).count()) throw new Error('el panel no se cierra con Escape')
 })
 
-await paso('Movimientos: historial muestra el gasto y se puede borrar', async () => {
-  await p.getByRole('button', { name: 'Historial', exact: true }).click(); await p.waitForTimeout(500)
-  await p.getByText(/23,45/).first().waitFor({ timeout: 3000 })
-  await desborde('Movimientos/Historial')
+await paso('Movimientos: la tabla muestra el gasto, se busca y se filtra', async () => {
+  await tab('Movimientos'); await p.waitForTimeout(600)
+  await p.locator('.v5-tabla-fila', { hasText: '23,45' }).first().waitFor({ timeout: 3000 })
+  await p.getByLabel('Buscar en tus movimientos').fill('academia'); await p.waitForTimeout(300)
+  if ((await p.locator('.v5-tabla-fila').count()) !== 1) throw new Error('la búsqueda no deja solo la academia')
+  await p.getByLabel('Buscar en tus movimientos').fill(''); await p.waitForTimeout(200)
+  await p.getByRole('button', { name: 'Ingresos', exact: true }).click(); await p.waitForTimeout(300)
+  if (await p.locator('.v5-tabla-fila', { hasText: '23,45' }).count()) throw new Error('el filtro de ingresos enseña gastos')
+  await p.getByRole('button', { name: 'Todos', exact: true }).click(); await p.waitForTimeout(300)
+  await desborde('Movimientos')
 })
 
-await paso('Movimientos: importar muestra el asistente', async () => {
-  await p.getByRole('button', { name: 'Importar', exact: true }).click(); await p.waitForTimeout(400)
+await paso('Movimientos: editar desde el detalle', async () => {
+  await p.locator('.v5-tabla-fila', { hasText: '13,99' }).first().click(); await p.waitForTimeout(400)
+  await p.getByRole('button', { name: 'Editar', exact: true }).locator('visible=true').first().click(); await p.waitForTimeout(300)
+  const campo = p.locator('.v5-det-edicion input[inputmode="decimal"]').first()
+  await campo.fill('14,50')
+  await p.getByRole('button', { name: 'Guardar cambios' }).click(); await p.waitForTimeout(800)
+  await p.locator('.v5-tabla-fila', { hasText: '14,50' }).first().waitFor({ timeout: 3000 })
+  // Móvil: el detalle va en un panel; se cierra para seguir.
+  if (await p.getByRole('dialog', { name: 'Movimiento' }).count()) { await p.keyboard.press('Escape'); await p.waitForTimeout(300) }
+})
+
+await paso('Movimientos: eliminar desde el detalle (con confirmación)', async () => {
+  await p.locator('.v5-tabla-fila', { hasText: '23,45' }).first().click(); await p.waitForTimeout(400)
+  await p.getByRole('button', { name: 'Eliminar', exact: true }).locator('visible=true').first().click(); await p.waitForTimeout(300)
+  await p.locator('.modal-confirmar').click(); await p.waitForTimeout(800)
+  if (await p.locator('.v5-tabla-fila', { hasText: '23,45' }).count()) throw new Error('el movimiento sigue en la tabla')
+  if (await p.getByRole('dialog', { name: 'Movimiento' }).count()) await p.keyboard.press('Escape')
+})
+
+await paso('Movimientos: importar muestra el asistente y se vuelve', async () => {
+  await p.getByRole('button', { name: 'Importar', exact: true }).click(); await p.waitForTimeout(500)
   await desborde('Movimientos/Importar')
+  await p.getByRole('button', { name: /Volver a movimientos/ }).click(); await p.waitForTimeout(300)
 })
 
-await paso('Fijos: calendario, detector y lista', async () => {
+await paso('Base: calendario, cifras y lista', async () => {
   await tab('Fijos'); await p.waitForTimeout(800)
-  await p.getByText('Próximos 30 días').waitFor({ timeout: 3000 })
-  await desborde('Fijos')
+  await p.locator('.v5-cal').waitFor({ timeout: 3000 })
+  await p.getByText('Compromisos', { exact: true }).waitFor()
+  await p.locator('.v5-cal-dia.hoy').click(); await p.waitForTimeout(300)
+  await p.locator('.v5-cal-detalle').waitFor()
+  await desborde('Base')
 })
 
 await paso('Fijos: añadir suscripción detectada no la deja pendiente', async () => {
@@ -134,20 +170,23 @@ await paso('Fijos: alta de compromiso anual', async () => {
   await p.locator('.tb-row', { hasText: 'Dominio web' }).waitFor({ timeout: 3000 })
 })
 
-await paso('Presupuesto: definir por tasa', async () => {
+await paso('Presupuesto: definir por tasa y ver el seguimiento', async () => {
   await tab('Plan'); await p.waitForTimeout(600)
   const campo = p.locator('input[type="number"]').first()
-  if (await campo.count()) { await campo.fill('20'); await p.getByRole('button', { name: /Guardar presupuesto/ }).click(); await p.waitForTimeout(600) }
+  if (await campo.count()) { await campo.fill('20'); await p.getByRole('button', { name: /Guardar presupuesto/ }).click(); await p.waitForTimeout(700) }
+  await p.locator('.v5-presu-hero').waitFor({ timeout: 3000 })
   await desborde('Presupuesto')
 })
 
-await paso('Inversión: pantalla y alta', async () => {
+await paso('Patrimonio: cifras, evolución e inversión', async () => {
   await tab('Inversión'); await p.waitForTimeout(700)
-  await desborde('Inversión')
+  await p.locator('.v5-patrimonio').waitFor()
+  await p.getByText('Composición', { exact: true }).waitFor()
+  await desborde('Patrimonio')
 })
 
-await paso('Simulador: todas las subpestañas', async () => {
-  await tab('Plan'); await p.getByRole('tab', { name: 'Simuladores' }).click(); await p.waitForTimeout(500)
+await paso('Objetivos: todas las subpestañas', async () => {
+  await tab('Objetivos'); await p.waitForTimeout(500)
   for (const s of ['Ahorro', 'Interés compuesto', 'Hipoteca', 'Independencia']) {
     const bt = p.getByRole('button', { name: s, exact: true })
     if (await bt.count()) { await bt.first().click(); await p.waitForTimeout(400); await desborde(`Simulador/${s}`) }
@@ -156,7 +195,7 @@ await paso('Simulador: todas las subpestañas', async () => {
 
 await paso('Fulcro: saludo local, pregunta con streaming y nueva', async () => {
   await p.evaluate(() => sessionStorage.clear())
-  await p.getByRole('button', { name: /Abrir Fulcro|Preguntar a Fulcro/ }).first().click(); await p.waitForTimeout(800)
+  await p.getByRole('button', { name: /Abrir Fulcro|Preguntar a Fulcro/ }).locator('visible=true').first().click(); await p.waitForTimeout(800)
   await p.getByLabel('Tu pregunta').fill('Hola')
   await p.keyboard.press('Enter'); await p.waitForTimeout(300)
   await p.getByText('¡Hola! Pregúntame').waitFor({ timeout: 2000 })

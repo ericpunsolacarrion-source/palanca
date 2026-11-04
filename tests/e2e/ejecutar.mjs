@@ -17,10 +17,10 @@ const navegador = process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHR
 
 const servidor = await createServer(config)
 await servidor.listen()
-const url = `http://localhost:${config.server.port}/?diseno=${process.env.E2E_DISENO || 'v4'}`
+const url = `http://localhost:${config.server.port}/?diseno=${process.env.E2E_DISENO || 'v5'}`
 let fallos = 0
 try {
-  for (const ancho of [390, 1440]) {
+  for (const ancho of [390, 1280, 1920]) {
     const r = await recorrido({ url, ancho, salida, navegador })
     console.log(`\nRecorrido a ${ancho}px: ${r.fallos.length ? `${r.fallos.length} fallos` : 'todo bien'}`)
     for (const f of [...r.fallos, ...r.errores]) console.log('  ✗ ' + f)
