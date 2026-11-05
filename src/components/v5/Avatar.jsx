@@ -35,7 +35,9 @@ function useDibujo(logo) {
 //  2. si la marca aún no tiene logo libre, su color y su monograma;
 //  3. si no es una marca, un tono estable y la inicial.
 // Los movimientos propios del motor (inversión, traspaso, ajuste) llevan su icono.
-export default function Avatar({ nombre, movimiento, tam = 36 }) {
+// `siNoHayMarca`: lo que se pinta si el nombre no es una marca reconocida (p. ej.
+// el icono de siempre en un campo de texto); sin él, monograma.
+export default function Avatar({ nombre, movimiento, tam = 36, siNoHayMarca }) {
   const logos = useLogos()
   const propio = movimiento && (esInversion(movimiento) || esTraspaso(movimiento) || esAjuste(movimiento))
   const logo = logos && !propio ? logoDe(nombre, logos) : null
@@ -96,6 +98,7 @@ export default function Avatar({ nombre, movimiento, tam = 36 }) {
     )
   }
 
+  if (siNoHayMarca !== undefined && !logo) return siNoHayMarca
   const id = identidadVisual(nombre)
   const largo = id.monograma.length
   return (

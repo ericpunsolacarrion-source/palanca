@@ -2784,3 +2784,17 @@
   object-fit: cover;
   background: var(--card-bg-2);
 }
+:root[data-diseno='v5'] .apunte-sugerencias button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+:root[data-diseno='v5'] .apunte-sugerencias .apunte-sug-meta {
+  margin-left: auto;
+}
+:root[data-diseno='v5'] .repetir-chip .v5-avatar {
+  border-radius: 5px !important;
+}
+:root[data-diseno='v5'] .apunte-lugar-campo input:focus-visible {
+  outline: none;
+}

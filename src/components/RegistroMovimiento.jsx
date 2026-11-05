@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { esV5 } from '../lib/diseno'
+import Avatar from './v5/Avatar'
 import Icono from './Icono'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
@@ -356,7 +358,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
               const clave = `${rep.categoriaId}|${rep.fuenteId}|${rep.importe}`
               return (
                 <button key={clave} type="button" className="repetir-chip" onClick={() => duplicar(rep)} disabled={duplicandoClave === clave}>
-                  <Icono nombre="repetir" tam={14} className="repetir-chip-icono" />
+                  {esV5() ? <Avatar nombre={rep.fuenteNombre || rep.comercio || ''} tam={18} siNoHayMarca={<Icono nombre="repetir" tam={14} className="repetir-chip-icono" />} /> : <Icono nombre="repetir" tam={14} className="repetir-chip-icono" />}
                   <span className="repetir-chip-texto">
                     {rep.fuenteNombre || rep.comercio || etiquetaCategoria(rep.categoriaNombre ?? '') || 'Movimiento'} · {formatearEuros(rep.importe)}
                   </span>
@@ -384,7 +386,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
 
       <div className="apunte-lugar">
         <label className="apunte-lugar-campo" htmlFor="apunte-lugar">
-          <Icono nombre="lugar" tam={18} />
+          {esV5() ? <Avatar nombre={lugar} tam={24} siNoHayMarca={<Icono nombre="lugar" tam={18} />} /> : <Icono nombre="lugar" tam={18} />}
           <input
             id="apunte-lugar"
             ref={lugarRef}
@@ -420,6 +422,7 @@ export default function RegistroMovimiento({ usuarioId, movimientos = [], onGuar
             {sugerencias.map((l) => (
               <li key={l.nombre}>
                 <button type="button" role="option" aria-selected="false" onMouseDown={(e) => e.preventDefault()} onClick={() => elegirLugar(l)}>
+                  {esV5() && <Avatar nombre={l.nombre} tam={26} />}
                   <span className="apunte-sug-nombre">{l.nombre}</span>
                   <span className="apunte-sug-meta">
                     {l.categoriaNombre && !esInversion ? `${etiquetaCategoria(l.categoriaNombre)} · ` : ''}

@@ -1,3 +1,5 @@
+import { esV5 } from '../lib/diseno'
+import Avatar from './v5/Avatar'
 import Icono from './Icono'
 import { useState } from 'react'
 import { formatearEuros } from '../lib/categorias'
@@ -144,7 +146,7 @@ export default function GastosRapidos({
                 onClick={() => onRepetir?.(rep)}
                 disabled={duplicandoClave === clave}
               >
-                <Icono nombre="repetir" tam={14} className="repetir-chip-icono" />
+                {esV5() ? <Avatar nombre={rep.fuenteNombre || rep.comercio || ''} tam={18} siNoHayMarca={<Icono nombre="repetir" tam={14} className="repetir-chip-icono" />} /> : <Icono nombre="repetir" tam={14} className="repetir-chip-icono" />}
                 <span className="repetir-chip-texto">
                   {etiqueta} · {formatearEuros(rep.importe)}
                 </span>
