@@ -354,5 +354,41 @@ null
 "iberdrola": [
 "Iberdrola",
 null
+],
+"sanitas": [
+"Sanitas",
+null
+],
+"cepsa": [
+"Cepsa (Moeve)",
+"cepsa|moeve"
+],
+"mutuamadrilena": [
+"Mutua Madrileña",
+"mutua madrilena|mutuamas|mutua mas"
+],
+"galp": [
+"Galp",
+null
+],
+"renfe": [
+"Renfe",
+null
+],
+"digi": [
+"Digi",
+null
+],
+"basicfit": [
+"Basic-Fit",
+null
+],
+"waylet": [
+"Waylet",
+"(^| )waylet( |$)|pago waylet"
+],
+"repsolluz": [
+"Repsol Luz y Gas",
+"repsol (luz|vivit|electricidad|gas)|vivit"
 ]
 }

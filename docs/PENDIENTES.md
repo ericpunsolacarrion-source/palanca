@@ -77,7 +77,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
   - Inversión sin plataforma sale como «Sin especificar»: pedir la plataforma al aportar;
   - el valor de mercado de las inversiones no existe (solo lo aportado): decidir si se añade a mano;
   - presupuestos por categoría: no existen (se compara con tu media); decidir si se crean, porque necesita tabla nueva;
-  - logos (05-11): quedan **31 marcas con monograma** (lista en `docs/LOGOS.md`): Eric puede pasar capturas de su ficha en la App Store.
+  - logos (05-11): quedan **24 marcas con monograma** (lista en `docs/LOGOS.md`): Eric puede pasar capturas de su ficha en la App Store.
   - logos de marcas (04-11, histórico): 104 de 153 con logo oficial (`docs/LOGOS.md`). **Faltan 49 (Mercadona, Repsol, BBVA, Santander, Iberdrola…)**: su SVG oficial está en Wikimedia Commons, que el entorno de Claude no puede abrir. Eric: añadir `upload.wikimedia.org` y `commons.wikimedia.org` a Allowed domains del entorno (o pasar los SVG) y se completan;
   - Movimientos: la tabla carga 120 filas y «Mostrar más»; con miles, virtualizar;
   - navegación sin rutas: el botón «atrás» del navegador no cambia de sección.
