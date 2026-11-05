@@ -65,6 +65,8 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 - 🟩 **Guías de descarga del extracto banco por banco** (ahora son genéricas; los menús de cada banco no están verificados).
 - 🟩 Pulir el ciclo mensual de "trae lo nuevo del extracto".
 
+- 🟩 **Importar un extracto que solo trae ingresos** (05-11): sin ningún importe negativo, el importador no sabe si el banco pone los gastos en positivo y lo toma todo como gasto. En extractos reales no pasa (siempre hay gastos); si un día importa: decidirlo por el concepto («nómina», «transferencia recibida»…) o preguntar al usuario.
+
 ### Demo y primeros pasos
 - 🟧 **Demo avanzada, segunda vuelta** (Eric, 15-10: "después ya trabajaremos con más profundidad"): la versión 1 recorre cada pantalla. Ideas: enseñar acciones en vivo (renombrar un "ALIPAM", confirmar un fijo, retirar de una inversión), un capítulo de importación con un extracto de ejemplo, y medir en el panel en qué paso se sale la gente.
 

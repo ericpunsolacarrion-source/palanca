@@ -49,7 +49,10 @@ for (let k = 6; k >= 0; k -= 1) {
   if (pasado(1)) movimientos.push(mov('ingreso', cats.nomina, 2150, d(1), 'NOMINA EMPRESA SL'))
   if (pasado(2)) movimientos.push(mov('gasto', cats.vivienda, 750, d(2), 'RECIBO ALQUILER'))
   if (pasado(3)) movimientos.push(mov('gasto', cats.ocio, k > 2 ? 12.99 : 13.99, d(3), 'COMPRA TARJ. NETFLIX.COM'))
-  if (pasado(5)) movimientos.push(mov('gasto', cats.ocio, 10.99, d(5), 'SPOTIFY AB'))
+  // Spotify de ESTE mes no está en movimientos: es el cobro «por confirmar» de
+  // Fijos (si estuviera, la app lo da por pagado y el recorrido no podría
+  // confirmarlo; antes fallaba cualquier día a partir del 5).
+  if (k > 0) movimientos.push(mov('gasto', cats.ocio, 10.99, d(5), 'SPOTIFY AB'))
   if (pasado(7)) movimientos.push(mov('gasto', cats.ocio, 39.9, d(7), 'GIMNASIO BASICFIT'))
   if (pasado(9)) movimientos.push(mov('gasto', cats.comida, 64.2 + k * 3, d(9), 'MERCADONA'))
   if (pasado(12)) movimientos.push(mov('gasto', cats.comida, 41.35 + k, d(12), 'MERCADONA'))

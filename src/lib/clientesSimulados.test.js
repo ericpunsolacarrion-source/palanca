@@ -143,10 +143,14 @@ describe('extractos que se solapan (el cliente baja el de cada mes)', () => {
     const segundo = importar(ext(c.evs.slice(mitad - 20)), primero.movs)
     expect(primero.validas.length + segundo.validas.length).toBe(c.evs.length)
     expect(segundo.duplicados).toHaveLength(20)
-    // Y lo ya apuntado a mano (mismo día e importe) se propone fuera.
-    const e = c.evs[mitad]
+    // Y lo ya apuntado a mano (mismo día e importe) se propone fuera. Se usa
+    // un gasto: un extracto de UNA sola fila positiva no dice cómo usa los
+    // signos el banco (ver PENDIENTES), y el día de hoy cambia qué fila toca.
+    let im = mitad
+    while (signo(c.evs[im]) > 0) im += 1
+    const e = c.evs[im]
     const aMano = [{ id: 'a', tipo: signo(e) > 0 ? 'ingreso' : 'gasto', fecha: e.fecha, importe: e.importe, importe_centimos: centimos(e.importe), nota: null }]
-    const tercero = importar(ext(c.evs.slice(mitad, mitad + 1)))
+    const tercero = importar(ext(c.evs.slice(im, im + 1)))
     expect(indicesParecidos(tercero.validas, aMano).size).toBe(1)
   })
 })

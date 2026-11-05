@@ -286,5 +286,37 @@
  "klarna": [
   "Klarna",
   null
+ ],
+ "mercadona": [
+  "Mercadona",
+  null
+ ],
+ "elcorteingles": [
+  "El Corte Inglés",
+  null
+ ],
+ "bbva": [
+  "BBVA",
+  null
+ ],
+ "santander": [
+  "Santander",
+  null
+ ],
+ "axa": [
+  "AXA",
+  null
+ ],
+ "ing": [
+  "ING",
+  null
+ ],
+ "dominos": [
+  "Domino's",
+  null
+ ],
+ "decathlon": [
+  "Decathlon",
+  null
  ]
 }
