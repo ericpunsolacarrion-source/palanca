@@ -153,7 +153,7 @@ PANTALLAS.md §3 y §4b.
   ingreso llega a final de mes; `max_tokens` 4000. Falta solo poner la clave
   (pasos en FULCRO.md → "Activarlo").
 - **Primeros minutos**: acceso con propuesta clara; alta en 4 pasos; logros
-  honestos (sin el saldo inicial); "Ver la app con datos de ejemplo" en Tu cuenta.
+  honestos (sin el saldo inicial); "Ver la app con datos de ejemplo" en Tu cuenta (enseña el **cliente completo**: Lucía, 3 años usando todo, `lib/clienteCompleto.js`).
 - **Navegación en 5 pestañas** (Plan = Presupuesto + Simuladores) y
   **buscador** en el historial; movimientos con nombre legible.
 - **Clientes extremos** (10 años, jubilado, estudiante, patrimonio alto,

@@ -51,6 +51,16 @@ try {
       const x = p.getByRole('button', { name: /^(Seguir|Entendido)$/ })
       if (await x.count()) { await x.first().click(); await p.waitForTimeout(150) } else break
     }
+    // EJEMPLO=1: captura el cliente completo (Tu cuenta → Ver la app con datos de ejemplo).
+    if (process.env.EJEMPLO) {
+      await p.getByRole('button', { name: /^Tu cuenta/ }).first().click()
+      await p.getByRole('button', { name: 'Ver la app con datos de ejemplo' }).click()
+      await p.waitForTimeout(900)
+      for (let i = 0; i < 20; i++) {
+        const x = p.getByRole('button', { name: /^(Seguir|Entendido|Cerrar demo|Saltar)$/ })
+        if (await x.count()) { await x.first().click(); await p.waitForTimeout(150) } else break
+      }
+    }
     for (const [nombre, accion] of PANTALLAS) {
       try {
         await accion(p)

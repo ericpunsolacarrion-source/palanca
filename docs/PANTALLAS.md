@@ -47,6 +47,16 @@ Dos vistas con un segmentado arriba: **Resumen** (por defecto, lo esencial en 5 
 
 **Usuario nuevo — datos de ejemplo y demo rápida** (`lib/datosDemo.js`, `TourRapido.jsx`): sin nada propio (el saldo inicial no cuenta) la app se enseña **llena con 6 meses de ejemplo** (en memoria, ids `demo-…`, nunca se guardan; editar/borrar/confirmar el ejemplo avisa y no escribe) con un aviso "Estás viendo datos de ejemplo · Ver demo · Empezar con mis datos". La **demo rápida** (6 pasos que recorren las pestañas y resaltan su botón) se abre sola la primera vez y siempre desde Tu cuenta → "Ver la demo rápida". El ejemplo desaparece al apuntar lo primero o al pulsar "Empezar con mis datos" (recordado por usuario). Fulcro, logros e hitos usan solo datos reales.
 
+**Cliente completo** (`lib/clienteCompleto.js`): cuando el ejemplo se pide a propósito (Tu cuenta → "Ver la app con datos de ejemplo" y la demo avanzada) no se ve el ejemplo corto sino **Lucía, 3 años usando todo**. Lleva unos 1.300 movimientos:
+- nómina con subidas, pagas extra, freelance y la devolución de la renta;
+- unas 60 marcas con logo, compras con devoluciones, traspasos a ahorro y su vuelta;
+- inversión en MyInvestor, Trade Republic, Coinbase (con una venta) e Indexa;
+- cuadres con el banco;
+- 22 fijos mensuales, bimestrales, trimestrales y anuales: Spotify por confirmar hoy, una renovación en 10 días y HBO Max dada de baja;
+- **presupuesto** (ahorrar el 25 %) y 3 **objetivos**, uno por cada bolsa (líquido, inversión y patrimonio).
+
+Todo en memoria y de solo lectura: guardar presupuesto u objetivos avisa con `AVISO_DEMO`. Capturas: `EJEMPLO=1 node tests/e2e/capturas.mjs v5 cliente`.
+
 **Demo avanzada** (`lib/tours.js` → `TOUR_AVANZADO`, mismo `TourRapido.jsx`): 18 pasos en 7 capítulos (Inicio, Movimientos, Fijos, Plan, Inversión, Fulcro, Tus datos) que se pueden saltar. Cada paso abre su pestaña y subpestaña, **resalta la pieza** de la que habla y añade una línea de "hasta dónde llega". En el capítulo Fulcro le hace una pregunta **en directo** (respuesta al momento, sin IA). Corre siempre con los **datos de ejemplo** (si el usuario tiene datos propios, se activan solo durante la demo) y al salir vuelve a los suyos. Se abre desde Tu cuenta → "Demo avanzada: todo lo que puede hacer Palanca" y desde el último paso de la rápida. Evento de métricas: `tour_avanzado`.
 
 ### 4. Movimientos (`MovimientosTab.jsx`)

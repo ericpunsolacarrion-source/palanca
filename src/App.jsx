@@ -50,6 +50,7 @@ import Icono, { Marca } from './components/Icono'
 import { fijarImportesOcultos, importesOcultos } from './lib/privacidad'
 import { toast } from './lib/toast'
 import { generarDemo } from './lib/datosDemo'
+import { generarClienteCompleto, objetivosCliente, presupuestoCliente } from './lib/clienteCompleto'
 import { esAjuste } from './lib/categorias'
 import { estadoCobro } from './lib/periodicidad'
 import TourRapido from './components/TourRapido'
@@ -304,10 +305,15 @@ function App() {
   const enDemo =
     forzarEjemplo ||
     (Boolean(perfil) && !cargando && !cargandoRecurrentes && !errorCarga && !tieneDatosPropios && !demoDescartada)
-  const movimientos = enDemo ? demo.movimientos : movimientosReales
-  const recurrentes = enDemo ? demo.recurrentes : recurrentesConciliados
+  // Con el ejemplo pedido a propósito (Tu cuenta o demo avanzada) se ve el
+  // cliente completo: 3 años usando todo (lib/clienteCompleto.js). Quien acaba
+  // de llegar ve el ejemplo corto de 6 meses.
+  const cliente = useMemo(() => (forzarEjemplo ? generarClienteCompleto() : null), [forzarEjemplo])
+  const ejemplo = cliente ?? demo
+  const movimientos = enDemo ? ejemplo.movimientos : movimientosReales
+  const recurrentes = enDemo ? ejemplo.recurrentes : recurrentesConciliados
   const nPendientesFijos = enDemo
-    ? demo.recurrentes.filter((r) => ['confirmar', 'sin-dia'].includes(estadoCobro(r))).length
+    ? ejemplo.recurrentes.filter((r) => ['confirmar', 'sin-dia'].includes(estadoCobro(r))).length
     : recurrentesConciliados.filter((r) => ['confirmar', 'sin-dia'].includes(estadoCobro(r))).length
 
   // Demo rápida (recorrido guiado): se ofrece sola la primera vez que se ven
@@ -402,7 +408,11 @@ function App() {
   // App es el dueño ÚNICO de presupuesto y objetivos: los instancia una vez y
   // los reparte por contexto (DatosCompartidosProvider). Evita que 3+3
   // componentes los pidan por su cuenta y mantiene una sola fuente fresca.
-  const presupuestoData = usePresupuesto(usuarioId)
+  const presupuestoReal = usePresupuesto(usuarioId)
+  const presupuestoData = useMemo(
+    () => (cliente ? presupuestoCliente((t) => toast(t)) : presupuestoReal),
+    [cliente, presupuestoReal],
+  )
   // Compromiso a abrir al llegar a Fijos (confirmar uno de importe variable).
   const [abrirFijoId, setAbrirFijoId] = useState(null)
 
@@ -431,7 +441,8 @@ function App() {
     },
     [recurrentes, confirmarCobro, desmarcarCobro, onGuardado],
   )
-  const objetivosData = useObjetivosAhorro(usuarioId)
+  const objetivosReales = useObjetivosAhorro(usuarioId)
+  const objetivosData = useMemo(() => (cliente ? objetivosCliente((t) => toast(t)) : objetivosReales), [cliente, objetivosReales])
   const { objetivoInversionMensual } = presupuestoData
   const [descartesPildora, setDescartesPildora] = useState(0)
 
@@ -569,7 +580,7 @@ function App() {
                   <strong>Estás viendo datos de ejemplo</strong>
                   <span>
                     {forzarEjemplo
-                      ? 'Tus datos siguen guardados; aquí no se ve nada tuyo.'
+                      ? 'Cliente de ejemplo: Lucía, 3 años usando Palanca a fondo. Tus datos siguen guardados; aquí no se ve nada tuyo.'
                       : 'Así se ve Palanca tras unos meses de uso. Nada de esto es tuyo.'}
                   </span>
                 </div>
@@ -728,7 +739,7 @@ function App() {
             key="suscripciones"
             usuarioId={usuarioId}
             movimientos={movimientosReales}
-            itemsDemo={enDemo ? demo.recurrentes : null}
+            itemsDemo={enDemo ? ejemplo.recurrentes : null}
             onRegistrado={onGuardado}
             abrirId={abrirFijoId}
             onAbierto={() => setAbrirFijoId(null)}

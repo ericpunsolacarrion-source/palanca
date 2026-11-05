@@ -6,6 +6,7 @@ import { TIPOS_OBJETIVO, useObjetivoTipo } from '../../lib/useObjetivoTipo'
 import { toast } from '../../lib/toast'
 import { confirmar } from '../../lib/confirmar'
 import InputImporte from '../InputImporte'
+import { esDemo } from '../../lib/datosDemo'
 
 const ETIQUETA_TIPO = Object.fromEntries(TIPOS_OBJETIVO.map((t) => [t.id, t.etiqueta]))
 // Cómo se nombra el "ritmo" según el tipo de objetivo.
@@ -165,7 +166,9 @@ function FormularioObjetivo({ inicial, tipoInicial, onGuardar, onCancelar, guard
 
 export default function AhorroObjetivo({ usuarioId, movimientos = [] }) {
   const { objetivos, cargando, tablaFalta, crear, actualizar, eliminar } = useObjetivosCompartidos()
-  const { tipoDe, fijarTipo } = useObjetivoTipo(usuarioId)
+  const { tipoDe: tipoGuardado, fijarTipo } = useObjetivoTipo(usuarioId)
+  // Los objetivos de ejemplo traen su tipo puesto (no está guardado en ningún sitio).
+  const tipoDe = (id) => objetivos.find((o) => o.id === id && esDemo(id))?.tipo ?? tipoGuardado(id)
   const [creando, setCreando] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
   const [guardando, setGuardando] = useState(false)
