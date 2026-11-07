@@ -75,6 +75,16 @@ export default function CalendarioBase({ items, movimientos = [], onAbrir }) {
   const esMesHoy = clave === claveHoy
   const seleccion = diaSel != null ? eventosDia.get(diaSel) ?? [] : null
 
+  // Frase del gráfico: qué queda por pagar (sin repetir importes de la lista).
+  const pendientes = flujo.eventos.filter((e) => e.estado !== 'realizado' && e.origen === 'compromiso' && e.tipo === 'gasto').length
+  const nombreMesTxt = etiquetaMes(clave, { month: 'long' }).toLowerCase()
+  const titular =
+    flujo.tramo === 'pasado'
+      ? `Así se movió tu dinero en ${nombreMesTxt}.`
+      : flujo.tramo === 'futuro'
+        ? pendientes ? `En ${nombreMesTxt} te esperan ${pendientes} ${pendientes === 1 ? 'cobro' : 'cobros'}.` : `Sin cobros previstos en ${nombreMesTxt}.`
+        : pendientes ? `Aún ${pendientes === 1 ? 'falta 1 cobro' : `faltan ${pendientes} cobros`} este mes.` : 'Este mes ya está todo pagado.'
+
   const selectorVista = (
     <div className="v5-seg" role="tablist" aria-label="Vista">
       {[['grafico', 'Gráfico'], ['calendario', 'Calendario']].map(([k, t]) => (
@@ -131,25 +141,14 @@ export default function CalendarioBase({ items, movimientos = [], onAbrir }) {
       {vista === 'grafico' ? (
         <>
           <div className="v5-saldo-leyenda">
-            <div className="v5-cal-barra">
-              {selectorVista}
+            <div className="v5-cal-barra">{selectorVista}</div>
             <ul className="v5-leyenda">
-              <li><i className="linea" aria-hidden="true" />Saldo real</li>
+              <li><i className="linea" aria-hidden="true" />Hasta hoy</li>
               {flujo.finPrevisto && <li><i className="linea discontinua" aria-hidden="true" />Previsto</li>}
-              <li><i className="punto" aria-hidden="true" />Realizado</li>
-              {flujo.finPrevisto && <li><i className="punto hueco" aria-hidden="true" />Previsto</li>}
             </ul>
-            </div>
-            <span className="v5-saldo-resumen num">
-              {flujo.tramo === 'actual' && <>Hoy <b>{formatearEuros(flujo.saldoHoy)}</b> · </>}
-              {flujo.tramo === 'pasado' ? 'Cerró en' : 'A fin de mes'} <b>{formatearEuros(flujo.saldoFinal)}</b>
-              {flujo.finPrevisto && <span className="v5-tenue"> previsto</span>}
-            </span>
           </div>
+          <p className="v5-saldo-titular">{titular}</p>
           <GraficoSaldo flujo={flujo} onAbrirCompromiso={onAbrir} />
-          <p className="v5-tenue v5-pie-nota v5-saldo-nota">
-            Saldo = tu liquidez en Palanca (lo que tienes sin contar lo invertido). {flujo.finPrevisto ? 'La previsión solo usa tus compromisos de Base y lo que ya has apuntado con fecha futura.' : ''}
-          </p>
         </>
       ) : (
         <>

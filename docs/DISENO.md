@@ -112,12 +112,13 @@ Las marcas sin logo libre llevan su color y su monograma. Los comercios sin marc
 - **Base (`Recurrentes.jsx` en v5 + `v5/CalendarioBase.jsx`):**
   - Cifras (al mes, al año, pagado este mes, lo que pide atención).
   - Tarjeta del mes con selector **Gráfico | Calendario**, que recuerda la última vista en el dispositivo. Las dos vistas usan los mismos datos: `flujoDelMes`, en `lib/flujoCaja.js`.
-    - **Gráfico** (`v5/GraficoSaldo.jsx`):
-      - Saldo (la liquidez del motor) en escalones: continua lo real, discontinua lo previsto, unidas en «Hoy».
-      - Marcadores: relleno si está realizado, hueco si está previsto.
-      - Etiquetas fuera de la línea: ingresos arriba y gastos abajo, con línea guía y sin solapes (`lib/etiquetasGrafico.js`); las que no caben se omiten y su punto sigue ahí.
-      - Al tocar un punto o un día se abre una ficha con cada movimiento: importe, fecha, tipo, estado y saldo antes → después.
-      - Colores del kit: acento para la línea; ingreso acento, gasto neutro e inversión latón en los puntos.
+    - **Gráfico** (`v5/GraficoSaldo.jsx`), visual y sin tecnicismos, como el ejemplo de Eric:
+      - Arriba, una frase: «Aún faltan 8 cobros este mes».
+      - Lo real es un área suave hasta Hoy; lo previsto, una línea discontinua que baja en escalones redondeados en la fecha de cada cobro.
+      - Sin eje de euros ni rejilla. Solo dos cifras: el saldo de hoy sobre la línea de «Hoy», y una etiqueta con el saldo tras el último cobro y su fecha.
+      - El **logo** de cada cobro previsto flota sobre su escalón. No lleva texto, porque los importes ya están en la lista de la derecha. Si no caben, suben a otra fila y nunca se pierden.
+      - Un cobro por confirmar lleva un aro ámbar.
+      - Al tocar un logo o un día se abre una ficha con cada movimiento (logo, importe, fecha, tipo, estado y saldo antes → después). Si el compromiso existe, enlaza a él.
     - **Calendario:** cada movimiento real o previsto en su día. Lo previsto va con el logo atenuado y un aro discontinuo, y la celda solo prevista con borde discontinuo. Tocar un día lo lista con el saldo antes → después; los compromisos abren su ficha.
   - Reparto anual, plan de ahorro.
   - Lista de compromisos con avatar y estado («Pagado», «Por confirmar», «Mañana», «En 9 días»…).

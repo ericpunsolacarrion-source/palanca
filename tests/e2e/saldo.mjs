@@ -31,26 +31,25 @@ export async function saldo({ url, navegador = {} }) {
       const tarjeta = p.locator('.v5-cal')
       ok((await p.getByRole('tab', { name: 'Gráfico', selected: true }).count()) === 1, 'El gráfico es la vista por defecto')
       ok((await tarjeta.locator('.v5-saldo-real').count()) === 1 && (await tarjeta.locator('.v5-saldo-prev').count()) === 1, 'Línea continua (real) y discontinua (prevista)')
-      const resumen = await tarjeta.locator('.v5-saldo-resumen').innerText()
-      const hoy = euros(resumen.split('Hoy')[1].split('·')[0])
-      ok(Math.round(hoy * 100) === Math.round(liquidezInicio * 100), `El saldo de hoy (${hoy}) = la liquidez del Inicio (${liquidezInicio})`)
+      ok(/(faltan? \d+ cobros?|todo pagado)/.test(await tarjeta.locator('.v5-saldo-titular').innerText()), 'Frase clara arriba («Aún faltan N cobros…»)')
+      const hoy = euros(await tarjeta.locator('.v5-saldo-hoy').textContent())
+      ok(hoy === Math.round(liquidezInicio), `El saldo de hoy (${hoy}) = la liquidez del Inicio (${liquidezInicio})`)
       // Las dos líneas se unen: el último punto de la real es el primero de la prevista.
       const [dReal, dPrev] = await Promise.all([tarjeta.locator('.v5-saldo-real').getAttribute('d'), tarjeta.locator('.v5-saldo-prev').getAttribute('d')])
-      const finReal = dReal.trim().split(/[ HVML]+/).filter(Boolean)
+      const nums = dReal.match(/-?[\d.]+/g).map(Number)
       const iniPrev = dPrev.match(/^M([\d.]+) ([\d.]+)/)
-      const ultH = Number(dReal.match(/H([\d.]+)$/)[1])
-      const ultV = Number([...dReal.matchAll(/V([\d.]+)/g)].at(-1)?.[1] ?? dReal.match(/^M[\d.]+ ([\d.]+)/)[1])
-      ok(finReal.length > 0 && Math.abs(Number(iniPrev[1]) - ultH) < 0.2 && Math.abs(Number(iniPrev[2]) - ultV) < 0.2, 'Las dos líneas se unen en el saldo de hoy')
-      const puntos = tarjeta.locator('.v5-saldo-punto')
-      ok((await puntos.count()) >= 2, `Marcadores en los movimientos (${await puntos.count()})`)
-      ok((await tarjeta.locator('.v5-saldo-punto.previsto').count()) >= 1, 'Marcadores de previstos (huecos)')
-      // Etiquetas sin solapes (por franja).
-      const cajas = await tarjeta.locator('.v5-saldo-etq').evaluateAll((gs) => gs.map((g) => { const r = g.getBoundingClientRect(); return { x: r.left, d: r.right, y: Math.round(r.top) } }))
+      ok(Math.abs(Number(iniPrev[1]) - nums.at(-2)) < 0.2 && Math.abs(Number(iniPrev[2]) - nums.at(-1)) < 0.2, 'Las dos líneas se unen en el saldo de hoy')
+      // Logos de los cobros previstos, sin pisarse y sin textos debajo.
+      const logos = tarjeta.locator('.v5-saldo-logo')
+      ok((await logos.count()) >= 2, `Logos de los cobros previstos (${await logos.count()})`)
+      ok((await tarjeta.locator('.v5-saldo-logo img, .v5-saldo-logo .v5-avatar').count()) >= 2, 'Cada logo es el de su compromiso (Avatar)')
+      const cajas = await logos.evaluateAll((bs) => bs.map((b) => { const r = b.getBoundingClientRect(); return { x: r.left, d: r.right, y: r.top, b: r.bottom } }))
       let solapes = 0
-      for (let i = 0; i < cajas.length; i++) for (let j = i + 1; j < cajas.length; j++) if (Math.abs(cajas[i].y - cajas[j].y) < 12 && cajas[i].x < cajas[j].d - 1 && cajas[j].x < cajas[i].d - 1) solapes++
-      ok(cajas.length >= 1 && solapes === 0, `${cajas.length} etiquetas externas, sin solapes`)
-      // Ficha al tocar un marcador: importe y saldo antes → después.
-      await puntos.first().click()
+      for (let i = 0; i < cajas.length; i++) for (let j = i + 1; j < cajas.length; j++) if (cajas[i].x < cajas[j].d - 1 && cajas[j].x < cajas[i].d - 1 && cajas[i].y < cajas[j].b - 1 && cajas[j].y < cajas[i].b - 1) solapes++
+      ok(solapes === 0, 'Los logos no se pisan')
+      ok((await tarjeta.locator('.v5-saldo-final').count()) === 1 && /€/.test(await tarjeta.locator('.v5-saldo-final').textContent()), 'Etiqueta con el saldo tras el último cobro y su fecha')
+      // Ficha al tocar un logo: importe y saldo antes → después.
+      await logos.first().click()
       await p.waitForTimeout(250)
       const ficha = tarjeta.locator('.v5-saldo-ficha')
       const txt = (await ficha.count()) ? await ficha.innerText() : ''

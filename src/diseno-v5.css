@@ -2260,24 +2260,6 @@
 .v5-saldo-leyenda .v5-leyenda i.linea.discontinua {
   border-top-style: dashed;
 }
-.v5-saldo-leyenda .v5-leyenda i.punto {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--text);
-}
-.v5-saldo-leyenda .v5-leyenda i.punto.hueco {
-  background: transparent;
-  border: 1.5px solid var(--text);
-}
-.v5-saldo-resumen {
-  font-size: var(--fs-s);
-  color: var(--text);
-}
-.v5-saldo-resumen b {
-  color: var(--text-h);
-  font-weight: 600;
-}
 .v5-saldo-real {
   fill: none;
   stroke: var(--accent);
@@ -2290,35 +2272,6 @@
   stroke-width: 1.75;
   stroke-dasharray: 5 4;
   opacity: 0.75;
-}
-.v5-saldo-guia {
-  fill: none;
-  stroke: var(--borde-fuerte);
-  stroke-width: 1;
-}
-.v5-saldo-etq text {
-  fill: var(--text);
-  font-size: 11px;
-  font-weight: 500;
-}
-.v5-saldo-etq .v5-saldo-etq-imp {
-  fill: var(--text-3);
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
-}
-.v5-saldo-etq.previsto text {
-  fill: var(--text-3);
-  font-style: italic;
-}
-.v5-saldo-etq:hover text {
-  fill: var(--text-h);
-}
-.v5-saldo-punto {
-  cursor: pointer;
-  outline: none;
-}
-.v5-saldo-punto:focus-visible circle:last-child {
-  stroke: var(--text-h);
 }
 .v5-saldo-ficha {
   position: absolute;
@@ -2390,8 +2343,80 @@
   align-self: flex-start;
   font-size: var(--fs-xs);
 }
-.v5-saldo-nota {
-  margin-top: 6px;
+.v5-saldo-titular {
+  margin: 10px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-h);
+}
+.v5-saldo-hoy {
+  fill: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+}
+.v5-saldo-final rect {
+  fill: var(--superficie-3);
+  stroke: var(--borde-fuerte);
+}
+.v5-saldo-final-v {
+  fill: var(--text-h);
+  font-size: 15px;
+  font-weight: 700;
+}
+.v5-saldo-final-f {
+  fill: var(--text-3);
+  font-size: 11px;
+}
+.v5-saldo-final-guia {
+  stroke: var(--borde-fuerte);
+  stroke-width: 1;
+}
+.v5-saldo-logo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  transition: transform var(--rapido) ease;
+}
+.v5-saldo-logo .v5-avatar {
+  box-shadow: 0 0 0 2px var(--card-bg);
+}
+.v5-saldo-logo:hover,
+.v5-saldo-logo.sel {
+  transform: translateY(-2px);
+}
+.v5-saldo-logo.sel .v5-avatar {
+  box-shadow: 0 0 0 2px var(--card-bg), 0 0 0 3.5px var(--text-h);
+}
+.v5-saldo-logo.atencion .v5-avatar {
+  box-shadow: 0 0 0 2px var(--card-bg), 0 0 0 3.5px var(--aviso);
+}
+.v5-saldo-logo:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.v5-saldo-logo-mas {
+  margin-left: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text);
+}
+.v5-saldo-ficha-nombre {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.v5-saldo-ficha-nombre b {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .v5-cal-mas {
   margin-left: 4px;
