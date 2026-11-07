@@ -426,5 +426,41 @@ null
 "farmacia": [
 "Farmacia",
 "(^| )(para)?farmacia( |$)|(^| )farm( |\\.)"
+],
+"unicaja": [
+"Unicaja",
+"(^| )unicaja( |$)"
+],
+"brubank": [
+"Brubank",
+"(^| )brubank( |$)"
+],
+"abanca": [
+"ABANCA",
+"(^| )abanca( |$)"
+],
+"bit2me": [
+"Bit2Me",
+"(^| )bit ?2 ?me( |$)"
+],
+"bunq": [
+"bunq",
+"(^| )bunq( |$)"
+],
+"taxdown": [
+"TaxDown",
+"(^| )tax ?down( |$)"
+],
+"kraken": [
+"Kraken",
+"(^| )kraken( |$)"
+],
+"n26": [
+"N26",
+"(^| )n26( |$)"
+],
+"xtb": [
+"XTB",
+"(^| )xtb( |$)"
 ]
 }
