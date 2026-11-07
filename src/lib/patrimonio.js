@@ -47,3 +47,29 @@ export function recortarInicio(serie, valor = (p) => p.valor) {
   const desde = Math.min(primero - 1, serie.length - 2)
   return serie.slice(Math.max(0, desde))
 }
+
+/**
+ * Resumen de la inversión mensual (aportaciones NETAS: aportar − retirar; no
+ * es rentabilidad ni valor de mercado). `meses` viene de agregarPorMes
+ * (campo invertido) y termina en el mes en curso.
+ * @returns { total, media, conAportacion, n, actual, anterior, difAnterior, mesesCerrados }
+ *   media y regularidad sobre los meses CERRADOS del periodo (el mes en curso
+ *   aún puede recibir aportaciones); total incluye el mes en curso.
+ */
+export function resumenInversionMensual(meses, claveActual) {
+  const cent = (v) => Math.round(v * 100)
+  const cerrados = meses.filter((m) => m.clave !== claveActual)
+  const total = meses.reduce((s, m) => s + cent(m.invertido), 0) / 100
+  const sumaCerrados = cerrados.reduce((s, m) => s + cent(m.invertido), 0)
+  const actual = meses.find((m) => m.clave === claveActual)?.invertido ?? 0
+  const anterior = cerrados.at(-1)?.invertido ?? null
+  return {
+    total,
+    media: cerrados.length ? Math.round(sumaCerrados / cerrados.length) / 100 : 0,
+    conAportacion: cerrados.filter((m) => m.invertido > 0).length,
+    n: cerrados.length,
+    actual,
+    anterior,
+    difAnterior: anterior == null ? null : (cent(actual) - cent(anterior)) / 100,
+  }
+}

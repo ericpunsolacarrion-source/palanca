@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { avisosNotificables, calcularAvisos } from '../lib/avisos'
 import { EVENTO_DESCARTES, leerDescartadas } from '../lib/suscripciones'
 import Icono from './Icono'
+import { toast } from '../lib/toast'
 import Avatar from './v5/Avatar'
 import AjustesAvisos from './v5/AjustesAvisos'
 import { esV5 } from '../lib/diseno'
@@ -117,7 +118,9 @@ export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimie
     }
     setPidiendo(false)
     setPermiso(resultado)
+    if (resultado === 'denied') toast('El navegador ha bloqueado las notificaciones. Puedes permitirlas en sus ajustes.', 'error')
     if (resultado === 'granted') {
+      toast('Notificaciones activadas en este dispositivo', 'ok')
       guardarSilencio(usuarioId, false)
       setSilenciado(false)
       notificar('Avisos de Palanca activados', 'Así te avisaremos de cobros, renovaciones y subidas de precio.', 'palanca-prueba')
@@ -128,6 +131,8 @@ export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimie
     setSilenciado(valor)
     // Al reactivarlas, una notificación real lo confirma (si no llega, algo
     // en el navegador o el sistema las está bloqueando).
+    if (valor) toast('Notificaciones pausadas en este dispositivo')
+    if (!valor && permisoActual() === 'granted') toast('Notificaciones activadas en este dispositivo', 'ok')
     if (!valor && permisoActual() === 'granted') notificar('Notificaciones activadas', 'Te avisaremos aquí de cobros, renovaciones y subidas de precio.', 'palanca-activadas')
   }
   function probar() {

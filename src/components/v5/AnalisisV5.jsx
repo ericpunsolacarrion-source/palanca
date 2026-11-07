@@ -496,7 +496,13 @@ function TasaAhorro({ historico, clave, ctx }) {
 
 function Interanual({ historico, ctx }) {
   const r = useMemo(() => tasaInteranual(historico, ctx), [historico, ctx])
-  if (!r.mes && !r.anio) return null
+  if (!r.mes && !r.anio)
+    return (
+      <div className="v5-ana-interanual" aria-label="Comparado con hace un año">
+        <span className="v5-etq">¿Ahorras mejor que hace un año?</span>
+        <small className="v5-tenue">Lo verás en cuanto tengas este mismo mes del año pasado con ingresos.</small>
+      </div>
+    )
   const pts = (d) => `${d >= 0 ? '+' : '−'}${Math.abs(d).toLocaleString('es-ES', { maximumFractionDigits: 1 })} pp`
   const tono = (d) => (Math.abs(d) < 2 ? 'igual' : d > 0 ? 'baja' : 'sube') // baja = verde (mejor), sube = ámbar (peor), como en categorías
   const corto = (c) => etiquetaMes(c, { month: 'short', year: 'numeric' }).replace('.', '').toLowerCase()

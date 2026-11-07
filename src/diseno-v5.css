@@ -4205,3 +4205,106 @@
   background: var(--accent-suave);
   color: var(--accent-2);
 }
+
+/* Gráficos que llenan su tarjeta (alto="auto"): la figura crece con flex y el
+   SVG se coloca encima, así su tamaño no realimenta la medición. */
+:root[data-diseno='v5'] .v5-graf.auto {
+  flex: 1 1 0;
+  min-height: 180px;
+}
+:root[data-diseno='v5'] .v5-graf.auto > svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+:root[data-diseno='v5'] .v5-ini-flujo,
+:root[data-diseno='v5'] .v5-pat-evolucion {
+  display: flex;
+  flex-direction: column;
+}
+/* Resumen compacto bajo un gráfico: cifras reales del periodo dibujado. */
+:root[data-diseno='v5'] .v5-graf-resumen {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 16px;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+:root[data-diseno='v5'] .v5-graf-resumen dt {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+:root[data-diseno='v5'] .v5-graf-resumen dd {
+  margin: 2px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+:root[data-diseno='v5'] .v5-graf-resumen dd small {
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--text-3);
+}
+@media (max-width: 599px) {
+  :root[data-diseno='v5'] .v5-graf-resumen {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Patrimonio · inversión mensual (v5/InversionMensualV5.jsx) */
+:root[data-diseno='v5'] .v5-inv-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px 18px;
+  margin: 0 0 14px;
+}
+:root[data-diseno='v5'] .v5-inv-kpis dt {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+:root[data-diseno='v5'] .v5-inv-kpis dd {
+  margin: 3px 0 0;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+:root[data-diseno='v5'] .v5-inv-kpis dd.v5-oro {
+  color: var(--inversion);
+}
+:root[data-diseno='v5'] .v5-inv-kpis dd small {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+}
+@media (max-width: 759px) {
+  :root[data-diseno='v5'] .v5-inv-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+:root[data-diseno='v5'] .v5-presu-estimacion {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--bg);
+  font-size: var(--fs-s);
+  color: var(--text);
+}
+:root[data-diseno='v5'] .v5-presu-estimacion b {
+  color: var(--text-h);
+  font-weight: 600;
+}
+:root[data-diseno='v5'] .v5-presu-estimacion b.v5-positivo {
+  color: var(--accent-2);
+}
+/* En Patrimonio v5, el total invertido, su media y el reparto por plataforma
+   ya están arriba (KPI «Invertido» y Composición) y en «Inversión mensual»:
+   el bloque antiguo duplicaba cifras con otra base. */
+:root[data-diseno='v5'] .v5-patrimonio .inv-vista > .balance {
+  display: none;
+}

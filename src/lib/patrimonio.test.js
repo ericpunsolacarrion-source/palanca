@@ -40,3 +40,22 @@ describe('patrimonio: recortar meses vacíos del principio', () => {
     expect(recortarInicio([0, 0, 0, 9].map((valor) => ({ valor }))).length).toBe(2)
   })
 })
+
+describe('resumenInversionMensual', () => {
+  it('total con el mes en curso; media y regularidad sobre meses cerrados', async () => {
+    const { resumenInversionMensual } = await import('./patrimonio')
+    const meses = [
+      { clave: '2026-07', invertido: 450 },
+      { clave: '2026-08', invertido: 0 },
+      { clave: '2026-09', invertido: 300.5 },
+      { clave: '2026-10', invertido: 449.5 },
+      { clave: '2026-11', invertido: 150 },
+    ]
+    const r = resumenInversionMensual(meses, '2026-11')
+    expect(r).toMatchObject({ total: 1350, media: 300, conAportacion: 3, n: 4, actual: 150, anterior: 449.5, difAnterior: -299.5 })
+  })
+  it('sin meses cerrados: media 0 y sin comparación', async () => {
+    const { resumenInversionMensual } = await import('./patrimonio')
+    expect(resumenInversionMensual([{ clave: '2026-11', invertido: 200 }], '2026-11')).toMatchObject({ total: 200, media: 0, n: 0, anterior: null, difAnterior: null })
+  })
+})

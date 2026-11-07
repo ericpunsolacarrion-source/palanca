@@ -268,6 +268,10 @@ function Flujo({ movimientos, onVerAnalisis }) {
   }))
   const conDatos = b.serie.filter((m) => m.ingresos > 0 || m.gastos > 0)
   const ahorroMedio = conDatos.length ? conDatos.reduce((s, m) => s + m.ahorro, 0) / conDatos.length : 0
+  // Totales de los mismos 6 meses dibujados (en céntimos para sumar exacto).
+  const suma = (k) => conDatos.reduce((t, m) => t + Math.round(m[k] * 100), 0) / 100
+  const totalSerie = { ingresos: suma('ingresos'), gastos: suma('gastos'), ahorro: suma('ahorro') }
+  const positivos = conDatos.filter((m) => m.ahorro > 0).length
   return (
     <Tarjeta
       className="v5-ini-flujo"
@@ -286,10 +290,34 @@ function Flujo({ movimientos, onVerAnalisis }) {
           </span>
         )}
       </div>
-      <GraficoBarras serie={serie} series={SERIES_FLUJO} alto={200} titulo="Ingresos y gastos de los últimos 6 meses" />
+      <GraficoBarras serie={serie} series={SERIES_FLUJO} alto={escritorio() ? 'auto' : 200} titulo="Ingresos y gastos de los últimos 6 meses" />
+      {conDatos.length > 0 && (
+        <dl className="v5-graf-resumen">
+          <div>
+            <dt>Entró en 6 meses</dt>
+            <dd className="num">{formatearEuros(Math.round(totalSerie.ingresos))}</dd>
+          </div>
+          <div>
+            <dt>Salió</dt>
+            <dd className="num">{formatearEuros(Math.round(totalSerie.gastos))}</dd>
+          </div>
+          <div>
+            <dt>Te quedó</dt>
+            <dd className={`num ${totalSerie.ahorro >= 0 ? 'v5-positivo' : 'v5-negativo'}`}>{formatearEuros(Math.round(totalSerie.ahorro))}</dd>
+          </div>
+          <div>
+            <dt>Meses en positivo</dt>
+            <dd className="num">
+              {positivos} <small>de {conDatos.length}</small>
+            </dd>
+          </div>
+        </dl>
+      )}
     </Tarjeta>
   )
 }
+
+const escritorio = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches
 
 // ── Próximos cobros (Base) ──────────────────────────────────────────────────
 function ProximosCobros({ recurrentes, onIrA }) {

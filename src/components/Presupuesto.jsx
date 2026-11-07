@@ -88,6 +88,7 @@ export default function Presupuesto({ movimientos, gastoEstimado, historico = []
         onCancelar={() => setEditando(false)}
         gastoEstimado={gastoEstimado}
         historico={historico}
+        ingresosMes={totalIngresos}
       />
     )
   }
@@ -437,9 +438,12 @@ function PresupuestoV5({ metodo, tasaAhorroObjetivo, gastoMaximoFijo, presupuest
 }
 
 // ── v5: configurar el presupuesto general (dos modalidades, explicadas) ─────
-function ConfigV5({ configurado, metodoInput, cambiarMetodo, valorInput, setValorInput, guardando, errorGuardado, onGuardar, onCancelar, gastoEstimado, historico }) {
+function ConfigV5({ configurado, metodoInput, cambiarMetodo, valorInput, setValorInput, guardando, errorGuardado, onGuardar, onCancelar, gastoEstimado, historico, ingresosMes = 0 }) {
   const ingresoMedio = useMemo(() => ingresoMensualMedio(historico), [historico])
-  const ejemploTasa = ingresoMedio.media > 0 && valorInput > 0 && valorInput <= 100 ? limiteGastoPresupuesto({ metodo: 'tasa', tasaAhorroObjetivo: valorInput }, ingresoMedio.media) : null
+  // La MISMA base que usa el motor: lo que ha entrado este mes (limiteGastoPresupuesto).
+  const tasaValida = valorInput != null && valorInput >= 0 && valorInput <= 100
+  const limiteMes = tasaValida && ingresosMes > 0 ? limiteGastoPresupuesto({ metodo: 'tasa', tasaAhorroObjetivo: valorInput }, ingresosMes) : null
+  const limiteHabitual = tasaValida && ingresoMedio.media > 0 && ingresoMedio.meses >= 2 ? limiteGastoPresupuesto({ metodo: 'tasa', tasaAhorroObjetivo: valorInput }, ingresoMedio.media) : null
   const opciones = [
     {
       id: 'tasa',
@@ -476,16 +480,44 @@ function ConfigV5({ configurado, metodoInput, cambiarMetodo, valorInput, setValo
                 <input id="tasa" type="number" inputMode="decimal" min="0" max="100" step="1" value={valorInput ?? ''} onChange={(e) => setValorInput(e.target.value === '' ? null : Number(e.target.value))} placeholder="ej. 20" autoFocus />
                 <span className="v5-tenue">%</span>
               </div>
-              {ejemploTasa != null && (
-                <p className="v5-tenue v5-pie-nota">
-                  Con lo que sueles ingresar (<span className="num">{formatearEuros(Math.round(ingresoMedio.media))}</span>/mes) podrías gastar unos <b className="num">{formatearEuros(Math.round(ejemploTasa))}</b> al mes.
-                </p>
+              {tasaValida && (
+                <div className="v5-presu-estimacion" aria-live="polite">
+                  <span className="v5-presu-estimacion-regla">
+                    Ahorrar el <b>{valorInput} %</b> = puedes gastar el <b>{100 - valorInput} %</b> de lo que entra.
+                  </span>
+                  {limiteMes != null ? (
+                    <span>
+                      Este mes han entrado <b className="num">{formatearEuros(ingresosMes)}</b> → tu límite sería <b className="num v5-positivo">{formatearEuros(Math.round(limiteMes * 100) / 100)}</b>.
+                    </span>
+                  ) : (
+                    <span className="v5-tenue">Este mes aún no ha entrado nada: el límite se calcula con lo que vaya entrando.</span>
+                  )}
+                  {limiteHabitual != null && (
+                    <span className="v5-tenue">
+                      Con lo que sueles ingresar (<span className="num">{formatearEuros(Math.round(ingresoMedio.media))}</span>/mes) serían unos <span className="num">{formatearEuros(Math.round(limiteHabitual))}</span>. Sube o baja según lo que entre.
+                    </span>
+                  )}
+                </div>
               )}
             </>
           ) : (
             <>
               <label htmlFor="fijo">¿Cuánto quieres gastar como máximo al mes?</label>
               <InputImporte id="fijo" value={valorInput} onValueChange={setValorInput} placeholder="ej. 1.500" autoFocus />
+              {valorInput > 0 && (
+                <div className="v5-presu-estimacion" aria-live="polite">
+                  <span className="v5-presu-estimacion-regla">
+                    Límite fijo: <b className="num">{formatearEuros(valorInput)}</b> al mes, entre lo que entre.
+                  </span>
+                  {ingresoMedio.media > 0 && ingresoMedio.meses >= 2 ? (
+                    <span className="v5-tenue">
+                      Con lo que sueles ingresar (<span className="num">{formatearEuros(Math.round(ingresoMedio.media))}</span>/mes) equivale a ahorrar cerca del <b>{Math.max(0, Math.round((1 - valorInput / ingresoMedio.media) * 100))} %</b>.
+                    </span>
+                  ) : (
+                    <span className="v5-tenue">Con un par de meses de ingresos te diremos qué porcentaje supone.</span>
+                  )}
+                </div>
+              )}
               {gastoEstimado?.estimacion > 0 && (
                 <p className="v5-tenue v5-pie-nota">
                   Sueles gastar <b className="num">{formatearEuros(gastoEstimado.estimacion)}</b> al mes{gastoEstimado.provisional ? ' (provisional, con un solo mes de datos)' : ` (media de tus últimos ${gastoEstimado.mesesUsados} meses)`}.

@@ -10,6 +10,13 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 
 
+
+## Decisión pendiente (07-11) — periodo financiero
+- **Nóminas a final de mes:** propuesta en `docs/PROPUESTA-PERIODO.md`.
+  - Recomendación: un ciclo personal («Mi mes empieza el día…», por defecto 1 = como hoy) con una única función de periodo en el motor.
+  - La asignación ingreso a ingreso queda como excepción futura.
+  - **No se toca el motor hasta que Eric lo apruebe.**
+
 ## Iteración 07-11 (tarde) — pendiente
 - **Entorno (Eric):** Production y Preview usan hoy el mismo Supabase («palanca»).
   - Para que develop no toque producción, en Vercel → Settings → Environment Variables, entorno **Preview**, cambiar `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` a las del proyecto **palanca dev** y redesplegar.

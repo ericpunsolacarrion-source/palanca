@@ -15,6 +15,8 @@ import Pildora from './Pildora'
 import { firmaDatos, PILDORA_INVERSION } from '../lib/pildoras'
 import InputImporte from './InputImporte'
 import InputFecha from './InputFecha'
+import InversionMensualV5 from './v5/InversionMensualV5'
+import { esV5 } from '../lib/diseno'
 
 // Altura del área de dibujo de las barras. HEADROOM reserva un hueco arriba
 // para que la CIFRA de la barra más alta nunca quede fuera (antes se cortaba
@@ -339,8 +341,10 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
 
       <Pildora usuarioId={usuarioId} pildora={PILDORA_INVERSION} firma={firmaDatos(movimientos)} />
 
-      {mesesInversion.some((m) => m.invertido > 0) && (
-        <GraficoInversionMensual meses={mesesInversion} media={mediaMensual} />
+      {esV5() ? (
+        <InversionMensualV5 aportaciones={aportaciones} nMesesDesdeInicio={nMesesInversion} />
+      ) : (
+        mesesInversion.some((m) => m.invertido > 0) && <GraficoInversionMensual meses={mesesInversion} media={mediaMensual} />
       )}
 
       <form className="registro-movimiento fade-in-up" onSubmit={handleSubmit}>

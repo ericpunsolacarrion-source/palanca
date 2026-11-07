@@ -103,7 +103,7 @@ export default function PatrimonioV5({ usuarioId, movimientos, cargando, onGuard
             </div>
           </header>
           {conDatos ? (
-            <GraficoArea serie={serie} alto={grande ? 360 : 240} titulo={`Patrimonio al cierre de cada mes, últimos ${meses} meses`} />
+            <GraficoArea serie={serie} alto={grande ? 'auto' : 240} titulo={`Patrimonio al cierre de cada mes, últimos ${meses} meses`} />
           ) : (
             <p className="v5-nota-vacia">La evolución aparece en cuanto tengas dos meses con datos.</p>
           )}

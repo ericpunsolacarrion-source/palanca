@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useState } from 'react'
-import { useAncho } from '../../lib/useAncho'
+import { useAncho, useCaja } from '../../lib/useAncho'
 import { formatearEuros } from '../../lib/categorias'
 import { formatearCompacto } from '../../lib/movimientosUtils'
 
@@ -26,6 +26,15 @@ function marcasEje(min, max, n = 4) {
 
 const ejeTexto = (v) => (v < 0 ? '−' : '') + (Math.abs(v) >= 1000 ? formatearCompacto(Math.abs(v)) : String(Math.round(Math.abs(v))))
 
+// alto: número fijo, o 'auto' para llenar el alto del contenedor (la figura
+// crece con flex: 1; mínimo legible `altoMin`).
+function useDimensiones(alto, altoMin = 180) {
+  const auto = alto === 'auto'
+  const [refA, ancho] = useAncho()
+  const [refC, caja] = useCaja()
+  return auto ? { ref: refC, w: Math.max(200, caja.ancho), h: Math.max(altoMin, caja.alto), auto } : { ref: refA, w: Math.max(200, ancho), h: alto, auto }
+}
+
 function Tooltip({ x, y, ancho, children }) {
   const izquierda = x > ancho * 0.62
   return (
@@ -40,12 +49,10 @@ function Tooltip({ x, y, ancho, children }) {
  * serie: [{ etiqueta, etiquetaLarga?, valor }]
  */
 export function GraficoArea({ serie, alto = 220, color = 'var(--accent)', titulo, formato = formatearEuros, resaltarUltimo = true }) {
-  const [ref, ancho] = useAncho()
+  const { ref, w, h, auto } = useDimensiones(alto)
   const [activo, setActivo] = useState(null)
   const idGrad = useId().replace(/:/g, '')
   const M = { arriba: 12, abajo: 26, izq: 46, der: 12 }
-  const w = Math.max(200, ancho)
-  const h = alto
   const valores = serie.map((p) => p.valor)
   // Dominio: desde 0 si la serie es positiva (o desde algo menos que su mínimo
   // si vive lejos de 0); si baja de 0, un poco por debajo de su mínimo. Las
@@ -76,7 +83,7 @@ export function GraficoArea({ serie, alto = 220, color = 'var(--accent)', titulo
   const sel = activo ?? null
 
   return (
-    <figure className="v5-graf" ref={ref} aria-label={titulo}>
+    <figure className={`v5-graf ${auto ? 'auto' : ''}`} ref={ref} aria-label={titulo}>
       <svg width={w} height={h} role="img" aria-label={titulo} onMouseMove={mover} onMouseLeave={() => setActivo(null)} onTouchStart={mover} onTouchMove={mover} onTouchEnd={() => setActivo(null)}>
         <defs>
           <linearGradient id={idGrad} x1="0" y1="0" x2="0" y2="1">
@@ -123,11 +130,9 @@ export function GraficoArea({ serie, alto = 220, color = 'var(--accent)', titulo
  * series: [{ clave, nombre, color }]
  */
 export function GraficoBarras({ serie, series, alto = 220, titulo, formato = formatearEuros, destacarUltimo = true }) {
-  const [ref, ancho] = useAncho()
+  const { ref, w, h, auto } = useDimensiones(alto)
   const [activo, setActivo] = useState(null)
   const M = { arriba: 12, abajo: 26, izq: 46, der: 8 }
-  const w = Math.max(200, ancho)
-  const h = alto
   const maximo = Math.max(1, ...serie.flatMap((p) => series.map((s) => p.valores[s.clave] ?? 0)))
   const marcas = marcasEje(0, maximo, 4)
   const vMax = marcas[marcas.length - 1]
@@ -139,7 +144,7 @@ export function GraficoBarras({ serie, series, alto = 220, titulo, formato = for
   const ult = serie.length - 1
 
   return (
-    <figure className="v5-graf" ref={ref} aria-label={titulo} onMouseLeave={() => setActivo(null)}>
+    <figure className={`v5-graf ${auto ? 'auto' : ''}`} ref={ref} aria-label={titulo} onMouseLeave={() => setActivo(null)}>
       <svg width={w} height={h} role="img" aria-label={titulo}>
         {marcas.map((m) => (
           <g key={m}>
@@ -265,11 +270,9 @@ export function Anillo({ pct, tam = 112, grosor = 10, color = 'var(--accent)', c
  * serie: [{ etiqueta, etiquetaLarga, entra, sale, queda, enCurso }]
  */
 export function GraficoFlujo({ serie, alto = 240, titulo }) {
-  const [ref, ancho] = useAncho()
+  const { ref, w, h, auto } = useDimensiones(alto)
   const [activo, setActivo] = useState(null)
   const M = { arriba: 14, abajo: 28, izq: 48, der: 8 }
-  const w = Math.max(220, ancho)
-  const h = alto
   const lo = Math.min(0, ...serie.map((p) => p.queda))
   const hi = Math.max(1, ...serie.flatMap((p) => [p.entra, p.sale, p.queda]))
   const marcas = marcasEje(lo, hi, 4)
@@ -291,7 +294,7 @@ export function GraficoFlujo({ serie, alto = 240, titulo }) {
   const sel = activo
 
   return (
-    <figure className="v5-graf" ref={ref} aria-label={titulo} onMouseLeave={() => setActivo(null)}>
+    <figure className={`v5-graf ${auto ? 'auto' : ''}`} ref={ref} aria-label={titulo} onMouseLeave={() => setActivo(null)}>
       <svg width={w} height={h} role="img" aria-label={titulo}>
         {marcas.map((m) => (
           <g key={m}>
@@ -418,6 +421,81 @@ export function GraficoProyeccion({ puntos, alto = 260, titulo }) {
         </Tooltip>
       )}
       <TablaDatos titulo={titulo} cabecera={['Año', 'Sin invertir', 'Invertido']} filas={puntos.map((p) => [String(p.anio), formatearEuros(Math.round(p.parado)), formatearEuros(Math.round(p.invertido))])} />
+    </figure>
+  )
+}
+
+/**
+ * Aportaciones por mes: barras doradas (inversión), raya discontinua con la
+ * media y raya menta con el objetivo, si lo hay. El mes en curso, atenuado.
+ * serie: [{ etiqueta, etiquetaLarga, valor, enCurso }]
+ */
+export function GraficoInversion({ serie, media = 0, objetivo = null, alto = 220, titulo }) {
+  const { ref, w, h, auto } = useDimensiones(alto)
+  const [activo, setActivo] = useState(null)
+  const M = { arriba: 16, abajo: 26, izq: 46, der: 8 }
+  const maximo = Math.max(1, media, objetivo ?? 0, ...serie.map((p) => p.valor))
+  const marcas = marcasEje(Math.min(0, ...serie.map((p) => p.valor)), maximo, 4)
+  const vMin = marcas[0]
+  const vMax = marcas[marcas.length - 1]
+  const y = (v) => M.arriba + (1 - (v - vMin) / (vMax - vMin || 1)) * (h - M.arriba - M.abajo)
+  const banda = (w - M.izq - M.der) / Math.max(1, serie.length)
+  const anchoBarra = Math.min(26, Math.max(4, banda * 0.6))
+  const cada = Math.ceil(serie.length / Math.max(2, Math.floor((w - M.izq) / 44)))
+  const sel = activo
+  return (
+    <figure className={`v5-graf ${auto ? 'auto' : ''}`} ref={ref} aria-label={titulo} onMouseLeave={() => setActivo(null)}>
+      <svg width={w} height={h} role="img" aria-label={titulo}>
+        {marcas.map((m) => (
+          <g key={m}>
+            <line x1={M.izq} x2={w - M.der} y1={y(m)} y2={y(m)} className={m === 0 ? 'v5-graf-cero' : 'v5-graf-rejilla'} />
+            <text x={M.izq - 10} y={y(m)} className="v5-graf-eje" textAnchor="end" dominantBaseline="middle">
+              {ejeTexto(m)}
+            </text>
+          </g>
+        ))}
+        {serie.map((p, i) => {
+          const x = M.izq + i * banda + (banda - anchoBarra) / 2
+          const v = p.valor
+          const top = y(Math.max(0, v))
+          const base = y(Math.min(0, v))
+          const alt = Math.max(v !== 0 ? 2 : 0, base - top)
+          return (
+            <g key={p.etiqueta + i} onMouseEnter={() => setActivo(i)} onTouchStart={() => setActivo(i)}>
+              <rect x={M.izq + i * banda} y={M.arriba} width={banda} height={h - M.arriba - M.abajo} fill="transparent" />
+              {sel === i && <rect x={M.izq + i * banda + 1} y={M.arriba} width={banda - 2} height={h - M.arriba - M.abajo} rx="5" className="v5-graf-banda" />}
+              <rect x={x} y={top} width={anchoBarra} height={alt} rx={Math.min(3, anchoBarra / 2)} fill={v < 0 ? 'var(--text-3)' : 'var(--inversion)'} opacity={p.enCurso ? 0.45 : sel !== null && sel !== i ? 0.6 : 1} />
+              {(i % cada === 0 || i === serie.length - 1) && (
+                <text x={M.izq + i * banda + banda / 2} y={h - 8} className={`v5-graf-eje ${i === serie.length - 1 ? 'fuerte' : ''}`} textAnchor="middle">
+                  {p.etiqueta}
+                  {p.enCurso ? '*' : ''}
+                </text>
+              )}
+            </g>
+          )
+        })}
+        {media > 0 && <line x1={M.izq} x2={w - M.der} y1={y(media)} y2={y(media)} stroke="var(--text-h)" strokeOpacity="0.55" strokeWidth="1.5" strokeDasharray="4 4" pointerEvents="none" />}
+        {objetivo > 0 && <line x1={M.izq} x2={w - M.der} y1={y(objetivo)} y2={y(objetivo)} stroke="var(--accent)" strokeWidth="2" pointerEvents="none" />}
+      </svg>
+      {sel !== null && (
+        <Tooltip x={M.izq + sel * banda + banda / 2} y={h / 2} ancho={w}>
+          <span className="v5-tooltip-etq">
+            {serie[sel].etiquetaLarga ?? serie[sel].etiqueta}
+            {serie[sel].enCurso ? ' (en curso)' : ''}
+          </span>
+          <span className="v5-tooltip-fila">
+            <i style={{ background: 'var(--inversion)' }} />
+            Aportado<b>{formatearEuros(serie[sel].valor)}</b>
+          </span>
+          {objetivo > 0 && (
+            <span className="v5-tooltip-fila">
+              <i style={{ background: 'var(--accent)' }} />
+              Objetivo<b>{formatearEuros(objetivo)}</b>
+            </span>
+          )}
+        </Tooltip>
+      )}
+      <TablaDatos titulo={titulo} cabecera={['Mes', 'Aportado']} filas={serie.map((p) => [p.etiquetaLarga ?? p.etiqueta, formatearEuros(p.valor)])} />
     </figure>
   )
 }
