@@ -2355,6 +2355,36 @@
   font-size: 12px;
   font-weight: 600;
 }
+.v5-saldo-hoy .v5-saldo-hoy-sub,
+.v5-saldo-hoy-sub {
+  fill: var(--text-3);
+  font-size: 11px;
+  font-weight: 500;
+}
+.v5-saldo-hoy {
+  fill: var(--text-h);
+  font-size: 13px;
+}
+.v5-saldo-hilo {
+  stroke: var(--text-2);
+  stroke-width: 0.8;
+  opacity: 0.35;
+}
+.v5-saldo-pie {
+  fill: var(--card-bg);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.v5-saldo-marca {
+  stroke: var(--text-3);
+  stroke-width: 1;
+}
+.v5-saldo-marca.prev {
+  opacity: 0.5;
+}
+.v5-saldo-dia-prev {
+  opacity: 0.6;
+}
 .v5-saldo-final rect {
   fill: var(--superficie-3);
   stroke: var(--borde-fuerte);

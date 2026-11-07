@@ -32,8 +32,13 @@ export async function saldo({ url, navegador = {} }) {
       ok((await p.getByRole('tab', { name: 'Gráfico', selected: true }).count()) === 1, 'El gráfico es la vista por defecto')
       ok((await tarjeta.locator('.v5-saldo-real').count()) === 1 && (await tarjeta.locator('.v5-saldo-prev').count()) === 1, 'Línea continua (real) y discontinua (prevista)')
       ok(/(faltan? \d+ cobros?|todo pagado)/.test(await tarjeta.locator('.v5-saldo-titular').innerText()), 'Frase clara arriba («Aún faltan N cobros…»)')
-      const hoy = euros(await tarjeta.locator('.v5-saldo-hoy').textContent())
-      ok(hoy === Math.round(liquidezInicio), `El saldo de hoy (${hoy}) = la liquidez del Inicio (${liquidezInicio})`)
+      // Escala sobre lo cobrado este mes: «te quedan X» y «llevas gastado Y» en la línea de hoy.
+      const hoyTxt = await tarjeta.locator('text.v5-saldo-hoy').textContent()
+      const gastadoTxt = await tarjeta.locator('text.v5-saldo-hoy-sub').textContent()
+      ok(/€ te quedan/.test(hoyTxt) && /llevas gastado .*€/.test(gastadoTxt), `Hoy: «${hoyTxt.trim()}» · «${gastadoTxt.trim()}»`)
+      ok(liquidezInicio > euros(hoyTxt), 'Lo que queda del mes es menor que toda la liquidez (escala del mes, no del total)')
+      ok((await tarjeta.locator('.v5-saldo-marca').count()) >= 3, 'Días apuntados en la línea de abajo')
+      ok((await tarjeta.locator('.v5-saldo-hilo').count()) === (await tarjeta.locator('.v5-saldo-logo').count()), 'Cada logo unido a su punto con un hilo')
       // Las dos líneas se unen: el último punto de la real es el primero de la prevista.
       const [dReal, dPrev] = await Promise.all([tarjeta.locator('.v5-saldo-real').getAttribute('d'), tarjeta.locator('.v5-saldo-prev').getAttribute('d')])
       const nums = dReal.match(/-?[\d.]+/g).map(Number)
@@ -53,7 +58,7 @@ export async function saldo({ url, navegador = {} }) {
       await p.waitForTimeout(250)
       const ficha = tarjeta.locator('.v5-saldo-ficha')
       const txt = (await ficha.count()) ? await ficha.innerText() : ''
-      ok(/Saldo .*€ → .*€/.test(txt) && /(Realizado|Previsto|Por confirmar)/.test(txt), 'La ficha muestra estado y saldo antes → después')
+      ok(/Te queda del mes .*€ → .*€/.test(txt) && /(Realizado|Previsto|Por confirmar)/.test(txt), 'La ficha muestra estado y saldo antes → después')
       await ficha.getByRole('button', { name: 'Cerrar' }).click()
       // Calendario con los mismos datos.
       await p.getByRole('tab', { name: 'Calendario' }).click()
