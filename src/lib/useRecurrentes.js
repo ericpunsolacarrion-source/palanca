@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
-import { SELECT_MOVIMIENTO, claveMesActual, hoyIso } from './movimientosUtils'
+import { SELECT_MOVIMIENTO, hoyIso } from './movimientosUtils'
+// Los fijos son calendario: se cobran el día X de cada MES NATURAL y se marcan
+// aplicados por mes natural, sea cual sea el día de inicio del periodo.
+import { mesNaturalActual as claveMesActual } from './periodo'
 import { estadoCobro, fechaCobroEnMes } from './periodicidad'
 import { aCentimos } from './importe'
 import { toast } from './toast'

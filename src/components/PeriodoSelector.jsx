@@ -1,4 +1,4 @@
-import { etiquetaMes } from '../lib/movimientosUtils'
+import { etiquetaPeriodo } from '../lib/movimientosUtils'
 
 // Selector de periodo GLOBAL del dashboard: un único control que gobierna
 // todos los bloques a la vez (métricas, tasa de ahorro, categorías, evolución).
@@ -33,7 +33,7 @@ export default function PeriodoSelector({ meses, valor, onCambiar }) {
         >
           {meses.map((clave) => (
             <option key={clave} value={clave}>
-              {etiquetaMes(clave)}
+              {etiquetaPeriodo(clave)}
             </option>
           ))}
         </select>

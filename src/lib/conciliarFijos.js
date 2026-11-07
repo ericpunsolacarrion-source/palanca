@@ -6,7 +6,8 @@
 // Es DERIVADO (no escribe nada): si el movimiento se borra, el fijo vuelve a
 // estar pendiente solo. Lógica pura y testeable.
 
-import { centimosDe, claveMes } from './movimientosUtils'
+import { centimosDe } from './movimientosUtils'
+import { mesNatural as claveMes } from './periodo' // los fijos van por mes natural
 import { esAjuste, esTraspaso } from './categorias'
 import { fechaCobroEnMes, tocaEnMes } from './periodicidad'
 import { claveComercio, directorio, marcaDe, mismaEtiqueta, normalizarTexto } from './comercios'

@@ -12,6 +12,7 @@
 
 import {
   centimosDe,
+  claveMes,
   claveMesActual,
   esConsumo,
   filtrarPorMes,
@@ -54,7 +55,7 @@ function serieMensual(movimientos, filtro, n = 6) {
   const meses = ultimosNMeses(n)
   const idx = new Map(meses.map((m) => [m.clave, 0]))
   for (const m of movimientos) {
-    const clave = m.fecha.slice(0, 7)
+    const clave = claveMes(m.fecha)
     if (idx.has(clave) && filtro(m)) idx.set(clave, idx.get(clave) + centimosDe(m))
   }
   return meses.map((m) => ({ mes: m.clave, total: euros(idx.get(m.clave)) }))
@@ -65,7 +66,7 @@ function detalleCategoria(nombre, movimientos) {
   const recientes = new Set(ultimosNMeses(3).map((m) => m.clave))
   const porComercio = new Map()
   for (const m of movimientos) {
-    if (!deCat(m) || !recientes.has(m.fecha.slice(0, 7))) continue
+    if (!deCat(m) || !recientes.has(claveMes(m.fecha))) continue
     const c = comercioDe(m) || 'sin concepto'
     porComercio.set(c, (porComercio.get(c) ?? 0) + centimosDe(m))
   }
@@ -83,7 +84,7 @@ function detalleComercio(clave, movimientos) {
   let n = 0
   let cent = 0
   for (const m of movimientos) {
-    if (!deCom(m) || !doce.has(m.fecha.slice(0, 7))) continue
+    if (!deCom(m) || !doce.has(claveMes(m.fecha))) continue
     n += 1
     cent += centimosDe(m)
   }
@@ -133,7 +134,7 @@ export function contextoParaPregunta(pregunta, movimientos = []) {
   const doce = new Set(ultimosNMeses(12).map((m) => m.clave))
   const comercios = new Set()
   for (const m of movimientos) {
-    if (!esConsumo(m) || !doce.has(m.fecha.slice(0, 7))) continue
+    if (!esConsumo(m) || !doce.has(claveMes(m.fecha))) continue
     const c = comercioDe(m)
     if (c) comercios.add(c)
   }

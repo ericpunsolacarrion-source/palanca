@@ -11,6 +11,7 @@ import { bolsas, categoriaDeDevolucion, centimosDe, esConsumo, etiquetaMes, form
 import { esAjuste, esDevolucion, esInversion, esTraspaso, etiquetaCategoria, formatearEuros } from './categorias'
 import { periodoDe, proximoCobro } from './periodicidad'
 import { buscarParecido, nombreComercio } from './comercios'
+import { diaEnPeriodo, fechaEnPeriodo, periodoDe as periodoFin, rangoPeriodo, sumarMeses } from './periodo'
 import { detectarSuscripciones } from './suscripciones'
 import { resumenDelMes } from './inicio'
 import { PALANCAS, tipoNegociable } from './negociables'
@@ -23,6 +24,13 @@ const sinAcentos = (s) =>
 
 const pad = (n) => String(n).padStart(2, '0')
 const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+// Periodo financiero (mes con el día de inicio del usuario; día 1 = mes natural).
+// `mm` es 0-based y puede salirse de 0..11 (se normaliza con el año).
+const claveYM = (yy, mm) => sumarMeses(`${yy}-01`, mm)
+const inicioPeriodo = (yy, mm) => rangoPeriodo(claveYM(yy, mm)).desde
+const finPeriodo = (yy, mm) => rangoPeriodo(claveYM(yy, mm)).hasta
+const inicioAnio = (yy) => rangoPeriodo(`${yy}-01`).desde
+const finAnio = (yy) => rangoPeriodo(`${yy}-12`).hasta
 const eur = (cent) => formatearEuros(Math.round(cent) / 100)
 const capital = (s) => s.charAt(0).toUpperCase() + s.slice(1)
 
@@ -78,11 +86,16 @@ const rangoDe = (p, primera, hoyIso) => {
 }
 function periodo(t, hoy) {
   const h = iso(hoy)
-  const y = hoy.getFullYear()
-  const m = hoy.getMonth()
-  const primeroDe = (yy, mm) => iso(new Date(yy, mm, 1))
-  const ultimoDe = (yy, mm) => iso(new Date(yy, mm + 1, 0))
-  const restarDias = (n) => iso(new Date(y, m, hoy.getDate() - n + 1))
+  // Año y mes del PERIODO en curso (meses, trimestres y años van por periodo;
+  // días y semanas, por calendario).
+  const act = periodoFin(h)
+  const y = Number(act.slice(0, 4))
+  const m = Number(act.slice(5, 7)) - 1
+  const primeroDe = inicioPeriodo
+  const ultimoDe = finPeriodo
+  const cy = hoy.getFullYear()
+  const cm = hoy.getMonth()
+  const restarDias = (n) => iso(new Date(cy, cm, hoy.getDate() - n + 1))
 
   if (/\b(hasta ahora|en total|desde siempre|desde el principio|desde el inicio|historico|desde que (empece|uso|tengo|use|estoy))\b/.test(t)) return { tipo: 'todo', etiqueta: 'desde el principio' }
   // "Los últimos 6 meses", "estos seis meses", "6 últimos meses", "en 6 meses".
@@ -106,26 +119,26 @@ function periodo(t, hoy) {
   if (r) return r
   if (/\bhoy\b/.test(t)) return { desde: h, hasta: h, etiqueta: 'hoy' }
   if (/\bayer\b/.test(t)) {
-    const a = iso(new Date(y, m, hoy.getDate() - 1))
+    const a = iso(new Date(cy, cm, hoy.getDate() - 1))
     return { desde: a, hasta: a, etiqueta: 'ayer' }
   }
   if (/\b(esta semana)\b/.test(t)) {
-    const lunes = new Date(y, m, hoy.getDate() - ((hoy.getDay() + 6) % 7))
+    const lunes = new Date(cy, cm, hoy.getDate() - ((hoy.getDay() + 6) % 7))
     return { desde: iso(lunes), hasta: h, etiqueta: 'esta semana' }
   }
-  if (/\b(mes pasado|mes anterior)\b/.test(t)) return { desde: primeroDe(y, m - 1), hasta: ultimoDe(y, m - 1), etiqueta: `en ${etiquetaMes(primeroDe(y, m - 1).slice(0, 7), { month: 'long' }).toLowerCase()}` }
+  if (/\b(mes pasado|mes anterior)\b/.test(t)) return { desde: primeroDe(y, m - 1), hasta: ultimoDe(y, m - 1), etiqueta: `en ${etiquetaMes(claveYM(y, m - 1), { month: 'long' }).toLowerCase()}` }
   if (/\bultimo mes\b/.test(t)) return { desde: restarDias(30), hasta: h, etiqueta: 'en los últimos 30 días' }
   // "El último año" / "este último año": los 12 meses que acaban hoy.
-  if (/\b(ultimo ano|ultimos doce meses|ultimo ejercicio)\b/.test(t)) return { desde: iso(new Date(y - 1, m, hoy.getDate() + 1)), hasta: h, etiqueta: 'en el último año' }
+  if (/\b(ultimo ano|ultimos doce meses|ultimo ejercicio)\b/.test(t)) return { desde: iso(new Date(cy - 1, cm, hoy.getDate() + 1)), hasta: h, etiqueta: 'en el último año' }
   const trim = m - (m % 3) // primer mes del trimestre actual (0, 3, 6, 9)
   if (/\b(este trimestre)\b/.test(t)) return { desde: primeroDe(y, trim), hasta: h, etiqueta: 'este trimestre' }
   if (/\b(trimestre pasado|trimestre anterior|ultimo trimestre)\b/.test(t)) return { desde: primeroDe(y, trim - 3), hasta: ultimoDe(y, trim - 1), etiqueta: 'el trimestre pasado' }
   if (/\b(semana pasada|semana anterior)\b/.test(t)) {
-    const lunes = new Date(y, m, hoy.getDate() - ((hoy.getDay() + 6) % 7) - 7)
+    const lunes = new Date(cy, cm, hoy.getDate() - ((hoy.getDay() + 6) % 7) - 7)
     return { desde: iso(lunes), hasta: iso(new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + 6)), etiqueta: 'la semana pasada' }
   }
-  if (/\b(ano pasado)\b/.test(t)) return { desde: `${y - 1}-01-01`, hasta: `${y - 1}-12-31`, etiqueta: `en ${y - 1}` }
-  if (/\b(este ano|lo que va de ano|en el ano)\b/.test(t)) return { desde: `${y}-01-01`, hasta: h, etiqueta: `en lo que va de ${y}` }
+  if (/\b(ano pasado)\b/.test(t)) return { desde: inicioAnio(y - 1), hasta: finAnio(y - 1), etiqueta: `en ${y - 1}` }
+  if (/\b(este ano|lo que va de ano|en el ano)\b/.test(t)) return { desde: inicioAnio(y), hasta: h, etiqueta: `en lo que va de ${y}` }
   if (/\b(este mes|lo que va de mes|mes en curso|mes actual)\b/.test(t)) return { desde: primeroDe(y, m), hasta: h, etiqueta: 'este mes' }
   const anio = t.match(/\b(20\d\d)\b/)
   const mes = MESES.findIndex((nombre) => new RegExp(`\\b${nombre}\\b`).test(t))
@@ -133,7 +146,7 @@ function periodo(t, hoy) {
     const yy = anio ? Number(anio[1]) : mes > m ? y - 1 : y
     return { desde: primeroDe(yy, mes), hasta: ultimoDe(yy, mes), etiqueta: `en ${MESES[mes]}${yy !== y ? ` de ${yy}` : ''}` }
   }
-  if (anio) return { desde: `${anio[1]}-01-01`, hasta: `${anio[1]}-12-31`, etiqueta: `en ${anio[1]}` }
+  if (anio) return { desde: inicioAnio(Number(anio[1])), hasta: finAnio(Number(anio[1])), etiqueta: `en ${anio[1]}` }
   return null
 }
 
@@ -251,20 +264,20 @@ function resolverObjetivo(t, movimientos) {
 // ── Piezas de respuesta ──────────────────────────────────────────────────────
 function porMeses(movs) {
   const mapa = new Map()
-  for (const m of movs) mapa.set(m.fecha.slice(0, 7), (mapa.get(m.fecha.slice(0, 7)) ?? 0) + centimosDe(m))
+  for (const m of movs) mapa.set(periodoFin(m.fecha), (mapa.get(periodoFin(m.fecha)) ?? 0) + centimosDe(m))
   return [...mapa.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))
 }
 
 // Más de 12 meses: por años ("2024 155,88 € · 2025 164,88 €").
 function lineaAnios(movs) {
   const mapa = new Map()
-  for (const m of movs) mapa.set(m.fecha.slice(0, 4), (mapa.get(m.fecha.slice(0, 4)) ?? 0) + centimosDe(m))
+  for (const m of movs) mapa.set(periodoFin(m.fecha).slice(0, 4), (mapa.get(periodoFin(m.fecha).slice(0, 4)) ?? 0) + centimosDe(m))
   const filas = [...mapa.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))
   return filas.length >= 2 ? filas.map(([a, c]) => `${a} ${eur(c)}`).join(' · ') : null
 }
 
 function lineaMeses(movs, p) {
-  if (!movs.length || (p.desde && p.desde.slice(0, 7) === p.hasta.slice(0, 7))) return null
+  if (!movs.length || (p.desde && periodoFin(p.desde) === periodoFin(p.hasta))) return null
   const filas = porMeses(movs)
   if (filas.length > 12) return null
   if (filas.length < 2) return null
@@ -466,11 +479,11 @@ function respuestaGasto({ objetivo, movs, devoluciones = [], p, hoyIso, verboPag
   if (media != null && !pideMedia) lineas.push(`- De media, **${eur(media)} al mes**.`)
   // Meses completos: también lo que va del mes en curso (y la suma con él).
   if (p.completos && !pideMedia) {
-    const desdeMes = `${hoyIso.slice(0, 7)}-01`
+    const desdeMes = rangoPeriodo(periodoFin(hoyIso)).desde
     const actual = movimientos.filter((m) => esConsumo(m) && (filtro ?? (() => true))(m) && m.fecha >= desdeMes && m.fecha <= hoyIso)
     const devActual = movimientos.filter((m) => esDevolucion(m) && m.fecha >= desdeMes && m.fecha <= hoyIso && (!objetivo || (objetivo.filtroDevolucion ?? objetivo.filtro)(m)))
     const cActual = actual.reduce((s, m) => s + centimosDe(m), 0) - devActual.reduce((s, m) => s + centimosDe(m), 0)
-    lineas.push(`- Con lo que va de ${MESES[Number(hoyIso.slice(5, 7)) - 1]} (${eur(cActual)} hasta el ${formatearFecha(hoyIso)}): **${eur(total + cActual)}**.`)
+    lineas.push(`- Con lo que va de ${MESES[Number(periodoFin(hoyIso).slice(5, 7)) - 1]} (${eur(cActual)} hasta el ${formatearFecha(hoyIso)}): **${eur(total + cActual)}**.`)
   }
   // Más valor con lo mismo: frente al mismo tramo del año anterior, y el
   // ticket medio y la frecuencia (si son compras sueltas, no una cuota).
@@ -592,10 +605,10 @@ function respuestaIngresos(per, movimientos, hoyIso) {
 // ── Preguntas sobre el conjunto (sin IA) ──────────────────────────────────────
 // Meses COMPLETOS con datos (sin el actual), con sus totales del motor.
 function mesesCompletos(movimientos, hoyIso) {
-  const actual = hoyIso.slice(0, 7)
+  const actual = periodoFin(hoyIso)
   const porMes = new Map()
   for (const m of movimientos) {
-    const k = m.fecha.slice(0, 7)
+    const k = periodoFin(m.fecha)
     if (k >= actual) continue
     if (!porMes.has(k)) porMes.set(k, [])
     porMes.get(k).push(m)
@@ -733,14 +746,15 @@ function mesRecord(t, movimientos, hoyIso) {
 // Comparar con el mismo tramo del año o del mes anterior (no un mes entero
 // contra medio mes).
 function comparativa(t, movimientos, hoy, hoyIso) {
-  const y = hoy.getFullYear()
-  const m = hoy.getMonth()
-  const d = hoy.getDate()
+  const act = periodoFin(hoyIso)
+  const y = Number(act.slice(0, 4))
   const esAnio = /\bano\b|anual/.test(t)
-  const A = esAnio ? { desde: `${y}-01-01`, hasta: hoyIso } : { desde: iso(new Date(y, m, 1)), hasta: hoyIso }
+  // Mismo tramo: el año (de periodos) hasta el mismo día del año pasado, o el
+  // periodo anterior hasta su mismo día de periodo.
+  const A = esAnio ? { desde: inicioAnio(y), hasta: hoyIso } : { desde: rangoPeriodo(act).desde, hasta: hoyIso }
   const B = esAnio
-    ? { desde: `${y - 1}-01-01`, hasta: iso(new Date(y - 1, m, d)) }
-    : { desde: iso(new Date(y, m - 1, 1)), hasta: iso(new Date(y, m - 1, Math.min(d, new Date(y, m, 0).getDate()))) }
+    ? { desde: inicioAnio(y - 1), hasta: iso(new Date(hoy.getFullYear() - 1, hoy.getMonth(), hoy.getDate())) }
+    : { desde: rangoPeriodo(sumarMeses(act, -1)).desde, hasta: fechaEnPeriodo(sumarMeses(act, -1), diaEnPeriodo(hoyIso)) }
   const en = (P) => movimientos.filter((x) => x.fecha >= P.desde && x.fecha <= P.hasta)
   const tA = totalesDe(en(A))
   const tB = totalesDe(en(B))
@@ -874,7 +888,8 @@ function cuentaDeAhorro(movimientos, hoyIso) {
 
 // Cuánto ha cambiado el patrimonio en un periodo (mismas bolsas que el inicio).
 function crecimientoPatrimonio(t, movimientos, hoy, hoyIso) {
-  const p = periodo(t, hoy) ?? { desde: `${hoy.getFullYear()}-01-01`, hasta: hoyIso, etiqueta: `en lo que va de ${hoy.getFullYear()}` }
+  const anioP = periodoFin(hoyIso).slice(0, 4)
+  const p = periodo(t, hoy) ?? { desde: inicioAnio(Number(anioP)), hasta: hoyIso, etiqueta: `en lo que va de ${anioP}` }
   if (p.tipo === 'todo' || !p.desde) return null
   const dia = new Date(`${p.desde}T12:00:00`)
   const antes = bolsas(movimientos, iso(new Date(dia.getFullYear(), dia.getMonth(), dia.getDate() - 1))).patrimonio
@@ -1005,7 +1020,7 @@ const enFecha = (hoy, meses) => {
 // Gasto medio por categoría (€/mes) en una lista de meses completos.
 function porCategoriaMedia(movimientos, claves) {
   const set = new Set(claves)
-  const mapa = gastoPorCategoria(movimientos.filter((m) => set.has(m.fecha.slice(0, 7))))
+  const mapa = gastoPorCategoria(movimientos.filter((m) => set.has(periodoFin(m.fecha))))
   return new Map([...mapa.entries()].map(([c, v]) => [c, v / Math.max(1, claves.length)]))
 }
 
@@ -1316,7 +1331,7 @@ function necesitoParaVivir({ movimientos, hoyIso }) {
 // Próximos cobros (resto del mes o 30 días): de Fijos o, si no, detectados.
 function proximosCobros(t, { movimientos, recurrentes, hoy, hoyIso }) {
   const finMes = /\beste mes\b|\bquedan?\b/.test(t)
-  const limite = finMes ? iso(new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0)) : iso(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 30))
+  const limite = finMes ? rangoPeriodo(periodoFin(hoyIso)).hasta : iso(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 30))
   const activos = recurrentes.filter((r) => r.activo !== false && r.tipo !== 'ingreso')
   const lista = activos.length
     ? activos.map((r) => ({ nombre: r.nombre, importe: Number(r.importe), p: proximoCobro(r, hoy) })).filter((x) => x.p && !x.p.sinDia).map((x) => ({ nombre: x.nombre, importe: x.importe, fecha: x.p.fecha }))

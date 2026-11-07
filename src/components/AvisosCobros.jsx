@@ -7,7 +7,7 @@ import Avatar from './v5/Avatar'
 import AjustesAvisos from './v5/AjustesAvisos'
 import { esV5 } from '../lib/diseno'
 import { formatearEuros } from '../lib/categorias'
-import { claveMesActual } from '../lib/movimientosUtils'
+import { mesNaturalActual } from '../lib/periodo'
 import { guardarSilencio, iosSinInstalar, leerSilencio, permisoActual, puedeNotificar } from '../lib/notificaciones'
 
 // Tarjeta del dashboard: lo que está a punto de salir de tu cuenta (cobros de
@@ -153,7 +153,7 @@ export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimie
     />
   )
   // Fijos de gasto ya cobrados este mes (lo «realizado»).
-  const mesActual = claveMesActual() // hora local (no UTC: el día 1 a las 00:30 ya es el mes nuevo)
+  const mesActual = mesNaturalActual() // calendario (los fijos van por mes natural), hora local (no UTC: el día 1 a las 00:30 ya es el mes nuevo)
   const cobrados = recurrentes.filter((r) => r.tipo === 'gasto' && r.activo !== false && r.aplicadoEn === mesActual)
   const totalCobrado = cobrados.reduce((s, r) => s + Math.round(Number(r.importe) * 100), 0) / 100
 

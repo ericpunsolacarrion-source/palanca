@@ -6,6 +6,7 @@ import {
   predecirMesFuturo,
   totalesDe,
 } from '../lib/movimientosUtils'
+import { sumarMeses } from '../lib/periodo'
 import { usePlanificaciones } from '../lib/usePlanificaciones'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
@@ -14,11 +15,13 @@ import InputImporte from './InputImporte'
 const N_MESES = 6
 
 function proximosMeses(n) {
-  const hoy = new Date()
+  // Periodos siguientes al actual (día 1 = meses naturales).
+  const actual = claveMesActual()
   const arr = []
   for (let i = 1; i <= n; i += 1) {
-    const d = new Date(hoy.getFullYear(), hoy.getMonth() + i, 1)
-    const clave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const clave = sumarMeses(actual, i)
+    const [yy, mm] = clave.split('-').map(Number)
+    const d = new Date(yy, mm - 1, 1)
     const etiqueta = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(d)
     arr.push({ clave, etiqueta: etiqueta.charAt(0).toUpperCase() + etiqueta.slice(1) })
   }

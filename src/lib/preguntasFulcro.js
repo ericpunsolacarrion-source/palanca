@@ -2,7 +2,9 @@
 // Cada pregunta lleva su RESPUESTA CORRECTA, calculada directamente de los
 // movimientos de Laura (no del motor de la app, para poder pillarlo si se
 // equivoca). Las de criterio llevan lo que debe decir una buena respuesta.
-// Sin dependencias: se usa en el test y en el informe para Eric.
+// Solo depende de periodo.js (la definición del mes/periodo, no del motor):
+// se usa en el test y en el informe para Eric.
+import { periodoDe, rangoPeriodo, sumarMeses } from './periodo'
 
 const c = (x) => Math.round(x * 100)
 const eur = (cent) => {
@@ -20,27 +22,24 @@ const esIngreso = (e) => e.tipo === 'ingreso' && ['Nomina', 'Intereses'].include
 export function crearCalculadora(evs, hoy) {
   const pad = (n) => String(n).padStart(2, '0')
   const hoyIso = `${hoy.getFullYear()}-${pad(hoy.getMonth() + 1)}-${pad(hoy.getDate())}`
-  const y = hoy.getFullYear()
-  const m = hoy.getMonth() + 1
-  const mesIso = (yy, mm) => {
-    const d = new Date(yy, mm - 1, 1)
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`
-  }
-  const finMes = (yy, mm) => {
-    const d = new Date(yy, mm, 0)
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-  }
+  // Meses y años van por PERIODO financiero (día 1 = mes natural).
+  const act = periodoDe(hoyIso)
+  const y = Number(act.slice(0, 4))
+  const m = Number(act.slice(5, 7))
+  const mesIso = (yy, mm) => sumarMeses(`${yy}-01`, mm - 1)
+  const inicioMes = (yy, mm) => rangoPeriodo(mesIso(yy, mm)).desde
+  const finMes = (yy, mm) => rangoPeriodo(mesIso(yy, mm)).hasta
   const P = {
-    esteMes: [`${mesIso(y, m)}-01`, hoyIso],
-    mesPasado: [`${mesIso(y, m - 1)}-01`, finMes(y, m - 1)],
-    esteAnio: [`${y}-01-01`, hoyIso],
-    anioPasado: [`${y - 1}-01-01`, `${y - 1}-12-31`],
-    ult3: [`${mesIso(y, m - 3)}-01`, finMes(y, m - 1)],
-    ult6: [`${mesIso(y, m - 6)}-01`, finMes(y, m - 1)],
-    ult12: [`${mesIso(y, m - 12)}-01`, finMes(y, m - 1)],
+    esteMes: [inicioMes(y, m), hoyIso],
+    mesPasado: [inicioMes(y, m - 1), finMes(y, m - 1)],
+    esteAnio: [inicioMes(y, 1), hoyIso],
+    anioPasado: [inicioMes(y - 1, 1), finMes(y - 1, 12)],
+    ult3: [inicioMes(y, m - 3), finMes(y, m - 1)],
+    ult6: [inicioMes(y, m - 6), finMes(y, m - 1)],
+    ult12: [inicioMes(y, m - 12), finMes(y, m - 1)],
     todo: ['0000-00-00', hoyIso],
-    anio: (a) => [`${a}-01-01`, `${a}-12-31`],
-    mes: (a, mm) => [`${a}-${pad(mm)}-01`, finMes(a, mm)],
+    anio: (a) => [inicioMes(a, 1), finMes(a, 12)],
+    mes: (a, mm) => [inicioMes(a, mm), finMes(a, mm)],
   }
   const en = ([d, h]) => (e) => e.fecha >= d && e.fecha <= h && e.fecha <= hoyIso
   const suma = (xs) => xs.reduce((s, e) => s + c(e.importe), 0)
@@ -65,13 +64,13 @@ export function crearCalculadora(evs, hoy) {
     suma(evs.filter((e) => esConsumo(e) && e.fecha <= hoyIso))
   const bolsaInversion = () => Math.max(0, invertidoNeto(P.todo))
   const mesesConDatos = (per) => {
-    const set = new Set(evs.filter((e) => en(per)(e)).map((e) => e.fecha.slice(0, 7)))
+    const set = new Set(evs.filter((e) => en(per)(e)).map((e) => periodoDe(e.fecha)))
     return set.size
   }
   const ahorroPorMes = (per) => {
-    const meses = [...new Set(evs.filter((e) => en(per)(e)).map((e) => e.fecha.slice(0, 7)))].sort()
+    const meses = [...new Set(evs.filter((e) => en(per)(e)).map((e) => periodoDe(e.fecha)))].sort()
     return meses.map((k) => {
-      const pm = [`${k}-01`, finMes(Number(k.slice(0, 4)), Number(k.slice(5, 7)))]
+      const pm = [rangoPeriodo(k).desde, rangoPeriodo(k).hasta]
       return { mes: k, ahorro: ahorro(pm), ingresos: ingresos(pm), gasto: gasto(pm) }
     })
   }

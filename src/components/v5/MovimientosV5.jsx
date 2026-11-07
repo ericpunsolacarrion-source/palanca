@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { coincideBusqueda } from '../../lib/busqueda'
 import { esAjuste, esDevolucion, esInversion, esTraspaso, etiquetaCategoria, formatearEuros } from '../../lib/categorias'
-import { claveMesActual, esConsumo, etiquetaMes, formatearFecha, netoAjustes, rangoMeses, totalesDe } from '../../lib/movimientosUtils'
+import { textoRangoPeriodo } from '../../lib/periodo'
+import { claveMes, claveMesActual, esConsumo, etiquetaMes, formatearFecha, netoAjustes, rangoMeses, totalesDe } from '../../lib/movimientosUtils'
 import { conceptoDe, fechaRelativa } from '../../lib/inicio'
 import { directorio } from '../../lib/comercios'
 import { AVISO_DEMO, esDemo } from '../../lib/datosDemo'
@@ -204,7 +205,7 @@ export default function MovimientosV5({
   const filtrados = useMemo(
     () =>
       movimientos.filter(
-        (m) => (mes === 'todo' || m.fecha.slice(0, 7) === mes) && coincideTipo(m, tipo) && coincideBusqueda(m, busqueda),
+        (m) => (mes === 'todo' || claveMes(m.fecha) === mes) && coincideTipo(m, tipo) && coincideBusqueda(m, busqueda),
       ),
     [movimientos, mes, tipo, busqueda],
   )
@@ -328,6 +329,7 @@ export default function MovimientosV5({
           <Icono nombre="chevron" tam={14} className="v5-bloque-flecha" />
           <span className="v5-bloque-titulo">
             {mayuscula(etiquetaMes(b.clave))}
+            {textoRangoPeriodo(b.clave) && <span className="v5-tenue v5-mini"> · {textoRangoPeriodo(b.clave)}</span>}
             {b.actual && <span className="v5-insignia info v5-mini">En curso</span>}
           </span>
           {resumenBloque(b.totales, b.n)}

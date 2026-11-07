@@ -4,7 +4,8 @@ import { createPortal } from 'react-dom'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { useRecurrentes } from '../lib/useRecurrentes'
 import { formatearEuros } from '../lib/categorias'
-import { claveMesActual, formatearFecha, hoyIso } from '../lib/movimientosUtils'
+import { formatearFecha, hoyIso } from '../lib/movimientosUtils'
+import { mesNaturalActual } from '../lib/periodo'
 import { biografiaRecurrente } from '../lib/biografiaRecurrente'
 import { PERIODOS, costeAnual, costeMensual, estadoCobro, fechaCobroEnMes, periodoDe, textoCalendario } from '../lib/periodicidad'
 import CalendarioCobros from './CalendarioCobros'
@@ -446,7 +447,7 @@ export default function Recurrentes({ usuarioId, movimientos, onRegistrado, abri
   const [registrandoId, setRegistrandoId] = useState(null)
   const [recienId, setRecienId] = useState(null) // id recién confirmado (anima el sello)
 
-  const mesActual = claveMesActual()
+  const mesActual = mesNaturalActual() // los fijos van por mes natural
 
   // Llegada desde el inicio con un compromiso concreto (p. ej. confirmar un
   // cobro de importe variable): abre su hoja en cuanto está cargado.

@@ -4,7 +4,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useEtiquetas } from '../lib/useEtiquetas'
 import { CATEGORIA_INVERSION, esInversion, formatearEuros } from '../lib/categorias'
-import { SELECT_MOVIMIENTO, agregarPorMes, bolsas, claveMes, formatearCompacto, formatearFecha, hoyIso } from '../lib/movimientosUtils'
+import { SELECT_MOVIMIENTO, agregarPorMes, bolsas, claveMes, claveMesActual, formatearCompacto, formatearFecha, hoyIso } from '../lib/movimientosUtils'
 import { useCountUp } from '../lib/useCountUp'
 import SelectorEtiqueta from './SelectorEtiqueta'
 import { resolverEtiqueta } from '../lib/etiquetas'
@@ -146,8 +146,8 @@ export default function Inversiones({ usuarioId, movimientos, cargando, onGuarda
     let min = '9999-12'
     for (const a of aportaciones) if (claveMes(a.fecha) < min) min = claveMes(a.fecha)
     const [y0, m0] = min.split('-').map(Number)
-    const hoy = new Date()
-    const n = (hoy.getFullYear() - y0) * 12 + (hoy.getMonth() + 1 - m0) + 1
+    const [ya, ma] = claveMesActual().split('-').map(Number)
+    const n = (ya - y0) * 12 + (ma - m0) + 1
     return Math.min(Math.max(n, 1), 120)
   }, [aportaciones])
 

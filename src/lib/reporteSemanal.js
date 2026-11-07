@@ -1,4 +1,5 @@
-import { claveMes, totalesDe } from './movimientosUtils'
+import { totalesDe } from './movimientosUtils'
+import { mesNatural as claveMes } from './periodo' // informe semanal: calendario
 import { formatearEuros } from './categorias'
 
 // ── Reporte semanal por usuario ────────────────────────────────────────────

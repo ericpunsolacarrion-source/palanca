@@ -5,10 +5,13 @@
 import { nombreComercio } from './comercios'
 import { esAjuste, etiquetaCategoria } from './categorias'
 import { agregarPorMes, bolsas, gastoPorCategoria, totalesDe } from './movimientosUtils'
+import { diaEnPeriodo, diasDelPeriodo, fechaEnPeriodo, isoDe, periodoDe, rangoPeriodo, sumarMeses } from './periodo'
 
-const pad = (n) => String(n).padStart(2, '0')
-const isoDe = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-const claveDe = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`
+// Día anterior a una fecha ISO.
+const diaAntes = (iso) => {
+  const [y, m, d] = iso.split('-').map(Number)
+  return isoDe(new Date(y, m - 1, d - 1))
+}
 
 /**
  * Patrimonio al cierre de cada uno de los últimos `n` meses (el último, a hoy).
@@ -16,11 +19,13 @@ const claveDe = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`
  * @returns [{ mes: 'YYYY-MM', valor }] del más antiguo al actual.
  */
 export function evolucionPatrimonio(movimientos, n = 6, hoy = new Date()) {
+  // Cierre de cada periodo = su último día (con día de inicio 1, fin de mes).
+  const actual = periodoDe(isoDe(hoy))
   const serie = []
   for (let k = n - 1; k >= 0; k -= 1) {
-    const finMes = new Date(hoy.getFullYear(), hoy.getMonth() - k + 1, 0)
-    const hasta = k === 0 ? isoDe(hoy) : isoDe(finMes)
-    serie.push({ mes: claveDe(finMes), valor: bolsas(movimientos, hasta).patrimonio })
+    const c = sumarMeses(actual, -k)
+    const hasta = k === 0 ? isoDe(hoy) : rangoPeriodo(c).hasta
+    serie.push({ mes: c, valor: bolsas(movimientos, hasta).patrimonio })
   }
   return serie
 }
@@ -31,7 +36,7 @@ export function evolucionPatrimonio(movimientos, n = 6, hoy = new Date()) {
  * inicial o cuadrar con el banco son correcciones, no ganancias ni pérdidas).
  */
 export function cambioPatrimonioMes(movimientos, hoy = new Date()) {
-  const cierreAnterior = isoDe(new Date(hoy.getFullYear(), hoy.getMonth(), 0))
+  const cierreAnterior = diaAntes(rangoPeriodo(periodoDe(isoDe(hoy))).desde)
   const antes = bolsas(movimientos, cierreAnterior)
   const ahora = bolsas(movimientos, isoDe(hoy))
   const cambio = ahora.patrimonio - ahora.ajusteTotal - (antes.patrimonio - antes.ajusteTotal)
@@ -46,13 +51,14 @@ export function cambioPatrimonioMes(movimientos, hoy = new Date()) {
  *    (media de lo gastado hasta el mismo día en los 3 meses previos con datos).
  */
 export function resumenDelMes(movimientos, hoy = new Date()) {
-  const clave = claveDe(hoy)
   const hoyIso = isoDe(hoy)
-  const delMes = movimientos.filter((m) => m.fecha.slice(0, 7) === clave && m.fecha <= hoyIso)
+  const clave = periodoDe(hoyIso)
+  const delMes = movimientos.filter((m) => periodoDe(m.fecha) === clave && m.fecha <= hoyIso)
   const totales = totalesDe(delMes)
 
-  const diasMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate()
-  const dia = hoy.getDate()
+  // Día dentro del periodo (con día de inicio 1, el día del mes).
+  const diasMes = diasDelPeriodo(clave)
+  const dia = diaEnPeriodo(hoyIso)
 
   // En qué se va (consumo): top 3 + resto, con su peso sobre el gasto.
   const porCat = [...gastoPorCategoria(delMes).entries()].sort((a, b) => b[1] - a[1])
@@ -66,11 +72,9 @@ export function resumenDelMes(movimientos, hoy = new Date()) {
   // principio de mes harían parecer que "vas rapidísimo" el día 3).
   const previos = []
   for (let k = 1; k <= 6 && previos.length < 3; k += 1) {
-    const ref = new Date(hoy.getFullYear(), hoy.getMonth() - k, 1)
-    const c = claveDe(ref)
-    const ultimoDia = new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate()
-    const tope = `${c}-${pad(Math.min(dia, ultimoDia))}`
-    const delMesPrevio = movimientos.filter((m) => m.fecha.slice(0, 7) === c)
+    const c = sumarMeses(clave, -k)
+    const tope = fechaEnPeriodo(c, dia)
+    const delMesPrevio = movimientos.filter((m) => periodoDe(m.fecha) === c)
     if (totalesDe(delMesPrevio).gastos <= 0) continue // mes sin datos: no cuenta
     previos.push(totalesDe(delMesPrevio.filter((m) => m.fecha <= tope)).gastos)
   }
@@ -88,17 +92,19 @@ export function resumenDelMes(movimientos, hoy = new Date()) {
   // mes y aún no ha llegado, el mes no va "en negativo": solo va por delante.
   const dias = []
   for (let k = 1; k <= 6 && dias.length < 3; k += 1) {
-    const c = claveDe(new Date(hoy.getFullYear(), hoy.getMonth() - k, 1))
+    const c = sumarMeses(clave, -k)
     let mayor = null
     for (const m of movimientos) {
-      if (m.tipo !== 'ingreso' || esAjuste(m) || m.fecha.slice(0, 7) !== c) continue
+      if (m.tipo !== 'ingreso' || esAjuste(m) || periodoDe(m.fecha) !== c) continue
       if (!mayor || Number(m.importe) > Number(mayor.importe)) mayor = m
     }
-    if (mayor) dias.push(Number(mayor.fecha.slice(8, 10)))
+    // Se ordena por posición en el periodo; se muestra el día real del mes.
+    if (mayor) dias.push({ indice: diaEnPeriodo(mayor.fecha), dia: Number(mayor.fecha.slice(8, 10)) })
   }
-  dias.sort((a, b) => a - b)
-  const diaIngresoHabitual = dias.length ? dias[Math.floor(dias.length / 2)] : null
-  const ingresoPendiente = totales.ingresos === 0 && diaIngresoHabitual != null && diaIngresoHabitual > dia
+  dias.sort((a, b) => a.indice - b.indice)
+  const habitual = dias.length ? dias[Math.floor(dias.length / 2)] : null
+  const diaIngresoHabitual = habitual?.dia ?? null
+  const ingresoPendiente = totales.ingresos === 0 && habitual != null && habitual.indice > dia
 
   return { clave, dia, diasMes, diasRestantes: diasMes - dia + 1, totales, categorias: top, ritmo, diaIngresoHabitual, ingresoPendiente }
 }
@@ -134,10 +140,10 @@ export function conceptoDe(m) {
  * Categorías: se destaca la que MÁS sube frente a su media, no la más grande.
  */
 export function balanceInicio(movimientos, hoy = new Date()) {
-  const cerrado = hoy.getDate() <= 3
-  const ref = cerrado ? new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1) : hoy
-  const clave = claveDe(ref)
   const hoyIso = isoDe(hoy)
+  // Primeros 3 días del periodo: se cierra el anterior.
+  const cerrado = diaEnPeriodo(hoyIso) <= 3
+  const clave = cerrado ? sumarMeses(periodoDe(hoyIso), -1) : periodoDe(hoyIso)
   const vivos = movimientos.filter((m) => m.fecha <= hoyIso)
   const serie = agregarPorMes(vivos, 6, clave)
   const actual = serie[serie.length - 1]
@@ -152,8 +158,8 @@ export function balanceInicio(movimientos, hoy = new Date()) {
   const mejorMes = cerrado && actual.ingresos > 0 && otros.length >= 2 && otros.every((m) => actual.ratioAhorro > m.ratioAhorro + 0.5)
 
   // Categorías del mes frente a su media en los meses previos con datos.
-  const delMes = vivos.filter((m) => m.fecha.slice(0, 7) === clave)
-  const porMesPrevio = previos.map((p) => gastoPorCategoria(vivos.filter((m) => m.fecha.slice(0, 7) === p.clave)))
+  const delMes = vivos.filter((m) => periodoDe(m.fecha) === clave)
+  const porMesPrevio = previos.map((p) => gastoPorCategoria(vivos.filter((m) => periodoDe(m.fecha) === p.clave)))
   const categorias = [...gastoPorCategoria(delMes).entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
@@ -169,7 +175,7 @@ export function balanceInicio(movimientos, hoy = new Date()) {
   return {
     clave,
     cerrado,
-    dia: hoy.getDate(),
+    dia: diaEnPeriodo(hoyIso),
     totales: actual,
     medias,
     mejorMes,

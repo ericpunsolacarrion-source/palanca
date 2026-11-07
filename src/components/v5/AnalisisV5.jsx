@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { esConsumo, formatearFecha, formatearPorcentaje, agregarPorMes, etiquetaMes, progresoObjetivo, resumenMensualMedio, totalesDe } from '../../lib/movimientosUtils'
 import { etiquetaCategoria, formatearEuros } from '../../lib/categorias'
-import { categoriasComparadas, comparativaPeriodos, constanciaInversion, tasaInteranual, contextoMes, delMes, insightsDelMes, mesesSiguientes, objetivoDelMes, referenciaHabitual, serieProyeccion } from '../../lib/analisis'
+import { categoriasComparadas, comparativaPeriodos, constanciaInversion, tasaInteranual, contextoMes, delMes, insightsDelMes, mesesSiguientes, objetivoDelMes, referenciaHabitual, serieProyeccion, textoAltura } from '../../lib/analisis'
+import { textoRangoPeriodo } from '../../lib/periodo'
 import { usePresupuestoCompartido } from '../../lib/DatosCompartidos'
 import { toast } from '../../lib/toast'
 import InputImporte from '../InputImporte'
@@ -33,6 +34,7 @@ export default function AnalisisV5({ historico, clave, meses, onCambiarMes, onVe
       <div className="v5-ana-barra">
         <PeriodoSelector meses={meses} valor={clave} onCambiar={onCambiarMes} />
         <span className="v5-tenue v5-ana-contexto">
+          {textoRangoPeriodo(clave) && `${textoRangoPeriodo(clave)} · `}
           {ctx.parcial
             ? `Mes en curso · día ${ctx.dia} de ${ctx.diasMes}. Las comparaciones son a la misma altura de tus meses anteriores.`
             : 'Mes cerrado · comparado con tus meses completos anteriores.'}
@@ -56,7 +58,7 @@ export default function AnalisisV5({ historico, clave, meses, onCambiarMes, onVe
 // ── 1. Tu mes ───────────────────────────────────────────────────────────────
 function TuMes({ t, ctx, ref_, onVerMovimientos }) {
   const media = ref_.media
-  const altura = ctx.parcial ? `a día ${ctx.dia}` : 'en un mes'
+  const altura = ctx.parcial ? textoAltura(ctx) : 'en un mes'
   const libre = t.ahorro - t.invertido
   const base = Math.max(t.ingresos, t.gastos + Math.max(0, t.invertido))
   const seg = base > 0
@@ -562,7 +564,7 @@ function EnQueSeVa({ cats, ctx, historico, clave }) {
           <div className="v5-ana-cats-cab v5-tenue" aria-hidden="true">
             <span>Categoría</span>
             <span>Gastado</span>
-            <span>Habitual {ctx.parcial ? `a día ${ctx.dia}` : 'al mes'}</span>
+            <span>Habitual {ctx.parcial ? textoAltura(ctx) : 'al mes'}</span>
             <span>Diferencia</span>
           </div>
           <ul className="v5-ana-cats-lista">
@@ -641,7 +643,7 @@ function QueHaCambiado({ insights, historico, ctx }) {
   const lista = useMemo(() => (n === 6 ? insights : comparativaPeriodos(historico, ctx, n)), [n, insights, historico, ctx])
   const explicacion =
     n === 6
-      ? `Este mes${ctx.parcial ? `, a día ${ctx.dia},` : ''} frente a tu media de hasta 6 meses anteriores a la misma altura.`
+      ? `Este mes${ctx.parcial ? `, ${textoAltura(ctx)},` : ''} frente a tu media de hasta 6 meses anteriores a la misma altura.`
       : n === 12
         ? 'Tus últimos 12 meses cerrados frente a los 12 anteriores, en media al mes.'
         : 'Tus últimos 12 meses cerrados frente a los mismos 12 de hace dos años, en media al mes.'

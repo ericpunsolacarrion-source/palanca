@@ -7,6 +7,10 @@ import { useCountUp } from '../lib/useCountUp'
 import InputImporte from './InputImporte'
 import { esV5 } from '../lib/diseno'
 import { claveMesActual, etiquetaMes } from '../lib/movimientosUtils'
+import { diaEnPeriodo, diasDelPeriodo, isoDe as isoPeriodo } from '../lib/periodo'
+import { textoAltura } from '../lib/analisis'
+
+const capitalPeriodo = (s) => s.charAt(0).toUpperCase() + s.slice(1)
 import { resumenDelMes } from '../lib/inicio'
 import { Anillo } from './v5/Graficos'
 import Icono from './Icono'
@@ -328,9 +332,11 @@ export default function Presupuesto({ movimientos, gastoEstimado, historico = []
 // ── v5: anillo + ritmo del mes + categorías frente a tu media ───────────────
 function PresupuestoV5({ metodo, tasaAhorroObjetivo, gastoMaximoFijo, presupuestoGasto, totalGastos, totalIngresos, ratioAhorroReal, restante, dias, presupuestoDiario, sinIngresos, gastoEstimado, historico, onEditar }) {
   const clave = claveMesActual()
-  const hoy = new Date()
-  const diasMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate()
-  const pctMes = ((hoy.getDate() - 0.5) / diasMes) * 100
+  // Día dentro del periodo financiero (día de inicio 1 = día del mes).
+  const hoyD = isoPeriodo(new Date())
+  const diasMes = diasDelPeriodo(clave)
+  const diaP = diaEnPeriodo(hoyD)
+  const pctMes = ((diaP - 0.5) / diasMes) * 100
   const pct = presupuestoGasto > 0 ? (totalGastos / presupuestoGasto) * 100 : 0
   // Referencia «a estas alturas»: lo que SUELES llevar gastado a este día del
   // mes (como el Inicio: el alquiler del día 2 no es «ir rápido»). Sin
@@ -380,7 +386,7 @@ function PresupuestoV5({ metodo, tasaAhorroObjetivo, gastoMaximoFijo, presupuest
               <div className="v5-presu-ritmo-cab">
                 <span className={`v5-insignia ${estado.c}`}>{estado.t}</span>
                 <span className="v5-tenue">
-                  {ritmo ? `A día ${hoy.getDate()} sueles llevar` : `A día ${hoy.getDate()}, a ritmo constante, llevarías`} <b className="num">{formatearEuros(Math.round(deberias))}</b>
+                  {ritmo ? `${capitalPeriodo(textoAltura({ dia: diaP }))} sueles llevar` : `${capitalPeriodo(textoAltura({ dia: diaP }))}, a ritmo constante, llevarías`} <b className="num">{formatearEuros(Math.round(deberias))}</b>
                 </span>
               </div>
               <span className="v5-barra grande" role="img" aria-label={`Gastado ${Math.round(pct)} % con el ${Math.round(pctMes)} % del mes recorrido`}>

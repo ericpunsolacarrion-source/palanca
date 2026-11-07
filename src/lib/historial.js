@@ -10,8 +10,7 @@
 // Si hubiera movimientos con fecha futura (mes o año posterior), van arriba
 // del mes en curso con la misma lógica.
 import { totalesDe } from './movimientosUtils'
-
-const pad = (n) => String(n).padStart(2, '0')
+import { periodoActual, periodoDe } from './periodo'
 
 function bloqueMes(clave, movs) {
   return { tipo: 'mes', clave, n: movs.length, totales: totalesDe(movs), movimientos: movs }
@@ -24,11 +23,13 @@ function bloqueMes(clave, movs) {
  *   Dentro de cada mes, los movimientos van por fecha descendente (estable).
  */
 export function agruparHistorial(movimientos, hoy = new Date()) {
-  const claveActual = `${hoy.getFullYear()}-${pad(hoy.getMonth() + 1)}`
-  const anioActual = String(hoy.getFullYear())
+  // Se agrupa por periodo financiero; el año es el del periodo (con inicio 28,
+  // el 30-12-2026 cae en «enero 2027», dentro de 2027). Día 1 = mes natural.
+  const claveActual = periodoActual(hoy)
+  const anioActual = claveActual.slice(0, 4)
   const porMes = new Map()
   for (const m of movimientos) {
-    const c = m.fecha.slice(0, 7)
+    const c = periodoDe(m.fecha)
     if (!porMes.has(c)) porMes.set(c, [])
     porMes.get(c).push(m)
   }

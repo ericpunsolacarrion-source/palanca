@@ -3,6 +3,7 @@ import { directorio } from './comercios'
 import { reglaPara } from './categorizar'
 import { aCentimos, aEuros } from './importe'
 import { importesOcultos } from './privacidad'
+import { diaEnPeriodo, diasDelPeriodo, isoDe as isoDePeriodo, periodoActual, periodoDe, sumarMeses, textoRangoPeriodo } from './periodo'
 
 // Importe de un movimiento en céntimos ENTEROS (frontera única de dinero del
 // motor; contrato docs/MOTOR.md P1). Prefiere la columna `importe_centimos` si
@@ -123,15 +124,16 @@ export function fusionarMovimientos(movimientos, cambio) {
   return movimientos
 }
 
-// Clave de mes ('2026-07') a partir de la fecha del movimiento.
-// SIEMPRE se agrupa por `fecha` (cuando ocurrió), nunca por created_at.
+// Clave del PERIODO financiero ('2026-07') al que pertenece la fecha del
+// movimiento. SIEMPRE se agrupa por `fecha` (cuando ocurrió), nunca por
+// created_at. Con día de inicio 1 (por defecto) es el mes natural; con otro
+// día, ver periodo.js / docs/PERIODO.md. Para calendario puro: mesNatural().
 export function claveMes(fechaIso) {
-  return fechaIso.slice(0, 7)
+  return periodoDe(fechaIso)
 }
 
 export function claveMesActual() {
-  const ahora = new Date()
-  return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`
+  return periodoActual(new Date())
 }
 
 // Fecha de hoy en formato 'YYYY-MM-DD' con componentes LOCALES. Usar esto para
@@ -164,22 +166,27 @@ export function etiquetaMes(clave, opciones = { month: 'long', year: 'numeric' }
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
+// Etiqueta del periodo: «Noviembre 2026», y con día de inicio distinto de 1
+// también su rango real («Noviembre 2026 · 28 oct – 27 nov»).
+export function etiquetaPeriodo(clave, opciones) {
+  const r = textoRangoPeriodo(clave)
+  return r ? `${etiquetaMes(clave, opciones)} · ${r}` : etiquetaMes(clave, opciones)
+}
+
 // Rango CONTIGUO de meses desde el primer movimiento hasta el mes actual,
 // del más reciente al más antiguo. Siempre incluye el mes actual (aunque no
 // haya datos), para que el selector permita volver a "hoy".
 export function rangoMeses(movimientos) {
-  const ahora = new Date()
-  const cursor = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
-  let fin = new Date(cursor)
+  let cursor = claveMesActual()
+  let fin = cursor
   for (const m of movimientos) {
-    const [y, mm] = m.fecha.slice(0, 7).split('-').map(Number)
-    const d = new Date(y, mm - 1, 1)
-    if (d < fin) fin = d
+    const k = claveMes(m.fecha)
+    if (k < fin) fin = k
   }
   const claves = []
   while (cursor >= fin) {
-    claves.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`)
-    cursor.setMonth(cursor.getMonth() - 1)
+    claves.push(cursor)
+    cursor = sumarMeses(cursor, -1)
   }
   return claves // más reciente primero
 }
@@ -667,7 +674,8 @@ export function limiteGastoPresupuesto({ metodo, tasaAhorroObjetivo, gastoMaximo
 }
 
 // Días que quedan del mes contando hoy (para el "puedes gastar X al día").
+// Días que quedan del periodo en curso, hoy incluido.
 export function diasRestantesDelMes(hoy = new Date()) {
-  const ultimo = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate()
-  return ultimo - hoy.getDate() + 1
+  const iso = isoDePeriodo(hoy)
+  return diasDelPeriodo(periodoDe(iso)) - diaEnPeriodo(iso) + 1
 }

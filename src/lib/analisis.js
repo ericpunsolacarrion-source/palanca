@@ -8,14 +8,12 @@
 // Si no hay meses suficientes con datos, se dice, en vez de inventar.
 import { gastoPorCategoria, totalesDe } from './movimientosUtils'
 import { esAjuste, formatearEuros } from './categorias'
+import { diaEnPeriodo, diaInicioPeriodo, diasDelPeriodo, fechaEnPeriodo, isoDe, periodoActual, periodoDe } from './periodo'
 
 const pad = (n) => String(n).padStart(2, '0')
 const r2 = (v) => Math.round(v * 100) / 100
 const claveDe = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`
-const diasDe = (clave) => {
-  const [y, m] = clave.split('-').map(Number)
-  return new Date(y, m, 0).getDate()
-}
+const diasDe = (clave) => diasDelPeriodo(clave)
 const mesAnterior = (clave, k = 1) => {
   const [y, m] = clave.split('-').map(Number)
   return claveDe(new Date(y, m - 1 - k, 1))
@@ -23,10 +21,16 @@ const mesAnterior = (clave, k = 1) => {
 const NOMBRES_MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 export const nombreMes = (clave) => NOMBRES_MES[Number(clave.slice(5, 7)) - 1]
 
-/** Movimientos del mes `clave` hasta el día `dia` (incluido); sin `dia`, el mes entero. */
+/** Movimientos del periodo `clave` hasta su día `dia` (incluido, contado desde
+ *  el inicio del periodo); sin `dia`, el periodo entero. */
 export function delMes(movimientos, clave, dia = null) {
-  const tope = dia ? `${clave}-${pad(Math.min(dia, diasDe(clave)))}` : null
-  return movimientos.filter((m) => m.fecha.slice(0, 7) === clave && (!tope || m.fecha <= tope))
+  const tope = dia ? fechaEnPeriodo(clave, dia) : null
+  return movimientos.filter((m) => periodoDe(m.fecha) === clave && (!tope || m.fecha <= tope))
+}
+
+/** «a día 7» (mes natural) o «a día 11 de tu periodo» (periodo personal). */
+export function textoAltura(ctx) {
+  return diaInicioPeriodo() === 1 ? `a día ${ctx.dia}` : `a día ${ctx.dia} de tu periodo`
 }
 
 const tieneDatos = (movs) => {
@@ -39,8 +43,8 @@ const tieneDatos = (movs) => {
  * parcial = es el mes en curso (se compara hasta el mismo día).
  */
 export function contextoMes(clave, hoy = new Date()) {
-  const parcial = clave === claveDe(hoy)
-  return { clave, parcial, dia: parcial ? hoy.getDate() : null, diasMes: diasDe(clave) }
+  const parcial = clave === periodoActual(hoy)
+  return { clave, parcial, dia: parcial ? diaEnPeriodo(isoDe(hoy)) : null, diasMes: diasDe(clave) }
 }
 
 /**
@@ -100,20 +104,27 @@ export function categoriasComparadas(historico, ctx, n = 6) {
     .sort((a, b) => b.gastado - a.gastado || (b.habitual ?? 0) - (a.habitual ?? 0))
 }
 
-/** Día habitual del ingreso principal (mediana de los 3 meses previos con ingresos). */
-export function diaIngresoHabitual(historico, clave) {
+/** Ingreso principal habitual: mediana (por posición dentro del periodo) de los
+ *  3 periodos previos con ingresos. { dia: día del mes real, indice: día del
+ *  periodo } — con día de inicio 1 los dos coinciden. */
+export function ingresoHabitual(historico, clave) {
   const dias = []
   for (let k = 1; k <= 6 && dias.length < 3; k += 1) {
     const c = mesAnterior(clave, k)
     let mayor = null
     for (const m of historico) {
-      if (m.tipo !== 'ingreso' || esAjuste(m) || m.fecha.slice(0, 7) !== c || m.categoria?.nombre === 'Inversion' || m.categoria?.nombre === 'Desde ahorro' || /^(devoluci|reembolso)/i.test(m.categoria?.nombre ?? '')) continue
+      if (m.tipo !== 'ingreso' || esAjuste(m) || periodoDe(m.fecha) !== c || m.categoria?.nombre === 'Inversion' || m.categoria?.nombre === 'Desde ahorro' || /^(devoluci|reembolso)/i.test(m.categoria?.nombre ?? '')) continue
       if (!mayor || Number(m.importe) > Number(mayor.importe)) mayor = m
     }
-    if (mayor) dias.push(Number(mayor.fecha.slice(8, 10)))
+    if (mayor) dias.push({ indice: diaEnPeriodo(mayor.fecha), dia: Number(mayor.fecha.slice(8, 10)) })
   }
-  dias.sort((a, b) => a - b)
+  dias.sort((a, b) => a.indice - b.indice)
   return dias.length ? dias[Math.floor(dias.length / 2)] : null
+}
+
+/** Día del mes en que suele llegar el ingreso principal (o null). */
+export function diaIngresoHabitual(historico, clave) {
+  return ingresoHabitual(historico, clave)?.dia ?? null
 }
 
 // Umbral de «variación normal»: por debajo, no es noticia.
@@ -128,7 +139,7 @@ const umbral = (base) => Math.max(25, Math.abs(base) * 0.08)
 export function insightsDelMes(historico, ctx) {
   const actual = totalesDe(delMes(historico, ctx.clave, ctx.dia))
   const ref = referenciaHabitual(historico, ctx)
-  const altura = ctx.parcial ? `a día ${ctx.dia}` : 'en el mes completo'
+  const altura = ctx.parcial ? textoAltura(ctx) : 'en el mes completo'
   const salida = []
 
   if (ref.meses.length < 2) {
@@ -143,8 +154,9 @@ export function insightsDelMes(historico, ctx) {
 
   // El ingreso principal aún no ha llegado: el ahorro «a estas alturas» no
   // significa nada todavía.
-  const diaIngreso = diaIngresoHabitual(historico, ctx.clave)
-  const ingresoPendiente = ctx.parcial && actual.ingresos === 0 && diaIngreso != null && diaIngreso > ctx.dia
+  const habitualIng = ingresoHabitual(historico, ctx.clave)
+  const diaIngreso = habitualIng?.dia ?? null
+  const ingresoPendiente = ctx.parcial && actual.ingresos === 0 && habitualIng != null && habitualIng.indice > ctx.dia
 
   const m = ref.media
   const n = ref.meses.length
@@ -194,7 +206,7 @@ export function insightsDelMes(historico, ctx) {
         tono: d > 0 ? 'bien' : 'aviso',
         flecha: d > 0 ? 'sube' : 'baja',
         titulo: `${fmt(Math.abs(d))} ${d > 0 ? 'más' : 'menos'} ahorrado que en ${nombreMes(ant.clave)}`,
-        detalle: `${capital(nombreMes(ant.clave))} ${ctx.parcial ? `a día ${ctx.dia}` : 'entero'}: ${fmt(ant.totales.ahorro)} · ${capital(nombreMes(ctx.clave))}: ${fmt(actual.ahorro)}.`,
+        detalle: `${capital(nombreMes(ant.clave))} ${ctx.parcial ? textoAltura(ctx) : 'entero'}: ${fmt(ant.totales.ahorro)} · ${capital(nombreMes(ctx.clave))}: ${fmt(actual.ahorro)}.`,
         importe: d,
       })
     }

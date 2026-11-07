@@ -3,6 +3,7 @@
 // No inventa presupuestos por categoría: compara cada categoría con LO QUE
 // SUELES GASTAR en ella (media de los meses anteriores con gasto).
 import { gastoPorCategoria } from './movimientosUtils'
+import { periodoDe } from './periodo'
 
 const pad = (n) => String(n).padStart(2, '0')
 
@@ -14,12 +15,12 @@ const pad = (n) => String(n).padStart(2, '0')
  */
 export function categoriasFrenteAMedia(historico, clave, n = 3) {
   const [y, m] = clave.split('-').map(Number)
-  const delMes = historico.filter((mv) => mv.fecha.slice(0, 7) === clave)
+  const delMes = historico.filter((mv) => periodoDe(mv.fecha) === clave)
   const previos = []
   for (let k = 1; k <= 12 && previos.length < n; k += 1) {
     const d = new Date(y, m - 1 - k, 1)
     const c = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`
-    const mapa = gastoPorCategoria(historico.filter((mv) => mv.fecha.slice(0, 7) === c))
+    const mapa = gastoPorCategoria(historico.filter((mv) => periodoDe(mv.fecha) === c))
     if ([...mapa.values()].some((v) => v > 0)) previos.push(mapa)
   }
   const actual = gastoPorCategoria(delMes)
@@ -80,10 +81,10 @@ function categoriasFrenteAMediaTodas(historico, clave, n = 3) {
   for (let k = 1; k <= 12 && previos.length < n; k += 1) {
     const d = new Date(y, m - 1 - k, 1)
     const c = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`
-    const mapa = gastoPorCategoria(historico.filter((mv) => mv.fecha.slice(0, 7) === c))
+    const mapa = gastoPorCategoria(historico.filter((mv) => periodoDe(mv.fecha) === c))
     if ([...mapa.values()].some((v) => v > 0)) previos.push(mapa)
   }
-  const actual = gastoPorCategoria(historico.filter((mv) => mv.fecha.slice(0, 7) === clave))
+  const actual = gastoPorCategoria(historico.filter((mv) => periodoDe(mv.fecha) === clave))
   const nombres = new Set([...actual.keys()])
   for (const mp of previos) for (const [k, v] of mp) if (v > 0) nombres.add(k)
   return [...nombres].map((nombre) => ({
