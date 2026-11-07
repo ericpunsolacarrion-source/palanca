@@ -32,6 +32,8 @@ import ProyeccionFuturo from './components/ProyeccionFuturo'
 import { pildorasDashboard, elegirPildora, firmaDatos, limpiarPildoras } from './lib/pildoras'
 import { usePresupuesto } from './lib/usePresupuesto'
 import { usePresupuestosCategoria } from './lib/usePresupuestosCategoria'
+import { usePlanificaciones } from './lib/usePlanificaciones'
+import { AVISO_DEMO } from './lib/datosDemo'
 import { useRecurrentes } from './lib/useRecurrentes'
 import { conciliarFijos } from './lib/conciliarFijos'
 import { useObjetivosAhorro } from './lib/useObjetivosAhorro'
@@ -444,6 +446,10 @@ function App() {
     },
     [recurrentes, confirmarCobro, desmarcarCobro, onGuardado],
   )
+  // Planificación por mes (objetivo de inversión de cada mes). Con datos de
+  // ejemplo, nada se escribe: guardar avisa y no toca la base de datos.
+  const planificacionesReales = usePlanificaciones(usuarioId)
+  const planificacionesEjemplo = useMemo(() => ({ planes: {}, cargando: false, tablaFalta: false, guardar: async () => { toast(AVISO_DEMO); return false }, eliminar: async () => false }), [])
   const objetivosReales = useObjetivosAhorro(usuarioId)
   const objetivosData = useMemo(() => (cliente ? objetivosCliente((t) => toast(t)) : objetivosReales), [cliente, objetivosReales])
   const { objetivoInversionMensual } = presupuestoData
@@ -672,6 +678,7 @@ function App() {
                     onCambiarMes={setMesDashboard}
                     onVerMovimientos={verMovimientos}
                     onIrARegistro={() => irAPestana('movimientos')}
+                    planificaciones={enDemo ? planificacionesEjemplo : planificacionesReales}
                   >
                     {pildoraDash && (
                       <Pildora

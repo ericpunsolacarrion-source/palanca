@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { esConsumo, formatearFecha, formatearPorcentaje, agregarPorMes, etiquetaMes, progresoObjetivo, resumenMensualMedio, totalesDe } from '../../lib/movimientosUtils'
 import { etiquetaCategoria, formatearEuros } from '../../lib/categorias'
-import { categoriasComparadas, contextoMes, delMes, insightsDelMes, referenciaHabitual, serieProyeccion } from '../../lib/analisis'
+import { categoriasComparadas, comparativaPeriodos, constanciaInversion, tasaInteranual, contextoMes, delMes, insightsDelMes, mesesSiguientes, objetivoDelMes, referenciaHabitual, serieProyeccion } from '../../lib/analisis'
 import { usePresupuestoCompartido } from '../../lib/DatosCompartidos'
 import { toast } from '../../lib/toast'
 import InputImporte from '../InputImporte'
 import PeriodoSelector from '../PeriodoSelector'
 import Icono from '../Icono'
+import Panel from './Panel'
 import { Anillo, GraficoArea, GraficoFlujo, GraficoProyeccion, Leyenda } from './Graficos'
 
 // INICIO · ANÁLISIS (v5): el centro de control del mes.
@@ -20,7 +21,7 @@ import { Anillo, GraficoArea, GraficoFlujo, GraficoProyeccion, Leyenda } from '.
 const COLORES = ['var(--cat-1)', 'var(--cat-2)', 'var(--cat-3)', 'var(--cat-4)', 'var(--cat-5)', 'var(--cat-6)']
 const HORIZONTES = [5, 10, 20, 30]
 
-export default function AnalisisV5({ historico, clave, meses, onCambiarMes, onVerMovimientos, onIrARegistro, children }) {
+export default function AnalisisV5({ historico, clave, meses, onCambiarMes, onVerMovimientos, onIrARegistro, planificaciones = null, children }) {
   const ctx = useMemo(() => contextoMes(clave), [clave])
   const t = useMemo(() => totalesDe(delMes(historico, clave)), [historico, clave])
   const ref = useMemo(() => referenciaHabitual(historico, ctx), [historico, ctx])
@@ -40,11 +41,11 @@ export default function AnalisisV5({ historico, clave, meses, onCambiarMes, onVe
 
       <div className="v5-ana-rejilla">
         <TuMes t={t} ctx={ctx} ref_={ref} onVerMovimientos={onVerMovimientos} />
-        <ObjetivoInversion invertido={t.invertido} historico={historico} />
+        <ObjetivoInversion invertido={t.invertido} historico={historico} clave={clave} ctx={ctx} planificaciones={planificaciones} />
         <Flujo historico={historico} clave={clave} ctx={ctx} />
         <TasaAhorro historico={historico} clave={clave} ctx={ctx} />
         <EnQueSeVa cats={cats} ctx={ctx} historico={historico} clave={clave} />
-        <QueHaCambiado insights={insights} />
+        <QueHaCambiado insights={insights} historico={historico} ctx={ctx} />
         <Futuro historico={historico} onIrARegistro={onIrARegistro} />
       </div>
       {children}
@@ -167,87 +168,207 @@ function TuMes({ t, ctx, ref_, onVerMovimientos }) {
 }
 
 // ── Objetivo de inversión ───────────────────────────────────────────────────
-function ObjetivoInversion({ invertido, historico }) {
-  const { objetivoInversionMensual: objetivo, cargando, guardarObjetivoInversion } = usePresupuestoCompartido()
+// Cifras del mes (%, invertido, objetivo, lo que falta) + CONSTANCIA: en
+// cuántos de los últimos 6 meses cumpliste tu objetivo (lo que el mes suelto
+// no cuenta: el esfuerzo sostenido). Editar: «¿Cuánto quieres invertir este
+// mes?», para todos los meses o solo este, y los próximos meses uno a uno.
+// Un objetivo es una meta: nunca crea movimientos ni cambia el patrimonio.
+function ObjetivoInversion({ invertido, historico, clave, ctx, planificaciones }) {
+  const { objetivoInversionMensual: general, cargando, guardarObjetivoInversion } = usePresupuestoCompartido()
+  const planesFuente = planificaciones?.planes
+  const planes = useMemo(() => planesFuente ?? {}, [planesFuente])
   const [editando, setEditando] = useState(false)
-  const [valor, setValor] = useState(null)
-  const [guardando, setGuardando] = useState(false)
-  const mediaInv = useMemo(() => resumenMensualMedio(historico).invertidoMedio, [historico])
-  const p = progresoObjetivo(invertido, objetivo)
+  const obj = objetivoDelMes(clave, general, planes)
+  const p = progresoObjetivo(invertido, obj.importe)
+  const constancia = useMemo(() => constanciaInversion(historico, clave, general, planes), [historico, clave, general, planes])
+  const nombre = etiquetaMes(clave, { month: 'long' }).toLowerCase()
 
-  async function guardar(e) {
-    e.preventDefault()
-    const n = Number(valor)
-    if (!valor || !(n > 0)) return
-    setGuardando(true)
-    const ok = await guardarObjetivoInversion(n)
-    setGuardando(false)
-    if (ok) {
-      setEditando(false)
-      toast('Objetivo guardado')
-    }
-  }
+  if (cargando) return <section className="v5-tarjeta v5-ana-inv" aria-label="Objetivo de inversión" />
 
   return (
     <section className="v5-tarjeta v5-ana-inv" aria-label="Objetivo de inversión">
       <header className="v5-tarjeta-cab">
         <h2>Objetivo de inversión</h2>
-        {objetivo != null && !editando && (
-          <button type="button" className="v5-enlace" onClick={() => { setValor(objetivo); setEditando(true) }}>
+        {obj.importe != null && (
+          <button type="button" className="v5-enlace" onClick={() => setEditando(true)}>
             Editar
           </button>
         )}
       </header>
-      {cargando ? null : editando || objetivo == null ? (
-        <form className="v5-ana-inv-form" onSubmit={guardar}>
-          <label htmlFor="ana-objetivo-inv">¿Cuánto quieres invertir cada mes?</label>
-          <div className="v5-ana-inv-fila">
-            <InputImporte id="ana-objetivo-inv" value={valor} onValueChange={setValor} placeholder="ej. 300" />
-            <button type="submit" className="v5-boton primario" disabled={guardando || !valor}>
-              {guardando ? 'Guardando…' : 'Guardar'}
-            </button>
-            {objetivo != null && (
-              <button type="button" className="v5-boton fantasma" onClick={() => setEditando(false)}>
-                Cancelar
-              </button>
-            )}
-          </div>
-          <p className="v5-tenue v5-pie-nota">Invertir no gasta presupuesto: es parte de tu ahorro.</p>
-        </form>
-      ) : (
-        <div className="v5-ana-inv-cuerpo">
-          <Anillo pct={Math.min(p.pct, 100)} tam={128} grosor={12} color="var(--inversion)" etiqueta={`Has invertido el ${Math.round(p.pct)} % de tu objetivo`}>
-            <span className="v5-anillo-pct">
-              <b>{Math.round(p.pct)} %</b>
-              <small>del objetivo</small>
-            </span>
-          </Anillo>
-          <dl className="v5-ana-inv-cifras">
-            <div>
-              <dt>Invertido</dt>
-              <dd className="num v5-oro">{formatearEuros(invertido)}</dd>
-            </div>
-            <div>
-              <dt>Objetivo</dt>
-              <dd className="num">{formatearEuros(objetivo)}</dd>
-            </div>
-            <div>
-              <dt>{p.superado ? 'Superado en' : invertido >= objetivo ? 'Este mes' : 'Te faltan'}</dt>
-              <dd className={`num ${p.superado || invertido >= objetivo ? 'v5-positivo' : ''}`}>
-                {invertido >= objetivo && !p.superado ? 'Cumplido' : formatearEuros(Math.abs(Math.round((objetivo - invertido) * 100) / 100))}
-              </dd>
-            </div>
-          </dl>
+      {obj.importe == null ? (
+        <div className="v5-ana-inv-vacio">
+          <p className="v5-tenue">Ponte una meta de inversión mensual y aquí verás cómo vas cada mes y lo constante que eres.</p>
+          <button type="button" className="v5-boton primario" onClick={() => setEditando(true)}>
+            Fijar objetivo
+          </button>
         </div>
+      ) : (
+        <>
+          <div className="v5-ana-inv-cuerpo">
+            <Anillo pct={Math.min(p.pct, 100)} tam={128} grosor={12} color="var(--inversion)" etiqueta={`Has invertido el ${Math.round(p.pct)} % de tu objetivo de ${nombre}`}>
+              <span className="v5-anillo-pct">
+                <b>{Math.round(p.pct)} %</b>
+                <small>de {nombre}</small>
+              </span>
+            </Anillo>
+            <dl className="v5-ana-inv-cifras">
+              <div>
+                <dt>Invertido</dt>
+                <dd className="num v5-oro">{formatearEuros(invertido)}</dd>
+              </div>
+              <div>
+                <dt>Objetivo{obj.origen === 'mes' ? ` de ${nombre}` : ''}</dt>
+                <dd className="num">{formatearEuros(obj.importe)}</dd>
+              </div>
+              <div>
+                <dt>{p.superado ? 'Superado en' : invertido >= obj.importe ? (ctx.parcial ? 'Este mes' : 'Resultado') : 'Te faltan'}</dt>
+                <dd className={`num ${p.superado || invertido >= obj.importe ? 'v5-positivo' : ''}`}>
+                  {invertido >= obj.importe && !p.superado ? 'Cumplido' : formatearEuros(Math.abs(Math.round((obj.importe - invertido) * 100) / 100))}
+                </dd>
+              </div>
+            </dl>
+          </div>
+          {constancia.conObjetivo > 0 && (
+            <div className="v5-ana-constancia">
+              <div className="v5-ana-constancia-cab">
+                <span className="v5-etq">Constancia</span>
+                <span>
+                  <b className="num">{constancia.cumplidos}</b> de {constancia.conObjetivo} meses cumplidos
+                </span>
+              </div>
+              <ol className="v5-ana-constancia-meses" aria-label={`Cumpliste tu objetivo en ${constancia.cumplidos} de los últimos ${constancia.conObjetivo} meses`}>
+                {constancia.meses.map((m) => (
+                  <li key={m.clave} className={m.cumplido == null ? 'sin' : m.cumplido ? 'si' : 'no'} title={`${etiquetaMes(m.clave)}: ${formatearEuros(m.invertido)}${m.objetivo != null ? ` de ${formatearEuros(m.objetivo)}` : ''}`}>
+                    <i aria-hidden="true" />
+                    <small>{etiquetaMes(m.clave, { month: 'short' }).replace('.', '')}</small>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </>
       )}
-      {mediaInv > 0 && !editando && objetivo != null && (
-        <p className="v5-tenue v5-pie-nota">
-          Sueles invertir <span className="num">{formatearEuros(Math.round(mediaInv))}</span> al mes.
-        </p>
+      {editando && (
+        <EditarObjetivo
+          clave={clave}
+          general={general}
+          planes={planes}
+          guardarGeneral={guardarObjetivoInversion}
+          planificaciones={planificaciones}
+          onCerrar={() => setEditando(false)}
+        />
       )}
     </section>
   )
 }
+
+function EditarObjetivo({ clave, general, planes, guardarGeneral, planificaciones, onCerrar }) {
+  const actual = objetivoDelMes(clave, general, planes)
+  const [importe, setImporte] = useState(actual.importe)
+  const [alcance, setAlcance] = useState(actual.origen === 'mes' ? 'mes' : 'todos')
+  const [futuros, setFuturos] = useState(() => Object.fromEntries(mesesSiguientes(clave).map((c) => [c, Number(planes[c]?.inversion_prevista) > 0 ? Number(planes[c].inversion_prevista) : null])))
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState(null)
+  const nombre = etiquetaMes(clave, { month: 'long' }).toLowerCase()
+  const puedePlanificar = Boolean(planificaciones?.guardar) && !planificaciones?.tablaFalta
+
+  // Guardar el objetivo de UN mes sin tocar lo demás de su planificación
+  // (ingresos, gastos y nota previstos se conservan tal cual).
+  async function guardarMes(c, valor) {
+    const plan = planes[c]
+    if (!plan && !(valor > 0)) return true // nada que guardar ni que quitar
+    return planificaciones.guardar(c, {
+      ingreso: Number(plan?.ingreso_previsto) || 0,
+      gasto: Number(plan?.gasto_previsto) || 0,
+      inversion: valor > 0 ? valor : 0,
+      nota: plan?.nota ?? '',
+    })
+  }
+
+  async function guardar(e) {
+    e.preventDefault()
+    const n = Number(importe)
+    if (!(n > 0)) return setError('Pon un importe mayor que 0.')
+    setGuardando(true)
+    setError(null)
+    let ok = true
+    if (alcance === 'todos') {
+      ok = (await guardarGeneral(n)) !== false
+      // Si este mes tenía uno propio, deja de tenerlo (ahora vale el general).
+      if (ok && actual.origen === 'mes' && puedePlanificar) ok = (await guardarMes(clave, 0)) !== false
+    } else if (puedePlanificar) {
+      ok = (await guardarMes(clave, n)) !== false
+    }
+    if (ok && puedePlanificar) {
+      for (const [c, v] of Object.entries(futuros)) {
+        const antes = Number(planes[c]?.inversion_prevista) > 0 ? Number(planes[c].inversion_prevista) : null
+        if ((v ?? null) === antes) continue
+        // eslint-disable-next-line no-await-in-loop
+        if ((await guardarMes(c, v ?? 0)) === false) ok = false
+      }
+    }
+    setGuardando(false)
+    if (ok) {
+      toast('Objetivo guardado')
+      onCerrar()
+    } else setError('No se ha podido guardar. Inténtalo de nuevo.')
+  }
+
+  return (
+    <Panel titulo="Objetivo de inversión" subtitulo="Una meta: no mueve dinero ni cambia tu patrimonio" onCerrar={onCerrar} etiqueta="Editar objetivo de inversión">
+      <form className="v5-obj-form" onSubmit={guardar}>
+        <label htmlFor="obj-inv-mes" className="v5-obj-pregunta">
+          ¿Cuánto quieres invertir este mes?
+        </label>
+        <InputImporte id="obj-inv-mes" value={importe} onValueChange={setImporte} placeholder="ej. 300" autoFocus />
+        {puedePlanificar ? (
+          <div className="v5-obj-alcance" role="radiogroup" aria-label="Para qué meses">
+            {[
+              { id: 'todos', t: 'Para todos los meses', d: general != null ? `Sustituye tu objetivo de siempre (${formatearEuros(general)}).` : 'Será tu objetivo de cada mes.' },
+              { id: 'mes', t: `Solo para ${nombre}`, d: general != null ? `Los demás meses siguen con ${formatearEuros(general)}.` : 'Los demás meses quedan sin objetivo.' },
+            ].map((o) => (
+              <button key={o.id} type="button" role="radio" aria-checked={alcance === o.id} className={`v5-presu-opcion ${alcance === o.id ? 'activa' : ''}`} onClick={() => setAlcance(o.id)}>
+                <span className="v5-presu-opcion-marca" aria-hidden="true">{alcance === o.id && <Icono nombre="check" tam={13} />}</span>
+                <b>{o.t}</b>
+                <small>{o.d}</small>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="v5-tenue v5-pie-nota">Se guardará como tu objetivo de cada mes.</p>
+        )}
+
+        {puedePlanificar && (
+          <section className="v5-obj-futuros" aria-label="Próximos meses">
+            <h3 className="v5-avisos-h">Próximos meses</h3>
+            <p className="v5-tenue v5-pie-nota">Deja vacío un mes para que use tu objetivo de siempre.</p>
+            <ul>
+              {Object.keys(futuros).map((c) => {
+                const base = alcance === 'todos' ? Number(importe) || null : general
+                return (
+                  <li key={c}>
+                    <span>{mayus(etiquetaMes(c))}</span>
+                    <InputImporte value={futuros[c]} onValueChange={(v) => setFuturos((f) => ({ ...f, [c]: v || null }))} placeholder={base ? `${formatearEuros(base)} (de siempre)` : 'Sin objetivo'} aria-label={`Objetivo de ${etiquetaMes(c)}`} />
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )}
+        {error && <p className="v5-aviso-texto">{error}</p>}
+        <div className="v5-avisos-acciones">
+          <button type="button" className="v5-boton fantasma" onClick={onCerrar} disabled={guardando}>
+            Cancelar
+          </button>
+          <button type="submit" className="v5-boton primario" disabled={guardando || !(Number(importe) > 0)}>
+            {guardando ? 'Guardando…' : 'Guardar objetivo'}
+          </button>
+        </div>
+      </form>
+    </Panel>
+  )
+}
+const mayus = (t) => t.charAt(0).toUpperCase() + t.slice(1)
 
 // ── 2. Evolución: entra / sale / queda ──────────────────────────────────────
 function Flujo({ historico, clave, ctx }) {
@@ -304,7 +425,7 @@ function Flujo({ historico, clave, ctx }) {
               </dd>
             </div>
           </dl>
-          <GraficoFlujo serie={serie} alto={230} titulo={`Lo que entró, salió y quedó cada mes, últimos ${n} meses`} />
+          <GraficoFlujo serie={serie} alto={290} titulo={`Lo que entró, salió y quedó cada mes, últimos ${n} meses`} />
           <div className="v5-ana-pie">
             <Leyenda
               series={[
@@ -332,9 +453,12 @@ function Flujo({ historico, clave, ctx }) {
 function TasaAhorro({ historico, clave, ctx }) {
   const datos = useMemo(() => {
     const meses = agregarPorMes(historico, 13, clave).filter((m) => !(ctx.parcial && m.clave === clave) && m.ingresos > 0)
-    return meses.slice(-12).map((m) => ({ clave: m.clave, etiqueta: etiquetaMes(m.clave, { month: 'short' }).replace('.', ''), etiquetaLarga: etiquetaMes(m.clave), valor: Math.round(m.ratioAhorro * 10) / 10 }))
+    return meses.slice(-12).map((m) => ({ ingresos: m.ingresos, ahorro: m.ahorro, clave: m.clave, etiqueta: etiquetaMes(m.clave, { month: 'short' }).replace('.', ''), etiquetaLarga: etiquetaMes(m.clave), valor: Math.round(m.ratioAhorro * 10) / 10 }))
   }, [historico, clave, ctx.parcial])
-  const media = datos.length ? datos.reduce((s, p) => s + p.valor, 0) / datos.length : 0
+  // Tasa del periodo = ahorro total / ingresos totales (no la media de los
+  // porcentajes: un mes de paga extra pesa lo que pesa). Igual que la interanual.
+  const sumIng = datos.reduce((s, p) => s + p.ingresos, 0)
+  const media = sumIng > 0 ? (datos.reduce((s, p) => s + p.ahorro, 0) / sumIng) * 100 : 0
   const mejor = datos.reduce((a, p) => (!a || p.valor > a.valor ? p : a), null)
   const peor = datos.reduce((a, p) => (!a || p.valor < a.valor ? p : a), null)
   const ult = datos.at(-1)
@@ -349,7 +473,7 @@ function TasaAhorro({ historico, clave, ctx }) {
         <>
           <div className="v5-ana-tasa-cifras">
             <div>
-              <span className="v5-etq">Media {datos.length} meses</span>
+              <span className="v5-etq">Últimos {datos.length} meses</span>
               <b className="num v5-cifra-l">{formatearPorcentaje(media, 0)}</b>
             </div>
             <div>
@@ -358,6 +482,7 @@ function TasaAhorro({ historico, clave, ctx }) {
             </div>
           </div>
           <GraficoArea serie={datos} alto={210} titulo="Tasa de ahorro de cada mes cerrado" formato={(v) => formatearPorcentaje(v, 0)} />
+          <Interanual historico={historico} ctx={ctx} />
           <p className="v5-tenue v5-pie-nota">
             Mejor: {mejor.etiquetaLarga} ({formatearPorcentaje(mejor.valor, 0)}) · Peor: {peor.etiquetaLarga} ({formatearPorcentaje(peor.valor, 0)})
           </p>
@@ -366,6 +491,42 @@ function TasaAhorro({ historico, clave, ctx }) {
         <p className="v5-nota-vacia">La tasa de ahorro aparece con dos meses cerrados con ingresos.</p>
       )}
     </section>
+  )
+}
+
+function Interanual({ historico, ctx }) {
+  const r = useMemo(() => tasaInteranual(historico, ctx), [historico, ctx])
+  if (!r.mes && !r.anio) return null
+  const pts = (d) => `${d >= 0 ? '+' : '−'}${Math.abs(d).toLocaleString('es-ES', { maximumFractionDigits: 1 })} puntos`
+  const tono = (d) => (Math.abs(d) < 2 ? 'igual' : d > 0 ? 'baja' : 'sube') // baja = verde (mejor), sube = ámbar (peor), como en categorías
+  const mesTxt = (c) => etiquetaMes(c, { month: 'long', year: 'numeric' }).toLowerCase()
+  const corto = (c) => etiquetaMes(c, { month: 'short', year: 'numeric' }).replace('.', '').toLowerCase()
+  return (
+    <div className="v5-ana-interanual" aria-label="Comparado con hace un año">
+      <span className="v5-etq">¿Ahorras mejor que hace un año?</span>
+      <ul>
+        {r.mes && (
+          <li>
+            <span>
+              {mayus(mesTxt(r.mes.clave))} <span className="v5-tenue">vs {corto(r.mes.claveAnterior)}{r.mes.parcial ? `, ambos a día ${r.mes.dia}` : ''}</span>
+            </span>
+            <span className="num">
+              {formatearPorcentaje(r.mes.actual, 0)} <span className="v5-tenue">vs {formatearPorcentaje(r.mes.anterior, 0)}</span> <b className={`v5-ana-dif ${tono(r.mes.difPuntos)}`}>{pts(r.mes.difPuntos)}</b>
+            </span>
+          </li>
+        )}
+        {r.anio && (
+          <li>
+            <span>
+              Últimos 12 meses <span className="v5-tenue">frente a los 12 anteriores</span>
+            </span>
+            <span className="num">
+              {formatearPorcentaje(r.anio.actual, 0)} <span className="v5-tenue">vs {formatearPorcentaje(r.anio.anterior, 0)}</span> <b className={`v5-ana-dif ${tono(r.anio.difPuntos)}`}>{pts(r.anio.difPuntos)}</b>
+            </span>
+          </li>
+        )}
+      </ul>
+    </div>
   )
 }
 
@@ -463,14 +624,35 @@ function EnQueSeVa({ cats, ctx, historico, clave }) {
 
 // ── Qué ha cambiado (insights) ──────────────────────────────────────────────
 const ICONO_TONO = { neutro: 'check', info: 'calendario' }
-function QueHaCambiado({ insights }) {
+const PERIODOS = [
+  { n: 6, etq: '6 meses' },
+  { n: 12, etq: '12 meses' },
+  { n: 24, etq: '24 meses' },
+]
+function QueHaCambiado({ insights, historico, ctx }) {
+  const [n, setN] = useState(6)
+  const lista = useMemo(() => (n === 6 ? insights : comparativaPeriodos(historico, ctx, n)), [n, insights, historico, ctx])
+  const explicacion =
+    n === 6
+      ? `Este mes${ctx.parcial ? `, a día ${ctx.dia},` : ''} frente a tu media de hasta 6 meses anteriores a la misma altura.`
+      : n === 12
+        ? 'Tus últimos 12 meses cerrados frente a los 12 anteriores, en media al mes.'
+        : 'Tus últimos 12 meses cerrados frente a los mismos 12 de hace dos años, en media al mes.'
   return (
     <section className="v5-tarjeta v5-ana-insights" aria-label="Qué ha cambiado">
       <header className="v5-tarjeta-cab">
         <h2>Qué ha cambiado</h2>
+        <div className="v5-seg" role="group" aria-label="Periodo de comparación">
+          {PERIODOS.map((p) => (
+            <button key={p.n} type="button" className={n === p.n ? 'activo' : ''} aria-pressed={n === p.n} onClick={() => setN(p.n)}>
+              {p.etq}
+            </button>
+          ))}
+        </div>
       </header>
+      <p className="v5-tenue v5-ana-insights-intro">{explicacion}</p>
       <ul className="v5-ana-insights-lista">
-        {insights.map((i) => (
+        {lista.map((i) => (
           <li key={i.id} className={`v5-ana-insight ${i.tono}`}>
             <span className="v5-ana-insight-icono" aria-hidden="true">
               <Icono nombre={i.flecha ?? ICONO_TONO[i.tono] ?? 'check'} tam={15} />
@@ -482,7 +664,7 @@ function QueHaCambiado({ insights }) {
           </li>
         ))}
       </ul>
-      <p className="v5-tenue v5-pie-nota">Calculado con tus movimientos: hasta 6 meses anteriores con datos, a la misma altura del mes.</p>
+      <p className="v5-tenue v5-pie-nota">Calculado con tus movimientos. Verde: mejora · ámbar: empeora · gris: en tu línea.</p>
     </section>
   )
 }

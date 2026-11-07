@@ -245,3 +245,147 @@ function fmt(v) {
   return `${v < 0 ? '−' : ''}${formatearEuros(Math.round(Math.abs(v)))}`
 }
 const capital = (s) => s.charAt(0).toUpperCase() + s.slice(1)
+
+// ── Objetivo de inversión por mes ──────────────────────────────────────────
+// Un objetivo es una META de planificación: nunca crea movimientos ni toca el
+// patrimonio. Fuente: el objetivo general (presupuestos.objetivo_inversion_mensual)
+// y, si un mes tiene el suyo, planificaciones.inversion_prevista de ese mes
+// (> 0). 0 o vacío = ese mes usa el general.
+
+/** Objetivo que corresponde a un mes. @returns { importe, origen: 'mes'|'general'|null } */
+export function objetivoDelMes(clave, general, planes = {}) {
+  const propio = Number(planes?.[clave]?.inversion_prevista)
+  if (Number.isFinite(propio) && propio > 0) return { importe: propio, origen: 'mes' }
+  const g = Number(general)
+  if (general != null && Number.isFinite(g) && g > 0) return { importe: g, origen: 'general' }
+  return { importe: null, origen: null }
+}
+
+/**
+ * Constancia: en cuántos de los últimos `n` meses CERRADOS (con datos) se
+ * cumplió el objetivo de ese mes. Sin objetivo para un mes, no cuenta.
+ * @returns { meses: [{ clave, invertido, objetivo, cumplido }], cumplidos, conObjetivo }
+ */
+export function constanciaInversion(historico, clave, general, planes = {}, n = 6) {
+  const meses = []
+  for (let k = 1; k <= 12 && meses.length < n; k += 1) {
+    const c = mesAnterior(clave, k)
+    const movs = delMes(historico, c)
+    if (!tieneDatos(movs)) continue
+    const obj = objetivoDelMes(c, general, planes).importe
+    const invertido = totalesDe(movs).invertido
+    meses.unshift({ clave: c, invertido, objetivo: obj, cumplido: obj != null ? Math.round(invertido * 100) >= Math.round(obj * 100) : null })
+  }
+  const con = meses.filter((m) => m.objetivo != null)
+  return { meses, cumplidos: con.filter((m) => m.cumplido).length, conObjetivo: con.length }
+}
+
+/** Los próximos `n` meses (tras `clave`), para planificar su objetivo. */
+export function mesesSiguientes(clave, n = 5) {
+  return Array.from({ length: n }, (_, i) => mesAnterior(clave, -(i + 1)))
+}
+
+// ── Comparaciones a largo plazo ─────────────────────────────────────────────
+const sumaTotales = (lista) => {
+  const t = lista.reduce((a, m) => ({ ingresos: a.ingresos + m.ingresos, gastos: a.gastos + m.gastos, invertido: a.invertido + m.invertido, ahorro: a.ahorro + m.ahorro }), { ingresos: 0, gastos: 0, invertido: 0, ahorro: 0 })
+  for (const k of Object.keys(t)) t[k] = r2(t[k])
+  t.ratio = t.ingresos > 0 ? (t.ahorro / t.ingresos) * 100 : null
+  return t
+}
+
+/** Totales de `n` meses completos terminando `fin` meses antes de `clave`. */
+function bloqueMeses(historico, clave, fin, n) {
+  const meses = []
+  for (let k = fin; k < fin + n; k += 1) {
+    const c = mesAnterior(clave, k)
+    const movs = delMes(historico, c)
+    meses.push({ clave: c, datos: tieneDatos(movs), t: totalesDe(movs) })
+  }
+  return { meses, conDatos: meses.filter((m) => m.datos).length, total: sumaTotales(meses.map((m) => m.t)), desde: meses.at(-1).clave, hasta: meses[0].clave }
+}
+
+/**
+ * Tasa de ahorro interanual.
+ *  - mes: el mes `ctx.clave` frente al mismo mes del año anterior (a la misma
+ *    altura si está en curso; se indica con `parcial`).
+ *  - anio: tasa de los 12 meses cerrados más recientes frente a los 12 anteriores
+ *    (ahorro total / ingresos totales, no la media de porcentajes).
+ * La diferencia va en PUNTOS (pp), no en %. null si falta información.
+ */
+export function tasaInteranual(historico, ctx) {
+  const claveAnt = mesAnterior(ctx.clave, 12)
+  const a = totalesDe(delMes(historico, ctx.clave, ctx.dia))
+  const b = totalesDe(delMes(historico, claveAnt, ctx.dia))
+  const mes = a.ingresos > 0 && b.ingresos > 0 && tieneDatos(delMes(historico, claveAnt))
+    ? { clave: ctx.clave, claveAnterior: claveAnt, actual: a.ratioAhorro, anterior: b.ratioAhorro, difPuntos: a.ratioAhorro - b.ratioAhorro, parcial: ctx.parcial, dia: ctx.dia }
+    : null
+  const ini = ctx.parcial ? 1 : 0
+  const reciente = bloqueMeses(historico, ctx.clave, ini, 12)
+  const previo = bloqueMeses(historico, ctx.clave, ini + 12, 12)
+  const anio = reciente.conDatos >= 10 && previo.conDatos >= 10 && reciente.total.ratio != null && previo.total.ratio != null
+    ? { actual: reciente.total.ratio, anterior: previo.total.ratio, difPuntos: reciente.total.ratio - previo.total.ratio, desde: reciente.desde, hasta: reciente.hasta, desdeAnt: previo.desde, hastaAnt: previo.hasta }
+    : null
+  return { mes, anio }
+}
+
+/**
+ * Comparación de periodos largos para «Qué ha cambiado»: los últimos 12 meses
+ * cerrados frente a otros 12 (`desfase` 12 = los anteriores; 24 = los de hace
+ * dos años). Medias MENSUALES (euros al mes) y su variación en € y %.
+ * Juzga con contexto: gastar menos solo es «bien» si el ahorro no empeora.
+ * @returns [{ id, tono, flecha?, titulo, detalle }] o un único aviso 'info' si faltan meses.
+ */
+export function comparativaPeriodos(historico, ctx, desfase = 12) {
+  const ini = ctx.parcial ? 1 : 0
+  const reciente = bloqueMeses(historico, ctx.clave, ini, 12)
+  const previo = bloqueMeses(historico, ctx.clave, ini + desfase, 12)
+  const nombre = (c) => `${nombreMes(c).slice(0, 3)} ${c.slice(2, 4)}`
+  const rango = (b) => `${nombre(b.desde)}–${nombre(b.hasta)}`
+  if (reciente.conDatos < 10 || previo.conDatos < 10) {
+    const necesarios = 12 + desfase
+    return [{ id: 'faltan-datos', tono: 'info', titulo: 'Aún no hay historial suficiente para esta comparación', detalle: `Hacen falta unos ${necesarios} meses con datos (al menos 10 en cada tramo de 12). Ahora: ${reciente.conDatos} recientes y ${previo.conDatos} en el tramo a comparar.` }]
+  }
+  const ref = `${rango(reciente)} frente a ${rango(previo)}`
+  const m = (t) => ({ ingresos: t.ingresos / 12, gastos: t.gastos / 12, invertido: t.invertido / 12, ahorro: t.ahorro / 12 })
+  const A = m(reciente.total)
+  const B = m(previo.total)
+  const salida = []
+  const pct = (a, b) => (b !== 0 ? ((a - b) / Math.abs(b)) * 100 : null)
+  const pctTxt = (p) => (p == null || Math.abs(p) > 300 ? '' : ` (${p >= 0 ? '+' : '−'}${Math.round(Math.abs(p))} %)`)
+  const fila = (id, etiqueta, a, b, mejorSiSube, extra = null) => {
+    const d = r2(a - b)
+    const p = pct(a, b)
+    const normal = Math.abs(d) < umbral(b)
+    const sube = d > 0
+    let tono = normal ? 'neutro' : sube === mejorSiSube ? 'bien' : 'aviso'
+    let nota = ''
+    if (extra && !normal) ({ tono, nota } = extra(d, tono))
+    salida.push({
+      id,
+      tono,
+      flecha: normal ? undefined : sube ? 'sube' : 'baja',
+      titulo: normal ? `${etiqueta}: en la misma línea` : `${etiqueta}: ${sube ? '+' : '−'}${fmt(Math.abs(d))} al mes${pctTxt(p)}`,
+      detalle: `${fmt(a)}/mes frente a ${fmt(b)}/mes · ${ref}.${nota}`,
+    })
+  }
+  fila('ahorro', 'Ahorro', A.ahorro, B.ahorro, true)
+  fila('ingresos', 'Ingresos', A.ingresos, B.ingresos, true)
+  // Gastar menos no es «bien» si se explica porque entra menos y se ahorra menos.
+  fila('gastos', 'Gastos', A.gastos, B.gastos, false, (d, tono) =>
+    d < 0 && A.ahorro < B.ahorro - umbral(B.ahorro) ? { tono: 'neutro', nota: ' Gastas menos, pero también ahorras menos: tus ingresos han bajado más.' } : { tono, nota: '' },
+  )
+  fila('inversion', 'Inversión', A.invertido, B.invertido, true)
+  const ra = reciente.total.ratio
+  const rb = previo.total.ratio
+  if (ra != null && rb != null) {
+    const dp = ra - rb
+    salida.push({
+      id: 'tasa',
+      tono: Math.abs(dp) < 2 ? 'neutro' : dp > 0 ? 'bien' : 'aviso',
+      flecha: Math.abs(dp) < 2 ? undefined : dp > 0 ? 'sube' : 'baja',
+      titulo: Math.abs(dp) < 2 ? 'Tasa de ahorro: igual que entonces' : `Tasa de ahorro: ${dp > 0 ? '+' : '−'}${Math.abs(dp).toLocaleString('es-ES', { maximumFractionDigits: 1 })} puntos`,
+      detalle: `${Math.round(ra)} % frente a ${Math.round(rb)} % de lo que entra · ${ref}.`,
+    })
+  }
+  return salida
+}

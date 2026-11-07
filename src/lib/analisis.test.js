@@ -118,3 +118,80 @@ describe('insights honestos', () => {
     expect(ins.some((i) => i.id === 'cat-Viajes')).toBe(false)
   })
 })
+
+describe('objetivo de inversión por mes', () => {
+  it('el mes con objetivo propio manda; si no, el general; sin ninguno, null', async () => {
+    const { objetivoDelMes } = await import('./analisis')
+    const planes = { '2026-12': { inversion_prevista: 600 }, '2027-01': { inversion_prevista: 0, ingreso_previsto: 2000 } }
+    expect(objetivoDelMes('2026-12', 450, planes)).toEqual({ importe: 600, origen: 'mes' })
+    expect(objetivoDelMes('2027-01', 450, planes)).toEqual({ importe: 450, origen: 'general' })
+    expect(objetivoDelMes('2027-02', null, planes)).toEqual({ importe: null, origen: null })
+  })
+  it('constancia: cuenta los meses cerrados que cumplieron su objetivo', async () => {
+    const { constanciaInversion } = await import('./analisis')
+    const L = []
+    const inv = { '2026-05': 450, '2026-06': 450, '2026-07': 200, '2026-08': 450, '2026-09': 500, '2026-10': 300 }
+    for (const [c, v] of Object.entries(inv)) {
+      L.push(mov('ingreso', 'Nomina', 2000, `${c}-01`))
+      L.push(mov('gasto', 'Inversion', v, `${c}-02`))
+    }
+    const r = constanciaInversion(L, '2026-11', 450, { '2026-10': { inversion_prevista: 300 } })
+    expect(r.meses.map((m) => m.cumplido)).toEqual([true, true, false, true, true, true])
+    expect(r).toMatchObject({ cumplidos: 5, conObjetivo: 6 })
+  })
+  it('meses siguientes: cruza de año', async () => {
+    const { mesesSiguientes } = await import('./analisis')
+    expect(mesesSiguientes('2026-11', 3)).toEqual(['2026-12', '2027-01', '2027-02'])
+  })
+})
+
+describe('comparaciones a largo plazo', () => {
+  const anios = (desde, hasta, f) => {
+    const L = []
+    for (let y = desde; y <= hasta; y++) for (let m = 1; m <= 12; m++) {
+      const c = `${y}-${String(m).padStart(2, '0')}`
+      if (c > '2026-11') continue
+      const { ing, gas, inv } = f(y, m)
+      L.push(mov('ingreso', 'Nomina', ing, `${c}-01`))
+      L.push(mov('gasto', 'Comida', gas, `${c}-10`))
+      if (inv) L.push(mov('gasto', 'Inversion', inv, `${c}-02`))
+    }
+    return L
+  }
+  it('tasa interanual: mismo mes del año pasado y año móvil, en puntos', async () => {
+    const { tasaInteranual } = await import('./analisis')
+    const L = anios(2024, 2026, (y) => ({ ing: 2000, gas: y === 2026 ? 1400 : 1600 }))
+    const r = tasaInteranual(L, contextoMes('2026-10', new Date(2026, 10, 7)))
+    expect(Math.round(r.mes.actual)).toBe(30)
+    expect(Math.round(r.mes.anterior)).toBe(20)
+    expect(Math.round(r.mes.difPuntos)).toBe(10)
+    expect(r.anio).toBeTruthy()
+  })
+  it('tasa interanual: sin el mismo mes del año pasado, no se compara', async () => {
+    const { tasaInteranual } = await import('./analisis')
+    const L = anios(2026, 2026, () => ({ ing: 2000, gas: 1500 }))
+    const r = tasaInteranual(L, contextoMes('2026-10', new Date(2026, 10, 7)))
+    expect(r.mes).toBeNull()
+    expect(r.anio).toBeNull()
+  })
+  it('12 meses: compara medias mensuales y explica un gasto menor por menos ingresos', async () => {
+    const { comparativaPeriodos } = await import('./analisis')
+    const L = anios(2024, 2026, (y, m) => {
+      const reciente = y === 2026 || (y === 2025 && m >= 11)
+      return reciente ? { ing: 1500, gas: 1300 } : { ing: 2500, gas: 1700 }
+    })
+    const r = comparativaPeriodos(L, contextoMes('2026-11', new Date(2026, 10, 7)), 12)
+    const gastos = r.find((x) => x.id === 'gastos')
+    expect(gastos.tono).toBe('neutro')
+    expect(gastos.detalle).toMatch(/ahorras menos/)
+    expect(r.find((x) => x.id === 'ahorro').tono).toBe('aviso')
+    expect(r.find((x) => x.id === 'ingresos').titulo).toMatch(/−1\.000\s€ al mes/)
+  })
+  it('24 meses sin historial suficiente: lo dice', async () => {
+    const { comparativaPeriodos } = await import('./analisis')
+    const L = anios(2025, 2026, () => ({ ing: 2000, gas: 1500 }))
+    const r = comparativaPeriodos(L, contextoMes('2026-11', new Date(2026, 10, 7)), 24)
+    expect(r).toHaveLength(1)
+    expect(r[0]).toMatchObject({ id: 'faltan-datos', tono: 'info' })
+  })
+})
