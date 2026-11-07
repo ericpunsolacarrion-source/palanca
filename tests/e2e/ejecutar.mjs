@@ -12,6 +12,7 @@ import { limites } from './limites.mjs'
 import { historial } from './historial.mjs'
 import { avisos } from './avisos.mjs'
 import { objetivo } from './objetivo.mjs'
+import { periodo } from './periodo.mjs'
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url))
 const salida = path.join(AQUI, 'salida')
@@ -47,6 +48,12 @@ try {
     console.log(`\nObjetivo de inversión: ${o.length ? `${o.length} fallos` : 'todo bien'}`)
     for (const f of o) console.log('  ✗ ' + f)
     fallos += o.length
+    for (const conColumna of [false, true]) {
+      const pe = await periodo({ url, navegador, conColumna, salida })
+      console.log(`\nPeriodo financiero (${conColumna ? 'con' : 'sin'} columna): ${pe.length ? `${pe.length} fallos` : 'todo bien'}`)
+      for (const f of pe) console.log('  ✗ ' + f)
+      fallos += pe.length
+    }
   }
   const informe = await auditoria({ url, salida, navegador })
   console.log(`\nAuditoría visual: ${informe.length ? `${informe.length} problemas` : 'sin problemas'}`)

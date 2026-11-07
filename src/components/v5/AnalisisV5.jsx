@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { esConsumo, formatearFecha, formatearPorcentaje, agregarPorMes, etiquetaMes, progresoObjetivo, resumenMensualMedio, totalesDe } from '../../lib/movimientosUtils'
 import { etiquetaCategoria, formatearEuros } from '../../lib/categorias'
 import { categoriasComparadas, comparativaPeriodos, constanciaInversion, tasaInteranual, contextoMes, delMes, insightsDelMes, mesesSiguientes, objetivoDelMes, referenciaHabitual, serieProyeccion, textoAltura } from '../../lib/analisis'
-import { textoRangoPeriodo } from '../../lib/periodo'
 import { usePresupuestoCompartido } from '../../lib/DatosCompartidos'
 import { toast } from '../../lib/toast'
 import InputImporte from '../InputImporte'
@@ -34,7 +33,6 @@ export default function AnalisisV5({ historico, clave, meses, onCambiarMes, onVe
       <div className="v5-ana-barra">
         <PeriodoSelector meses={meses} valor={clave} onCambiar={onCambiarMes} />
         <span className="v5-tenue v5-ana-contexto">
-          {textoRangoPeriodo(clave) && `${textoRangoPeriodo(clave)} · `}
           {ctx.parcial
             ? `Mes en curso · día ${ctx.dia} de ${ctx.diasMes}. Las comparaciones son a la misma altura de tus meses anteriores.`
             : 'Mes cerrado · comparado con tus meses completos anteriores.'}

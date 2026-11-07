@@ -2,7 +2,7 @@
 
 **Todo lo que se ha dejado para más adelante, en un solo sitio**, para poder rematarlo algún día.
 Se mantiene al día en cada sesión: lo terminado se marca ✔ con la fecha, lo nuevo se añade en su bloque.
-Última revisión: 04-11-2026 (rediseño v5 «Bosque»).
+Última revisión: 07-11-2026 (periodo financiero).
 
 Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejora.
 
@@ -11,11 +11,18 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 
 
-## Decisión pendiente (07-11) — periodo financiero
-- **Nóminas a final de mes:** propuesta en `docs/PROPUESTA-PERIODO.md`.
-  - Recomendación: un ciclo personal («Mi mes empieza el día…», por defecto 1 = como hoy) con una única función de periodo en el motor.
-  - La asignación ingreso a ingreso queda como excepción futura.
-  - **No se toca el motor hasta que Eric lo apruebe.**
+## Periodo financiero (07-11) — B implementada en la rama de trabajo
+- ✔ 07-11 **Alternativa B** («Mi mes empieza el día…», 1 = como siempre). Ver `docs/PERIODO.md`.
+  - Una sola función de periodo en el motor.
+  - Ajuste con vista previa en Tu cuenta.
+  - Equivalencia al céntimo con día 1.
+  - Escenarios e invariantes probados.
+- 🟧 **Paso de Eric:**
+  1. Revisar la rama `claude/capabilities-overview-m3ry1u` (sin subir a develop ni a main).
+  2. Ejecutar `supabase-schema-periodo.sql` **solo en palanca dev**: comprobar el proyecto arriba a la izquierda, vaciar el SQL Editor, pegar y Run.
+  - Hasta entonces, el ajuste se guarda en el navegador de cada usuario.
+- 🟩 **Alternativa C (futuro):** «cuenta para…» en un ingreso concreto (atrasos, paga extra). Necesita una columna por movimiento y su propia aprobación.
+- 🟩 Al pasar del día 1 a otro, las metas de inversión por mes (`planificaciones`) siguen guardadas por clave `AAAA-MM`. Ahora esa clave significa «periodo». No hace falta migrar nada, pero conviene que Eric lo sepa.
 
 ## Iteración 07-11 (tarde) — pendiente
 - **Entorno (Eric):** Production y Preview usan hoy el mismo Supabase («palanca»).

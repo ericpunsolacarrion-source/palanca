@@ -230,6 +230,12 @@ activar el envío). Detalle y plantilla de Edge Function en `docs/REPORTE_SEMANA
 ## Tu cuenta (botón de la cabecera)
 - Nombre y año de nacimiento.
 - Ver la demo rápida, la **demo avanzada** y ver la app con datos de ejemplo.
+- **Tu mes financiero** (`AjustePeriodo.jsx`, `docs/PERIODO.md`): «Mi mes empieza el día…» (1–28).
+  - Ejemplo con fechas reales del periodo.
+  - Vista previa de los 4 últimos periodos (entra, sale, ahorro, nº de movimientos y el ahorro de antes) **antes de guardar**.
+  - Aviso: solo cambia la clasificación.
+  - Se guarda en `perfiles.dia_inicio_periodo`; si la columna no existe, en el navegador.
+  - Al guardar, toda la app se recalcula. Con día ≠ 1, el selector de Análisis y los bloques de Movimientos muestran el rango («28 oct – 27 nov»).
 - **Tus datos**:
   - descargar los movimientos en CSV (formato español; Palanca lo reimporta tal cual);
   - descargar todo en JSON (todas las tablas, también los eventos).

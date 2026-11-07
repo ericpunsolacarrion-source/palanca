@@ -48,6 +48,11 @@ No recalcular a mano en componentes: usar siempre estas utilidades.
 - Toda agregación mensual agrupa por el campo **`fecha`** del movimiento
   (cuándo ocurrió), nunca por `created_at` ni asumiendo el mes actual.
   Meses sin datos aparecen a cero, no se omiten.
+- **«Mes» = periodo financiero del usuario** (`docs/PERIODO.md`): usar siempre
+  `claveMes`/`claveMesActual` o las funciones de `src/lib/periodo.js`, nunca
+  `fecha.slice(0, 7)` ni `getMonth()` para asignar dinero a un mes. Con día de
+  inicio 1 es el mes natural. Lo que es calendario (fijos «el día X de cada mes»,
+  días, semanas) usa `mesNatural`.
 
 ## Arquitectura de datos
 

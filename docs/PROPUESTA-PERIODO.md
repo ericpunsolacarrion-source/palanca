@@ -1,6 +1,6 @@
 # Propuesta · Periodo financiero y nóminas a final de mes
 
-> **Estado: pendiente de aprobación de Eric.** No se ha tocado el motor.
+> **Estado: B aprobada e implementada (07-11-2026) en la rama de trabajo; C para más adelante.** Ver `docs/PERIODO.md`.
 > Fecha: 07-11-2026.
 
 ## 1. Cómo funciona hoy (auditoría)

@@ -17,6 +17,14 @@
 PWA de finanzas personales (React 19 + Vite + Supabase). Estética oscura,
 premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](ESTADO-PLATAFORMA.md)**.
 
+## 🗓️ Periodo financiero (2026-11-07, rama de trabajo)
+- «Mi mes empieza el día…» (1–28, por defecto 1 = mes natural), en Tu cuenta con vista previa.
+- Una sola función, `periodoDe`, para todo el motor.
+- Con día 1, todo da lo mismo que antes, al céntimo (prueba de equivalencia).
+- Fijos y calendario siguen en mes natural.
+- SQL `supabase-schema-periodo.sql`, solo para palanca dev (pendiente de Eric).
+- Detalle: **[PERIODO.md](PERIODO.md)**.
+
 ## 🎨 Diseño v5 «Bosque» en pruebas (2026-11-04)
 Rediseño completo con prioridad en el ordenador, tras rechazar v4 («hemos ido a peor») y con Finerd como referencia:
 - verde profundo casi negro y un solo acento menta;

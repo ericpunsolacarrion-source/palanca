@@ -11,6 +11,8 @@ import PantallaCarga from './components/PantallaCarga'
 import CuentaPanel from './components/CuentaPanel'
 import PrimerosPasos from './components/PrimerosPasos'
 import { obtenerPerfil, crearPerfil } from './lib/perfil'
+import { configurarPeriodo } from './lib/periodo'
+import { useDiaInicioPeriodo } from './lib/useDiaInicioPeriodo'
 import { crearAjuste } from './lib/ajustes'
 import {
   SELECT_MOVIMIENTO,
@@ -125,6 +127,11 @@ function App() {
   const [verCuenta, setVerCuenta] = useState(false)
   const [perfil, setPerfil] = useState(null)
   const [comprobandoPerfil, setComprobandoPerfil] = useState(true)
+  // Periodo financiero del usuario («mi mes empieza el día…», 1 = mes natural).
+  // Se fija en el motor ANTES de cualquier cálculo de este render; al cambiarlo
+  // se recalcula y se vuelve a montar todo el contenido (ver docs/PERIODO.md).
+  const { dia: diaInicio, guardar: guardarDiaInicio } = useDiaInicioPeriodo(usuarioId, perfil, setPerfil)
+  configurarPeriodo(diaInicio)
   const [movimientosReales, setMovimientos] = useState([])
   const [cargando, setCargando] = useState(true)
   const [errorCarga, setErrorCarga] = useState(false)
@@ -134,6 +141,7 @@ function App() {
   // Selector de periodo GLOBAL del dashboard (clave 'YYYY-MM'). Gobierna a la vez
   // métricas, tasa de ahorro, categorías y evolución. Por defecto, el mes actual.
   const [mesDashboard, setMesDashboard] = useState(claveMesActual())
+  useEffect(() => setMesDashboard(claveMesActual()), [diaInicio])
   // Inicio: "Resumen" (lo esencial) o "Análisis" (gráficos por periodo).
   const [vistaInicio, setVistaInicio] = useState('resumen')
   // Modo discreto: oculta todos los importes (alguien al lado). Al cambiar se
@@ -375,17 +383,22 @@ function App() {
     }
   }, [ejemploPorTour])
 
-  const movimientosMes = useMemo(() => filtrarMesActual(movimientos), [movimientos])
+  // diaInicio en las dependencias: el mismo histórico se reagrupa por periodo.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const movimientosMes = useMemo(() => filtrarMesActual(movimientos), [movimientos, diaInicio])
   const totalesMes = useMemo(() => totalesDe(movimientosMes), [movimientosMes])
-  const gastoEstimado = useMemo(() => estimacionGastoMensual(movimientos), [movimientos])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const gastoEstimado = useMemo(() => estimacionGastoMensual(movimientos), [movimientos, diaInicio])
 
   // Rango de meses navegables y movimientos del periodo elegido (solo dashboard).
-  const mesesRango = useMemo(() => rangoMeses(movimientos), [movimientos])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const mesesRango = useMemo(() => rangoMeses(movimientos), [movimientos, diaInicio])
   const mesActivoDash = mesesRango.includes(mesDashboard) ? mesDashboard : mesesRango[0]
   const esMesActual = mesActivoDash === claveMesActual()
   const movimientosPeriodo = useMemo(
     () => filtrarPorMes(movimientos, mesActivoDash),
-    [movimientos, mesActivoDash],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [movimientos, mesActivoDash, diaInicio],
   )
 
   const { diasDesdeUltimoMovimiento, diasConHistorial } = useMemo(() => {
@@ -564,7 +577,7 @@ function App() {
         </button>
       </header>
 
-      <main key={ocultos ? 'ocultos' : 'visibles'}>
+      <main key={`${ocultos ? 'ocultos' : 'visibles'}-${diaInicio}`}>
         {errorCarga && (
           <div className="aviso-error">
             <span>No se han podido cargar tus datos. Revisa tu conexión.</span>
@@ -865,6 +878,9 @@ function App() {
           perfil={perfil}
           usuarioId={usuarioId}
           onPerfilActualizado={(p) => setPerfil(p)}
+          movimientos={movimientos}
+          diaInicioPeriodo={diaInicio}
+          onGuardarDiaInicio={guardarDiaInicio}
           onVerDemo={() => {
             setVerCuenta(false)
             setTourAbierto('rapido')

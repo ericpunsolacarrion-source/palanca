@@ -3890,6 +3890,15 @@
   font-size: 15px;
   font-weight: 600;
 }
+:root[data-diseno='v5'] .v5-bloque-periodo {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+:root[data-diseno='v5'] .v5-bloque-rango {
+  font-size: var(--fs-xs);
+  font-weight: 400;
+}
 :root[data-diseno='v5'] .v5-bloque-cifras.solo-gasto {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }

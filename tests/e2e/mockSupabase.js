@@ -209,6 +209,11 @@ class Q {
       try { localStorage.setItem('mock_db_limites', JSON.stringify(db.presupuestos_categoria)) } catch { /* nada */ }
       return r
     }
+    // Periodo financiero: con mock_columna_periodo=1 la columna
+    // perfiles.dia_inicio_periodo «existe» y se conserva entre recargas.
+    if (this.tabla === 'perfiles' && this.op === 'update' && LS('mock_columna_periodo') && this.datos.dia_inicio_periodo != null) {
+      try { localStorage.setItem('mock_periodo_bd', String(this.datos.dia_inicio_periodo)) } catch { /* nada */ }
+    }
     return this.ejecutarTabla()
   }
   ejecutarTabla() {
@@ -243,6 +248,7 @@ class Q {
 
 const LS = (k) => typeof localStorage !== 'undefined' && localStorage.getItem(k) === '1'
 if (LS('mock_sin_perfil')) db.perfiles.length = 0
+if (LS('mock_columna_periodo') && db.perfiles[0]) db.perfiles[0].dia_inicio_periodo = Number(localStorage.getItem('mock_periodo_bd') || 1)
 const session = LS('mock_sin_sesion') ? null : { user: { id: UID, email: 'demo@palanca.app' } }
 if (LS('mock_inactivo')) { const t = new Date(Date.now() - 4 * 864e5).toISOString(); for (const m of db.movimientos || []) m.created_at = t }
 const metricas = LS('mock_metricas_vacias') ? metricasVacias : metricasLlenas

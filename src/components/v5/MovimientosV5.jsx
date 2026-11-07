@@ -328,8 +328,14 @@ export default function MovimientosV5({
         <button type="button" className="v5-bloque-cab" aria-expanded={open} onClick={() => alternar(b.clave)}>
           <Icono nombre="chevron" tam={14} className="v5-bloque-flecha" />
           <span className="v5-bloque-titulo">
-            {mayuscula(etiquetaMes(b.clave))}
-            {textoRangoPeriodo(b.clave) && <span className="v5-tenue v5-mini"> · {textoRangoPeriodo(b.clave)}</span>}
+            {textoRangoPeriodo(b.clave) ? (
+              <span className="v5-bloque-periodo">
+                {mayuscula(etiquetaMes(b.clave))}
+                <span className="v5-bloque-rango v5-tenue">{textoRangoPeriodo(b.clave)}</span>
+              </span>
+            ) : (
+              mayuscula(etiquetaMes(b.clave))
+            )}
             {b.actual && <span className="v5-insignia info v5-mini">En curso</span>}
           </span>
           {resumenBloque(b.totales, b.n)}
