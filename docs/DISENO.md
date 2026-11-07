@@ -58,11 +58,12 @@ tarjetas 16 px; relleno 20 px (16 en móvil).
 «La P que crece» (dos barras y la P) en menta. Mismo dibujo que v2
 (`Marca` en `Icono.jsx`), con el color del acento.
 
-### Comercios y servicios (`lib/marcas.js`, `v5/Avatar.jsx`)
-Cada marca conocida (Netflix, Spotify, Mercadona, Repsol…) lleva su color y
-su monograma, como un logo reconocible, sin usar imágenes de terceros y sin
-pedir nada a internet. Los comercios sin marca reciben un tono estable
-derivado del nombre. Inversión, traspasos y ajustes llevan su icono.
+### Comercios y servicios (`lib/marcas.js`, `v5/Avatar.jsx`, `docs/LOGOS.md`)
+Cada movimiento lleva el logo real de su empresa:
+- 3.512 marcas, 3.488 con logo oficial;
+- 98 iconos de app (`public/logos/apps/`), que tienen prioridad.
+
+Las marcas sin logo libre llevan su color y su monograma. Los comercios sin marca, un tono oscuro estable con su inicial. Inversión, traspasos y ajustes llevan su icono.
 
 ### Componentes (prefijo `v5-`)
 - **Botón:** `.v5-boton` (secundario), `.primario` (menta), `.fantasma`, `.peligro`, `.icono-solo`.
@@ -122,6 +123,36 @@ derivado del nombre. Inversión, traspasos y ajustes llevan su icono.
 - **Objetivos:** objetivos de ahorro y simuladores a la izquierda; planificación de los próximos meses a la derecha.
 - **Fulcro:** panel acoplado a la derecha (ordenador), burbujas y fichas en el lenguaje v5; Escape cierra.
 - **Tu cuenta:** panel lateral derecho en el ordenador; Escape cierra.
+
+### Análisis (`v5/AnalisisV5.jsx`, lógica en `lib/analisis.js`)
+El centro de control del mes, en una retícula de 12:
+- Tu mes (8) + Objetivo de inversión (4).
+- Entra, sale y queda (8) + Tasa de ahorro (4).
+- En qué se va (7) + Qué ha cambiado (5).
+- Tu futuro (12; controles a la izquierda y gráfico a la derecha).
+
+Reglas:
+- **Comparación justa:** el mes en curso se compara hasta el mismo día de los meses anteriores; un mes cerrado, con meses completos. Nunca «389 % más» porque el mes va por el día 7.
+- **Insights:** cada uno dice qué cambió, frente a qué, cuántos euros y si es bueno (menta), malo (ámbar) o normal (gris, «en tu línea habitual»).
+  - La flecha indica hacia dónde se movió la cifra; el color, si conviene.
+  - Con menos de 2 meses de referencia, se dice en vez de comparar.
+  - Lo que no es habitual (un viaje de otro mes) no cuenta como «ahorro».
+- **Entra, sale y queda:** barras de entrada (menta) y salida (neutra) y un punto con lo que quedó, rojo y bajo el 0 si ese mes salió más de lo que entró. El mes en curso va atenuado y con asterisco.
+- **En qué se va:** cada fila a su propia escala, porque lo que importa es lo gastado frente a SU media (raya blanca). Ámbar si se pasa; flecha si sube 3 meses seguidos.
+- **Tu futuro:** la rentabilidad es una hipótesis editable (0–12 %, por defecto 7 %).
+  - Dorado = invertido, línea neutra = sin invertir; la franja entre ambos es el interés compuesto.
+  - Siempre con el aviso de simulación.
+  - Misma fórmula que el simulador (`serieProyeccion` ≡ `proyectarInteresCompuesto`).
+
+### Presupuesto · límites por categoría (`v5/LimitesCategoria.jsx`)
+Tres valores que nunca se mezclan, cada uno con su forma:
+- **Gastado:** la barra; ámbar desde el 85 % del límite, rojo si te pasas.
+- **Tu límite:** raya menta gruesa y columna «Tu límite».
+- **Media:** raya blanca fina y columna «Media/mes».
+
+Columna «Queda» (o «Te pasas X»). Se editan todos a la vez («Editar límites»); vaciar un campo quita el límite. Los límites no tocan el presupuesto general ni los movimientos.
+
+La configuración del presupuesto general son dos tarjetas de opción (porcentaje o cantidad fija), con un ejemplo calculado con tus datos.
 
 ### Movimiento
 Entradas de 0,16–0,28 s con curva `cubic-bezier(0.16, 1, 0.3, 1)`; barras y

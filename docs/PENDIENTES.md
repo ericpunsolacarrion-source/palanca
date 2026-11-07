@@ -8,6 +8,16 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 ---
 
+
+## Límites por categoría (07-11) — paso de Eric
+- **Ejecutar `supabase-schema-presupuestos-categoria.sql`** en Supabase (SQL Editor → vaciar → pegar → Run).
+  - Es aditivo: crea una tabla nueva con su seguridad por usuario y no toca nada existente.
+  - Hasta entonces, los límites se guardan en el navegador de cada usuario. Al existir la tabla se suben solos.
+- Por construir:
+  - que Fulcro conozca los límites por categoría («¿cómo voy en restaurantes?»);
+  - avisos al acercarte a un límite;
+  - mostrar los límites también en Inicio · Resumen.
+
 ## A. Decisiones que tiene que tomar Eric
 
 | | Tema | Estado / propuesta | Dónde |

@@ -42,6 +42,15 @@ Dos vistas con un segmentado arriba: **Resumen** (por defecto, lo esencial en 5 
 5. **Últimos movimientos**: 5, con concepto legible (los extractos en MAYÚSCULAS se pasan a "Mercadona"), categoría y fecha relativa (Hoy/Ayer/12 oct). "Ver todos" abre el historial.
 
 **Análisis**: selector de periodo global, métricas del periodo (`MetricasPrincipales`), gasto por categoría, tasa de ahorro, evolución, comparativas, píldora educativa, proyección de futuro y camino de logros.
+  - **En v5 (`v5/AnalisisV5.jsx`):** retícula de 12. Contiene:
+    - Tu mes: ahorro, ratio, entra/sale/invertido frente a lo habitual a la misma altura del mes, y a dónde ha ido lo que entró.
+    - Objetivo de inversión, editable.
+    - Entra, sale y queda: 6/12 meses, con medias y meses en negativo.
+    - Tasa de ahorro de los meses cerrados.
+    - En qué se va: categoría, gastado, habitual, diferencia y tendencia; al tocar una salen sus movimientos.
+    - Qué ha cambiado: insights en euros con su periodo de referencia.
+    - Tu futuro: horizontes de 5 a 30 años y rentabilidad supuesta editable.
+  - Detalle y reglas en `docs/DISENO.md`. La v2 sigue con los bloques de siempre.
 
 **Modo discreto** (ojo de la cabecera, `lib/privacidad.js`): oculta TODAS las cifras de la app (`formatearEuros` → "•••• €"); se recuerda en el dispositivo.
 
@@ -94,6 +103,14 @@ Puerta de entrada del producto (foco: suscripciones + seguimiento financiero).
   - **Cargos periódicos detectados** (`SuscripcionesDetectadas.jsx` + `lib/suscripciones.js`): encima de la lista, si en tus movimientos (p. ej. un extracto importado) hay un mismo comercio cobrando un importe estable cada ≈mes (≥3 cargos) o ≈año (≥2), se muestra una tarjeta "Hemos detectado N cargos periódicos · X € al año" con cada uno (importe, día, nº de cargos y aviso "Ha subido de A a B" si el precio subió). **Añadir** lo crea como compromiso en Base (solo mensuales; las anuales se muestran con su fecha de renovación). **×** lo descarta (localStorage, por dispositivo). No reaparece lo que ya está en Base (por fuente o nombre) ni lo que dejó de cobrarse.
 
 ### 5. Plan → Presupuesto (`Presupuesto.jsx`)
+
+**v5:**
+- Anillo, cifras y ritmo; «Tu regla» al lado.
+- **Por categoría** a todo el ancho: categoría, barra, gastado, tu límite, media/mes y queda.
+  - Los límites se fijan y editan con «Poner límites» / «Editar límites» (`v5/LimitesCategoria.jsx` + `lib/usePresupuestosCategoria.js`).
+  - Se guardan por usuario en `presupuestos_categoria`, o en el navegador hasta que exista la tabla.
+- Configurar el presupuesto general: dos tarjetas (porcentaje / cantidad fija) con un ejemplo calculado con tus datos. Los límites por categoría están disponibles aunque no haya presupuesto general.
+
 Dos modos a elegir:
 - **Por tasa de ahorro**: "quiero ahorrar el 20%" → calcula cuánto puede gastar según sus ingresos reales del mes.
 - **Gasto máximo fijo**: "quiero gastar máximo 500 €/mes".

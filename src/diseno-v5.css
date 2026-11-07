@@ -3748,3 +3748,100 @@
   gap: 8px;
   margin-top: 20px;
 }
+
+/* Objetivos de ahorro (AhorroObjetivo.jsx) con las piezas v5: tarjeta
+   interior, barra fina, insignia del tipo y acciones como enlaces. */
+:root[data-diseno='v5'] .objetivo-card {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--bg);
+  box-shadow: none;
+}
+:root[data-diseno='v5'] .objetivo-card + .objetivo-card {
+  margin-top: 10px;
+}
+:root[data-diseno='v5'] .objetivo-card-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+:root[data-diseno='v5'] .objetivo-nombre {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+:root[data-diseno='v5'] .objetivo-tipo-badge {
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--accent-suave);
+  color: var(--accent-2);
+}
+:root[data-diseno='v5'] .objetivo-tipo-badge.inversion {
+  background: color-mix(in srgb, var(--inversion) 15%, transparent);
+  color: var(--inversion);
+}
+:root[data-diseno='v5'] .objetivo-tipo-badge.patrimonio {
+  background: var(--superficie-3);
+  color: var(--text-h);
+}
+:root[data-diseno='v5'] .objetivo-card .btn-editar,
+:root[data-diseno='v5'] .objetivo-card .btn-eliminar {
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  color: var(--accent-2);
+  box-shadow: none;
+}
+:root[data-diseno='v5'] .objetivo-card .btn-eliminar {
+  color: var(--text-3);
+}
+:root[data-diseno='v5'] .objetivo-card .btn-eliminar:hover {
+  color: var(--critico);
+}
+:root[data-diseno='v5'] .objetivo-cifras {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 10px 0 10px;
+}
+:root[data-diseno='v5'] .objetivo-actual {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-h);
+}
+:root[data-diseno='v5'] .objetivo-meta {
+  font-size: var(--fs-s);
+  color: var(--text);
+}
+:root[data-diseno='v5'] .objetivo-card .ratio-barra {
+  height: 8px;
+  border-radius: 99px;
+  background: var(--superficie-3);
+}
+:root[data-diseno='v5'] .objetivo-card .ratio-barra-relleno {
+  border-radius: 99px;
+  background: var(--accent);
+}
+:root[data-diseno='v5'] .objetivo-nota {
+  margin-top: 10px;
+  font-size: var(--fs-s);
+  line-height: 1.5;
+  color: var(--text);
+}
+:root[data-diseno='v5'] .objetivo-logrado {
+  color: var(--accent-2);
+  font-weight: 600;
+}
