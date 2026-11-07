@@ -2343,6 +2343,40 @@
   align-self: flex-start;
   font-size: var(--fs-xs);
 }
+.v5-saldo-sub {
+  margin: 4px 0 0;
+  font-size: var(--fs-s);
+  color: var(--text);
+}
+.v5-saldo-sub.riesgo {
+  color: var(--aviso);
+}
+.v5-cal-rango {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+}
+.v5-saldo-ritmo-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  background: none;
+  color: var(--text-3);
+  font: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.v5-saldo-ritmo-boton.activo {
+  border-color: var(--borde-fuerte);
+  background: var(--superficie-3);
+  color: var(--text-h);
+}
+.v5-saldo-leyenda .v5-leyenda i.linea.punteada {
+  border-top: 2px dotted var(--text-3);
+}
 .v5-saldo-titular {
   margin: 10px 0 0;
   font-size: 17px;
@@ -2369,6 +2403,40 @@
   stroke: var(--text-2);
   stroke-width: 0.8;
   opacity: 0.35;
+}
+.v5-saldo-prev.riesgo {
+  stroke: var(--aviso);
+  opacity: 1;
+}
+.v5-saldo-cero {
+  stroke: var(--aviso);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+  opacity: 0.45;
+}
+.v5-saldo-ritmo {
+  fill: none;
+  stroke: var(--text-3);
+  stroke-width: 1.25;
+  stroke-dasharray: 1 4;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+.v5-saldo-final rect.riesgo {
+  stroke: var(--aviso);
+}
+.v5-saldo-riesgo-txt {
+  fill: var(--aviso);
+}
+.v5-saldo-logo.hecho {
+  opacity: 0.55;
+}
+.v5-saldo-logo.hecho:hover,
+.v5-saldo-logo.hecho.sel {
+  opacity: 1;
+}
+.v5-saldo-real-marca {
+  opacity: 0.6;
 }
 .v5-saldo-pie {
   fill: var(--card-bg);

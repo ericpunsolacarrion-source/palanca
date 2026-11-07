@@ -101,3 +101,46 @@ describe('cliente de 3 años', () => {
     if (r.length) expect(r.at(-1).saldoDespues).toBe(f.saldoHoy)
   })
 })
+
+describe('por periodo financiero (cobra el 28)', () => {
+  it('el gráfico va del 28 al 27: la nómina del 28 abre el periodo y los fijos de dos meses naturales caen en su sitio', async () => {
+    const { configurarPeriodo } = await import('./periodo')
+    const { flujoDelMes: f } = await import('./flujoCaja')
+    configurarPeriodo(28)
+    try {
+      const hoy = new Date('2026-11-07T12:00:00')
+      const L = [mov('ingreso', 'Ajuste', 500, '2026-09-01'), mov('ingreso', 'Nomina', 2000, '2026-10-28'), mov('gasto', 'Vivienda', 800, '2026-11-02'), mov('gasto', 'Comida', 60, '2026-10-30')]
+      const R = [rec({ id: 'luz', nombre: 'Luz', importe: 50, diaMes: 15, categoriaNombre: 'Suministros' }), rec({ id: 'nom', nombre: 'Nómina', tipo: 'ingreso', importe: 2000, diaMes: 28, categoriaNombre: 'Nomina' }), rec({ id: 'gym', nombre: 'Gym', importe: 30, diaMes: 29 })]
+      const r = f({ movimientos: L, recurrentes: R, clave: '2026-11', hoy, periodo: true })
+      expect(r).toMatchObject({ desde: '2026-10-28', hasta: '2026-11-27', dias: 31, diaHoy: 11, tramo: 'actual', saldoInicial: 500 })
+      const reales = r.eventos.filter((e) => e.estado === 'realizado')
+      expect(reales.map((e) => [e.fecha, e.dia, e.diaMes])).toEqual([['2026-10-28', 1, 28], ['2026-10-30', 3, 30], ['2026-11-02', 6, 2]])
+      // Previstos: la luz del 15-nov; la nómina del 28-nov y el gym del 29-nov ya son del periodo siguiente.
+      expect(r.eventos.filter((e) => e.estado !== 'realizado').map((e) => [e.nombre, e.fecha])).toEqual([['Luz', '2026-11-15']])
+      // Con día 1 sería el mes natural, exactamente como antes.
+      configurarPeriodo(1)
+      const n = f({ movimientos: L, recurrentes: R, clave: '2026-11', hoy, periodo: true })
+      const n0 = f({ movimientos: L, recurrentes: R, clave: '2026-11', hoy })
+      expect(JSON.stringify(n.eventos)).toBe(JSON.stringify(n0.eventos))
+      expect([n.desde, n.hasta, n.saldoInicial, n.saldoFinal]).toEqual([n0.desde, n0.hasta, n0.saldoInicial, n0.saldoFinal])
+    } finally {
+      configurarPeriodo(1)
+    }
+  })
+})
+
+describe('ritmo variable habitual', () => {
+  it('media diaria de lo no fijo de los 3 periodos anteriores; los fijos no cuentan', async () => {
+    const { ritmoVariableDiario } = await import('./flujoCaja')
+    const L = []
+    for (const c of ['2026-08', '2026-09', '2026-10']) {
+      L.push(mov('gasto', 'Vivienda', 800, `${c}-02`, 'Alquiler piso'))
+      L.push(mov('gasto', 'Comida', 310, `${c}-10`, 'Mercadona'))
+    }
+    const R = [rec({ id: 'alq', nombre: 'Alquiler piso', importe: 800, diaMes: 2, categoriaNombre: 'Vivienda' })]
+    const r = ritmoVariableDiario(L, R, new Date('2026-11-07T12:00:00'))
+    expect(r.periodos).toBe(3)
+    expect(r.diario).toBe(Math.round((930 * 100) / 92) / 100) // 3 × 310 € entre 31+30+31 días
+    expect(ritmoVariableDiario(L.slice(0, 2), R, new Date('2026-11-07T12:00:00'))).toBeNull()
+  })
+})

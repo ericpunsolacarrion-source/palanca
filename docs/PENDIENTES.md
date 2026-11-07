@@ -12,6 +12,17 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 
 ## Saldo del mes en Base (07-11) — hecho
+- ✔ Mejoras de Eric:
+  - periodo financiero;
+  - escala sobre lo cobrado;
+  - «por semana» sin riesgo;
+  - aviso en ámbar si baja de 0;
+  - bajadas proporcionales;
+  - logos de lo ya hecho;
+  - ritmo habitual opcional;
+  - días apuntados;
+  - logos a niveles con hilo.
+- Nota: con día de inicio ≠ 1, las cifras de arriba de la tarjeta (Comprometido / Pagado / Falta) siguen siendo del mes natural con esa clave, porque los fijos son calendario.
 - ✔ Selector Gráfico/Calendario en la tarjeta del mes de Base.
   - Saldo real y previsto con marcadores, etiquetas sin solapes y ficha con saldo antes → después.
   - Calendario con los mismos datos.

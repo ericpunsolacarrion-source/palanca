@@ -112,13 +112,22 @@ Las marcas sin logo libre llevan su color y su monograma. Los comercios sin marc
 - **Base (`Recurrentes.jsx` en v5 + `v5/CalendarioBase.jsx`):**
   - Cifras (al mes, al año, pagado este mes, lo que pide atención).
   - Tarjeta del mes con selector **Gráfico | Calendario**, que recuerda la última vista en el dispositivo. Las dos vistas usan los mismos datos: `flujoDelMes`, en `lib/flujoCaja.js`.
-    - **Gráfico** (`v5/GraficoSaldo.jsx`), visual y sin tecnicismos, como el ejemplo de Eric:
-      - Arriba, una frase: «Aún faltan 8 cobros este mes».
-      - Lo real es un área suave hasta Hoy; lo previsto, una línea discontinua que baja en escalones redondeados en la fecha de cada cobro.
-      - Sin eje de euros ni rejilla. Solo dos cifras: el saldo de hoy sobre la línea de «Hoy», y una etiqueta con el saldo tras el último cobro y su fecha.
-      - El **logo** de cada cobro previsto flota sobre su escalón. No lleva texto, porque los importes ya están en la lista de la derecha. Si no caben, suben a otra fila y nunca se pierden.
-      - Un cobro por confirmar lleva un aro ámbar.
-      - Al tocar un logo o un día se abre una ficha con cada movimiento (logo, importe, fecha, tipo, estado y saldo antes → después). Si el compromiso existe, enlaza a él.
+    - **Gráfico** (`v5/GraficoSaldo.jsx`), visual y sin tecnicismos:
+      - **Periodo financiero** del usuario: si cobra el 28, va del 28 al 27, con el rango bajo el título. Con día 1 es el mes natural.
+      - **Escala sobre lo cobrado este mes:** el saldo menos el saldo al empezar el periodo. Si se cobra el día 1, la línea arranca en lo cobrado.
+      - Arriba, una frase («Aún faltan 8 cobros este mes») y, debajo, «Para gastar sin riesgo: unos X € por semana hasta el …»: lo que queda tras los cobros fijos entre los días que faltan × 7.
+      - Si la previsión baja de 0, ese tramo de la línea discontinua sale en **ámbar** y la frase avisa: «El 25 nov te quedarías en −120 € de lo cobrado este mes».
+      - Lo real es un área suave. Lo previsto es una línea discontinua: cada cobro baja en una curva **prolongada y proporcional a su importe** (de ~0,6 a ~3 días de ancho).
+      - **Logos:** el de cada cobro previsto, y más apagados los de los grandes movimientos ya hechos (nómina, alquiler).
+        - Van a distintas alturas, encima del punto o debajo si no caben, sin pisarse.
+        - Cada uno está unido a su punto con un hilo muy fino, translúcido y algo difuminado.
+      - Línea de **Hoy** con «X € te quedan · llevas gastado Y €».
+      - Etiqueta final con lo que te quedará tras el último cobro y su fecha.
+      - Abajo, los **días apuntados**: los reales y, más tenues, los previstos.
+      - **«A tu ritmo habitual»**, opcional, apagado por defecto y recordado en el dispositivo.
+        - Es una línea punteada con lo que sueles gastar al día en lo no fijo: media de los 3 últimos periodos, sin los movimientos de tus compromisos (`ritmoVariableDiario`).
+        - La etiqueta final añade «a tu ritmo: Z €».
+      - Al tocar un logo o un día se abre la ficha: «Te queda del mes» antes → después.
     - **Calendario:** cada movimiento real o previsto en su día. Lo previsto va con el logo atenuado y un aro discontinuo, y la celda solo prevista con borde discontinuo. Tocar un día lo lista con el saldo antes → después; los compromisos abren su ficha.
   - Reparto anual, plan de ahorro.
   - Lista de compromisos con avatar y estado («Pagado», «Por confirmar», «Mañana», «En 9 días»…).

@@ -39,6 +39,17 @@ export async function saldo({ url, navegador = {} }) {
       ok(liquidezInicio > euros(hoyTxt), 'Lo que queda del mes es menor que toda la liquidez (escala del mes, no del total)')
       ok((await tarjeta.locator('.v5-saldo-marca').count()) >= 3, 'Días apuntados en la línea de abajo')
       ok((await tarjeta.locator('.v5-saldo-hilo').count()) === (await tarjeta.locator('.v5-saldo-logo').count()), 'Cada logo unido a su punto con un hilo')
+      ok(/(por semana|para estos \d+ d[ií]as?|te quedar[ií]as)/.test(await tarjeta.locator('.v5-saldo-sub').innerText()), 'Debajo de la frase: cuánto puedes gastar por semana (o el aviso)')
+      ok((await tarjeta.locator('.v5-saldo-logo.hecho').count()) >= 1, 'Logos (apagados) de los grandes movimientos ya hechos')
+      const botonRitmo = tarjeta.locator('.v5-saldo-ritmo-boton')
+      if (await botonRitmo.count()) {
+        ok((await tarjeta.locator('.v5-saldo-ritmo').count()) === 0, 'El ritmo habitual está apagado por defecto')
+        await botonRitmo.click()
+        await p.waitForTimeout(200)
+        ok((await tarjeta.locator('.v5-saldo-ritmo').count()) === 1 && /a tu ritmo/.test(await tarjeta.locator('.v5-saldo-final').textContent()), 'Al activarlo: línea punteada y «a tu ritmo» en la etiqueta final')
+        await botonRitmo.click()
+        await p.waitForTimeout(200)
+      }
       // Las dos líneas se unen: el último punto de la real es el primero de la prevista.
       const [dReal, dPrev] = await Promise.all([tarjeta.locator('.v5-saldo-real').getAttribute('d'), tarjeta.locator('.v5-saldo-prev').getAttribute('d')])
       const nums = dReal.match(/-?[\d.]+/g).map(Number)
@@ -73,6 +84,35 @@ export async function saldo({ url, navegador = {} }) {
       const ancho2 = await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)
       ok(ancho2, 'Sin desbordes horizontales')
       ok(err.length === 0, 'Sin errores en consola ' + err.join(' | '))
+      await p.close()
+    }
+    // Cobra el 28 (periodo 28 → 27): el gráfico usa su mes financiero.
+    {
+      const p = await b.newPage({ viewport: { width: 1280, height: 1000 } })
+      await p.addInitScript(() => {
+        if (sessionStorage.getItem('__ini')) return
+        localStorage.setItem('mock_nomina28', '1')
+        localStorage.setItem('palanca_periodo_demo-user', JSON.stringify({ dia: 28, cobro: 28, auto: false }))
+        localStorage.removeItem('palanca_base_vista')
+        sessionStorage.setItem('__ini', '1')
+      })
+      await p.goto(url, { waitUntil: 'networkidle' })
+      await p.waitForTimeout(700)
+      for (let i = 0; i < 20; i++) {
+        const x = p.getByRole('button', { name: /^(Seguir|Entendido)$/ })
+        if (await x.count()) { await x.first().click(); await p.waitForTimeout(120) } else break
+      }
+      await p.locator('[data-pestana="suscripciones"]:visible').first().click()
+      await p.waitForTimeout(900)
+      const t = p.locator('.v5-cal')
+      const titulo = await t.locator('h2').first().innerText()
+      const okP = /28 \w+ – 27 \w+/.test(titulo)
+      console.log(okP ? '  ✓' : '  ✗', `[periodo 28] El gráfico va del 28 al 27 («${titulo.replace(/\n/g, ' ')}»)`)
+      if (!okP) fallos.push('Saldo en Base: con inicio 28 el gráfico no usa el periodo')
+      const hoyTxt = await t.locator('text.v5-saldo-hoy').textContent()
+      const okH = /^\s*[\d.]+\s€ te quedan/.test(hoyTxt)
+      console.log(okH ? '  ✓' : '  ✗', `[periodo 28] Con la nómina del 28 ya cobrada, te quedan dinero del periodo («${hoyTxt.trim()}»)`)
+      if (!okH) fallos.push('Saldo en Base: con inicio 28 no cuenta la nómina del 28')
       await p.close()
     }
   } catch (e) {

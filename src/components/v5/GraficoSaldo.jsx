@@ -58,7 +58,7 @@ function curva(p) {
   return r
 }
 
-export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso }) {
+export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso, ritmoDiario = null }) {
   const { ref, w } = useDimensiones(alto)
   const h = alto
   const estrecho = w < 520
@@ -71,7 +71,7 @@ export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso }) {
   const ancho = w - M.izq - M.der
   const altoPlot = h - M.arriba - M.abajo
   const { dias, eventos, tramo } = flujo
-  const diaHoy = tramo === 'actual' ? Number(flujo.hoyIso.slice(8, 10)) : null
+  const diaHoy = flujo.diaHoy ?? null
   const x = (d) => M.izq + ((d - 0.5) / dias) * ancho
   const xIni = M.izq
   const xFin = M.izq + ancho
@@ -79,7 +79,22 @@ export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso }) {
   // Base de la escala: el saldo al empezar el mes (0 = nada cobrado aún).
   const base0 = flujo.saldoInicial
   const rel = (v) => Math.round((v - base0) * 100) / 100
-  const saldos = [base0, flujo.saldoFinal, ...(flujo.saldoHoy != null ? [flujo.saldoHoy] : []), ...eventos.flatMap((e) => [e.saldoAntes, e.saldoDespues])]
+  // A tu ritmo habitual (opcional): lo previsto menos lo que sueles gastar al
+  // día en lo variable, día a día desde hoy (o desde el inicio si es futuro).
+  const serieRitmo = useMemo(() => {
+    if (!ritmoDiario || tramo === 'pasado') return null
+    const d0 = tramo === 'actual' ? diaHoy : 0
+    const prev = eventos.filter((e) => e.estado !== 'realizado')
+    let s0 = Math.round((tramo === 'actual' ? flujo.saldoHoy : flujo.saldoInicial) * 100)
+    const out = [[d0, s0 / 100]]
+    let i = 0
+    for (let d = Math.max(1, d0); d <= flujo.dias; d++) {
+      while (i < prev.length && prev[i].dia <= d) s0 += Math.round(prev[i++].delta * 100)
+      out.push([d, (s0 - Math.round(ritmoDiario * 100) * (d - d0)) / 100])
+    }
+    return out
+  }, [ritmoDiario, eventos, tramo, diaHoy, flujo.saldoHoy, flujo.saldoInicial, flujo.dias])
+  const saldos = [base0, flujo.saldoFinal, ...(serieRitmo ? serieRitmo.map((p) => p[1]) : []), ...(flujo.saldoHoy != null ? [flujo.saldoHoy] : []), ...eventos.flatMap((e) => [e.saldoAntes, e.saldoDespues])]
   const lo = Math.min(...saldos)
   const hi = Math.max(...saldos)
   const aire = (hi - lo || Math.abs(hi) || 100) * 0.08
@@ -94,7 +109,7 @@ export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso }) {
     for (const e of eventos) {
       const tipo = e.estado === 'realizado' ? 'real' : 'prev'
       const k = `${e.dia}-${tipo}`
-      if (!mapa.has(k)) mapa.set(k, { clave: k, dia: e.dia, tipo, eventos: [] })
+      if (!mapa.has(k)) mapa.set(k, { clave: k, dia: e.dia, diaMes: e.diaMes ?? e.dia, tipo, eventos: [] })
       mapa.get(k).eventos.push(e)
     }
     return [...mapa.values()].map((g) => ({ ...g, antes: g.eventos[0].saldoAntes, despues: g.eventos[g.eventos.length - 1].saldoDespues }))
@@ -123,7 +138,10 @@ export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso }) {
   const union = tramo === 'actual' ? [x(diaHoy), flujo.saldoHoy] : tramo === 'futuro' ? [xIni, flujo.saldoInicial] : null
   let lineaPrev = null
   if (union) {
-    const r = Math.min(10, ancho / dias / 2)
+    // Cada cobro baja en una curva suave y PROLONGADA: cuanto mayor el
+    // importe, más larga la bajada (de ~0,6 a ~3 días de ancho).
+    const anchoDia = ancho / dias
+    const maxSalto = Math.max(1, ...previstos.map((g) => Math.abs(g.despues - g.antes)))
     let cx = union[0]
     let cy = y(union[1])
     lineaPrev = `M${cx.toFixed(1)} ${cy.toFixed(1)}`
@@ -131,33 +149,52 @@ export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso }) {
       const gx = Math.max(x(g.dia), cx + 0.1)
       const ny = y(g.despues)
       if (Math.abs(ny - cy) < 0.5) continue
-      const a = Math.max(cx, gx - r)
-      const b = gx + r * 0.4
-      lineaPrev += ` L${a.toFixed(1)} ${cy.toFixed(1)} C${(a + (b - a) * 0.6).toFixed(1)} ${cy.toFixed(1)} ${(b - (b - a) * 0.6).toFixed(1)} ${ny.toFixed(1)} ${b.toFixed(1)} ${ny.toFixed(1)}`
+      const largo = anchoDia * (0.6 + 2.4 * (Math.abs(g.despues - g.antes) / maxSalto))
+      const a = Math.max(cx, gx - largo * 0.35)
+      const b = Math.min(xFin, Math.max(a + 2, gx + largo * 0.65))
+      lineaPrev += ` L${a.toFixed(1)} ${cy.toFixed(1)} C${(a + (b - a) * 0.5).toFixed(1)} ${cy.toFixed(1)} ${(a + (b - a) * 0.5).toFixed(1)} ${ny.toFixed(1)} ${b.toFixed(1)} ${ny.toFixed(1)}`
       cx = b
       cy = ny
     }
     lineaPrev += ` L${xFin.toFixed(1)} ${cy.toFixed(1)}`
   }
+  // Cero de la escala (lo cobrado este mes, gastado entero): si la previsión
+  // lo cruza, ese tramo se pinta en ámbar.
+  const y0 = y(base0)
+  const cruzaCero = eventos.some((e) => e.estado !== 'realizado' && e.saldoDespues < base0) || (serieRitmo ?? []).some((p) => p[1] < base0)
+  const lineaRitmo = serieRitmo ? serieRitmo.map(([d, v], i) => `${i ? 'L' : 'M'}${(d === 0 ? xIni : x(d)).toFixed(1)} ${y(v).toFixed(1)}`).join(' ') : null
 
   // Logos de lo previsto: encima de su punto, a distintas alturas para no
   // pisarse, unidos al gráfico con un hilo fino (varios el mismo día: «+N»).
   const logos = useMemo(() => {
-    const items = previstos
+    // Grandes movimientos ya hechos (alquiler, nómina…), también con su logo,
+    // más apagados: explican por qué cae o sube la parte real.
+    const saltos = reales.map((g) => Math.abs(g.despues - g.antes)).sort((a, b) => b - a)
+    const umbral = Math.max(saltos[3] ?? 0, (Math.max(...saldos) - Math.min(...saldos)) * 0.12)
+    const grandes = reales.filter((g) => Math.abs(g.despues - g.antes) >= umbral && Math.abs(g.despues - g.antes) > 0)
+    const items = [...previstos, ...grandes]
       .map((g) => {
         const principal = [...g.eventos].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta) || b.importe - a.importe)[0]
         return { id: g.clave, px: x(g.dia), py: y(g.despues), ancho: LOGO + (g.eventos.length > 1 ? 16 : 0), g, principal }
       })
       .sort((a, b) => a.px - b.px)
+    // Huecos candidatos: encima del punto a distintas alturas y, si no caben
+    // (el punto está arriba del todo), debajo. Nunca dos logos en el mismo sitio.
     const puestos = []
+    const minY = M.arriba - 4 + LOGO / 2
+    const maxY = M.arriba + altoPlot - LOGO / 2 - 2
+    const choca = (lx, cy, an) => puestos.some((p) => Math.abs(p.lx - lx) < (p.ancho + an) / 2 + 3 && Math.abs(p.cy - cy) < LOGO + 4)
     for (const it of items) {
-      let nivel = 0
-      while (nivel < 4 && puestos.some((p) => p.nivel === nivel && Math.abs(p.px - it.px) < (p.ancho + it.ancho) / 2 + 4)) nivel++
-      const cy = Math.max(M.arriba - 4 + LOGO / 2, it.py - 24 - nivel * (LOGO + 10))
-      puestos.push({ ...it, nivel, lx: Math.min(Math.max(it.px, M.izq + it.ancho / 2), w - M.der - it.ancho / 2), cy })
+      const lx = Math.min(Math.max(it.px, M.izq + it.ancho / 2), w - M.der - it.ancho / 2)
+      const huecos = []
+      for (let n = 0; n < 4; n++) huecos.push(it.py - 24 - n * (LOGO + 10))
+      for (let n = 0; n < 4; n++) huecos.push(it.py + 24 + n * (LOGO + 10))
+      const validos = huecos.filter((cy) => cy >= minY && cy <= maxY)
+      const cy = validos.find((c) => !choca(lx, c, it.ancho)) ?? validos[0] ?? minY
+      puestos.push({ ...it, lx, cy })
     }
     return puestos
-  }, [previstos.map((g) => g.clave + g.despues).join('|'), w, flujo.clave, vMin, vMax]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [grupos.map((g) => g.clave + g.despues).join('|'), w, flujo.clave, vMin, vMax]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Días apuntados en la línea de abajo (sin pisarse; manda «Hoy»).
   const diasEje = useMemo(() => {
@@ -165,7 +202,7 @@ export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso }) {
     for (const g of grupos) {
       const prev = porDia.get(g.dia)
       const peso = Math.abs(g.despues - g.antes) + (g.tipo === 'prev' ? 1e6 : 0)
-      if (!prev || peso > prev.peso) porDia.set(g.dia, { dia: g.dia, tipo: g.tipo, peso })
+      if (!prev || peso > prev.peso) porDia.set(g.dia, { dia: g.dia, diaMes: g.diaMes, tipo: g.tipo, peso })
     }
     const sep = estrecho ? 15 : 18
     const puestos = diaHoy ? [{ dia: diaHoy, hoy: true }] : []
@@ -182,6 +219,7 @@ export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso }) {
 
   // Cifra final: tras el último cobro previsto (o al cierre si el mes pasó).
   const ultimo = previstos.at(-1)
+  const finRitmo = serieRitmo ? serieRitmo.at(-1)[1] : null
   const final = tramo === 'pasado' ? { x: xFin - 2, v: flujo.saldoFinal, etq: 'te quedó al cerrar' } : ultimo ? { x: x(ultimo.dia), v: ultimo.despues, etq: `te quedará · ${diaCorto(ultimo.eventos[0].fecha)}` } : null
 
   const grupoSel = grupos.find((g) => g.clave === sel) ?? null
@@ -199,7 +237,7 @@ export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso }) {
   const ficha = grupoSel && (
     <div
       className={`v5-saldo-ficha ${estrecho ? 'estatica' : ''}`}
-      style={estrecho ? undefined : { left: Math.min(Math.max(x(grupoSel.dia) - 150, 0), Math.max(0, w - 300)), top: yFicha > h / 2 ? undefined : yFicha + 14, bottom: yFicha > h / 2 ? h - yFicha + 14 : undefined }}
+      style={estrecho ? undefined : { left: Math.min(Math.max(x(grupoSel.dia) - 150, 0), Math.max(0, w - 300)), top: yFicha > h / 2 ? undefined : yFicha + 14, bottom: yFicha > h / 2 ? h - yFicha + 14 : undefined, maxHeight: yFicha > h / 2 ? yFicha - 14 : h - yFicha - 14, overflowY: 'auto' }}
       role="dialog"
       aria-label={`Movimientos del ${formatearFecha(grupoSel.eventos[0].fecha)}`}
     >
@@ -247,6 +285,12 @@ export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso }) {
     <figure className="v5-graf v5-saldo" ref={ref} aria-label="Evolución del saldo del mes">
       <svg width={w} height={h} role="img" aria-label="Saldo hasta hoy y previsto del mes">
         <defs>
+          <clipPath id={`${idGrad}-sobre`}>
+            <rect x="0" y="0" width={w} height={Math.max(0, y0)} />
+          </clipPath>
+          <clipPath id={`${idGrad}-bajo`}>
+            <rect x="0" y={y0} width={w} height={Math.max(0, h - y0)} />
+          </clipPath>
           <filter id={`${idGrad}-hilo`} x="-50%" y="-5%" width="200%" height="110%">
             <feGaussianBlur stdDeviation="0.45" />
           </filter>
@@ -269,27 +313,35 @@ export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso }) {
             </text>
           </g>
         )}
-        {lineaPrev && <path d={lineaPrev} className="v5-saldo-prev" pointerEvents="none" />}
+        {cruzaCero && <line x1={xIni} x2={xFin} y1={y0} y2={y0} className="v5-saldo-cero" pointerEvents="none" />}
+        {lineaRitmo && <path d={lineaRitmo} className="v5-saldo-ritmo" pointerEvents="none" />}
+        {lineaPrev && <path d={lineaPrev} className="v5-saldo-prev" clipPath={cruzaCero ? `url(#${idGrad}-sobre)` : undefined} pointerEvents="none" />}
+        {lineaPrev && cruzaCero && <path d={lineaPrev} className="v5-saldo-prev riesgo" clipPath={`url(#${idGrad}-bajo)`} pointerEvents="none" />}
         {lineaReal && <path d={lineaReal} className="v5-saldo-real" pointerEvents="none" />}
         {union && tramo === 'actual' && <circle cx={union[0]} cy={y(union[1])} r="5.5" fill="var(--accent)" stroke="var(--card-bg)" strokeWidth="2.5" pointerEvents="none" />}
 
         {final && (
           <g pointerEvents="none" className="v5-saldo-final">
-            <line x1={final.x} x2={final.x} y1={48} y2={y(final.v)} className="v5-saldo-final-guia" />
-            <rect x={badgeCx - badgeW / 2} y={6} width={badgeW} height={42} rx={10} />
+            <line x1={final.x} x2={final.x} y1={finRitmo != null ? 60 : 48} y2={y(final.v)} className="v5-saldo-final-guia" />
+            <rect x={badgeCx - badgeW / 2} y={6} width={badgeW} height={finRitmo != null ? 54 : 42} rx={10} className={final.v < base0 ? 'riesgo' : ''} />
             <text x={badgeCx} y={25} textAnchor="middle" className="v5-saldo-final-v num">
               {redondo(rel(final.v))}
             </text>
             <text x={badgeCx} y={40} textAnchor="middle" className="v5-saldo-final-f">
               {final.etq}
             </text>
-            <circle cx={final.x} cy={y(final.v)} r="5.5" fill="var(--accent)" stroke="var(--card-bg)" strokeWidth="2.5" />
+            {finRitmo != null && (
+              <text x={badgeCx} y={53} textAnchor="middle" className={`v5-saldo-final-f num ${finRitmo < base0 ? 'v5-saldo-riesgo-txt' : ''}`}>
+                a tu ritmo: {redondo(rel(finRitmo))}
+              </text>
+            )}
+            <circle cx={final.x} cy={y(final.v)} r="5.5" fill={final.v < base0 ? 'var(--aviso)' : 'var(--accent)'} stroke="var(--card-bg)" strokeWidth="2.5" />
           </g>
         )}
 
         {logos.map((l) => (
-          <g key={`h-${l.id}`} pointerEvents="none">
-            <line x1={l.lx} x2={l.px} y1={l.cy + LOGO / 2} y2={l.py} className="v5-saldo-hilo" filter={`url(#${idGrad}-hilo)`} />
+          <g key={`h-${l.id}`} pointerEvents="none" className={l.g.tipo === 'real' ? 'v5-saldo-real-marca' : ''}>
+            <line x1={l.lx} x2={l.px} y1={l.cy + (l.cy < l.py ? LOGO / 2 : -LOGO / 2)} y2={l.py} className="v5-saldo-hilo" filter={`url(#${idGrad}-hilo)`} />
             <circle cx={l.px} cy={l.py} r="2.5" className="v5-saldo-pie" />
           </g>
         ))}
@@ -297,7 +349,7 @@ export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso }) {
           <foreignObject key={l.id} x={l.lx - l.ancho / 2 - 1} y={l.cy - LOGO / 2 - 1} width={l.ancho + 2} height={LOGO + 2}>
             <button
               type="button"
-              className={`v5-saldo-logo ${sel === l.id ? 'sel' : ''} ${l.principal.estado === 'por-confirmar' ? 'atencion' : ''}`}
+              className={`v5-saldo-logo ${l.g.tipo === 'real' ? 'hecho' : ''} ${sel === l.id ? 'sel' : ''} ${l.principal.estado === 'por-confirmar' ? 'atencion' : ''}`}
               onClick={() => setSel(sel === l.id ? null : l.id)}
               aria-label={`${l.principal.nombre}${l.g.eventos.length > 1 ? ` y ${l.g.eventos.length - 1} más` : ''}, ${formatearFecha(l.g.eventos[0].fecha)}, ${firma(l.principal.tipo === 'ingreso' ? l.principal.importe : -l.principal.importe)}`}
             >
@@ -311,7 +363,7 @@ export default function GraficoSaldo({ flujo, alto = 320, onAbrirCompromiso }) {
           <g key={`d-${d.dia}`} pointerEvents="none">
             <line x1={x(d.dia)} x2={x(d.dia)} y1={base} y2={base + 4} className={`v5-saldo-marca ${d.tipo === 'prev' ? 'prev' : ''}`} />
             <text x={x(d.dia)} y={h - 6} className={`v5-graf-eje ${d.tipo === 'prev' ? 'v5-saldo-dia-prev' : ''}`} textAnchor="middle">
-              {d.dia}
+              {d.diaMes}
             </text>
           </g>
         ))}

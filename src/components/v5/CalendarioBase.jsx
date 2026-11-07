@@ -6,7 +6,8 @@ import { etiquetaMes } from '../../lib/movimientosUtils'
 import Icono from '../Icono'
 import Avatar from './Avatar'
 import GraficoSaldo from './GraficoSaldo'
-import { TEXTO_CLASE, flujoDelMes } from '../../lib/flujoCaja'
+import { TEXTO_CLASE, flujoDelMes, ritmoVariableDiario } from '../../lib/flujoCaja'
+import { periodoActual, sumarMeses, textoRangoPeriodo } from '../../lib/periodo'
 
 // CALENDARIO DE BASE (v5): cuánto está comprometido este mes y, con dos vistas
 // sobre los MISMOS datos (flujoDelMes, lib/flujoCaja.js):
@@ -18,6 +19,10 @@ import { TEXTO_CLASE, flujoDelMes } from '../../lib/flujoCaja'
 const ESTADO_EV = { realizado: { texto: 'Realizado', clase: 'bien' }, previsto: { texto: 'Previsto', clase: '' }, 'por-confirmar': { texto: 'Por confirmar', clase: 'aviso' } }
 const firma = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${formatearEuros(Math.abs(v))}`
 const LS_VISTA = 'palanca_base_vista'
+const LS_RITMO = 'palanca_base_ritmo'
+const FMT_CORTO = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' })
+const diaCorto = (iso) => FMT_CORTO.format(new Date(`${iso}T12:00:00`)).replace('.', '')
+const redondo = (v) => formatearEuros(Math.round(v))
 function leerVista() {
   try {
     return localStorage.getItem(LS_VISTA) === 'calendario' ? 'calendario' : 'grafico'
@@ -37,9 +42,28 @@ export default function CalendarioBase({ items, movimientos = [], onAbrir }) {
   const ref = new Date(hoy.getFullYear(), hoy.getMonth() + desfase, 1)
   const y = ref.getFullYear()
   const m = ref.getMonth() + 1
-  const clave = claveDe(y, m)
+  const claveNatural = claveDe(y, m)
   const [diaSel, setDiaSel] = useState(null)
   const [vista, setVista] = useState(leerVista)
+  // Gráfico: por PERIODO financiero (si cobras el 28, del 28 al 27; con día 1,
+  // el mes natural). Calendario: mes natural (es un calendario).
+  const claveGraf = sumarMeses(periodoActual(hoy), desfase)
+  const clave = vista === 'grafico' ? claveGraf : claveNatural
+  const [verRitmo, setVerRitmo] = useState(() => {
+    try {
+      return localStorage.getItem(LS_RITMO) === '1'
+    } catch {
+      return false
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_RITMO, verRitmo ? '1' : '0')
+    } catch {
+      /* preferencia de este dispositivo */
+    }
+  }, [verRitmo])
+  const ritmo = useMemo(() => ritmoVariableDiario(movimientos, items, hoy), [movimientos, items]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     try {
       localStorage.setItem(LS_VISTA, vista)
@@ -48,7 +72,7 @@ export default function CalendarioBase({ items, movimientos = [], onAbrir }) {
     }
   }, [vista])
   // Fuente única de las dos vistas.
-  const flujo = useMemo(() => flujoDelMes({ movimientos, recurrentes: items, clave, hoy }), [movimientos, items, clave]) // eslint-disable-line react-hooks/exhaustive-deps
+  const flujo = useMemo(() => flujoDelMes({ movimientos, recurrentes: items, clave, hoy, periodo: vista === 'grafico' }), [movimientos, items, clave, vista]) // eslint-disable-line react-hooks/exhaustive-deps
   const eventosDia = useMemo(() => {
     const m = new Map()
     for (const e of flujo.eventos) {
@@ -72,7 +96,7 @@ export default function CalendarioBase({ items, movimientos = [], onAbrir }) {
   const hueco = (new Date(y, m - 1, 1).getDay() + 6) % 7 // lunes = 0
   const celdas = [...Array(hueco).fill(null), ...Array.from({ length: diasMes }, (_, i) => i + 1)]
   while (celdas.length % 7) celdas.push(null)
-  const esMesHoy = clave === claveHoy
+  const esMesHoy = vista === 'grafico' ? flujo.tramo === 'actual' : clave === claveHoy
   const seleccion = diaSel != null ? eventosDia.get(diaSel) ?? [] : null
 
   // Frase del gráfico: qué queda por pagar (sin repetir importes de la lista).
@@ -84,6 +108,25 @@ export default function CalendarioBase({ items, movimientos = [], onAbrir }) {
       : flujo.tramo === 'futuro'
         ? pendientes ? `En ${nombreMesTxt} te esperan ${pendientes} ${pendientes === 1 ? 'cobro' : 'cobros'}.` : `Sin cobros previstos en ${nombreMesTxt}.`
         : pendientes ? `Aún ${pendientes === 1 ? 'falta 1 cobro' : `faltan ${pendientes} cobros`} este mes.` : 'Este mes ya está todo pagado.'
+
+  // Debajo de la frase: el aviso si la previsión se come lo cobrado o, si no,
+  // cuánto puedes gastar por semana sin riesgo (tras tus cobros fijos).
+  const c = (v) => Math.round(v * 100)
+  const relC = (v) => c(v) - c(flujo.saldoInicial)
+  const negativo = flujo.finPrevisto ? flujo.eventos.find((e) => e.estado !== 'realizado' && relC(e.saldoDespues) < 0) : null
+  let subtitular = null
+  if (negativo) {
+    subtitular = { riesgo: true, texto: `El ${diaCorto(negativo.fecha)} te quedarías en ${firma(relC(negativo.saldoDespues) / 100)} de lo cobrado este mes.` }
+  } else if (flujo.finPrevisto) {
+    const queda = relC(flujo.saldoFinal) / 100
+    const diasRest = flujo.tramo === 'actual' ? flujo.dias - flujo.diaHoy + 1 : flujo.dias
+    if (queda > 0 && diasRest > 0) {
+      subtitular =
+        diasRest >= 7
+          ? { texto: `Para gastar sin riesgo: unos ${redondo((queda / diasRest) * 7)} por semana hasta el ${diaCorto(flujo.hasta)}.` }
+          : { texto: `Para gastar sin riesgo: ${redondo(queda)} para estos ${diasRest} ${diasRest === 1 ? 'día' : 'días'}.` }
+    }
+  }
 
   const selectorVista = (
     <div className="v5-seg" role="tablist" aria-label="Vista">
@@ -102,7 +145,10 @@ export default function CalendarioBase({ items, movimientos = [], onAbrir }) {
           <button type="button" className="v5-boton fantasma icono-solo" onClick={() => { setDesfase((d) => d - 1); setDiaSel(null) }} aria-label="Mes anterior">
             <Icono nombre="chevron" tam={16} style={{ transform: 'rotate(180deg)' }} />
           </button>
-          <h2>{etiquetaMes(clave)}</h2>
+          <h2>
+            {etiquetaMes(clave)}
+            {vista === 'grafico' && textoRangoPeriodo(clave) && <small className="v5-tenue v5-cal-rango">{textoRangoPeriodo(clave)}</small>}
+          </h2>
           <button type="button" className="v5-boton fantasma icono-solo" onClick={() => { setDesfase((d) => d + 1); setDiaSel(null) }} aria-label="Mes siguiente">
             <Icono nombre="chevron" tam={16} />
           </button>
@@ -145,10 +191,24 @@ export default function CalendarioBase({ items, movimientos = [], onAbrir }) {
             <ul className="v5-leyenda">
               <li><i className="linea" aria-hidden="true" />Hasta hoy</li>
               {flujo.finPrevisto && <li><i className="linea discontinua" aria-hidden="true" />Previsto</li>}
+              {flujo.finPrevisto && ritmo && (
+                <li>
+                  <button
+                    type="button"
+                    className={`v5-saldo-ritmo-boton ${verRitmo ? 'activo' : ''}`}
+                    aria-pressed={verRitmo}
+                    onClick={() => setVerRitmo((v) => !v)}
+                    title={`Lo que sueles gastar al día en lo que no es fijo (media de tus ${ritmo.periodos} últimos meses): ${formatearEuros(ritmo.diario)} al día`}
+                  >
+                    <i className="linea punteada" aria-hidden="true" />A tu ritmo habitual
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
           <p className="v5-saldo-titular">{titular}</p>
-          <GraficoSaldo flujo={flujo} onAbrirCompromiso={onAbrir} />
+          {subtitular && <p className={`v5-saldo-sub ${subtitular.riesgo ? 'riesgo' : ''}`}>{subtitular.texto}</p>}
+          <GraficoSaldo flujo={flujo} onAbrirCompromiso={onAbrir} ritmoDiario={verRitmo && ritmo ? ritmo.diario : null} />
         </>
       ) : (
         <>
