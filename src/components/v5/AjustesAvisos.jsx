@@ -12,7 +12,7 @@ const TIPOS = [
   { icono: 'baja', titulo: 'Ingresos fijos', texto: 'El día que debería entrar tu nómina u otro ingreso fijo, para confirmar que ha llegado.' },
 ]
 
-export default function AjustesAvisos({ permiso, silenciado, ios, pidiendo, onActivar, onSilenciar, recordatoriosEmail = null, onAbrirCuenta, onCerrar }) {
+export default function AjustesAvisos({ permiso, silenciado, ios, pidiendo, onActivar, onSilenciar, onProbar, recordatoriosEmail = null, onAbrirCuenta, onCerrar }) {
   const e = estadoNotificaciones(permiso, silenciado, { ios })
   return (
     <Panel titulo="Avisos de Palanca" subtitulo="Qué te avisamos y por dónde" onCerrar={onCerrar} etiqueta="Ajustes de avisos">
@@ -49,6 +49,7 @@ export default function AjustesAvisos({ permiso, silenciado, ios, pidiendo, onAc
                 <b>Notificaciones en este dispositivo</b>
                 <small>{e.explicacion}</small>
                 {(e.clave === 'activas' || e.clave === 'sin-activar') && <small className="v5-tenue">Por ahora llegan cuando abres Palanca; con la app cerrada aún no (lo estamos preparando).</small>}
+                {e.clave === 'silenciadas' && <small className="v5-tenue">Al reanudarlas te llegará una notificación que lo confirma.</small>}
               </span>
               <span className={`v5-insignia ${e.tono}`} data-estado={e.clave}>
                 {e.etiqueta}
@@ -76,6 +77,11 @@ export default function AjustesAvisos({ permiso, silenciado, ios, pidiendo, onAc
           {e.accion === 'activar' && (
             <button type="button" className="v5-boton primario" onClick={onActivar} disabled={pidiendo}>
               {pidiendo ? 'Esperando tu permiso…' : 'Activar notificaciones'}
+            </button>
+          )}
+          {e.accion === 'silenciar' && onProbar && (
+            <button type="button" className="v5-boton" onClick={onProbar}>
+              Enviar una de prueba
             </button>
           )}
           {e.accion === 'silenciar' && (

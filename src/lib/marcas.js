@@ -181,3 +181,18 @@ export function logoDe(nombre, lista = logos) {
   if (lista === logos) cache.set(t, r)
   return r
 }
+
+// Conceptos sin marca que se reconocen por lo que son (no por un comercio):
+// llevan un icono propio en vez de la inicial. Solo frases inequívocas.
+const CONCEPTOS = [
+  { icono: 'casa', rx: /(^| )(alquiler|hipoteca|comunidad (de )?(propietarios|vecinos)|ibi)( |$)/ },
+  { icono: 'billete', rx: /(^| )paga (extra|extraordinaria|de navidad|de verano|de beneficios)( |$)/ },
+]
+/** Icono de concepto ('casa' | 'billete') o null. */
+export function iconoConcepto(nombre) {
+  const t = normalizarTexto(nombre)
+  if (!t) return null
+  // Alquilar un coche, una bici o un equipo no es la vivienda.
+  if (/alquiler (de )?(coches?|vehiculos?|motos?|furgonetas?|bicis?|bicicletas?|patinetes?|material|equipos?|trasteros?)( |$)/.test(t)) return null
+  return CONCEPTOS.find((c) => c.rx.test(t))?.icono ?? null
+}

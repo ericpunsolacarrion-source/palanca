@@ -497,35 +497,36 @@ function TasaAhorro({ historico, clave, ctx }) {
 function Interanual({ historico, ctx }) {
   const r = useMemo(() => tasaInteranual(historico, ctx), [historico, ctx])
   if (!r.mes && !r.anio) return null
-  const pts = (d) => `${d >= 0 ? '+' : '−'}${Math.abs(d).toLocaleString('es-ES', { maximumFractionDigits: 1 })} puntos`
+  const pts = (d) => `${d >= 0 ? '+' : '−'}${Math.abs(d).toLocaleString('es-ES', { maximumFractionDigits: 1 })} pp`
   const tono = (d) => (Math.abs(d) < 2 ? 'igual' : d > 0 ? 'baja' : 'sube') // baja = verde (mejor), sube = ámbar (peor), como en categorías
-  const mesTxt = (c) => etiquetaMes(c, { month: 'long', year: 'numeric' }).toLowerCase()
   const corto = (c) => etiquetaMes(c, { month: 'short', year: 'numeric' }).replace('.', '').toLowerCase()
+  const filas = [
+    r.mes && {
+      k: 'mes',
+      etq: `${mayus(corto(r.mes.clave))} vs ${corto(r.mes.claveAnterior)}`,
+      titulo: r.mes.parcial ? `Ambos meses hasta el día ${r.mes.dia}` : 'Meses completos',
+      a: r.mes.actual,
+      b: r.mes.anterior,
+      d: r.mes.difPuntos,
+    },
+    r.anio && { k: 'anio', etq: '12 meses vs 12 anteriores', titulo: 'Ahorro total entre ingresos totales de cada periodo', a: r.anio.actual, b: r.anio.anterior, d: r.anio.difPuntos },
+  ].filter(Boolean)
   return (
     <div className="v5-ana-interanual" aria-label="Comparado con hace un año">
       <span className="v5-etq">¿Ahorras mejor que hace un año?</span>
-      <ul>
-        {r.mes && (
-          <li>
-            <span>
-              {mayus(mesTxt(r.mes.clave))} <span className="v5-tenue">vs {corto(r.mes.claveAnterior)}{r.mes.parcial ? `, ambos a día ${r.mes.dia}` : ''}</span>
-            </span>
-            <span className="num">
-              {formatearPorcentaje(r.mes.actual, 0)} <span className="v5-tenue">vs {formatearPorcentaje(r.mes.anterior, 0)}</span> <b className={`v5-ana-dif ${tono(r.mes.difPuntos)}`}>{pts(r.mes.difPuntos)}</b>
-            </span>
-          </li>
-        )}
-        {r.anio && (
-          <li>
-            <span>
-              Últimos 12 meses <span className="v5-tenue">frente a los 12 anteriores</span>
-            </span>
-            <span className="num">
-              {formatearPorcentaje(r.anio.actual, 0)} <span className="v5-tenue">vs {formatearPorcentaje(r.anio.anterior, 0)}</span> <b className={`v5-ana-dif ${tono(r.anio.difPuntos)}`}>{pts(r.anio.difPuntos)}</b>
-            </span>
-          </li>
-        )}
-      </ul>
+      <table>
+        <tbody>
+          {filas.map((f) => (
+            <tr key={f.k} title={f.titulo}>
+              <th scope="row">{f.etq}{f.k === 'mes' && r.mes.parcial && <span className="v5-tenue">*</span>}</th>
+              <td className="num">{formatearPorcentaje(f.a, 0)}</td>
+              <td className="num v5-tenue">{formatearPorcentaje(f.b, 0)}</td>
+              <td className={`num v5-ana-dif ${tono(f.d)}`}>{pts(f.d)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {r.mes?.parcial && <small className="v5-tenue">* Los dos meses hasta el día {r.mes.dia}.</small>}
     </div>
   )
 }

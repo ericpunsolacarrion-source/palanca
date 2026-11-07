@@ -20,3 +20,17 @@ describe('identidad visual de comercios', () => {
     expect(identidadVisual('  ¿¡ ').monograma).toBe('?')
   })
 })
+
+describe('iconoConcepto', () => {
+  it('reconoce alquiler/hipoteca (casa) y paga extra (billete), sin falsos positivos', async () => {
+    const { iconoConcepto } = await import('./marcas')
+    expect(iconoConcepto('Alquiler piso')).toBe('casa')
+    expect(iconoConcepto('RECIBO ALQUILER')).toBe('casa')
+    expect(iconoConcepto('Cuota hipoteca')).toBe('casa')
+    expect(iconoConcepto('Paga extra')).toBe('billete')
+    expect(iconoConcepto('Paga de Navidad')).toBe('billete')
+    expect(iconoConcepto('Alquiler de coches Hertz')).toBeNull()
+    expect(iconoConcepto('Pagar extra en Amazon')).toBeNull()
+    expect(iconoConcepto('Mercadona')).toBeNull()
+  })
+})

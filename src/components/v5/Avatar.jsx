@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { alCargarLogos, cargarDibujos, cargarLogos, dibujoDe, identidadVisual, logoDe, logosCargados } from '../../lib/marcas'
+import { alCargarLogos, cargarDibujos, cargarLogos, dibujoDe, iconoConcepto, identidadVisual, logoDe, logosCargados } from '../../lib/marcas'
 import { esAjuste, esInversion, esTraspaso } from '../../lib/categorias'
 import Icono from '../Icono'
 
@@ -103,6 +103,15 @@ export default function Avatar({ nombre, movimiento, tam = 36, siNoHayMarca }) {
     )
   }
 
+  // Sin marca, pero con un concepto reconocible (alquiler, paga extra…): su icono.
+  const concepto = !logo ? iconoConcepto(nombre) : null
+  if (concepto) {
+    return (
+      <span className={`v5-avatar concepto ${concepto}`} style={estilo} aria-hidden="true">
+        <Icono nombre={concepto} tam={Math.round(tam * 0.5)} />
+      </span>
+    )
+  }
   if (siNoHayMarca !== undefined && !logo) return siNoHayMarca
   const id = identidadVisual(nombre)
   const largo = id.monograma.length

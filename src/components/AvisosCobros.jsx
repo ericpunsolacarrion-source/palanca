@@ -126,6 +126,12 @@ export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimie
   function silenciar(valor) {
     guardarSilencio(usuarioId, valor)
     setSilenciado(valor)
+    // Al reactivarlas, una notificación real lo confirma (si no llega, algo
+    // en el navegador o el sistema las está bloqueando).
+    if (!valor && permisoActual() === 'granted') notificar('Notificaciones activadas', 'Te avisaremos aquí de cobros, renovaciones y subidas de precio.', 'palanca-activadas')
+  }
+  function probar() {
+    notificar('Prueba de Palanca', 'Si ves esto, las notificaciones funcionan en este dispositivo.', 'palanca-prueba')
   }
   const ajustesAvisos = ajustes && (
     <AjustesAvisos
@@ -135,6 +141,7 @@ export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimie
       pidiendo={pidiendo}
       onActivar={activarAvisos}
       onSilenciar={silenciar}
+      onProbar={probar}
       recordatoriosEmail={recordatoriosEmail}
       onAbrirCuenta={onAbrirCuenta ? () => { setAjustes(false); onAbrirCuenta() } : undefined}
       onCerrar={() => setAjustes(false)}

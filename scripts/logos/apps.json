@@ -390,5 +390,41 @@ null
 "repsolluz": [
 "Repsol Luz y Gas",
 "repsol (luz|vivit|electricidad|gas)|vivit"
+],
+"deale": [
+"Deale",
+"(^| )deale( |$)"
+],
+"tarjetatransporte": [
+"Tarjeta Transporte Madrid",
+"abono (de )?transporte|tarjeta (de )?transporte|consorcio regional de transportes|(^| )crtm( |$)"
+],
+"latagliatella": [
+"La Tagliatella",
+"tagliatella"
+],
+"primark": [
+"Primark",
+null
+],
+"bizum": [
+"Bizum",
+null
+],
+"goiko": [
+"Goiko",
+"(^| )goiko( |$)"
+],
+"cinesa": [
+"Cinesa",
+"(^| )cinesa( |$)"
+],
+"brim": [
+"Brim",
+"(^| )brim( |$)"
+],
+"farmacia": [
+"Farmacia",
+"(^| )(para)?farmacia( |$)|(^| )farm( |\\.)"
 ]
 }

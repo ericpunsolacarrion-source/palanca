@@ -3855,7 +3855,7 @@
 }
 :root[data-diseno='v5'] .v5-bloque-cab {
   display: grid;
-  grid-template-columns: 16px 200px minmax(0, 1fr);
+  grid-template-columns: 16px 250px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   width: 100%;
@@ -3969,7 +3969,7 @@
 }
 @media (min-width: 760px) and (max-width: 1439px) {
   :root[data-diseno='v5'] .v5-bloque-cab {
-    grid-template-columns: 16px 170px minmax(0, 1fr);
+    grid-template-columns: 16px 220px minmax(0, 1fr);
   }
   :root[data-diseno='v5'] .v5-bloque-cifras {
     gap: 4px 10px;
@@ -4135,25 +4135,27 @@
   padding-top: 12px;
   border-top: 1px solid var(--border);
 }
-:root[data-diseno='v5'] .v5-ana-interanual ul {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 8px 0 0;
-  padding: 0;
-  list-style: none;
-}
-:root[data-diseno='v5'] .v5-ana-interanual li {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 4px 12px;
+:root[data-diseno='v5'] .v5-ana-interanual table {
+  width: 100%;
+  margin-top: 6px;
+  border-collapse: collapse;
   font-size: var(--fs-s);
+}
+:root[data-diseno='v5'] .v5-ana-interanual th {
+  padding: 4px 0;
+  font-weight: 400;
+  text-align: left;
+  color: var(--text-h);
+  white-space: nowrap;
+}
+:root[data-diseno='v5'] .v5-ana-interanual td {
+  padding: 4px 0 4px 10px;
+  text-align: right;
+  white-space: nowrap;
   color: var(--text-h);
 }
-:root[data-diseno='v5'] .v5-ana-interanual li > span:first-child {
-  min-width: 0;
+:root[data-diseno='v5'] .v5-ana-interanual small {
+  font-size: 11px;
 }
 :root[data-diseno='v5'] .v5-ana-insights-intro {
   margin: -6px 0 12px;
@@ -4190,4 +4192,16 @@
   gap: 12px;
   font-size: var(--fs-s);
   color: var(--text-h);
+}
+
+/* Avatares de concepto (alquiler → casa, paga extra → billete) */
+:root[data-diseno='v5'] .v5-avatar.concepto {
+  display: inline-grid;
+  place-items: center;
+  background: var(--superficie-3);
+  color: var(--text-h);
+}
+:root[data-diseno='v5'] .v5-avatar.concepto.billete {
+  background: var(--accent-suave);
+  color: var(--accent-2);
 }
