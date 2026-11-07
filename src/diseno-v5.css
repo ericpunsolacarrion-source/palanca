@@ -3845,3 +3845,6 @@
   color: var(--accent-2);
   font-weight: 600;
 }
+:root[data-diseno='v5'] .objetivo-card:has(.objetivo-tipo-badge.inversion) .ratio-barra-relleno {
+  background: var(--inversion);
+}

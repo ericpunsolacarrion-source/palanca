@@ -8,6 +8,11 @@
 
 ---
 
+
+> **07-11 (develop):**
+> - Inicio · Análisis rediseñado como centro de control (`v5/AnalisisV5.jsx`, `lib/analisis.js`): comparaciones justas a la misma altura del mes, insights en euros y proyección con rentabilidad editable.
+> - Presupuesto con **límites por categoría** (`presupuestos_categoria`; falta ejecutar `supabase-schema-presupuestos-categoria.sql`) y configuración v5.
+> - Objetivos con piezas v5. e2e con prueba de límites.
 ## Qué es
 PWA de finanzas personales (React 19 + Vite + Supabase). Estética oscura,
 premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](ESTADO-PLATAFORMA.md)**.
