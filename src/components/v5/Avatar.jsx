@@ -39,8 +39,13 @@ function useDibujo(logo) {
 // el icono de siempre en un campo de texto); sin él, monograma.
 export default function Avatar({ nombre, movimiento, tam = 36, siNoHayMarca }) {
   const logos = useLogos()
-  const propio = movimiento && (esInversion(movimiento) || esTraspaso(movimiento) || esAjuste(movimiento))
-  const logo = logos && !propio ? logoDe(nombre, logos) : null
+  // Inversión: si la plataforma (cuenta del movimiento o el nombre) es una marca
+  // reconocida, lleva su logo (Trade Republic, MyInvestor…); si no, el icono
+  // dorado de inversión. Traspasos y ajustes, siempre su icono.
+  const inversion = movimiento && esInversion(movimiento)
+  const logoInversion = inversion && logos ? logoDe(movimiento.fuente?.nombre || nombre, logos) : null
+  const propio = movimiento && ((inversion && !logoInversion) || esTraspaso(movimiento) || esAjuste(movimiento))
+  const logo = logos && !propio ? logoInversion ?? logoDe(nombre, logos) : null
   const dibujo = useDibujo(logo)
   const estilo = { width: tam, height: tam, borderRadius: Math.round(tam * 0.28) }
   if (propio) {

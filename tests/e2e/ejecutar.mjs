@@ -9,6 +9,7 @@ import config from './vite.config.mjs'
 import { recorrido } from './recorrido.mjs'
 import { auditoria } from './auditoria.mjs'
 import { limites } from './limites.mjs'
+import { historial } from './historial.mjs'
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url))
 const salida = path.join(AQUI, 'salida')
@@ -32,6 +33,10 @@ try {
     console.log(`\nLímites por categoría: ${l.length ? `${l.length} fallos` : 'todo bien'}`)
     for (const f of l) console.log('  ✗ ' + f)
     fallos += l.length
+    const h = await historial({ url, navegador })
+    console.log(`\nHistorial agrupado: ${h.length ? `${h.length} fallos` : 'todo bien'}`)
+    for (const f of h) console.log('  ✗ ' + f)
+    fallos += h.length
   }
   const informe = await auditoria({ url, salida, navegador })
   console.log(`\nAuditoría visual: ${informe.length ? `${informe.length} problemas` : 'sin problemas'}`)

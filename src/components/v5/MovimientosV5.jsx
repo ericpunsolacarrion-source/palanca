@@ -10,6 +10,7 @@ import { toast } from '../../lib/toast'
 import { confirmar } from '../../lib/confirmar'
 import { FilaEdicion } from '../ListaMovimientos'
 import Icono from '../Icono'
+import { agruparHistorial } from '../../lib/historial'
 import Avatar from './Avatar'
 import Panel from './Panel'
 
@@ -40,6 +41,15 @@ function coincideTipo(m, tipo) {
 }
 
 const POR_PAGINA = 120
+function agruparPorDia(lista) {
+  const g = new Map()
+  for (const m of lista) {
+    if (!g.has(m.fecha)) g.set(m.fecha, [])
+    g.get(m.fecha).push(m)
+  }
+  return [...g.entries()]
+}
+const mayuscula = (t) => t.charAt(0).toUpperCase() + t.slice(1)
 const FMT_DIA = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
 const FMT_DIA_ANIO = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 function tituloDia(iso) {
@@ -201,14 +211,11 @@ export default function MovimientosV5({
   const totales = useMemo(() => totalesDe(filtrados), [filtrados])
   const netoAj = useMemo(() => (tipo === 'ajuste' ? netoAjustes(filtrados) : 0), [filtrados, tipo])
   const visibles = filtrados.slice(0, limite)
-  const grupos = useMemo(() => {
-    const g = new Map()
-    for (const m of visibles) {
-      if (!g.has(m.fecha)) g.set(m.fecha, [])
-      g.get(m.fecha).push(m)
-    }
-    return [...g.entries()]
-  }, [visibles])
+  // Todos y Gastos, con todo el historial y sin búsqueda: Año → Mes → Movimientos.
+  // Buscando o con un mes elegido, la lista plana de siempre (con paginación).
+  const agrupado = (tipo === 'todos' || tipo === 'gasto') && mes === 'todo' && busqueda.trim() === ''
+  const historial = useMemo(() => (agrupado ? agruparHistorial(filtrados) : []), [agrupado, filtrados])
+  const [abiertos, setAbiertos] = useState(() => new Set([claveMesActual()]))
   const seleccionado = seleccion ? movimientos.find((m) => m.id === seleccion) : null
   useEffect(() => {
     if (seleccion && !seleccionado) setSeleccion(null)
@@ -220,6 +227,130 @@ export default function MovimientosV5({
     setTipo('todos')
     setMes('todo')
     setBusqueda('')
+  }
+
+  const filasDeDias = (lista) =>
+    agruparPorDia(lista).map(([dia, items]) => {
+              const t = totalesDe(items)
+              return (
+                <div key={dia} role="rowgroup" className="v5-tabla-grupo">
+                  <div className="v5-tabla-dia" role="row">
+                    <span role="cell">{tituloDia(dia)}</span>
+                    <span role="cell" className="num v5-tenue">
+                      {t.gastos > 0 && `−${formatearEuros(t.gastos)}`}
+                      {t.gastos > 0 && t.ingresos > 0 && ' · '}
+                      {t.ingresos > 0 && `+${formatearEuros(t.ingresos)}`}
+                    </span>
+                  </div>
+                  {items.map((m) => {
+                    const concepto = conceptoDe(m)
+                    const activo = seleccion === m.id
+                    return (
+                      <div
+                        key={m.id}
+                        role="row"
+                        tabIndex={0}
+                        className={`v5-tabla-fila ${activo ? 'activo' : ''}`}
+                        aria-selected={activo}
+                        onClick={() => setSeleccion(activo ? null : m.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            setSeleccion(activo ? null : m.id)
+                          }
+                        }}
+                      >
+                        <span role="cell" className="v5-col-concepto">
+                          <Avatar nombre={concepto} movimiento={m} tam={34} />
+                          <span className="v5-fila-texto">
+                            <b>{concepto}</b>
+                            <small>
+                              <span className="v5-solo-estrecho">{etiquetaCategoria(m.categoria?.nombre, m.tipo)} · </span>
+                              {m.nota && m.nota !== concepto ? m.nota : naturaleza(m)}
+                              {m.es_fijo && <span className="v5-insignia v5-mini">Fijo</span>}
+                            </small>
+                          </span>
+                        </span>
+                        <span role="cell" className="v5-col-cat">
+                          <span className="v5-etiqueta-cat">{etiquetaCategoria(m.categoria?.nombre, m.tipo)}</span>
+                        </span>
+                        <span role="cell" className="v5-col-cuenta v5-tenue">{m.fuente?.nombre ?? '—'}</span>
+                        <span role="cell" className={`v5-col-importe num v5-importe ${claseMov(m)}`}>
+                          {signoMov(m)}
+                          {formatearEuros(Number(m.importe))}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })
+
+  // ── Historial agrupado (Todos y Gastos, todo el historial, sin búsqueda) ──
+  const abierto = (c) => abiertos.has(c)
+  const alternar = (c) =>
+    setAbiertos((s) => {
+      const n = new Set(s)
+      if (n.has(c)) n.delete(c)
+      else n.add(c)
+      return n
+    })
+  const resumenBloque = (t, n) => (
+    <span className={`v5-bloque-cifras ${tipo === 'gasto' ? 'solo-gasto' : ''}`}>
+      <span className="v5-tenue">
+        {n} {n === 1 ? 'movimiento' : 'movimientos'}
+      </span>
+      {tipo === 'gasto' ? (
+        <span>
+          Gastado <b className="num">{formatearEuros(t.gastos)}</b>
+        </span>
+      ) : (
+        <>
+          <span>{t.ingresos > 0 && <>Entra <b className="num v5-positivo">+{formatearEuros(t.ingresos)}</b></>}</span>
+          <span>
+            Sale <b className="num">−{formatearEuros(t.gastos)}</b>
+          </span>
+          <span>{t.invertido !== 0 && <>Invertido <b className="num v5-oro">{formatearEuros(t.invertido)}</b></>}</span>
+          <span>
+            {(t.ingresos > 0 || t.gastos !== 0) && (
+              <>Balance <b className={`num ${t.ahorro >= 0 ? 'v5-positivo' : 'v5-negativo'}`}>{t.ahorro >= 0 ? '+' : '−'}{formatearEuros(Math.abs(t.ahorro))}</b></>
+            )}
+          </span>
+        </>
+      )}
+    </span>
+  )
+  const bloqueMes = (b, nivel) => {
+    const open = abierto(b.clave)
+    return (
+      <div key={b.clave} className={`v5-bloque v5-bloque-mes ${nivel ? 'anidado' : ''} ${open ? 'abierto' : ''}`}>
+        <button type="button" className="v5-bloque-cab" aria-expanded={open} onClick={() => alternar(b.clave)}>
+          <Icono nombre="chevron" tam={14} className="v5-bloque-flecha" />
+          <span className="v5-bloque-titulo">
+            {mayuscula(etiquetaMes(b.clave))}
+            {b.actual && <span className="v5-insignia info v5-mini">En curso</span>}
+          </span>
+          {resumenBloque(b.totales, b.n)}
+        </button>
+        {open && (b.n === 0 ? <p className="v5-bloque-vacio v5-tenue">Aún no hay movimientos este mes.</p> : filasDeDias(b.movimientos))}
+      </div>
+    )
+  }
+  const bloqueAnio = (b) => {
+    const open = abierto(b.clave)
+    return (
+      <div key={b.clave} className={`v5-bloque v5-bloque-anio ${open ? 'abierto' : ''}`}>
+        <button type="button" className="v5-bloque-cab" aria-expanded={open} onClick={() => alternar(b.clave)}>
+          <Icono nombre="chevron" tam={14} className="v5-bloque-flecha" />
+          <span className="v5-bloque-titulo">
+            {b.clave}
+            <span className="v5-tenue v5-bloque-sub">{b.meses.length} {b.meses.length === 1 ? 'mes' : 'meses'}</span>
+          </span>
+          {resumenBloque(b.totales, b.n)}
+        </button>
+        {open && <div className="v5-bloque-hijos">{b.meses.map((m) => bloqueMes(m, 1))}</div>}
+      </div>
+    )
   }
 
   if (vista === 'importar') {
@@ -351,63 +482,13 @@ export default function MovimientosV5({
               )}
             </div>
           ) : (
-            grupos.map(([dia, items]) => {
-              const t = totalesDe(items)
-              return (
-                <div key={dia} role="rowgroup" className="v5-tabla-grupo">
-                  <div className="v5-tabla-dia" role="row">
-                    <span role="cell">{tituloDia(dia)}</span>
-                    <span role="cell" className="num v5-tenue">
-                      {t.gastos > 0 && `−${formatearEuros(t.gastos)}`}
-                      {t.gastos > 0 && t.ingresos > 0 && ' · '}
-                      {t.ingresos > 0 && `+${formatearEuros(t.ingresos)}`}
-                    </span>
-                  </div>
-                  {items.map((m) => {
-                    const concepto = conceptoDe(m)
-                    const activo = seleccion === m.id
-                    return (
-                      <div
-                        key={m.id}
-                        role="row"
-                        tabIndex={0}
-                        className={`v5-tabla-fila ${activo ? 'activo' : ''}`}
-                        aria-selected={activo}
-                        onClick={() => setSeleccion(activo ? null : m.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
-                            setSeleccion(activo ? null : m.id)
-                          }
-                        }}
-                      >
-                        <span role="cell" className="v5-col-concepto">
-                          <Avatar nombre={concepto} movimiento={m} tam={34} />
-                          <span className="v5-fila-texto">
-                            <b>{concepto}</b>
-                            <small>
-                              <span className="v5-solo-estrecho">{etiquetaCategoria(m.categoria?.nombre, m.tipo)} · </span>
-                              {m.nota && m.nota !== concepto ? m.nota : naturaleza(m)}
-                              {m.es_fijo && <span className="v5-insignia v5-mini">Fijo</span>}
-                            </small>
-                          </span>
-                        </span>
-                        <span role="cell" className="v5-col-cat">
-                          <span className="v5-etiqueta-cat">{etiquetaCategoria(m.categoria?.nombre, m.tipo)}</span>
-                        </span>
-                        <span role="cell" className="v5-col-cuenta v5-tenue">{m.fuente?.nombre ?? '—'}</span>
-                        <span role="cell" className={`v5-col-importe num v5-importe ${claseMov(m)}`}>
-                          {signoMov(m)}
-                          {formatearEuros(Number(m.importe))}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )
-            })
+            agrupado ? (
+              historial.map((b) => (b.tipo === 'mes' ? bloqueMes(b, 0) : bloqueAnio(b)))
+            ) : (
+              agruparPorDia(visibles).length > 0 && filasDeDias(visibles)
+            )
           )}
-          {filtrados.length > limite && (
+          {!agrupado && filtrados.length > limite && (
             <div className="v5-tabla-mas">
               <button type="button" className="v5-boton" onClick={() => setLimite((n) => n + POR_PAGINA)}>
                 Mostrar {Math.min(POR_PAGINA, filtrados.length - limite)} más
