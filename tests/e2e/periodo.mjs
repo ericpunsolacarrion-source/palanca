@@ -85,11 +85,11 @@ export async function periodo({ url, navegador = {}, conColumna = false, salida 
     await p.waitForTimeout(300)
     ok((await p.locator('#ajuste-periodo-dia').inputValue()) === '28', 'Al recargar se conserva el día 28')
     if (conColumna) {
-      const enBD = await p.evaluate(() => [localStorage.getItem('mock_periodo_bd'), Object.keys(localStorage).some((k) => k.startsWith('palanca_dia_inicio_periodo_'))])
+      const enBD = await p.evaluate(() => [localStorage.getItem('mock_periodo_bd'), Object.keys(localStorage).some((k) => k.startsWith('palanca_periodo_'))])
       ok(enBD[0] === '28' && !enBD[1], 'Se guarda en la columna del perfil (no en el navegador)')
     } else {
-      const ls = await p.evaluate(() => Object.entries(localStorage).find(([k]) => k.startsWith('palanca_dia_inicio_periodo_'))?.[1])
-      ok(ls === '28', 'Sin la columna, se guarda en este dispositivo')
+      const ls = await p.evaluate(() => Object.entries(localStorage).find(([k]) => k.startsWith('palanca_periodo_'))?.[1])
+      ok(JSON.parse(ls || '{}').dia === 28, 'Sin la columna, se guarda en este dispositivo')
     }
     // Volver al día 1 deja todo como estaba.
     await p.locator('#ajuste-periodo-dia').selectOption('1')

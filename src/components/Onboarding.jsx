@@ -25,12 +25,14 @@ export default function Onboarding({ onCompletar, emailInicial }) {
   const [email, setEmail] = useState(emailInicial ?? '')
   const [saldoInicial, setSaldoInicial] = useState(null)
   const [anioNacimiento, setAnioNacimiento] = useState('')
+  const [diaCobro, setDiaCobro] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
 
-  const pasos = ['nombre', 'objetivo', ...(cuentaAuth ? [] : ['email']), 'saldo', 'edad']
+  const pasos = ['nombre', 'objetivo', ...(cuentaAuth ? [] : ['email']), 'saldo', 'nomina', 'edad']
   const actual = pasos[paso]
   const ultimo = paso === pasos.length - 1
+  const cobroValido = /^\d{1,2}$/.test(diaCobro) && Number(diaCobro) >= 1 && Number(diaCobro) <= 31
   const anioValido = /^\d{4}$/.test(anioNacimiento) && Number(anioNacimiento) >= 1900 && Number(anioNacimiento) <= ANIO_ACTUAL - 14
 
   async function terminar(anio) {
@@ -44,6 +46,7 @@ export default function Onboarding({ onCompletar, emailInicial }) {
         Number.isFinite(saldo) && saldo > 0 ? saldo : 0,
         anio,
         nombrePropio(nombre) || null,
+        cobroValido ? Number(diaCobro) : null,
       )
       // Si sale bien, este componente se desmonta; si no, se reactiva el botón.
       if (!ok) {
@@ -68,6 +71,7 @@ export default function Onboarding({ onCompletar, emailInicial }) {
   function saltar() {
     setError(null)
     if (actual === 'saldo') setSaldoInicial(null)
+    if (actual === 'nomina') setDiaCobro('')
     if (actual === 'edad') return terminar(null)
     setPaso(paso + 1)
   }
@@ -172,6 +176,30 @@ export default function Onboarding({ onCompletar, emailInicial }) {
           </>
         )}
 
+        {actual === 'nomina' && (
+          <>
+            <h1 className="ob-titulo">¿Qué día cobras tu nómina?</h1>
+            <p className="ob-sub">
+              Así tu mes en Palanca empieza cuando cobras y la nómina cuenta junto a los gastos que paga. Cuando apuntes o
+              importes tus extractos, Palanca detectará el día exacto y, si a veces se adelanta (el 27 en vez del 28), lo tendrá
+              en cuenta sola.
+            </p>
+            <input
+              id="ob-cobro"
+              className="ob-input"
+              type="text"
+              inputMode="numeric"
+              maxLength={2}
+              value={diaCobro}
+              onChange={(e) => setDiaCobro(e.target.value.replace(/\D/g, '').slice(0, 2))}
+              placeholder="Ej. 28"
+              aria-label="Día del mes en que cobras"
+              autoFocus
+            />
+            {diaCobro !== '' && !cobroValido && <p className="ob-nota">Pon un día del 1 al 31.</p>}
+          </>
+        )}
+
         {actual === 'edad' && (
           <>
             <h1 className="ob-titulo">¿En qué año naciste?</h1>
@@ -201,14 +229,14 @@ export default function Onboarding({ onCompletar, emailInicial }) {
             <button
               type="submit"
               className="ob-continuar"
-              disabled={guardando || (actual === 'edad' && anioNacimiento !== '' && !anioValido)}
+              disabled={guardando || (actual === 'edad' && anioNacimiento !== '' && !anioValido) || (actual === 'nomina' && diaCobro !== '' && !cobroValido)}
             >
               {guardando ? 'Preparando tu Palanca…' : ultimo ? 'Empezar' : 'Continuar'}
             </button>
           )}
-          {(actual === 'saldo' || actual === 'edad') && (
+          {(actual === 'saldo' || actual === 'edad' || actual === 'nomina') && (
             <button type="button" className="ob-saltar" onClick={saltar} disabled={guardando}>
-              {actual === 'edad' ? 'Prefiero no decirlo' : 'Lo pongo después'}
+              {actual === 'edad' ? 'Prefiero no decirlo' : actual === 'nomina' ? 'No cobro nómina o varía' : 'Lo pongo después'}
             </button>
           )}
         </div>

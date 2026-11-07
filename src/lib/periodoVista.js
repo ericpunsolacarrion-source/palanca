@@ -26,16 +26,33 @@ export function vistaPreviaPeriodos(movimientos, diaInicio, n = 4, hoy = new Dat
   })
 }
 
-// Día de inicio guardado para un usuario: la columna perfiles.dia_inicio_periodo
-// si existe; si no (migración pendiente), el ajuste de este dispositivo; y si
-// no hay nada, 1 (mes natural): así funcionan los perfiles existentes.
+// Configuración del periodo de un usuario: { dia, cobro, auto }.
+//  - dia:   día de inicio del periodo (1 = mes natural).
+//  - cobro: día de cobro de la nómina que dijo en el alta (o null).
+//  - auto:  si Palanca ajusta el día de inicio solo, según cuándo llega la
+//           nómina de verdad (detectarCobroNomina). Se apaga al elegirlo a mano.
+// Fuente: columnas de perfiles si existen; si no (migración pendiente), el
+// navegador; y si no hay nada, { dia: 1, cobro: null, auto: false }: así los
+// perfiles existentes siguen exactamente igual.
 export const claveLSDiaInicio = (usuarioId) => `palanca_dia_inicio_periodo_${usuarioId}`
-export function diaInicioDePerfil(perfil, usuarioId) {
-  if (perfil && 'dia_inicio_periodo' in perfil) return normalizarDiaInicio(perfil.dia_inicio_periodo)
-  if (!usuarioId) return 1
-  try {
-    return normalizarDiaInicio(localStorage.getItem(claveLSDiaInicio(usuarioId)))
-  } catch {
-    return 1
+export const claveLSPeriodo = (usuarioId) => `palanca_periodo_${usuarioId}`
+const cobroValido = (c) => (Number.isInteger(Number(c)) && Number(c) >= 1 && Number(c) <= 31 && c !== null && c !== '' ? Number(c) : null)
+
+export function configPeriodoDePerfil(perfil, usuarioId) {
+  if (perfil && 'dia_inicio_periodo' in perfil) {
+    return { dia: normalizarDiaInicio(perfil.dia_inicio_periodo), cobro: cobroValido(perfil.dia_cobro_nomina), auto: perfil.periodo_automatico === true }
   }
+  const base = { dia: 1, cobro: null, auto: false }
+  if (!usuarioId) return base
+  try {
+    const j = JSON.parse(localStorage.getItem(claveLSPeriodo(usuarioId)) || 'null')
+    if (j) return { dia: normalizarDiaInicio(j.dia), cobro: cobroValido(j.cobro), auto: j.auto === true }
+    return { ...base, dia: normalizarDiaInicio(localStorage.getItem(claveLSDiaInicio(usuarioId))) }
+  } catch {
+    return base
+  }
+}
+
+export function diaInicioDePerfil(perfil, usuarioId) {
+  return configPeriodoDePerfil(perfil, usuarioId).dia
 }

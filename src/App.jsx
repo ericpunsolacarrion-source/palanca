@@ -12,7 +12,8 @@ import CuentaPanel from './components/CuentaPanel'
 import PrimerosPasos from './components/PrimerosPasos'
 import { obtenerPerfil, crearPerfil } from './lib/perfil'
 import { configurarPeriodo } from './lib/periodo'
-import { useDiaInicioPeriodo } from './lib/useDiaInicioPeriodo'
+import { guardarPeriodoUsuario, useDiaInicioPeriodo } from './lib/useDiaInicioPeriodo'
+import { detectarCobroNomina, diaInicioDesdeCobro } from './lib/diaCobro'
 import { crearAjuste } from './lib/ajustes'
 import {
   SELECT_MOVIMIENTO,
@@ -130,7 +131,8 @@ function App() {
   // Periodo financiero del usuario («mi mes empieza el día…», 1 = mes natural).
   // Se fija en el motor ANTES de cualquier cálculo de este render; al cambiarlo
   // se recalcula y se vuelve a montar todo el contenido (ver docs/PERIODO.md).
-  const { dia: diaInicio, guardar: guardarDiaInicio } = useDiaInicioPeriodo(usuarioId, perfil, setPerfil)
+  const periodoCfg = useDiaInicioPeriodo(usuarioId, perfil, setPerfil)
+  const { dia: diaInicio, guardar: guardarDiaInicio } = periodoCfg
   configurarPeriodo(diaInicio)
   const [movimientosReales, setMovimientos] = useState([])
   const [cargando, setCargando] = useState(true)
@@ -383,6 +385,32 @@ function App() {
     }
   }, [ejemploPorTour])
 
+  // Día de cobro real de la nómina (motor, sin IA), con los movimientos
+  // propios: los apuntados y los de extractos importados.
+  const deteccionCobro = useMemo(() => detectarCobroNomina(movimientosReales), [movimientosReales])
+  useEffect(() => {
+    if (!deteccionCobro || deteccionCobro.diaInicio === periodoCfg.dia) return
+    const { diaHabitual, diaMasTemprano, diaInicio: sugerido } = deteccionCobro
+    const cuando = diaMasTemprano !== diaHabitual ? `el día ${diaHabitual} y a veces el ${diaMasTemprano}` : `el día ${diaHabitual}`
+    if (periodoCfg.auto) {
+      // Modo automático: se ajusta solo y se avisa.
+      periodoCfg.guardar({ dia: sugerido, auto: true }).then((ok) => {
+        if (ok) toast(sugerido === 1 ? `Tu nómina llega ${cuando}: tu mes va del 1 al último día.` : `Tu nómina llega ${cuando}: tu mes empieza ahora el día ${sugerido}. Lo puedes cambiar en Tu cuenta.`)
+      })
+      return
+    }
+    // Elegido a mano (o perfil anterior): solo se sugiere, una vez por valor.
+    const marca = `palanca_sugerencia_periodo_${usuarioId}_${sugerido}`
+    try {
+      if (localStorage.getItem(marca)) return
+      localStorage.setItem(marca, '1')
+    } catch {
+      return
+    }
+    if (sugerido !== 1) toast(`Tu nómina llega ${cuando}. Si quieres que tu mes empiece el día ${sugerido}, actívalo en Tu cuenta → Tu mes financiero.`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deteccionCobro, periodoCfg.auto, periodoCfg.dia, usuarioId])
+
   // diaInicio en las dependencias: el mismo histórico se reagrupa por periodo.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const movimientosMes = useMemo(() => filtrarMesActual(movimientos), [movimientos, diaInicio])
@@ -507,9 +535,13 @@ function App() {
     return (
       <Onboarding
         emailInicial={session?.user?.email}
-        onCompletar={async (objetivo, email, saldoInicial, anioNacimiento, nombre) => {
-          const nuevoPerfil = await crearPerfil(usuarioId, objetivo, email, anioNacimiento, nombre)
+        onCompletar={async (objetivo, email, saldoInicial, anioNacimiento, nombre, diaCobro) => {
+          let nuevoPerfil = await crearPerfil(usuarioId, objetivo, email, anioNacimiento, nombre)
           if (nuevoPerfil) {
+            // Día de cobro de la nómina → día de inicio del periodo. Con modo
+            // automático: Palanca lo afina sola cuando vea la nómina real.
+            const r = await guardarPeriodoUsuario(usuarioId, nuevoPerfil, { cobro: diaCobro ?? null, dia: diaInicioDesdeCobro(diaCobro), auto: true })
+            if (r.perfil) nuevoPerfil = r.perfil
             // Saldo líquido de partida como movimiento de ajuste (bolsa de liquidez).
             if (saldoInicial > 0) {
               await crearAjuste(usuarioId, {
@@ -880,6 +912,9 @@ function App() {
           onPerfilActualizado={(p) => setPerfil(p)}
           movimientos={movimientos}
           diaInicioPeriodo={diaInicio}
+          periodoAuto={periodoCfg.auto}
+          diaCobroDeclarado={periodoCfg.cobro}
+          deteccionCobro={deteccionCobro}
           onGuardarDiaInicio={guardarDiaInicio}
           onVerDemo={() => {
             setVerCuenta(false)

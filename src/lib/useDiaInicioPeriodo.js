@@ -1,39 +1,51 @@
 import { useCallback, useState } from 'react'
 import { actualizarPerfil } from './perfil'
 import { normalizarDiaInicio } from './periodo'
-import { claveLSDiaInicio as claveLS, diaInicioDePerfil } from './periodoVista'
+import { claveLSPeriodo, configPeriodoDePerfil } from './periodoVista'
 
-export { diaInicioDePerfil }
+export { diaInicioDePerfil } from './periodoVista'
 
-// Día de inicio del periodo financiero del usuario (1 = mes natural).
-// Fuente: la columna perfiles.dia_inicio_periodo (RLS: cada usuario solo lee y
-// escribe su fila). Si la columna aún no existe en la BD (migración pendiente),
-// se guarda en este dispositivo (localStorage por usuario), como otros ajustes.
+// Guarda la configuración del periodo ({ dia?, cobro?, auto? }) del usuario.
+// Con las columnas en perfiles (RLS: cada usuario solo su fila) va a la BD; si
+// aún no existen, a este dispositivo. Devuelve { ok, perfil? }.
+export async function guardarPeriodoUsuario(usuarioId, perfil, campos) {
+  const actual = configPeriodoDePerfil(perfil, usuarioId)
+  const nuevo = {
+    dia: campos.dia != null ? normalizarDiaInicio(campos.dia) : actual.dia,
+    cobro: campos.cobro !== undefined ? campos.cobro : actual.cobro,
+    auto: campos.auto !== undefined ? campos.auto === true : actual.auto,
+  }
+  if (perfil && 'dia_inicio_periodo' in perfil) {
+    const actualizado = await actualizarPerfil(usuarioId, { dia_inicio_periodo: nuevo.dia, dia_cobro_nomina: nuevo.cobro, periodo_automatico: nuevo.auto })
+    if (!actualizado || !('dia_inicio_periodo' in actualizado)) return { ok: false }
+    return { ok: true, perfil: actualizado, config: nuevo }
+  }
+  try {
+    localStorage.setItem(claveLSPeriodo(usuarioId), JSON.stringify(nuevo))
+  } catch {
+    return { ok: false }
+  }
+  return { ok: true, config: nuevo }
+}
+
+// Periodo financiero del usuario: { dia, cobro, auto, enBD, guardar(campos) }.
 export function useDiaInicioPeriodo(usuarioId, perfil, onPerfilActualizado) {
-  const [local, setLocal] = useState(null) // fuerza re-render tras guardar en localStorage
-  const dia = local ?? diaInicioDePerfil(perfil, usuarioId)
+  const [local, setLocal] = useState(null) // fuerza re-render tras guardar en el navegador
+  const config = local ?? configPeriodoDePerfil(perfil, usuarioId)
   const enBD = Boolean(perfil && 'dia_inicio_periodo' in perfil)
 
   const guardar = useCallback(
-    async (nuevo) => {
-      const valor = normalizarDiaInicio(nuevo)
-      if (enBD) {
-        const actualizado = await actualizarPerfil(usuarioId, { dia_inicio_periodo: valor })
-        if (!actualizado || !('dia_inicio_periodo' in actualizado)) return false
-        onPerfilActualizado?.(actualizado)
+    async (campos) => {
+      const r = await guardarPeriodoUsuario(usuarioId, perfil, typeof campos === 'number' ? { dia: campos } : campos)
+      if (!r.ok) return false
+      if (r.perfil) {
+        onPerfilActualizado?.(r.perfil)
         setLocal(null)
-        return true
-      }
-      try {
-        localStorage.setItem(claveLS(usuarioId), String(valor))
-      } catch {
-        return false
-      }
-      setLocal(valor)
+      } else setLocal(r.config)
       return true
     },
-    [enBD, usuarioId, onPerfilActualizado],
+    [usuarioId, perfil, onPerfilActualizado],
   )
 
-  return { dia, guardar, enBD }
+  return { ...config, enBD, guardar }
 }

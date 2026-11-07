@@ -20,7 +20,10 @@ Una pregunta por pantalla, barra de progreso y botón atrás:
 1. **Nombre** ("¿Cómo te llamamos?"; se saluda por el nombre de pila).
 2. **Objetivo** (un toque y avanza): saber en qué se me va · controlar suscripciones · ahorrar más · preparar mi futuro → `perfiles.objetivo`.
 3. **Saldo de hoy** (opcional, "Lo pongo después") → movimiento de **ajuste** "Saldo inicial".
-4. **Año de nacimiento** (opcional, "Prefiero no decirlo"; 1900 – año actual − 14).
+4. **Día de cobro de la nómina** («¿Qué día cobras tu nómina?», opcional, «No cobro nómina o varía»).
+   - Fija el día de inicio del periodo con el modo automático activado. Ver `docs/PERIODO.md` §6.
+   - Avisa de que, al apuntar o importar extractos, Palanca detecta el día exacto y los adelantos.
+5. **Año de nacimiento** (opcional, "Prefiero no decirlo"; 1900 – año actual − 14).
 Al terminar: datos de ejemplo + demo rápida (ver §3). El saldo inicial NO cuenta como "ahorrado" en logros ni como "+X este mes".
 
 ---
@@ -234,6 +237,7 @@ activar el envío). Detalle y plantilla de Edge Function en `docs/REPORTE_SEMANA
   - Ejemplo con fechas reales del periodo.
   - Vista previa de los 4 últimos periodos (entra, sale, ahorro, nº de movimientos y el ahorro de antes) **antes de guardar**.
   - Aviso: solo cambia la clasificación.
+  - Lo que Palanca ha detectado de tu nómina y el interruptor «Ajustar mi mes según mi nómina». Si no está activado y hay un día sugerido, ofrece «Ver cómo quedaría empezando el día N».
   - Se guarda en `perfiles.dia_inicio_periodo`; si la columna no existe, en el navegador.
   - Al guardar, toda la app se recalcula. Con día ≠ 1, el selector de Análisis y los bloques de Movimientos muestran el rango («28 oct – 27 nov»).
 - **Tus datos**:

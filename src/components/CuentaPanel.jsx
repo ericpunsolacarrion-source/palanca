@@ -27,7 +27,7 @@ const proyectoSupabase = (() => {
 })()
 const esProduccion = typeof location !== 'undefined' && location.hostname === 'palanca-zeta.vercel.app'
 
-export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualizado, movimientos = [], diaInicioPeriodo = 1, onGuardarDiaInicio, onCerrar, onCerrarSesion, onVerDemo, onVerDemoAvanzada, verEjemplo = false, onVerEjemplo }) {
+export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualizado, movimientos = [], diaInicioPeriodo = 1, periodoAuto = false, diaCobroDeclarado = null, deteccionCobro = null, onGuardarDiaInicio, onCerrar, onCerrarSesion, onVerDemo, onVerDemoAvanzada, verEjemplo = false, onVerEjemplo }) {
   const [nombre, setNombre] = useState(perfil?.nombre ?? '')
   const [anio, setAnio] = useState(perfil?.anio_nacimiento ? String(perfil.anio_nacimiento) : '')
   const [guardando, setGuardando] = useState(false)
@@ -210,7 +210,7 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
             {verEjemplo ? 'Volver a mis datos' : 'Ver la app con datos de ejemplo'}
           </button>
         )}
-        {onGuardarDiaInicio && <AjustePeriodo movimientos={movimientos} diaActual={diaInicioPeriodo} onGuardar={onGuardarDiaInicio} />}
+        {onGuardarDiaInicio && <AjustePeriodo movimientos={movimientos} diaActual={diaInicioPeriodo} auto={periodoAuto} cobroDeclarado={diaCobroDeclarado} deteccion={deteccionCobro} onGuardar={onGuardarDiaInicio} />}
 
         <div className="cuenta-datos">
           <span className="cuenta-seccion">Tus datos</span>

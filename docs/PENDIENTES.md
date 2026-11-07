@@ -21,6 +21,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
   1. Revisar la rama `claude/capabilities-overview-m3ry1u` (sin subir a develop ni a main).
   2. Ejecutar `supabase-schema-periodo.sql` **solo en palanca dev**: comprobar el proyecto arriba a la izquierda, vaciar el SQL Editor, pegar y Run.
   - Hasta entonces, el ajuste se guarda en el navegador de cada usuario.
+- ✔ 07-11 **Día de cobro de la nómina:** el alta lo pregunta; el motor detecta el día real y los adelantos (28 → a veces 27 ⇒ el mes empieza el 27) con los movimientos y los extractos; se ajusta solo si es automático y respeta la elección manual. Ver `docs/PERIODO.md` §6.
 - 🟩 **Alternativa C (futuro):** «cuenta para…» en un ingreso concreto (atrasos, paga extra). Necesita una columna por movimiento y su propia aprobación.
 - 🟩 Al pasar del día 1 a otro, las metas de inversión por mes (`planificaciones`) siguen guardadas por clave `AAAA-MM`. Ahora esa clave significa «periodo». No hace falta migrar nada, pero conviene que Eric lo sepa.
 

@@ -130,3 +130,55 @@
   - el rango visible en Movimientos;
   - persistencia al recargar;
   - volver al día 1 lo deja todo como estaba.
+
+## 6. Día de cobro de la nómina (alta + detección automática)
+
+Todo en el motor (`src/lib/diaCobro.js`): reglas fijas y probadas, **sin IA**.
+
+### En el alta
+
+- Junto al nombre y el año, el alta pregunta: «¿Qué día cobras tu nómina?».
+  - Se puede contestar «No cobro nómina o varía».
+  - El texto avisa de que, al apuntar o importar extractos, Palanca detectará el día exacto y los adelantos.
+- `diaInicioDesdeCobro(d)` convierte el día de cobro en día de inicio:
+
+| Día de cobro | Día de inicio | Por qué |
+|---|---|---|
+| 1 a 5 | 1 | El mes natural ya junta la nómina con sus gastos |
+| 6 a 28 | ese mismo día | El mes empieza cuando cobras |
+| 29 a 31 | 28 | La nómina del 29–31 cae dentro del periodo |
+
+- Se guarda con el **modo automático activado**.
+
+### Detección (`detectarCobroNomina`)
+
+Mira los últimos 12 meses de movimientos: los apuntados y los de extractos importados.
+
+1. **Qué ingresos mira:** los que cuentan como ingreso. Si hay al menos 3 meses con categoría «Nomina», solo esos.
+2. **Solo los grandes:** al menos el 60 % de la mediana del mayor ingreso de cada mes.
+3. **Día habitual:** el día con más ingresos grandes a ±2 días, de forma circular (el 30 y el 1 están a 2 días).
+4. **Adelantos:** ingresos que llegan de 1 a 5 días **antes** del día habitual.
+   - Una paga extra que llega 8 o 12 días antes no cuenta.
+   - Los retrasos tampoco, porque ya caen en su periodo.
+5. **Día de inicio:** el **día más temprano** en que ha llegado, pasado por la tabla de arriba.
+   - Nómina el 28 que a veces llega el 27 → **27**.
+   - Nómina el 1 que a veces llega el 30 → **28**.
+6. **Mínimo de datos:** con menos de 3 meses de nómina no se detecta nada y se queda lo declarado.
+
+### Cómo se aplica
+
+| Situación | Qué pasa |
+|---|---|
+| Modo automático (usuario nuevo) | Si lo detectado difiere del día actual, se ajusta solo y se avisa: «Tu nómina llega el día 28 y a veces el 27: tu mes empieza ahora el día 27» |
+| Elegido a mano en Tu cuenta, o perfil anterior | No se cambia nada. Se sugiere una vez con un aviso, y Tu cuenta ofrece «Ver cómo quedaría empezando el día 27» con la vista previa |
+| En Tu cuenta | Se ve lo detectado (o lo declarado) y el interruptor «Ajustar mi mes según mi nómina». Guardar un día a mano apaga el automático |
+
+**Columnas nuevas** en `supabase-schema-periodo.sql` (solo palanca dev):
+- `dia_cobro_nomina`: 1–31 o null.
+- `periodo_automatico`: por defecto false, así los perfiles existentes no cambian.
+
+Mientras no se ejecute, todo se guarda en el navegador (`palanca_periodo_<usuario>`).
+
+**Pruebas:**
+- `diaCobro.test.js`: 28 con adelanto al 27 y al 26; 1 con adelanto al 30; paga extra y Bizum ignorados; sin categoría; traspasos; menos de 3 meses; ventana de 12 meses; el cliente de 3 años.
+- `tests/e2e/cobro.mjs`: el alta, el ajuste automático y el modo manual.

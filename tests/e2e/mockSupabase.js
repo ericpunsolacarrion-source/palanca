@@ -46,7 +46,11 @@ const movimientos = [mov('ingreso', cats.ajuste, 4200, iso(Y, M - 6, 1), 'Saldo 
 for (let k = 6; k >= 0; k -= 1) {
   const d = (dia) => iso(Y, M - k, dia)
   const pasado = (dia) => k > 0 || dia <= hoy.getDate()
-  if (pasado(1)) movimientos.push(mov('ingreso', cats.nomina, 2150, d(1), 'NOMINA EMPRESA SL'))
+  // mock_nomina28=1: nómina el 28 (la de hace 3 meses llegó el 27) en vez del 1.
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('mock_nomina28') === '1') {
+    const dn = k === 3 ? 27 : 28
+    if (k > 0 || dn <= hoy.getDate()) movimientos.push(mov('ingreso', cats.nomina, 2150, d(dn), 'NOMINA EMPRESA SL'))
+  } else if (pasado(1)) movimientos.push(mov('ingreso', cats.nomina, 2150, d(1), 'NOMINA EMPRESA SL'))
   if (pasado(2)) movimientos.push(mov('gasto', cats.vivienda, 750, d(2), 'RECIBO ALQUILER'))
   if (pasado(3)) movimientos.push(mov('gasto', cats.ocio, k > 2 ? 12.99 : 13.99, d(3), 'COMPRA TARJ. NETFLIX.COM'))
   // Spotify de ESTE mes no está en movimientos: es el cobro «por confirmar» de

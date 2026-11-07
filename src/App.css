@@ -9389,6 +9389,13 @@ input[type='number']::-webkit-outer-spin-button {
   text-transform: uppercase;
   color: var(--text-3);
 }
+.ajuste-periodo-nomina {
+  margin: 0;
+  font-size: var(--fs-xs);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
 .ajuste-periodo-fila {
   display: flex;
   align-items: center;
