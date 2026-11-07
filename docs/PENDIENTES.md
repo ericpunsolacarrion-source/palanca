@@ -9,6 +9,26 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 ---
 
 
+
+## Iteración 07-11 (tarde) — pendiente
+- **Entorno (Eric):** Production y Preview usan hoy el mismo Supabase («palanca»).
+  - Para que develop no toque producción, en Vercel → Settings → Environment Variables, entorno **Preview**, cambiar `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` a las del proyecto **palanca dev** y redesplegar.
+  - Comprobación: en la versión de prueba, Tu cuenta muestra «base de datos: <proyecto>».
+  - Los SQL nuevos (`supabase-schema-presupuestos-categoria.sql`) se ejecutan **solo en palanca dev**.
+- **Bizum (decisión de modelo, sin tocar):** muchos Bizum son compensaciones de gastos compartidos o devoluciones entre personas. Hoy cuentan como ingreso.
+  - Opciones a estudiar:
+    - categoría «Bizum compartido» que reste del gasto, como las devoluciones;
+    - preguntar al importar.
+  - No se ha cambiado ninguna regla ni cálculo.
+- **Push con la app cerrada (no implementado):** hoy los avisos llegan dentro de Palanca, como notificación del navegador cuando la app está abierta, y por email. Para el push real falta:
+  - claves VAPID (secreto en Vercel);
+  - una tabla `suscripciones_push` (usuario, endpoint, claves, con RLS);
+  - un endpoint para guardar y borrar suscripciones;
+  - enviar desde el cron de `api/recordatorios.js` con web-push;
+  - manejar `push` y `notificationclick` en el service worker;
+  - probarlo en Android y en un iPhone con la app instalada.
+- **Objetivo de inversión por mes:** usa `planificaciones.inversion_prevista` (0 = ese mes usa el general). Falta un histórico del objetivo general: la constancia usa el objetivo actual para los meses sin objetivo propio.
+
 ## Límites por categoría (07-11) — paso de Eric
 - **Ejecutar `supabase-schema-presupuestos-categoria.sql`** en Supabase (SQL Editor → vaciar → pegar → Run).
   - Es aditivo: crea una tabla nueva con su seguridad por usuario y no toca nada existente.

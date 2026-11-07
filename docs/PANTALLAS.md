@@ -51,6 +51,15 @@ Dos vistas con un segmentado arriba: **Resumen** (por defecto, lo esencial en 5 
     - Qué ha cambiado: insights en euros con su periodo de referencia.
     - Tu futuro: horizontes de 5 a 30 años y rentabilidad supuesta editable.
   - Detalle y reglas en `docs/DISENO.md`. La v2 sigue con los bloques de siempre.
+  - 07-11:
+    - **Objetivo de inversión:** se edita por mes («¿Cuánto quieres invertir este mes?», para todos los meses o solo este, y los 5 próximos) y muestra la constancia: meses cumplidos de los últimos 6.
+    - **Tasa de ahorro:** comparada con el mismo mes del año pasado y con los 12 meses anteriores, en puntos.
+    - **Qué ha cambiado:** se puede ver a 6, 12 o 24 meses.
+  - **Inicio · Avisos (v5):**
+    - el logo de la marca, o el icono de su tipo si no la hay;
+    - el estado de cada aviso: Por confirmar, Mañana, En N días, Subida;
+    - lo ya cobrado del mes;
+    - «Recibir avisos» abre la explicación con el estado real del permiso (`v5/AjustesAvisos.jsx`, `lib/notificaciones.js`).
 
 **Modo discreto** (ojo de la cabecera, `lib/privacidad.js`): oculta TODAS las cifras de la app (`formatearEuros` → "•••• €"); se recuerda en el dispositivo.
 

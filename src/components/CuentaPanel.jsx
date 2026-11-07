@@ -14,6 +14,18 @@ const PanelMetricas = lazy(() => import('./PanelMetricas'))
 // Panel de cuenta (usuarios de Auth): editar nombre y año de nacimiento, ver
 // email, descargar tus datos, estadísticas de uso, cerrar sesión y borrar la
 // cuenta con todos sus datos (supresión). Al administrador, sus métricas.
+// Versión de prueba: a qué proyecto de Supabase está conectada (la dirección
+// del proyecto es pública, va en la app; no es ninguna clave). Sirve para
+// comprobar que develop usa «palanca dev» y no la base de producción.
+const proyectoSupabase = (() => {
+  try {
+    return new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0]
+  } catch {
+    return null
+  }
+})()
+const esProduccion = typeof location !== 'undefined' && location.hostname === 'palanca-zeta.vercel.app'
+
 export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualizado, onCerrar, onCerrarSesion, onVerDemo, onVerDemoAvanzada, verEjemplo = false, onVerEjemplo }) {
   const [nombre, setNombre] = useState(perfil?.nombre ?? '')
   const [anio, setAnio] = useState(perfil?.anio_nacimiento ? String(perfil.anio_nacimiento) : '')
@@ -260,6 +272,11 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
           Logos de marcas: Simple Icons y SVG Logos (CC0), Streamline (CC BY 4.0). Las marcas pertenecen a sus dueños y solo
           sirven para reconocer en qué gastas.
         </p>
+        {proyectoSupabase && !esProduccion && (
+          <p className="cuenta-creditos" data-entorno={proyectoSupabase}>
+            Versión de prueba · base de datos: <b>{proyectoSupabase}</b>
+          </p>
+        )}
       </section>
       {verMetricas && (
         <Suspense fallback={null}>
