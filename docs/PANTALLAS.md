@@ -78,6 +78,13 @@ Todo en memoria y de solo lectura: guardar presupuesto u objetivos avisa con `AV
 **Demo avanzada** (`lib/tours.js` → `TOUR_AVANZADO`, mismo `TourRapido.jsx`): 18 pasos en 7 capítulos (Inicio, Movimientos, Fijos, Plan, Inversión, Fulcro, Tus datos) que se pueden saltar. Cada paso abre su pestaña y subpestaña, **resalta la pieza** de la que habla y añade una línea de "hasta dónde llega". En el capítulo Fulcro le hace una pregunta **en directo** (respuesta al momento, sin IA). Corre siempre con los **datos de ejemplo** (si el usuario tiene datos propios, se activan solo durante la demo) y al salir vuelve a los suyos. Se abre desde Tu cuenta → "Demo avanzada: todo lo que puede hacer Palanca" y desde el último paso de la rápida. Evento de métricas: `tour_avanzado`.
 
 ### 4. Movimientos (`MovimientosTab.jsx`)
+
+**v5 (`v5/MovimientosV5.jsx`, 07-11):** en Todos y Gastos, con «Todo el historial» y sin búsqueda, el historial va en **Año → Mes → Movimientos** (`lib/historial.js`).
+- El mes en curso va abierto; los demás meses del año y los años anteriores, plegados con su recuento y sus totales (entra, sale, invertido y balance; en Gastos, lo gastado).
+- Los totales salen de la regla única y cuadran con la suma de sus filas (e2e `historial.mjs`).
+- Buscando o con un mes elegido, la lista plana de siempre, con paginación. Ingresos, Inversión y Ahorro y ajustes siguen planos.
+- Las inversiones llevan el logo de su plataforma si es reconocible; si no, el icono dorado.
+
 Tres sub-pestañas por frecuencia de uso: **Nuevo · Historial · Importar** (los recurrentes viven ahora en su propia pestaña **Fijos**, ver §4b)
 (el historial se consulta a diario; el importador, una o dos veces). Se puede llegar también
 desde las **tarjetas de métrica del dashboard** (Ingresos/Gastos/Inversión),
