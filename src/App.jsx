@@ -629,6 +629,8 @@ function App() {
                   <InicioV5
                     usuarioId={usuarioId}
                     avisosRenovacion={perfil?.avisos_renovacion ?? null}
+                    recordatoriosEmail={perfil && 'recordatorios' in perfil ? perfil.recordatorios !== false : null}
+                    onAbrirCuenta={() => setVerCuenta(true)}
                     movimientos={movimientos}
                     recurrentes={recurrentes}
                     cargandoRecurrentes={cargandoRecurrentes}

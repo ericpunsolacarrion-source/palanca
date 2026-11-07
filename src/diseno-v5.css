@@ -3974,3 +3974,96 @@
     font-size: var(--fs-xs);
   }
 }
+
+/* Inicio · Avisos: logo de la marca, estado y lo ya cobrado */
+:root[data-diseno='v5'] .av-item .v5-avatar {
+  flex: none;
+}
+:root[data-diseno='v5'] .av-item-detalle .v5-insignia {
+  margin-right: 8px;
+  vertical-align: 1px;
+}
+:root[data-diseno='v5'] .av-realizados {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: var(--fs-xs);
+  color: var(--text);
+}
+:root[data-diseno='v5'] .av-realizados svg {
+  color: var(--accent-2);
+}
+
+/* Ajustes de avisos (v5/AjustesAvisos.jsx) */
+:root[data-diseno='v5'] .v5-avisos-ajustes {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+:root[data-diseno='v5'] .v5-avisos-h {
+  margin: 0 0 10px;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  color: var(--text-h);
+}
+:root[data-diseno='v5'] .v5-avisos-tipos,
+:root[data-diseno='v5'] .v5-avisos-canales {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+:root[data-diseno='v5'] .v5-avisos-tipos li {
+  display: flex;
+  gap: 12px;
+}
+:root[data-diseno='v5'] .v5-avisos-tipo-icono {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--accent-suave);
+  color: var(--accent-2);
+}
+:root[data-diseno='v5'] .v5-avisos-tipos b,
+:root[data-diseno='v5'] .v5-avisos-canales b {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+:root[data-diseno='v5'] .v5-avisos-tipos small,
+:root[data-diseno='v5'] .v5-avisos-canales small {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--text);
+}
+:root[data-diseno='v5'] .v5-avisos-canales li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-m);
+  background: var(--bg);
+}
+:root[data-diseno='v5'] .v5-avisos-canales .v5-insignia {
+  flex: none;
+}
+:root[data-diseno='v5'] .v5-insignia.neutro {
+  background: var(--superficie-3);
+  color: var(--text);
+}
+:root[data-diseno='v5'] .v5-avisos-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

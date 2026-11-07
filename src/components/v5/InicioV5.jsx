@@ -430,6 +430,8 @@ export default function InicioV5({
   onIrA,
   onVerAnalisis,
   avisosRenovacion = null,
+  recordatoriosEmail = null,
+  onAbrirCuenta,
 }) {
   return (
     <div className="v5-inicio">
@@ -442,6 +444,8 @@ export default function InicioV5({
           onVerSuscripciones={() => onIrA('suscripciones')}
           onConfirmar={onConfirmarCobro}
           avisosRenovacion={avisosRenovacion}
+          recordatoriosEmail={recordatoriosEmail}
+          onAbrirCuenta={onAbrirCuenta}
         />
       </div>
       <PatrimonioHero usuarioId={usuarioId} movimientos={movimientos} onGuardado={onGuardado} onIrA={onIrA} soloLectura={soloLectura} />

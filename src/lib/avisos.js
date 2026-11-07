@@ -17,7 +17,8 @@ const DIAS_SUBIDA = 45 // una subida de precio es noticia ~1,5 meses
 /**
  * @param recurrentes items de useRecurrentes (Base)
  * @param movimientos histórico completo
- * @returns [{ id, tipo: 'cobro'|'renovacion'|'subida', titulo, detalle, importe, dias, urgente }]
+ * @returns [{ id, tipo: 'cobro'|'renovacion'|'subida'|'negociar'|'ingreso', marca (nombre del
+ *   compromiso o comercio, para su logo), titulo, detalle, importe, dias, urgente, porConfirmar? }]
  *          ordenados por urgencia.
  */
 export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Date(), { descartadas = new Set(), avisosRenovacion = null } = {}) {
@@ -35,6 +36,7 @@ export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Dat
         id: `renovacion:${c.rec.id}:${c.mes}`,
         tipo: 'renovacion',
         recId: c.rec.id,
+        marca: c.rec.nombre,
         porConfirmar,
         titulo: c.dias === 0 ? `${c.rec.nombre} se renueva hoy` : c.dias < 0 ? `${c.rec.nombre} se renovó ${c.texto}` : `${c.rec.nombre} se renueva ${c.texto}`,
         detalle: `${formatearEuros(c.importe)} · ${periodoDe(c.rec).etiqueta.toLowerCase()}. Buen momento para ver si te compensa.`,
@@ -47,6 +49,7 @@ export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Dat
         id: `cobro:${c.rec.id}:${c.mes}`,
         tipo: 'cobro',
         recId: c.rec.id,
+        marca: c.rec.nombre,
         porConfirmar,
         titulo:
           c.dias === 0
@@ -76,6 +79,7 @@ export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Dat
       id: `negociar:${c.rec.id}:${c.mes}`,
       tipo: 'negociar',
       recId: c.rec.id,
+      marca: c.rec.nombre,
       porConfirmar: false,
       titulo: `Momento de negociar ${c.rec.nombre}`,
       detalle:
@@ -94,6 +98,7 @@ export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Dat
       id: `ingreso:${c.rec.id}:${c.mes}`,
       tipo: 'ingreso',
       recId: c.rec.id,
+      marca: c.rec.nombre,
       porConfirmar: true,
       titulo: c.dias === 0 ? `Hoy entra ${c.rec.nombre}` : `${c.rec.nombre} · debía entrar ${c.texto}`,
       detalle: `${formatearEuros(c.importe)} · ¿lo has recibido?`,
@@ -116,6 +121,7 @@ export function calcularAvisos(recurrentes = [], movimientos = [], hoy = new Dat
       // Un id por SUBIDA (precio anterior → nuevo): descartarlo es definitivo.
       id: `subida:${d.clave}:${d.subida.antes}->${d.subida.ahora}`,
       tipo: 'subida',
+      marca: d.nombre,
       titulo: `${d.nombre} ha subido de precio`,
       detalle: `De ${formatearEuros(d.subida.antes)} a ${formatearEuros(d.subida.ahora)} (+${formatearEuros(extraAnual)} al año)`,
       importe: d.subida.ahora,
