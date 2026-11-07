@@ -166,6 +166,7 @@ if (PERSONA && PERSONA !== 'normal') {
 
 const VACIO = typeof localStorage !== 'undefined' && localStorage.getItem('mock_vacio') === '1'
 if (VACIO) { movimientos.length = 0; if (localStorage.getItem('mock_sin_perfil') !== '1') movimientos.push(mov('ingreso', cats.ajuste, 1200, iso(Y, M, 1), 'Saldo inicial')); recurrentes.length = 0; recurrentes_confirmaciones.length = 0 }
+const LS0 = (k) => typeof localStorage !== 'undefined' && localStorage.getItem(k) === '1'
 const db = {
   perfiles: [{ usuario_id: UID, objetivo: 'Ahorrar para la entrada de un piso', nombre: PERSONA === 'caotico' ? 'Maximiliano Alejandro de la Santísima Trinidad' : 'Eric', anio_nacimiento: PERSONA === 'jubilado' ? 1948 : PERSONA === 'estudiante' ? 2006 : 1990, email: 'demo@palanca.app', analitica: true, recordatorios: true, ultima_reconciliacion: new Date(Date.now() - 6 * 864e5).toISOString() }],
   categorias: Object.values(cats).map((c) => ({ ...c, usuario_id: UID })),
@@ -173,6 +174,7 @@ const db = {
   movimientos,
   recurrentes,
   recurrentes_confirmaciones,
+  presupuestos: LS0('mock_sin_presupuesto') ? [] : [{ usuario_id: UID, metodo: 'tasa', tasa_ahorro_objetivo: 20, gasto_maximo_fijo: null, objetivo_inversion_mensual: 200 }],
 }
 
 const CLAVES = { comercios_alias: 'usuario_id,clave', presupuestos: 'usuario_id', recurrentes_confirmaciones: 'recurrente_id,mes', ahorros_negociados: 'usuario_id,rec_id', planificaciones: 'usuario_id,mes', perfiles: 'usuario_id' }
@@ -197,6 +199,19 @@ class Q {
   update(f) { this.op = 'update'; this.datos = f; return this }
   delete() { this.op = 'delete'; return this }
   ejecutar() {
+    // Límites por categoría: por defecto la tabla «no existe» (como hoy en
+    // producción, la app guarda en el navegador). Con mock_tabla_limites=1
+    // existe y se conserva entre recargas (para probar el modo nube).
+    if (this.tabla === 'presupuestos_categoria') {
+      if (!LS('mock_tabla_limites')) return { data: null, error: { code: '42P01', message: 'relation "public.presupuestos_categoria" does not exist' } }
+      if (!db.presupuestos_categoria) { try { db.presupuestos_categoria = JSON.parse(localStorage.getItem('mock_db_limites') || '[]') } catch { db.presupuestos_categoria = [] } }
+      const r = this.ejecutarTabla()
+      try { localStorage.setItem('mock_db_limites', JSON.stringify(db.presupuestos_categoria)) } catch { /* nada */ }
+      return r
+    }
+    return this.ejecutarTabla()
+  }
+  ejecutarTabla() {
     const t = (db[this.tabla] ||= [])
     let filas
     if (this.op === 'upsert') {

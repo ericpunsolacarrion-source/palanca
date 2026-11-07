@@ -283,6 +283,14 @@ export function presupuestoCliente(avisar) {
     cargando: false,
     guardarPresupuesto: bloqueado,
     guardarObjetivoInversion: bloqueado,
+    // Límites por categoría que Lucía se ha puesto (unos holgados, otros justos).
+    limitesCategoria: Object.fromEntries(
+      [['Comida', 330], ['Restaurantes', 140], ['Transporte', 200], ['Compras', 120], ['Ocio', 90], ['Vivienda', 1000]].map(([nombre, importe]) => [`${PREFIJO_DEMO}c-${nombre}`, { categoriaId: `${PREFIJO_DEMO}c-${nombre}`, nombre, importe }]),
+    ),
+    modoLimites: 'nube',
+    cargandoLimites: false,
+    guardarLimiteCategoria: bloqueado,
+    guardarLimitesCategoria: bloqueado,
   }
 }
 

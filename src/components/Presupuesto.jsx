@@ -1,18 +1,16 @@
 import { useMemo, useState } from 'react'
 import { formatearEuros } from '../lib/categorias'
-import { diasRestantesDelMes, formatearPorcentaje, gastoPorCategoria, limiteGastoPresupuesto, totalesDe } from '../lib/movimientosUtils'
+import { diasRestantesDelMes, formatearPorcentaje, gastoPorCategoria, ingresoMensualMedio, limiteGastoPresupuesto, totalesDe } from '../lib/movimientosUtils'
 import { usePresupuestoCompartido } from '../lib/DatosCompartidos'
 import { toast } from '../lib/toast'
 import { useCountUp } from '../lib/useCountUp'
 import InputImporte from './InputImporte'
 import { esV5 } from '../lib/diseno'
 import { claveMesActual, etiquetaMes } from '../lib/movimientosUtils'
-import { categoriasFrenteAMedia } from '../lib/presupuesto'
 import { resumenDelMes } from '../lib/inicio'
-import { etiquetaCategoria } from '../lib/categorias'
-import { preguntarAFulcro } from '../lib/fulcro'
 import { Anillo } from './v5/Graficos'
 import Icono from './Icono'
+import LimitesCategoria from './v5/LimitesCategoria'
 
 function Cifra({ valor, className }) {
   const animado = useCountUp(valor)
@@ -75,6 +73,24 @@ export default function Presupuesto({ movimientos, gastoEstimado, historico = []
   }
 
   if (cargando) return <p>Cargando presupuesto…</p>
+
+  if ((!configurado || editando) && esV5()) {
+    return (
+      <ConfigV5
+        configurado={configurado}
+        metodoInput={metodoInput}
+        cambiarMetodo={cambiarMetodo}
+        valorInput={valorInput}
+        setValorInput={setValorInput}
+        guardando={guardando}
+        errorGuardado={errorGuardado}
+        onGuardar={handleGuardar}
+        onCancelar={() => setEditando(false)}
+        gastoEstimado={gastoEstimado}
+        historico={historico}
+      />
+    )
+  }
 
   if (!configurado || editando) {
     return (
@@ -323,9 +339,6 @@ function PresupuestoV5({ metodo, tasaAhorroObjetivo, gastoMaximoFijo, presupuest
   const pctReferencia = presupuestoGasto > 0 ? Math.min(100, (deberias / presupuestoGasto) * 100) : pctMes
   const rapido = totalGastos > deberias * 1.05 + 1
   const estado = pct > 100 ? { t: 'Te has pasado', c: 'critico' } : rapido ? { t: 'Vas más rápido de lo habitual', c: 'aviso' } : { t: 'Vas bien', c: 'bien' }
-  const cats = useMemo(() => categoriasFrenteAMedia(historico, clave), [historico, clave])
-  const maximo = Math.max(1, ...cats.map((c) => Math.max(c.gastado, c.media ?? 0)))
-  const colores = ['var(--cat-1)', 'var(--cat-2)', 'var(--cat-3)', 'var(--cat-4)', 'var(--cat-5)', 'var(--cat-6)']
 
   return (
     <div className="v5-presupuesto">
@@ -392,35 +405,7 @@ function PresupuestoV5({ metodo, tasaAhorroObjetivo, gastoMaximoFijo, presupuest
         )}
       </section>
 
-      <section className="v5-tarjeta v5-presu-cats" aria-label="Por categoría">
-        <header className="v5-tarjeta-cab">
-          <h2>Por categoría</h2>
-          <button type="button" className="v5-enlace" onClick={() => preguntarAFulcro('¿En qué puedo recortar este mes?')}>
-            <Icono nombre="consultor" tam={14} /> ¿Dónde recorto?
-          </button>
-        </header>
-        {cats.length === 0 ? (
-          <p className="v5-nota-vacia">Aún no hay gastos este mes.</p>
-        ) : (
-          <ul className="v5-cats">
-            {cats.slice(0, 7).map((c, i) => (
-              <li key={c.nombre}>
-                <span className="v5-cat-relleno" style={{ width: `${(c.gastado / maximo) * 100}%`, '--c': colores[i % colores.length] }} aria-hidden="true" />
-                {c.media > 0 && <span className="v5-cat-media" style={{ left: `${(c.media / maximo) * 100}%` }} aria-hidden="true" />}
-                <span className="v5-cat-nombre">
-                  <i style={{ background: colores[i % colores.length] }} aria-hidden="true" />
-                  {etiquetaCategoria(c.nombre)}
-                </span>
-                <span className="v5-cat-valor">
-                  <b className="num">{formatearEuros(c.gastado)}</b>
-                  {c.media > 0 && <small className="num">de {formatearEuros(Math.round(c.media))} habituales</small>}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="v5-tenue v5-pie-nota">La raya es lo que sueles gastar en un mes entero en esa categoría (media de tus últimos meses).</p>
-      </section>
+      <LimitesCategoria historico={historico} clave={clave} presupuestoGasto={sinIngresos ? 0 : presupuestoGasto} />
 
       <section className="v5-tarjeta v5-presu-info" aria-label="Cómo funciona tu presupuesto">
         <header className="v5-tarjeta-cab">
@@ -447,6 +432,82 @@ function PresupuestoV5({ metodo, tasaAhorroObjetivo, gastoMaximoFijo, presupuest
         </dl>
         <p className="v5-tenue v5-pie-nota">Invertir no gasta presupuesto: la inversión es parte de tu ahorro.</p>
       </section>
+    </div>
+  )
+}
+
+// ── v5: configurar el presupuesto general (dos modalidades, explicadas) ─────
+function ConfigV5({ configurado, metodoInput, cambiarMetodo, valorInput, setValorInput, guardando, errorGuardado, onGuardar, onCancelar, gastoEstimado, historico }) {
+  const ingresoMedio = useMemo(() => ingresoMensualMedio(historico), [historico])
+  const ejemploTasa = ingresoMedio.media > 0 && valorInput > 0 && valorInput <= 100 ? limiteGastoPresupuesto({ metodo: 'tasa', tasaAhorroObjetivo: valorInput }, ingresoMedio.media) : null
+  const opciones = [
+    {
+      id: 'tasa',
+      titulo: 'Un porcentaje de lo que ingresas',
+      texto: 'Eliges cuánto ahorrar (p. ej. el 20 %). El límite en euros se adapta cada mes a lo que entra: los meses buenos te deja gastar más; los flojos, aprieta solo.',
+    },
+    {
+      id: 'fijo',
+      titulo: 'Una cantidad fija al mes',
+      texto: 'Un tope en euros que no cambia, ingreses lo que ingreses. Lo que entra de más esos meses se queda ahorrado: suele hacer crecer el patrimonio más rápido.',
+    },
+  ]
+  return (
+    <div className="v5-presupuesto">
+      <form className="v5-tarjeta v5-presu-config" onSubmit={onGuardar}>
+        <header className="v5-tarjeta-cab">
+          <h2>{configurado ? 'Ajustar tu presupuesto' : 'Define tu presupuesto'}</h2>
+        </header>
+        <p className="v5-tenue v5-presu-config-intro">Elige cómo quieres limitar tu gasto de consumo. Invertir nunca gasta presupuesto.</p>
+        <div className="v5-presu-opciones" role="radiogroup" aria-label="Cómo limitar el gasto">
+          {opciones.map((o) => (
+            <button key={o.id} type="button" role="radio" aria-checked={metodoInput === o.id} className={`v5-presu-opcion ${metodoInput === o.id ? 'activa' : ''}`} onClick={() => cambiarMetodo(o.id)}>
+              <span className="v5-presu-opcion-marca" aria-hidden="true">{metodoInput === o.id && <Icono nombre="check" tam={13} />}</span>
+              <b>{o.titulo}</b>
+              <small>{o.texto}</small>
+            </button>
+          ))}
+        </div>
+        <div className="v5-presu-config-campo">
+          {metodoInput === 'tasa' ? (
+            <>
+              <label htmlFor="tasa">¿Qué porcentaje de lo que ingresas quieres ahorrar?</label>
+              <div className="v5-presu-config-fila">
+                <input id="tasa" type="number" inputMode="decimal" min="0" max="100" step="1" value={valorInput ?? ''} onChange={(e) => setValorInput(e.target.value === '' ? null : Number(e.target.value))} placeholder="ej. 20" autoFocus />
+                <span className="v5-tenue">%</span>
+              </div>
+              {ejemploTasa != null && (
+                <p className="v5-tenue v5-pie-nota">
+                  Con lo que sueles ingresar (<span className="num">{formatearEuros(Math.round(ingresoMedio.media))}</span>/mes) podrías gastar unos <b className="num">{formatearEuros(Math.round(ejemploTasa))}</b> al mes.
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <label htmlFor="fijo">¿Cuánto quieres gastar como máximo al mes?</label>
+              <InputImporte id="fijo" value={valorInput} onValueChange={setValorInput} placeholder="ej. 1.500" autoFocus />
+              {gastoEstimado?.estimacion > 0 && (
+                <p className="v5-tenue v5-pie-nota">
+                  Sueles gastar <b className="num">{formatearEuros(gastoEstimado.estimacion)}</b> al mes{gastoEstimado.provisional ? ' (provisional, con un solo mes de datos)' : ` (media de tus últimos ${gastoEstimado.mesesUsados} meses)`}.
+                </p>
+              )}
+            </>
+          )}
+          {metodoInput === 'tasa' && valorInput > 100 && <p className="v5-aviso-texto">El porcentaje tiene que estar entre 0 y 100.</p>}
+          {errorGuardado && <p className="v5-aviso-texto">{errorGuardado}</p>}
+        </div>
+        <div className="v5-presu-config-acciones">
+          {configurado && (
+            <button type="button" className="v5-boton fantasma" onClick={onCancelar}>
+              Cancelar
+            </button>
+          )}
+          <button type="submit" className="v5-boton primario" disabled={guardando || valorInput == null || (metodoInput === 'tasa' && valorInput > 100)}>
+            {guardando ? 'Guardando…' : 'Guardar presupuesto'}
+          </button>
+        </div>
+      </form>
+      <LimitesCategoria historico={historico} clave={claveMesActual()} presupuestoGasto={0} />
     </div>
   )
 }

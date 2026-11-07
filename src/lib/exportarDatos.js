@@ -13,6 +13,7 @@ export const TABLAS_USUARIO = [
   'recurrentes',
   'recurrentes_confirmaciones',
   'presupuestos',
+  'presupuestos_categoria',
   'objetivos_ahorro',
   'planificaciones',
   'simulaciones_guardadas',

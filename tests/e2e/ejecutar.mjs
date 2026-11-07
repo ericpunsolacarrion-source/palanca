@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import config from './vite.config.mjs'
 import { recorrido } from './recorrido.mjs'
 import { auditoria } from './auditoria.mjs'
+import { limites } from './limites.mjs'
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url))
 const salida = path.join(AQUI, 'salida')
@@ -25,6 +26,12 @@ try {
     console.log(`\nRecorrido a ${ancho}px: ${r.fallos.length ? `${r.fallos.length} fallos` : 'todo bien'}`)
     for (const f of [...r.fallos, ...r.errores]) console.log('  ✗ ' + f)
     fallos += r.fallos.length + r.errores.length
+  }
+  if ((process.env.E2E_DISENO || 'v5') === 'v5') {
+    const l = await limites({ url, navegador })
+    console.log(`\nLímites por categoría: ${l.length ? `${l.length} fallos` : 'todo bien'}`)
+    for (const f of l) console.log('  ✗ ' + f)
+    fallos += l.length
   }
   const informe = await auditoria({ url, salida, navegador })
   console.log(`\nAuditoría visual: ${informe.length ? `${informe.length} problemas` : 'sin problemas'}`)

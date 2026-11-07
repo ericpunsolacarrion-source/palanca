@@ -31,6 +31,7 @@ import Pildora from './components/Pildora'
 import ProyeccionFuturo from './components/ProyeccionFuturo'
 import { pildorasDashboard, elegirPildora, firmaDatos, limpiarPildoras } from './lib/pildoras'
 import { usePresupuesto } from './lib/usePresupuesto'
+import { usePresupuestosCategoria } from './lib/usePresupuestosCategoria'
 import { useRecurrentes } from './lib/useRecurrentes'
 import { conciliarFijos } from './lib/conciliarFijos'
 import { useObjetivosAhorro } from './lib/useObjetivosAhorro'
@@ -50,6 +51,7 @@ import Icono, { Marca } from './components/Icono'
 import { fijarImportesOcultos, importesOcultos } from './lib/privacidad'
 import { toast } from './lib/toast'
 import { generarDemo } from './lib/datosDemo'
+import AnalisisV5 from './components/v5/AnalisisV5'
 import { generarClienteCompleto, objetivosCliente, presupuestoCliente } from './lib/clienteCompleto'
 import { esAjuste } from './lib/categorias'
 import { estadoCobro } from './lib/periodicidad'
@@ -408,10 +410,11 @@ function App() {
   // App es el dueño ÚNICO de presupuesto y objetivos: los instancia una vez y
   // los reparte por contexto (DatosCompartidosProvider). Evita que 3+3
   // componentes los pidan por su cuenta y mantiene una sola fuente fresca.
-  const presupuestoReal = usePresupuesto(usuarioId)
+  const presupuestoGeneral = usePresupuesto(usuarioId)
+  const limitesCategoria = usePresupuestosCategoria(usuarioId)
   const presupuestoData = useMemo(
-    () => (cliente ? presupuestoCliente((t) => toast(t)) : presupuestoReal),
-    [cliente, presupuestoReal],
+    () => (cliente ? presupuestoCliente((t) => toast(t)) : { ...presupuestoGeneral, ...limitesCategoria }),
+    [cliente, presupuestoGeneral, limitesCategoria],
   )
   // Compromiso a abrir al llegar a Fijos (confirmar uno de importe variable).
   const [abrirFijoId, setAbrirFijoId] = useState(null)
@@ -659,7 +662,30 @@ function App() {
                   />
                 )}
 
-                {vistaInicio === 'analisis' && (
+                {vistaInicio === 'analisis' && v5 && (
+                  <AnalisisV5
+                    historico={movimientos}
+                    clave={mesActivoDash}
+                    meses={mesesRango}
+                    onCambiarMes={setMesDashboard}
+                    onVerMovimientos={verMovimientos}
+                    onIrARegistro={() => irAPestana('movimientos')}
+                  >
+                    {pildoraDash && (
+                      <Pildora
+                        key={pildoraDash.id}
+                        usuarioId={usuarioId}
+                        pildora={pildoraDash}
+                        firma={firmaPildoras}
+                        onCta={irAPestana}
+                        onDescartar={() => setDescartesPildora((n) => n + 1)}
+                      />
+                    )}
+                    {!enDemo && <Logros usuarioId={usuarioId} movimientos={movimientos} movimientosMes={movimientosMes} />}
+                  </AnalisisV5>
+                )}
+
+                {vistaInicio === 'analisis' && !v5 && (
                   <>
                     <PeriodoSelector meses={mesesRango} valor={mesActivoDash} onCambiar={setMesDashboard} />
                     <MetricasPrincipales
