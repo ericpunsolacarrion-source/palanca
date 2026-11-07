@@ -11,6 +11,18 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 
 
+## Saldo del mes en Base (07-11) — hecho
+- ✔ Selector Gráfico/Calendario en la tarjeta del mes de Base.
+  - Saldo real y previsto con marcadores, etiquetas sin solapes y ficha con saldo antes → después.
+  - Calendario con los mismos datos.
+- **Limitaciones (no se inventa nada):**
+  - La previsión solo sabe de los compromisos de Base y de los movimientos ya apuntados con fecha futura. No hay otra fuente de ingresos futuros.
+  - Los compromisos sin día no se pueden situar; se avisa.
+  - Un cobro que ya tocaba y no está confirmado se coloca en hoy como «por confirmar».
+  - En los importes variables se usa el importe del compromiso como aproximación y se marca así.
+  - El saldo es la liquidez del motor: es fiable si el usuario puso su saldo inicial o cuadra con el banco.
+- Corregido de paso: con «datos de ejemplo», Base usaba los movimientos del usuario junto a los compromisos del ejemplo. Ahora la tarjeta usa los mismos movimientos que el resto de la app.
+
 ## Periodo financiero (07-11) — B implementada en la rama de trabajo
 - ✔ 07-11 **Alternativa B** («Mi mes empieza el día…», 1 = como siempre). Ver `docs/PERIODO.md`.
   - Una sola función de periodo en el motor.

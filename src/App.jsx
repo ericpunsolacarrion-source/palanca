@@ -819,6 +819,7 @@ function App() {
             key="suscripciones"
             usuarioId={usuarioId}
             movimientos={movimientosReales}
+            movimientosVista={movimientos}
             itemsDemo={enDemo ? ejemplo.recurrentes : null}
             onRegistrado={onGuardado}
             abrirId={abrirFijoId}

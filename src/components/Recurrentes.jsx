@@ -428,7 +428,7 @@ function FormularioRecurrente({ inicial, categoriasGasto, categoriasIngreso, onG
   )
 }
 
-export default function Recurrentes({ usuarioId, movimientos, onRegistrado, abrirId = null, onAbierto, itemsDemo = null }) {
+export default function Recurrentes({ usuarioId, movimientos, movimientosVista = null, onRegistrado, abrirId = null, onAbierto, itemsDemo = null }) {
   const hook = useRecurrentes(usuarioId)
   const { crear, actualizar, eliminar, confirmarCobro, desmarcar } = hook
   // Con datos de ejemplo (usuario nuevo) se enseñan sus compromisos de ejemplo;
@@ -671,7 +671,7 @@ export default function Recurrentes({ usuarioId, movimientos, onRegistrado, abri
 
         <div className="v5-base-rejilla">
           <div className="v5-base-a">
-            {items.some((r) => r.activo) && <CalendarioBase items={items} onAbrir={setDetalle} />}
+            {items.some((r) => r.activo) && <CalendarioBase items={items} movimientos={movimientosVista ?? movimientos} onAbrir={setDetalle} />}
             <RepartoAnual items={items} />
             <PlanAhorro usuarioId={usuarioId} recurrentes={items} onActualizar={actualizar} />
           </div>

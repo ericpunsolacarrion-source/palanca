@@ -111,7 +111,14 @@ Las marcas sin logo libre llevan su color y su monograma. Los comercios sin marc
   - Debajo, Inversión (aportar/retirar e historial).
 - **Base (`Recurrentes.jsx` en v5 + `v5/CalendarioBase.jsx`):**
   - Cifras (al mes, al año, pagado este mes, lo que pide atención).
-  - Calendario mensual con logos por día, importe del día, estados y navegación por meses; tocar un día lista sus cobros y abre su ficha.
+  - Tarjeta del mes con selector **Gráfico | Calendario**, que recuerda la última vista en el dispositivo. Las dos vistas usan los mismos datos: `flujoDelMes`, en `lib/flujoCaja.js`.
+    - **Gráfico** (`v5/GraficoSaldo.jsx`):
+      - Saldo (la liquidez del motor) en escalones: continua lo real, discontinua lo previsto, unidas en «Hoy».
+      - Marcadores: relleno si está realizado, hueco si está previsto.
+      - Etiquetas fuera de la línea: ingresos arriba y gastos abajo, con línea guía y sin solapes (`lib/etiquetasGrafico.js`); las que no caben se omiten y su punto sigue ahí.
+      - Al tocar un punto o un día se abre una ficha con cada movimiento: importe, fecha, tipo, estado y saldo antes → después.
+      - Colores del kit: acento para la línea; ingreso acento, gasto neutro e inversión latón en los puntos.
+    - **Calendario:** cada movimiento real o previsto en su día. Lo previsto va con el logo atenuado y un aro discontinuo, y la celda solo prevista con borde discontinuo. Tocar un día lo lista con el saldo antes → después; los compromisos abren su ficha.
   - Reparto anual, plan de ahorro.
   - Lista de compromisos con avatar y estado («Pagado», «Por confirmar», «Mañana», «En 9 días»…).
   - Confirmar y deshacer siguen siendo 1:1.

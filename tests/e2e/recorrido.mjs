@@ -138,9 +138,13 @@ await paso('Base: calendario, cifras y lista', async () => {
   await tab('Fijos'); await p.waitForTimeout(800)
   await p.locator('.v5-cal').waitFor({ timeout: 3000 })
   await p.getByText('Compromisos', { exact: true }).waitFor()
+  // Vista Gráfico (por defecto) y luego Calendario con los mismos datos.
+  await p.locator('.v5-saldo-real').waitFor({ timeout: 3000 })
+  await p.getByRole('tab', { name: 'Calendario' }).click(); await p.waitForTimeout(300)
   await p.locator('.v5-cal-dia.hoy').click(); await p.waitForTimeout(300)
   await p.locator('.v5-cal-detalle').waitFor()
   await desborde('Base')
+  await p.getByRole('tab', { name: 'Gráfico' }).click(); await p.waitForTimeout(200)
 })
 
 await paso('Fijos: añadir suscripción detectada no la deja pendiente', async () => {

@@ -2197,6 +2197,202 @@
 .v5-cal-logo.pagado {
   opacity: 0.5;
 }
+/* Previsto: el logo atenuado con aro discontinuo; la celda solo prevista,
+   con borde discontinuo (mismo lenguaje que la línea discontinua del gráfico). */
+.v5-cal-logo.previsto .v5-avatar {
+  opacity: 0.55;
+  outline: 1px dashed var(--text-3);
+  outline-offset: 1px;
+}
+.v5-cal-dia.con-cobros.previsto {
+  background: var(--bg);
+  border-style: dashed;
+  border-color: var(--borde-fuerte);
+}
+.v5-cal-leyenda {
+  margin-top: 12px;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.v5-cal-muestra {
+  width: 14px;
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid var(--borde-fuerte);
+  background: var(--card-bg-2);
+}
+.v5-cal-muestra.previsto {
+  border-style: dashed;
+  background: var(--bg);
+}
+.v5-cal-detalle li.previsto .v5-avatar {
+  opacity: 0.6;
+}
+.v5-cal-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+/* ── Saldo del mes (Base · vista Gráfico) ── */
+.v5-saldo-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: 2px 0 6px;
+}
+.v5-saldo-leyenda .v5-leyenda {
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.v5-saldo-leyenda .v5-leyenda i.linea {
+  width: 16px;
+  height: 0;
+  border-radius: 0;
+  border-top: 2px solid var(--accent);
+  background: none;
+}
+.v5-saldo-leyenda .v5-leyenda i.linea.discontinua {
+  border-top-style: dashed;
+}
+.v5-saldo-leyenda .v5-leyenda i.punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text);
+}
+.v5-saldo-leyenda .v5-leyenda i.punto.hueco {
+  background: transparent;
+  border: 1.5px solid var(--text);
+}
+.v5-saldo-resumen {
+  font-size: var(--fs-s);
+  color: var(--text);
+}
+.v5-saldo-resumen b {
+  color: var(--text-h);
+  font-weight: 600;
+}
+.v5-saldo-real {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.v5-saldo-prev {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.75;
+  stroke-dasharray: 5 4;
+  opacity: 0.75;
+}
+.v5-saldo-guia {
+  fill: none;
+  stroke: var(--borde-fuerte);
+  stroke-width: 1;
+}
+.v5-saldo-etq text {
+  fill: var(--text);
+  font-size: 11px;
+  font-weight: 500;
+}
+.v5-saldo-etq .v5-saldo-etq-imp {
+  fill: var(--text-3);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.v5-saldo-etq.previsto text {
+  fill: var(--text-3);
+  font-style: italic;
+}
+.v5-saldo-etq:hover text {
+  fill: var(--text-h);
+}
+.v5-saldo-punto {
+  cursor: pointer;
+  outline: none;
+}
+.v5-saldo-punto:focus-visible circle:last-child {
+  stroke: var(--text-h);
+}
+.v5-saldo-ficha {
+  position: absolute;
+  z-index: 6;
+  width: 300px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--superficie-3);
+  border: 1px solid var(--borde-fuerte);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
+  font-size: var(--fs-s);
+  color: var(--text-h);
+}
+.v5-saldo-ficha.estatica {
+  position: static;
+  width: auto;
+  margin-top: 8px;
+}
+.v5-saldo-ficha-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.v5-saldo-ficha-cab .v5-boton {
+  width: 26px;
+  height: 26px;
+  font-size: 16px;
+}
+.v5-saldo-ficha ul {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+}
+.v5-saldo-ficha li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.v5-saldo-ficha li + li {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.v5-saldo-ficha-fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.v5-saldo-ficha-fila b:first-child {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.v5-saldo-ficha small {
+  font-size: var(--fs-xs);
+}
+.v5-saldo-ficha-saldo {
+  color: var(--text);
+}
+.v5-saldo-ficha .v5-enlace {
+  align-self: flex-start;
+  font-size: var(--fs-xs);
+}
+.v5-saldo-nota {
+  margin-top: 6px;
+}
 .v5-cal-mas {
   margin-left: 4px;
   font-size: 11px;

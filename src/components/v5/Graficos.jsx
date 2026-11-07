@@ -8,7 +8,7 @@ import { formatearCompacto } from '../../lib/movimientosUtils'
 // accesible. Paleta y reglas en docs/DISENO.md (validada CVD y contraste).
 
 // Marcas «bonitas» del eje: 3–4 líneas en números redondos.
-function marcasEje(min, max, n = 4) {
+export function marcasEje(min, max, n = 4) {
   if (min === max) {
     const d = Math.abs(max) || 1
     min -= d * 0.1
@@ -24,11 +24,11 @@ function marcasEje(min, max, n = 4) {
   return marcas
 }
 
-const ejeTexto = (v) => (v < 0 ? '−' : '') + (Math.abs(v) >= 1000 ? formatearCompacto(Math.abs(v)) : String(Math.round(Math.abs(v))))
+export const ejeTexto = (v) => (v < 0 ? '−' : '') + (Math.abs(v) >= 1000 ? formatearCompacto(Math.abs(v)) : String(Math.round(Math.abs(v))))
 
 // alto: número fijo, o 'auto' para llenar el alto del contenedor (la figura
 // crece con flex: 1; mínimo legible `altoMin`).
-function useDimensiones(alto, altoMin = 180) {
+export function useDimensiones(alto, altoMin = 180) {
   const auto = alto === 'auto'
   const [refA, ancho] = useAncho()
   const [refC, caja] = useCaja()
@@ -210,7 +210,7 @@ export function Leyenda({ series }) {
 }
 
 // Los datos del gráfico como tabla, para lectores de pantalla.
-function TablaDatos({ titulo, cabecera, filas }) {
+export function TablaDatos({ titulo, cabecera, filas }) {
   return (
     <table className="v5-solo-lector">
       {titulo && <caption>{titulo}</caption>}

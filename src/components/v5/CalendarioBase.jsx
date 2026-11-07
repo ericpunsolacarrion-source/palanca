@@ -1,21 +1,36 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { formatearEuros } from '../../lib/categorias'
 import { costeAnual, fechaCobroEnMes, tocaEnMes } from '../../lib/periodicidad'
 import { TEXTO_ESTADO, estadoEnMes } from '../../lib/calendarioBase'
 import { etiquetaMes } from '../../lib/movimientosUtils'
 import Icono from '../Icono'
 import Avatar from './Avatar'
+import GraficoSaldo from './GraficoSaldo'
+import { TEXTO_CLASE, flujoDelMes } from '../../lib/flujoCaja'
 
-// CALENDARIO DE BASE (v5): qué días se cobra cada compromiso y cuánto está
-// comprometido. Usa SOLO las reglas de periodicidad.js (qué meses toca, qué
-// día, si está confirmado): no crea ni borra nada. Tocar un cobro abre su
-// ficha, donde se confirma o se deshace como siempre (1:1, sin duplicados).
+// CALENDARIO DE BASE (v5): cuánto está comprometido este mes y, con dos vistas
+// sobre los MISMOS datos (flujoDelMes, lib/flujoCaja.js):
+//  - Gráfico: saldo real (continua) y previsto (discontinua) con marcadores;
+//  - Calendario: cada movimiento real o previsto en su día.
+// Usa SOLO las reglas del motor (bolsas) y de periodicidad.js: no crea ni borra
+// nada. Tocar un compromiso abre su ficha, donde se confirma o se deshace como
+// siempre (1:1, sin duplicados).
+const ESTADO_EV = { realizado: { texto: 'Realizado', clase: 'bien' }, previsto: { texto: 'Previsto', clase: '' }, 'por-confirmar': { texto: 'Por confirmar', clase: 'aviso' } }
+const firma = (v) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${formatearEuros(Math.abs(v))}`
+const LS_VISTA = 'palanca_base_vista'
+function leerVista() {
+  try {
+    return localStorage.getItem(LS_VISTA) === 'calendario' ? 'calendario' : 'grafico'
+  } catch {
+    return 'grafico'
+  }
+}
 
 const pad = (n) => String(n).padStart(2, '0')
 const claveDe = (y, m) => `${y}-${pad(m)}`
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
-export default function CalendarioBase({ items, onAbrir }) {
+export default function CalendarioBase({ items, movimientos = [], onAbrir }) {
   const hoy = new Date()
   const claveHoy = claveDe(hoy.getFullYear(), hoy.getMonth() + 1)
   const [desfase, setDesfase] = useState(0)
@@ -24,17 +39,25 @@ export default function CalendarioBase({ items, onAbrir }) {
   const m = ref.getMonth() + 1
   const clave = claveDe(y, m)
   const [diaSel, setDiaSel] = useState(null)
-
-  const cobros = useMemo(() => {
-    const lista = []
-    for (const rec of items) {
-      if (!rec.activo || !tocaEnMes(rec, clave)) continue
-      const fecha = fechaCobroEnMes(rec, clave)
-      if (!fecha) continue
-      lista.push({ rec, dia: Number(fecha.slice(8, 10)), importe: Number(rec.importe) || 0, estado: estadoEnMes(rec, clave, claveHoy, hoy) })
+  const [vista, setVista] = useState(leerVista)
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_VISTA, vista)
+    } catch {
+      /* preferencia de este dispositivo: si no se puede guardar, no pasa nada */
     }
-    return lista.sort((a, b) => a.dia - b.dia || b.importe - a.importe)
-  }, [items, clave]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [vista])
+  // Fuente única de las dos vistas.
+  const flujo = useMemo(() => flujoDelMes({ movimientos, recurrentes: items, clave, hoy }), [movimientos, items, clave]) // eslint-disable-line react-hooks/exhaustive-deps
+  const eventosDia = useMemo(() => {
+    const m = new Map()
+    for (const e of flujo.eventos) {
+      if (!m.has(e.dia)) m.set(e.dia, [])
+      m.get(e.dia).push(e)
+    }
+    return m
+  }, [flujo])
+
   const sinDia = items.filter((r) => r.activo && tocaEnMes(r, clave) && !fechaCobroEnMes(r, clave))
 
   const cent = (v) => Math.round(v * 100)
@@ -45,21 +68,25 @@ export default function CalendarioBase({ items, onAbrir }) {
     .map((rec) => ({ rec, importe: Number(rec.importe) || 0, estado: estadoEnMes(rec, clave, claveHoy, hoy) }))
   const total = gastos.reduce((s, c) => s + cent(c.importe), 0) / 100
   const pagado = gastos.filter((c) => c.estado === 'pagado').reduce((s, c) => s + cent(c.importe), 0) / 100
-  const porDia = new Map()
-  for (const c of cobros) {
-    if (!porDia.has(c.dia)) porDia.set(c.dia, [])
-    porDia.get(c.dia).push(c)
-  }
-
   const diasMes = new Date(y, m, 0).getDate()
   const hueco = (new Date(y, m - 1, 1).getDay() + 6) % 7 // lunes = 0
   const celdas = [...Array(hueco).fill(null), ...Array.from({ length: diasMes }, (_, i) => i + 1)]
   while (celdas.length % 7) celdas.push(null)
   const esMesHoy = clave === claveHoy
-  const seleccion = diaSel != null ? porDia.get(diaSel) ?? [] : null
+  const seleccion = diaSel != null ? eventosDia.get(diaSel) ?? [] : null
+
+  const selectorVista = (
+    <div className="v5-seg" role="tablist" aria-label="Vista">
+      {[['grafico', 'Gráfico'], ['calendario', 'Calendario']].map(([k, t]) => (
+        <button key={k} type="button" role="tab" aria-selected={vista === k} className={vista === k ? 'activo' : ''} onClick={() => { setVista(k); setDiaSel(null) }}>
+          {t}
+        </button>
+      ))}
+    </div>
+  )
 
   return (
-    <section className="v5-tarjeta v5-cal" aria-label="Calendario de cobros">
+    <section className="v5-tarjeta v5-cal" aria-label="Saldo y cobros del mes">
       <header className="v5-tarjeta-cab">
         <div className="v5-cal-mes">
           <button type="button" className="v5-boton fantasma icono-solo" onClick={() => { setDesfase((d) => d - 1); setDiaSel(null) }} aria-label="Mes anterior">
@@ -101,73 +128,122 @@ export default function CalendarioBase({ items, onAbrir }) {
         </div>
       )}
 
-      <div className="v5-cal-rejilla" role="grid" aria-label={`Cobros de ${etiquetaMes(clave)}`}>
-        {DIAS.map((d) => (
-          <span key={d} className="v5-cal-dsem" role="columnheader">
-            {d}
-          </span>
-        ))}
-        {celdas.map((dia, i) => {
-          if (dia == null) return <span key={`h${i}`} className="v5-cal-vacio" aria-hidden="true" />
-          const del = porDia.get(dia) ?? []
-          const gastoDia = del.filter((c) => c.rec.tipo === 'gasto').reduce((s, c) => s + cent(c.importe), 0) / 100
-          const esHoy = esMesHoy && dia === hoy.getDate()
-          const pendienteHoy = del.some((c) => c.estado === 'confirmar')
-          const nombres = del.map((c) => `${c.rec.nombre} ${formatearEuros(c.importe)} (${TEXTO_ESTADO[c.estado].texto})`).join(', ')
-          return (
-            <button
-              key={dia}
-              type="button"
-              role="gridcell"
-              className={`v5-cal-dia ${esHoy ? 'hoy' : ''} ${del.length ? 'con-cobros' : ''} ${diaSel === dia ? 'sel' : ''} ${pendienteHoy ? 'atencion' : ''}`}
-              onClick={() => setDiaSel(diaSel === dia ? null : dia)}
-              aria-label={`${dia} de ${etiquetaMes(clave, { month: 'long' }).toLowerCase()}${del.length ? `: ${nombres}` : ', sin cobros'}`}
-              aria-pressed={diaSel === dia}
-            >
-              <span className="v5-cal-num">{dia}</span>
-              {del.length > 0 && (
-                <span className="v5-cal-logos">
-                  {del.slice(0, 3).map((c) => (
-                    <span key={c.rec.id} className={`v5-cal-logo ${c.estado === 'pagado' ? 'pagado' : ''}`}>
-                      <Avatar nombre={c.rec.nombre} tam={22} />
+      {vista === 'grafico' ? (
+        <>
+          <div className="v5-saldo-leyenda">
+            <div className="v5-cal-barra">
+              {selectorVista}
+            <ul className="v5-leyenda">
+              <li><i className="linea" aria-hidden="true" />Saldo real</li>
+              {flujo.finPrevisto && <li><i className="linea discontinua" aria-hidden="true" />Previsto</li>}
+              <li><i className="punto" aria-hidden="true" />Realizado</li>
+              {flujo.finPrevisto && <li><i className="punto hueco" aria-hidden="true" />Previsto</li>}
+            </ul>
+            </div>
+            <span className="v5-saldo-resumen num">
+              {flujo.tramo === 'actual' && <>Hoy <b>{formatearEuros(flujo.saldoHoy)}</b> · </>}
+              {flujo.tramo === 'pasado' ? 'Cerró en' : 'A fin de mes'} <b>{formatearEuros(flujo.saldoFinal)}</b>
+              {flujo.finPrevisto && <span className="v5-tenue"> previsto</span>}
+            </span>
+          </div>
+          <GraficoSaldo flujo={flujo} onAbrirCompromiso={onAbrir} />
+          <p className="v5-tenue v5-pie-nota v5-saldo-nota">
+            Saldo = tu liquidez en Palanca (lo que tienes sin contar lo invertido). {flujo.finPrevisto ? 'La previsión solo usa tus compromisos de Base y lo que ya has apuntado con fecha futura.' : ''}
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="v5-saldo-leyenda">
+            <div className="v5-cal-barra">
+              {selectorVista}
+            </div>
+          </div>
+          <div className="v5-cal-rejilla" role="grid" aria-label={`Movimientos de ${etiquetaMes(clave)}`}>
+            {DIAS.map((d) => (
+              <span key={d} className="v5-cal-dsem" role="columnheader">
+                {d}
+              </span>
+            ))}
+            {celdas.map((dia, i) => {
+              if (dia == null) return <span key={`h${i}`} className="v5-cal-vacio" aria-hidden="true" />
+              const del = eventosDia.get(dia) ?? []
+              const neto = del.reduce((s, e) => s + Math.round(e.delta * 100), 0) / 100
+              const esHoy = esMesHoy && dia === hoy.getDate()
+              const atencion = del.some((e) => e.estado === 'por-confirmar')
+              const soloPrevisto = del.length > 0 && del.every((e) => e.estado !== 'realizado')
+              const logos = [...del].sort((a, b) => (a.estado === 'realizado') - (b.estado === 'realizado') || Math.abs(b.delta) - Math.abs(a.delta) || b.importe - a.importe)
+              const nombres = del.map((e) => `${e.nombre} ${firma(e.tipo === 'ingreso' ? e.importe : -e.importe)} (${ESTADO_EV[e.estado].texto})`).join(', ')
+              return (
+                <button
+                  key={dia}
+                  type="button"
+                  role="gridcell"
+                  className={`v5-cal-dia ${esHoy ? 'hoy' : ''} ${del.length ? 'con-cobros' : ''} ${soloPrevisto ? 'previsto' : ''} ${diaSel === dia ? 'sel' : ''} ${atencion ? 'atencion' : ''}`}
+                  onClick={() => setDiaSel(diaSel === dia ? null : dia)}
+                  aria-label={`${dia} de ${etiquetaMes(clave, { month: 'long' }).toLowerCase()}${del.length ? `: ${nombres}` : ', sin movimientos'}`}
+                  aria-pressed={diaSel === dia}
+                >
+                  <span className="v5-cal-num">{dia}</span>
+                  {del.length > 0 && (
+                    <span className="v5-cal-logos">
+                      {logos.slice(0, 3).map((e) => (
+                        <span key={e.id} className={`v5-cal-logo ${e.estado !== 'realizado' ? 'previsto' : ''}`}>
+                          <Avatar nombre={e.nombre} tam={22} />
+                        </span>
+                      ))}
+                      {del.length > 3 && <span className="v5-cal-mas">+{del.length - 3}</span>}
                     </span>
-                  ))}
-                  {del.length > 3 && <span className="v5-cal-mas">+{del.length - 3}</span>}
-                </span>
-              )}
-              {gastoDia > 0 && <span className="v5-cal-importe num">{formatearEuros(Math.round(gastoDia))}</span>}
-            </button>
-          )
-        })}
-      </div>
+                  )}
+                  {neto !== 0 && <span className={`v5-cal-importe num ${neto > 0 ? 'v5-positivo' : ''}`}>{neto > 0 ? '+' : '−'}{formatearEuros(Math.round(Math.abs(neto)))}</span>}
+                </button>
+              )
+            })}
+          </div>
+          <ul className="v5-leyenda v5-cal-leyenda">
+            <li><span className="v5-cal-muestra" aria-hidden="true" />Realizado</li>
+            <li><span className="v5-cal-muestra previsto" aria-hidden="true" />Previsto</li>
+          </ul>
+        </>
+      )}
 
-      {seleccion && (
+      {vista === 'calendario' && seleccion && (
         <div className="v5-cal-detalle">
           <h3>
             {diaSel} de {etiquetaMes(clave, { month: 'long' }).toLowerCase()}
           </h3>
           {seleccion.length === 0 ? (
-            <p className="v5-tenue">Ese día no se cobra nada.</p>
+            <p className="v5-tenue">Ese día no hay movimientos.</p>
           ) : (
             <ul className="v5-lista">
-              {seleccion.map((c) => (
-                <li key={c.rec.id}>
-                  <button type="button" className="v5-fila v5-fila-boton" onClick={() => onAbrir(c.rec)}>
-                    <Avatar nombre={c.rec.nombre} tam={34} />
+              {seleccion.map((e) => {
+                const contenido = (
+                  <>
+                    <Avatar nombre={e.nombre} tam={34} />
                     <span className="v5-fila-texto">
-                      <b>{c.rec.nombre}</b>
-                      <small>{c.rec.tipo === 'ingreso' ? 'Ingreso' : 'Cobro'} · toca para ver o confirmar</small>
+                      <b>{e.nombre}</b>
+                      <small>
+                        {TEXTO_CLASE[e.clase]}
+                        {e.aproximado ? ' · importe aproximado' : ''} · saldo {formatearEuros(e.saldoAntes)} → {formatearEuros(e.saldoDespues)}
+                      </small>
                     </span>
                     <span className="v5-fila-dcha">
-                      <b className={`num ${c.rec.tipo === 'ingreso' ? 'v5-positivo' : ''}`}>
-                        {c.rec.tipo === 'ingreso' ? '+' : ''}
-                        {formatearEuros(c.importe)}
-                      </b>
-                      <span className={`v5-insignia ${TEXTO_ESTADO[c.estado].clase}`}>{TEXTO_ESTADO[c.estado].texto}</span>
+                      <b className={`num ${e.delta > 0 ? 'v5-positivo' : ''}`}>{firma(e.tipo === 'ingreso' ? e.importe : -e.importe)}</b>
+                      <span className={`v5-insignia ${ESTADO_EV[e.estado].clase}`}>{ESTADO_EV[e.estado].texto}</span>
                     </span>
-                  </button>
-                </li>
-              ))}
+                  </>
+                )
+                return (
+                  <li key={e.id} className={e.estado !== 'realizado' ? 'previsto' : ''}>
+                    {e.rec ? (
+                      <button type="button" className="v5-fila v5-fila-boton" onClick={() => onAbrir(e.rec)}>
+                        {contenido}
+                      </button>
+                    ) : (
+                      <div className="v5-fila">{contenido}</div>
+                    )}
+                  </li>
+                )
+              })}
             </ul>
           )}
         </div>
