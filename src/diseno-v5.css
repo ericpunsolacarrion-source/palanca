@@ -3855,7 +3855,7 @@
 }
 :root[data-diseno='v5'] .v5-bloque-cab {
   display: grid;
-  grid-template-columns: 16px minmax(160px, auto) 1fr;
+  grid-template-columns: 16px 200px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   width: 100%;
@@ -3891,7 +3891,7 @@
   font-weight: 600;
 }
 :root[data-diseno='v5'] .v5-bloque-cifras.solo-gasto {
-  grid-template-columns: minmax(110px, 1fr) 170px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 :root[data-diseno='v5'] .v5-bloque-anio > .v5-bloque-cab .v5-bloque-titulo {
   font-size: 17px;
@@ -3904,7 +3904,7 @@
 }
 :root[data-diseno='v5'] .v5-bloque-cifras {
   display: grid;
-  grid-template-columns: minmax(110px, 1fr) 150px 150px 140px 170px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.15fr);
   justify-items: end;
   align-items: baseline;
   gap: 4px 18px;
@@ -3967,10 +3967,12 @@
     padding-left: 28px;
   }
 }
-@media (min-width: 760px) and (max-width: 1279px) {
+@media (min-width: 760px) and (max-width: 1439px) {
+  :root[data-diseno='v5'] .v5-bloque-cab {
+    grid-template-columns: 16px 170px minmax(0, 1fr);
+  }
   :root[data-diseno='v5'] .v5-bloque-cifras {
-    grid-template-columns: minmax(90px, 1fr) 130px 130px 120px 150px;
-    gap: 4px 12px;
+    gap: 4px 10px;
     font-size: var(--fs-xs);
   }
 }
