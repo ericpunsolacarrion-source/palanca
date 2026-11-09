@@ -2,7 +2,7 @@
 
 **Todo lo que se ha dejado para más adelante, en un solo sitio**, para poder rematarlo algún día.
 Se mantiene al día en cada sesión: lo terminado se marca ✔ con la fecha, lo nuevo se añade en su bloque.
-Última revisión: 07-11-2026 (periodo financiero).
+Última revisión: 09-11-2026 (auditoría legal).
 
 Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejora.
 
@@ -10,6 +10,26 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 
 
+
+## Legal, privacidad y seguridad (09-11) — auditoría preventiva
+Informe: `docs/legal/AUDITORIA-LEGAL-2026-11.md` · borradores en `docs/legal/borradores/` (no definitivos; ⚖️ abogado).
+- 🟥 **Paso de Eric (ya):** ejecutar `supabase-auditoria-seguridad.sql` (solo lectura) en palanca dev y en producción. Debe salir **sin filas**: si sale «Política abierta», hay tablas legibles por cualquiera.
+- 🟥 **Paso de Eric:** Vercel → Preview apuntando a palanca dev + *Deployment Protection* en las previews.
+- 🟥 Corregir la política de privacidad publicada (Fulcro no es «anónimo»; Anthropic también en Fulcro e importador; datos técnicos y del dispositivo; base jurídica).
+- 🟧 Responder la lista F del informe:
+  - titular, NIF y domicilio; contacto; dominio;
+  - pagos y planes; edad mínima;
+  - analítica, newsletter, IA y Open Banking;
+  - conservación; regiones; DPA; Supabase Auth.
+- 🟧 Analítica sin almacenamiento en el dispositivo (o opt-in) → probablemente evita el banner de cookies.
+- 🟧 Purga de `palanca_*` al cerrar sesión; cabeceras de seguridad (CSP…) en `vercel.json`; aviso «es una IA» en Fulcro y aviso previo en «Importar con capturas».
+- 🟩 Antes de la beta pública:
+  - páginas legales con aceptación versionada;
+  - casillas separadas en el alta;
+  - centro de privacidad;
+  - emails operativos y comerciales separados;
+  - registro de actividades, EIPD (si procede) y procedimiento de brechas.
+- 🟩 Antes de cobrar: doc 05 (información previa, botón «con obligación de pago», confirmación duradera, renovación, cancelación, desistimiento a validar).
 
 ## Saldo del mes en Base (07-11) — hecho
 - ✔ Mejoras de Eric:

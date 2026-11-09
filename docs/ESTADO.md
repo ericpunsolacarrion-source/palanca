@@ -17,6 +17,13 @@
 PWA de finanzas personales (React 19 + Vite + Supabase). Estética oscura,
 premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](ESTADO-PLATAFORMA.md)**.
 
+## ⚖️ Auditoría legal, privacidad y seguridad (2026-11-09)
+- Informe completo en **[legal/AUDITORIA-LEGAL-2026-11.md](legal/AUDITORIA-LEGAL-2026-11.md)**: estado, riesgos, proveedores, borradores, pendientes de Eric, plan y bloqueantes.
+- Urgente:
+  - comprobar RLS con `supabase-auditoria-seguridad.sql` (solo lectura);
+  - separar Preview de producción;
+  - corregir la política publicada.
+
 ## 🗓️ Periodo financiero (2026-11-07, rama de trabajo)
 - «Mi mes empieza el día…» (1–28, por defecto 1 = mes natural), en Tu cuenta con vista previa.
 - Una sola función, `periodoDe`, para todo el motor.
