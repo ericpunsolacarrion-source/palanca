@@ -34,6 +34,45 @@ export async function borrarCuenta() {
   return { ok: true }
 }
 
+// Reenvía el correo de confirmación de una cuenta nueva (si existe y no está
+// confirmada; si no, Supabase no envía nada y la app no lo revela).
+export async function reenviarConfirmacion(email) {
+  return supabase.auth.resend({
+    type: 'signup',
+    email: norm(email),
+    options: { emailRedirectTo: window.location.origin },
+  })
+}
+
+// Errores que Supabase devuelve EN LA DIRECCIÓN al volver de un enlace del
+// correo (confirmar cuenta, recuperar contraseña): #error=…&error_code=…&
+// error_description=…  Antes se ignoraban y la persona veía la pantalla de
+// acceso sin ninguna explicación. Devuelve un texto claro o null.
+export function errorDeEnlaceAuth(ubicacion = globalThis.location) {
+  const partes = new URLSearchParams(`${String(ubicacion?.hash ?? '').replace(/^#/, '')}&${String(ubicacion?.search ?? '').replace(/^\?/, '')}`)
+  const codigo = (partes.get('error_code') || '').toLowerCase()
+  const error = (partes.get('error') || '').toLowerCase()
+  const desc = (partes.get('error_description') || '').toLowerCase()
+  if (!codigo && !error && !desc) return null
+  if (codigo === 'otp_expired' || /expired|invalid/.test(desc))
+    return 'El enlace del correo ha caducado o ya se había usado (algunos correos lo abren solos al revisarlo). Entra con tu email y contraseña; si te pide confirmar el email, pulsa «Reenviar correo de confirmación».'
+  return 'No se ha podido completar el enlace del correo. Entra con tu email y contraseña o pide un correo nuevo.'
+}
+
+// Quita el error de la dirección (para que no vuelva a salir al recargar).
+export function limpiarErrorDeEnlace(ubicacion = globalThis.location, historial = globalThis.history) {
+  try {
+    if (/error/.test(ubicacion?.hash ?? '') || /error_code|error_description/.test(ubicacion?.search ?? '')) {
+      const p = new URLSearchParams(String(ubicacion.search ?? '').replace(/^\?/, ''))
+      for (const k of ['error', 'error_code', 'error_description']) p.delete(k)
+      const q = p.toString()
+      historial?.replaceState(null, '', `${ubicacion.pathname}${q ? `?${q}` : ''}`)
+    }
+  } catch {
+    /* sin historial: no pasa nada */
+  }
+}
+
 export async function recuperarPassword(email) {
   return supabase.auth.resetPasswordForEmail(norm(email), {
     redirectTo: `${window.location.origin}?recuperar=1`,

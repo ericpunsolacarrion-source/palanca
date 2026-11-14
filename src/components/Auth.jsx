@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { emailValido } from '../lib/perfil'
-import { iniciarSesion, recuperarPassword, registrar, traducirErrorAuth } from '../lib/auth'
+import { errorDeEnlaceAuth, iniciarSesion, limpiarErrorDeEnlace, recuperarPassword, reenviarConfirmacion, registrar, traducirErrorAuth } from '../lib/auth'
 import PoliticaPrivacidad from './PoliticaPrivacidad'
 import Icono, { Marca } from './Icono'
 
@@ -53,13 +53,33 @@ export default function Auth() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [cargando, setCargando] = useState(false)
-  const [error, setError] = useState(null)
+  // Si se vuelve de un enlace del correo que ha fallado, se explica (antes no).
+  const [error, setError] = useState(() => errorDeEnlaceAuth())
+  const [pendienteConfirmar, setPendienteConfirmar] = useState(() => Boolean(errorDeEnlaceAuth()))
   const [aviso, setAviso] = useState(null)
   const [consentimiento, setConsentimiento] = useState(false) // NO premarcada
   const [verPrivacidad, setVerPrivacidad] = useState(false)
   const [mostrarPass, setMostrarPass] = useState(false)
 
   const emailOk = emailValido(email)
+  useEffect(() => {
+    if (errorDeEnlaceAuth()) {
+      limpiarErrorDeEnlace()
+      setModo('login')
+    }
+  }, [])
+
+  async function reenviar() {
+    setError(null)
+    setAviso(null)
+    if (!emailOk) return setError('Escribe tu email arriba y vuelve a pulsar «Reenviar correo de confirmación».')
+    setCargando(true)
+    const { error: err } = await reenviarConfirmacion(email)
+    setCargando(false)
+    if (err) return setError(traducirErrorAuth(err.message))
+    // Neutro: no revela si el email tiene cuenta.
+    setAviso('Si hay una cuenta pendiente de confirmar con ese email, te hemos enviado otro correo (revisa también spam y promociones).')
+  }
 
   function cambiarModo(nuevo) {
     setModo(nuevo)
@@ -115,6 +135,7 @@ export default function Auth() {
       if (!data.session) {
         setAviso(avisoNeutro)
         setModo('login')
+        setPendienteConfirmar(true)
       }
       return
     }
@@ -123,7 +144,10 @@ export default function Auth() {
     setCargando(true)
     const { error: err } = await iniciarSesion(email, password)
     setCargando(false)
-    if (err) return setError(traducirErrorAuth(err.message))
+    if (err) {
+      if ((err.message || '').toLowerCase().includes('email not confirmed')) setPendienteConfirmar(true)
+      return setError(traducirErrorAuth(err.message))
+    }
     // La entrada la gestiona App al detectar la sesión.
   }
 
@@ -229,6 +253,11 @@ export default function Auth() {
 
           {error && <p className="error">{error}</p>}
           {aviso && <p className="acceso-aviso">{aviso}</p>}
+          {modo === 'login' && pendienteConfirmar && (
+            <button type="button" className="link acceso-link" onClick={reenviar} disabled={cargando}>
+              Reenviar correo de confirmación
+            </button>
+          )}
 
           <button type="submit" className="acceso-boton" disabled={cargando}>
             {cargando

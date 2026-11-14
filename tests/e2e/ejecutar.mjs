@@ -15,6 +15,7 @@ import { objetivo } from './objetivo.mjs'
 import { periodo } from './periodo.mjs'
 import { cobro } from './cobro.mjs'
 import { saldo } from './saldo.mjs'
+import { acceso } from './acceso.mjs'
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url))
 const salida = path.join(AQUI, 'salida')
@@ -64,6 +65,10 @@ try {
     console.log(`\nSaldo del mes en Base: ${sa.length ? `${sa.length} fallos` : 'todo bien'}`)
     for (const f of sa) console.log('  ✗ ' + f)
     fallos += sa.length
+    const ac = await acceso({ url, navegador })
+    console.log(`\nAcceso (enlaces del correo y confirmación): ${ac.length ? `${ac.length} fallos` : 'todo bien'}`)
+    for (const f of ac) console.log('  ✗ ' + f)
+    fallos += ac.length
   }
   const informe = await auditoria({ url, salida, navegador })
   console.log(`\nAuditoría visual: ${informe.length ? `${informe.length} problemas` : 'sin problemas'}`)
