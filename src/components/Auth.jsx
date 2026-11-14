@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { emailValido } from '../lib/perfil'
-import { errorDeEnlaceAuth, iniciarSesion, limpiarErrorDeEnlace, recuperarPassword, reenviarConfirmacion, registrar, traducirErrorAuth } from '../lib/auth'
+import { errorDeEnlaceAuth, iniciarSesion, limpiarErrorDeEnlace, mensajeErrorAuth, recuperarPassword, reenviarConfirmacion, registrar } from '../lib/auth'
 import PoliticaPrivacidad from './PoliticaPrivacidad'
 import Icono, { Marca } from './Icono'
 
@@ -76,7 +76,7 @@ export default function Auth() {
     setCargando(true)
     const { error: err } = await reenviarConfirmacion(email)
     setCargando(false)
-    if (err) return setError(traducirErrorAuth(err.message))
+    if (err) return setError(mensajeErrorAuth(err))
     // Neutro: no revela si el email tiene cuenta.
     setAviso('Si hay una cuenta pendiente de confirmar con ese email, te hemos enviado otro correo (revisa también spam y promociones).')
   }
@@ -100,7 +100,7 @@ export default function Auth() {
       setCargando(true)
       const { error: err } = await recuperarPassword(email)
       setCargando(false)
-      if (err) return setError(traducirErrorAuth(err.message))
+      if (err) return setError(mensajeErrorAuth(err))
       setAviso('Si ese email tiene cuenta, te hemos enviado un enlace para restablecer la contraseña.')
       return
     }
@@ -128,7 +128,7 @@ export default function Auth() {
           setModo('login')
           return
         }
-        return setError(traducirErrorAuth(err.message))
+        return setError(mensajeErrorAuth(err))
       }
       // Con confirmación de email no hay sesión aún → mismo mensaje neutro. Si el
       // proyecto no exige confirmar, hay sesión y App entra solo (onAuthStateChange).
@@ -146,7 +146,7 @@ export default function Auth() {
     setCargando(false)
     if (err) {
       if ((err.message || '').toLowerCase().includes('email not confirmed')) setPendienteConfirmar(true)
-      return setError(traducirErrorAuth(err.message))
+      return setError(mensajeErrorAuth(err))
     }
     // La entrada la gestiona App al detectar la sesión.
   }

@@ -79,6 +79,14 @@ export async function recuperarPassword(email) {
   })
 }
 
+// Error de Supabase (objeto) → texto claro. Los fallos de red llegan como
+// AuthRetryableFetchError, a veces con el mensaje vacío o «{}».
+export function mensajeErrorAuth(err) {
+  if (!err) return null
+  if (err.name === 'AuthRetryableFetchError' || err.status === 0) return traducirErrorAuth('fetch failed')
+  return traducirErrorAuth(err.message)
+}
+
 // Traduce los mensajes de error de Supabase a algo claro en español.
 export function traducirErrorAuth(msg) {
   const m = String(msg || '').toLowerCase()
@@ -92,6 +100,10 @@ export function traducirErrorAuth(msg) {
     return 'Confirma tu email antes de entrar (revisa tu correo, también spam).'
   if (m.includes('unable to validate email') || m.includes('invalid email'))
     return 'Introduce un email válido.'
+  // Sin conexión con el servidor (sin internet, o Supabase caído o pausado):
+  // antes salía «Revisa los datos», que confundía.
+  if (m.includes('failed to fetch') || m.includes('networkerror') || m.includes('network request failed') || m.includes('load failed') || m.includes('fetch failed') || m.includes('retryable'))
+    return 'No podemos conectar con Palanca ahora mismo. No es un problema de tus datos: inténtalo de nuevo en unos minutos.'
   if (m.includes('rate limit') || m.includes('too many'))
     return 'Demasiados intentos. Espera un momento e inténtalo de nuevo.'
   return 'No se ha podido completar. Revisa los datos e inténtalo de nuevo.'

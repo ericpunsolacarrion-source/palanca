@@ -40,6 +40,19 @@ export async function acceso({ url, navegador = {} }) {
       ok((await p.getByRole('button', { name: 'Reenviar correo de confirmación' }).count()) === 1, 'Y ofrece reenviar el correo')
       await p.close()
     }
+    {
+      // Servidor caído o pausado: decirlo, no «revisa los datos».
+      const p = await b.newPage({ viewport: { width: 390, height: 844 } })
+      await p.addInitScript(() => { localStorage.setItem('mock_sin_sesion', '1'); localStorage.setItem('mock_sin_red', '1'); localStorage.setItem('palanca_ya_entro', '1') })
+      await p.goto(url, { waitUntil: 'networkidle' })
+      await p.waitForTimeout(600)
+      await p.locator('input[type="email"]').fill('amigo@ejemplo.com')
+      await p.locator('input[type="password"]').fill('secreto123')
+      await p.locator('button.acceso-boton').click()
+      await p.waitForTimeout(400)
+      ok(/No podemos conectar con Palanca/.test(await p.locator('.error').innerText().catch(() => '')), 'Sin conexión con el servidor: lo explica')
+      await p.close()
+    }
   } catch (e) {
     fallos.push('Acceso: ' + e.message.split('\n')[0])
   } finally {

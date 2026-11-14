@@ -279,7 +279,7 @@ export const supabase = {
     onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
     signOut: async () => ({}),
     signUp: async () => ({ data: { user: { id: UID }, session: null }, error: null }),
-    signInWithPassword: async () => ({ data: {}, error: { message: LS('mock_sin_confirmar') ? 'Email not confirmed' : 'Invalid login credentials' } }),
+    signInWithPassword: async () => ({ data: {}, error: LS('mock_sin_red') ? { name: 'AuthRetryableFetchError', message: '{}', status: 0 } : { message: LS('mock_sin_confirmar') ? 'Email not confirmed' : 'Invalid login credentials' } }),
     resetPasswordForEmail: async () => ({ error: null }),
     resend: async () => ({ data: {}, error: null }),
   },

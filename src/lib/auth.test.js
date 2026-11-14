@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 vi.mock('./supabaseClient', () => ({ supabase: {} }))
-const { errorDeEnlaceAuth, limpiarErrorDeEnlace, traducirErrorAuth } = await import('./auth')
+const { errorDeEnlaceAuth, limpiarErrorDeEnlace, mensajeErrorAuth, traducirErrorAuth } = await import('./auth')
 
 describe('vuelta de un enlace del correo con error', () => {
   it('enlace caducado o ya usado → explicación clara', () => {
@@ -18,6 +18,14 @@ describe('vuelta de un enlace del correo con error', () => {
     const replaceState = vi.fn()
     limpiarErrorDeEnlace({ hash: '#error=access_denied', search: '?diseno=v5&error_code=otp_expired', pathname: '/' }, { replaceState })
     expect(replaceState).toHaveBeenCalledWith(null, '', '/?diseno=v5')
+  })
+  it('sin conexión con el servidor → lo dice (no «revisa los datos»)', () => {
+    for (const m of ['Failed to fetch', 'NetworkError when attempting to fetch resource.', 'Load failed', 'AuthRetryableFetchError'])
+      expect(traducirErrorAuth(m)).toMatch(/No podemos conectar con Palanca/)
+  })
+  it('error de red de Supabase con mensaje vacío → también', () => {
+    expect(mensajeErrorAuth({ name: 'AuthRetryableFetchError', message: '{}', status: 0 })).toMatch(/No podemos conectar/)
+    expect(mensajeErrorAuth({ name: 'AuthApiError', message: 'Invalid login credentials', status: 400 })).toMatch(/incorrectos/)
   })
   it('email sin confirmar → lo dice', () => {
     expect(traducirErrorAuth('Email not confirmed')).toMatch(/Confirma tu email/)
