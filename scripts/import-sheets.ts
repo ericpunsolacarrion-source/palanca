@@ -431,6 +431,38 @@ async function importar(soloComparar: boolean) {
   await sb.auth.signOut()
 }
 
+// Deshace una importación: borra SOLO lo creado entre DESDE y HASTA (created_at,
+// ISO) en tu cuenta. Se para si el número de movimientos no es ESPERADOS.
+async function deshacer() {
+  const { sb, uid } = await sesion()
+  const desde = process.env.DESDE, hasta = process.env.HASTA, esperados = Number(process.env.ESPERADOS)
+  if (!desde || !hasta || !esperados) throw new Error('Faltan DESDE, HASTA y ESPERADOS')
+  const { data: movs, error } = await sb.from('movimientos').select('id').eq('usuario_id', uid).gte('created_at', desde).lte('created_at', hasta)
+  if (error) throw error
+  if (movs.length !== esperados) throw new Error(`Hay ${movs.length} movimientos en esa franja y se esperaban ${esperados}. No se borra nada.`)
+  for (let i = 0; i < movs.length; i += 200) {
+    const { error: e } = await sb.from('movimientos').delete().in('id', movs.slice(i, i + 200).map((m: any) => m.id))
+    if (e) throw e
+  }
+  console.log(`Movimientos borrados: ${movs.length}`)
+  for (const t of ['categorias', 'fuentes']) {
+    const { data: nuevas, error: e } = await sb.from(t).select('id, nombre').eq('usuario_id', uid).gte('created_at', desde).lte('created_at', hasta)
+    if (e) throw e
+    let n = 0
+    for (const x of nuevas) {
+      const col = t === 'categorias' ? 'categoria_id' : 'fuente_id'
+      const { count } = await sb.from('movimientos').select('id', { count: 'exact', head: true }).eq(col, x.id)
+      if ((count ?? 0) > 0) { console.log(`  ${t} «${x.nombre}» se conserva: la usan ${count} movimientos`); continue }
+      const { error: e2 } = await sb.from(t).delete().eq('id', x.id)
+      if (e2) throw e2
+      n++
+    }
+    console.log(`${t} borradas: ${n}`)
+  }
+  console.log(`Quedan ${(await leerTodo(sb, uid)).length} movimientos en tu cuenta.`)
+  await sb.auth.signOut()
+}
+
 async function pedirEnlace() {
   const sb = await cliente()
   const email = process.env.EMAIL
@@ -441,5 +473,5 @@ async function pedirEnlace() {
 }
 
 const arg = process.argv.slice(2)
-const accion = arg.includes('--importar') ? importar(false) : arg.includes('--comparar') ? importar(true) : arg.includes('--pedir-enlace') ? pedirEnlace() : Promise.resolve(informeSeco())
+const accion = arg.includes('--deshacer') ? deshacer() : arg.includes('--importar') ? importar(false) : arg.includes('--comparar') ? importar(true) : arg.includes('--pedir-enlace') ? pedirEnlace() : Promise.resolve(informeSeco())
 accion.catch((e) => { console.error('✗', e.message ?? e); process.exit(1) })
