@@ -37,7 +37,8 @@ const DECISION = {
   // «Ajuste nómina» negativo: se resta de la nómina del mismo día ('netear') o se deja fuera ('dudosa').
   ajusteNegativo: 'dudosa' as 'netear' | 'dudosa',
   // Aportaciones: 'finanzas' (Inversión O:R, netas) o 'road60k' (APORTACIONES, con pagos de tarjeta en negativo).
-  aportaciones: 'finanzas' as 'finanzas' | 'road60k',
+  aportaciones: 'libro' as 'finanzas' | 'road60k' | 'libro',
+  // 'libro' = extracto de Trade (Inversión W:AB): compras = invertido; aportaciones = traspaso neutro.
   // Ingresos: la nota es «Fuente · Concepto» (si no, solo Concepto).
   notaConFuente: true,
 }
@@ -189,6 +190,28 @@ function leerIngresos(anio: number, movs: Mov[], fuera: Fuera[], dudas: Fuera[])
 }
 
 function leerAportaciones(movs: Mov[], fuera: Fuera[]) {
+  if (DECISION.aportaciones === 'libro') {
+    const filas = leerCsv(join(DATOS, 'finanzas', 'inversion-extracto.csv'))
+    for (let i = cabecera(filas, 'Fecha') + 1; i < filas.length; i++) {
+      const [fTxt, tipo = '', plataforma = '', activo = '', impTxt, nota = ''] = filas[i]
+      const fecha = fechaEs(fTxt)
+      const c = centimosEs(impTxt)
+      const origen = `Extracto Trade · fila ${i + 1}`
+      const texto = `${fTxt} · ${tipo} · ${activo} · ${impTxt}`
+      if (!fecha || c === null || c <= 0) { if (filas[i].some((x) => x.trim())) fuera.push({ origen, motivo: 'Fila sin fecha o importe', texto }); continue }
+      const base = { fecha, centimos: c, origen, mesHoja: fecha.slice(0, 7), fuente: plataforma.trim() || 'Trade Republic' }
+      const detalle = (a: string) => [a, nota.trim()].filter(Boolean).join(' · ')
+      if (tipo === 'Compra') movs.push({ ...base, tipo: 'gasto', categoria: 'Inversion', nota: detalle(`Compra ${activo}`) })
+      else if (tipo === 'Venta') movs.push({ ...base, tipo: 'ingreso', categoria: 'Inversion', nota: detalle(`Venta ${activo}`) })
+      else if (tipo === 'Aportación') movs.push({ ...base, tipo: 'gasto', categoria: 'Ahorro', nota: detalle('Aportación a Trade Republic'), fuente: undefined })
+      else if (tipo === 'Retirada') movs.push({ ...base, tipo: 'ingreso', categoria: 'Desde ahorro', nota: detalle('Retirada de Trade Republic'), fuente: undefined })
+      else if (tipo === 'Interés') movs.push({ ...base, tipo: 'ingreso', categoria: 'Intereses', nota: 'Intereses Trade Republic', fuente: undefined })
+      else if (tipo === 'Dividendo') movs.push({ ...base, tipo: 'ingreso', categoria: 'Dividendos', nota: `Dividendo ${activo}`, fuente: undefined })
+      else if (tipo === 'Previsión') fuera.push({ origen, motivo: 'Previsión de aportación (futuro)', texto })
+      else fuera.push({ origen, motivo: 'Gasto con la tarjeta de Trade: lo cubre el ajuste de saldo (puede estar ya en tus gastos)', texto })
+    }
+    return
+  }
   if (DECISION.aportaciones === 'finanzas') {
     const filas = leerCsv(join(DATOS, 'finanzas', 'inversion-aportaciones.csv'))
     for (let i = cabecera(filas, 'Fecha') + 1; i < filas.length; i++) {
@@ -226,8 +249,13 @@ function totalesHoja() {
     const r = join(DATOS, 'finanzas', `ingresos-${anio}.csv`)
     if (existsSync(r)) { const f = leerCsv(r); for (let i = cabecera(f, 'Fecha') + 1; i < f.length; i++) if (f[i][8] === 'Real') sumar(mesEs(f[i][1]), 'i', centimosEs(f[i][7])) }
   }
-  const a = leerCsv(join(DATOS, 'finanzas', 'inversion-aportaciones.csv'))
-  for (let i = cabecera(a, 'Fecha') + 1; i < a.length; i++) { const f = fechaEs(a[i][0]); sumar(f ? f.slice(0, 7) : null, 'inv', centimosEs(a[i][2])) }
+  if (DECISION.aportaciones === 'libro') {
+    const a = leerCsv(join(DATOS, 'finanzas', 'inversion-extracto.csv'))
+    for (let i = cabecera(a, 'Fecha') + 1; i < a.length; i++) { const f = fechaEs(a[i][0]); const c = centimosEs(a[i][4]); if (c !== null && (a[i][1] === 'Compra' || a[i][1] === 'Venta')) sumar(f ? f.slice(0, 7) : null, 'inv', a[i][1] === 'Compra' ? c : -c) }
+  } else {
+    const a = leerCsv(join(DATOS, 'finanzas', 'inversion-aportaciones.csv'))
+    for (let i = cabecera(a, 'Fecha') + 1; i < a.length; i++) { const f = fechaEs(a[i][0]); sumar(f ? f.slice(0, 7) : null, 'inv', centimosEs(a[i][2])) }
+  }
   return t
 }
 
@@ -237,6 +265,7 @@ function totalesPalanca(lista: Pick<Mov, 'tipo' | 'fecha' | 'centimos' | 'catego
   for (const m of lista) {
     const mes = m.fecha.slice(0, 7)
     t[mes] ??= { g: 0, i: 0, inv: 0 }
+    if (m.categoria === 'Ahorro' || m.categoria === 'Desde ahorro' || m.categoria === 'Ajuste') continue
     if (m.categoria === 'Inversion') t[mes].inv += m.tipo === 'gasto' ? m.centimos : -m.centimos
     else if (m.tipo === 'gasto') t[mes].g += m.centimos
     else t[mes].i += m.centimos
@@ -557,7 +586,7 @@ async function ajustarSaldo() {
   const saldo = centimosEs(String(process.env.SALDO ?? '').replace('.', ','))
   if (saldo === null) throw new Error('Falta SALDO (p. ej. 75,29)')
   const hoy = new Date().toISOString().slice(0, 10)
-  const todos = await leerTodo(sb, uid)
+  const todos = (await leerTodo(sb, uid)).sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : (a.tipo === 'ingreso' ? 1 : 0) - (b.tipo === 'ingreso' ? 1 : 0)))
   let liquidez = 0, invertido = 0
   for (const m of todos) {
     if (m.fecha > hoy) continue
@@ -573,9 +602,28 @@ async function ajustarSaldo() {
   const tipo = dif > 0 ? 'ingreso' : 'gasto'
   let { data: cat } = await sb.from('categorias').select('id').eq('usuario_id', uid).eq('tipo', tipo).eq('nombre', 'Ajuste').maybeSingle()
   if (!cat) ({ data: cat } = await sb.from('categorias').insert({ usuario_id: uid, tipo, nombre: 'Ajuste' }).select('id').single())
-  const { error } = await sb.from('movimientos').insert({ usuario_id: uid, tipo, categoria_id: cat.id, fuente_id: null, importe: Math.abs(dif) / 100, importe_centimos: Math.abs(dif), fecha: hoy, es_fijo: false, nota: `Ajuste de saldo: el banco tiene ${euros(saldo)}` })
+  const { error } = await sb.from('movimientos').insert({ usuario_id: uid, tipo, categoria_id: cat.id, fuente_id: null, importe: Math.abs(dif) / 100, importe_centimos: Math.abs(dif), fecha: hoy, es_fijo: false, nota: `Ajuste de saldo: disponible ${euros(saldo)} (${process.env.NOTA_SALDO ?? "banco"})` })
   if (error) throw error
   console.log(`Ajuste (${tipo}) de ${euros(Math.abs(dif))} → banco ${euros(saldo)} · invertido ${euros(invertido)} · patrimonio ${euros(saldo + invertido)}`)
+}
+
+// Cambia las aportaciones (Inversion = transferencias) por el libro del bróker
+// (Inversion = compras). Borra las ESPERADOS filas «Inversion» y los ajustes de
+// saldo de hoy, importa (idempotente) y vuelve a cuadrar el saldo con SALDO.
+async function pasarALibro() {
+  const s = await sesion()
+  const { sb, uid } = s
+  const { data: cats } = await sb.from('categorias').select('id, nombre').eq('usuario_id', uid).in('nombre', ['Inversion', 'Ajuste'])
+  const ids = (n: string) => (cats ?? []).filter((c: any) => c.nombre === n).map((c: any) => c.id)
+  const { data: inv, error } = await sb.from('movimientos').select('id').eq('usuario_id', uid).in('categoria_id', ids('Inversion'))
+  if (error) throw error
+  if (inv.length !== Number(process.env.ESPERADOS)) throw new Error(`Hay ${inv.length} movimientos de inversión y se esperaban ${process.env.ESPERADOS}. No se toca nada.`)
+  const { data: aj } = await sb.from('movimientos').select('id').eq('usuario_id', uid).in('categoria_id', ids('Ajuste')).like('nota', 'Ajuste de saldo%')
+  const borrar = [...inv, ...(aj ?? [])].map((m: any) => m.id)
+  for (let i = 0; i < borrar.length; i += 200) { const { error: e } = await sb.from('movimientos').delete().in('id', borrar.slice(i, i + 200)); if (e) throw e }
+  console.log(`Borradas ${inv.length} aportaciones antiguas y ${(aj ?? []).length} ajuste(s) de saldo`)
+  await importar(false, s)
+  await ajustarSaldo()
 }
 
 async function pedirEnlace() {
@@ -588,5 +636,5 @@ async function pedirEnlace() {
 }
 
 const arg = process.argv.slice(2)
-const accion = arg.includes('--ajustar-saldo') ? ajustarSaldo() : arg.includes('--borrar-extra') ? borrarExtra() : arg.includes('--listar') ? listar() : arg.includes('--reemplazar') ? reemplazar() : arg.includes('--deshacer') ? deshacer() : arg.includes('--importar') ? importar(false) : arg.includes('--comparar') ? importar(true) : arg.includes('--pedir-enlace') ? pedirEnlace() : Promise.resolve(informeSeco())
+const accion = arg.includes('--libro') ? pasarALibro() : arg.includes('--ajustar-saldo') ? ajustarSaldo() : arg.includes('--borrar-extra') ? borrarExtra() : arg.includes('--listar') ? listar() : arg.includes('--reemplazar') ? reemplazar() : arg.includes('--deshacer') ? deshacer() : arg.includes('--importar') ? importar(false) : arg.includes('--comparar') ? importar(true) : arg.includes('--pedir-enlace') ? pedirEnlace() : Promise.resolve(informeSeco())
 accion.catch((e) => { console.error('✗', e.message ?? e); process.exit(1) })

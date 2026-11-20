@@ -25,6 +25,10 @@ Pendiente de Eric:
 - Hecho (20-11): borrados fijos, presupuesto, objetivos, planificaciones y
   categorías/plataformas sin uso (eran de prueba). Quedan solo los datos de las hojas.
 - Los movimientos antiguos eran inventados: copia eliminada.
+- Inversión = libro del bróker (compras «Inversion», ventas = retirada,
+  aportaciones = traspaso «Ahorro», intereses/dividendos = ingresos). Saldo
+  cuadrado con un ajuste (banco + efectivo en Trade). Gastos con la tarjeta de
+  Trade fuera (los cubre el ajuste).
 
 ## Legal, privacidad y seguridad (09-11) — auditoría preventiva
 Informe: `docs/legal/AUDITORIA-LEGAL-2026-11.md` · borradores en `docs/legal/borradores/` (no definitivos; ⚖️ abogado).
