@@ -22,9 +22,9 @@ Pendiente de Eric:
   «No sumado», previstos, aportaciones netas, categorías). Cambiar una decisión
   = `--deshacer` de la franja y volver a importar.
 - ¿Borrar la cuenta de prueba `epcericpunsolacarrion@…` (correo inexistente)?
-- ¿Borrar las categorías antiguas que ya no usa ningún movimiento?
-- La copia de los movimientos antiguos solo vive en el contenedor: se pierde
-  cuando se cierre.
+- Hecho (20-11): borrados fijos, presupuesto, objetivos, planificaciones y
+  categorías/plataformas sin uso (eran de prueba). Quedan solo los datos de las hojas.
+- Los movimientos antiguos eran inventados: copia eliminada.
 
 ## Legal, privacidad y seguridad (09-11) — auditoría preventiva
 Informe: `docs/legal/AUDITORIA-LEGAL-2026-11.md` · borradores en `docs/legal/borradores/` (no definitivos; ⚖️ abogado).

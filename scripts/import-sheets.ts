@@ -527,6 +527,28 @@ async function listar() {
   console.log(`\ncategorías sin ningún movimiento: ${sinUso.length}\n  ${sinUso.join('\n  ')}`)
 }
 
+// Borra lo que no viene de las hojas: fijos (y sus confirmaciones), presupuesto,
+// objetivos, planificaciones, y plataformas y categorías que no usa ningún movimiento.
+async function borrarExtra() {
+  const { sb, uid } = await sesion()
+  for (const t of ['recurrentes_confirmaciones', 'recurrentes', 'presupuestos', 'objetivos_ahorro', 'planificaciones']) {
+    const { data, error } = await sb.from(t).delete().eq('usuario_id', uid).select('usuario_id')
+    console.log(`${t}: ${error ? 'ERROR ' + error.message : `${data.length} borradas`}`)
+  }
+  for (const [t, col] of [['fuentes', 'fuente_id'], ['categorias', 'categoria_id']] as const) {
+    const { data } = await sb.from(t).select('id, nombre').eq('usuario_id', uid)
+    const borradas: string[] = []
+    for (const x of data ?? []) {
+      const { count } = await sb.from('movimientos').select('id', { count: 'exact', head: true }).eq(col, x.id)
+      if (count) continue
+      const { error } = await sb.from(t).delete().eq('id', x.id)
+      borradas.push(error ? `${x.nombre} (ERROR ${error.message})` : x.nombre)
+    }
+    console.log(`${t} sin uso borradas: ${borradas.join(', ') || 'ninguna'}`)
+  }
+  console.log(`Movimientos en tu cuenta: ${(await leerTodo(sb, uid)).length}`)
+}
+
 async function pedirEnlace() {
   const sb = await cliente()
   const email = process.env.EMAIL
@@ -537,5 +559,5 @@ async function pedirEnlace() {
 }
 
 const arg = process.argv.slice(2)
-const accion = arg.includes('--listar') ? listar() : arg.includes('--reemplazar') ? reemplazar() : arg.includes('--deshacer') ? deshacer() : arg.includes('--importar') ? importar(false) : arg.includes('--comparar') ? importar(true) : arg.includes('--pedir-enlace') ? pedirEnlace() : Promise.resolve(informeSeco())
+const accion = arg.includes('--borrar-extra') ? borrarExtra() : arg.includes('--listar') ? listar() : arg.includes('--reemplazar') ? reemplazar() : arg.includes('--deshacer') ? deshacer() : arg.includes('--importar') ? importar(false) : arg.includes('--comparar') ? importar(true) : arg.includes('--pedir-enlace') ? pedirEnlace() : Promise.resolve(informeSeco())
 accion.catch((e) => { console.error('✗', e.message ?? e); process.exit(1) })
