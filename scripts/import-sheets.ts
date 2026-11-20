@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url'
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DATOS = join(RAIZ, 'data', 'import')
-const USUARIO_ESPERADO = '1c3062fc-b31c-46c1-abf9-a83df2bd3e3a'
+// La cuenta destino se identifica por su correo (EMAIL); el user_id sale de la sesión.
 
 // ---------------------------------------------------------------------------
 // Decisiones pendientes de Eric (valores provisionales para la prueba en seco)
@@ -291,7 +291,7 @@ function informeSeco() {
   const md = `# Prueba en seco · importación de tus hojas a Palanca
 
 > Generado ${new Date().toISOString().slice(0, 16).replace('T', ' ')} · NO se ha escrito nada en Supabase.
-> Cuenta destino: \`${USUARIO_ESPERADO}\`.
+> Cuenta destino: la del correo EMAIL (se comprueba al iniciar sesión).
 
 ## Lo que se importaría
 
@@ -347,7 +347,9 @@ async function sesion() {
   if (!hash) throw new Error('Falta ENLACE (el enlace del correo de acceso, sin abrirlo)')
   const { data, error } = await sb.auth.verifyOtp({ token_hash: decodeURIComponent(hash), type: 'email' })
   if (error || !data.user) throw new Error('No se pudo iniciar sesión con el enlace: ' + (error?.message ?? 'sin usuario'))
-  if (data.user.id !== USUARIO_ESPERADO) throw new Error(`La sesión es de otro usuario (${data.user.id}). No se toca nada.`)
+  const email = (process.env.EMAIL ?? '').trim().toLowerCase()
+  if (!email || (data.user.email ?? '').toLowerCase() !== email) throw new Error(`La sesión es de otra cuenta (${data.user.email}). No se toca nada.`)
+  console.log(`Sesión: ${data.user.email} · user_id ${data.user.id}`)
   return { sb, uid: data.user.id }
 }
 
