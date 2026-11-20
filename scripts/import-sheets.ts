@@ -549,6 +549,35 @@ async function borrarExtra() {
   console.log(`Movimientos en tu cuenta: ${(await leerTodo(sb, uid)).length}`)
 }
 
+// Cuadra la liquidez con el saldo real del banco (SALDO, en euros) con un
+// movimiento de categoría «Ajuste» hoy (igual que crearAjuste de la app): no es
+// gasto ni ingreso, solo corrige el dinero disponible. Misma regla que bolsas().
+async function ajustarSaldo() {
+  const { sb, uid } = await sesion()
+  const saldo = centimosEs(String(process.env.SALDO ?? '').replace('.', ','))
+  if (saldo === null) throw new Error('Falta SALDO (p. ej. 75,29)')
+  const hoy = new Date().toISOString().slice(0, 10)
+  const todos = await leerTodo(sb, uid)
+  let liquidez = 0, invertido = 0
+  for (const m of todos) {
+    if (m.fecha > hoy) continue
+    const c = m.centimos
+    if (m.categoria === 'Ajuste') liquidez += m.tipo === 'ingreso' ? c : -c
+    else if (m.categoria === 'Inversion') { if (m.tipo === 'gasto') { invertido += c; liquidez -= c } else { liquidez += c; invertido -= Math.min(c, invertido) } }
+    else if (m.categoria === 'Ahorro' || m.categoria === 'Desde ahorro') continue
+    else liquidez += m.tipo === 'ingreso' ? c : -c
+  }
+  console.log(`Antes: banco ${euros(liquidez)} · invertido ${euros(invertido)} · patrimonio ${euros(liquidez + invertido)}`)
+  const dif = saldo - liquidez
+  if (dif === 0) { console.log('Ya cuadra.'); return }
+  const tipo = dif > 0 ? 'ingreso' : 'gasto'
+  let { data: cat } = await sb.from('categorias').select('id').eq('usuario_id', uid).eq('tipo', tipo).eq('nombre', 'Ajuste').maybeSingle()
+  if (!cat) ({ data: cat } = await sb.from('categorias').insert({ usuario_id: uid, tipo, nombre: 'Ajuste' }).select('id').single())
+  const { error } = await sb.from('movimientos').insert({ usuario_id: uid, tipo, categoria_id: cat.id, fuente_id: null, importe: Math.abs(dif) / 100, importe_centimos: Math.abs(dif), fecha: hoy, es_fijo: false, nota: `Ajuste de saldo: el banco tiene ${euros(saldo)}` })
+  if (error) throw error
+  console.log(`Ajuste (${tipo}) de ${euros(Math.abs(dif))} → banco ${euros(saldo)} · invertido ${euros(invertido)} · patrimonio ${euros(saldo + invertido)}`)
+}
+
 async function pedirEnlace() {
   const sb = await cliente()
   const email = process.env.EMAIL
@@ -559,5 +588,5 @@ async function pedirEnlace() {
 }
 
 const arg = process.argv.slice(2)
-const accion = arg.includes('--borrar-extra') ? borrarExtra() : arg.includes('--listar') ? listar() : arg.includes('--reemplazar') ? reemplazar() : arg.includes('--deshacer') ? deshacer() : arg.includes('--importar') ? importar(false) : arg.includes('--comparar') ? importar(true) : arg.includes('--pedir-enlace') ? pedirEnlace() : Promise.resolve(informeSeco())
+const accion = arg.includes('--ajustar-saldo') ? ajustarSaldo() : arg.includes('--borrar-extra') ? borrarExtra() : arg.includes('--listar') ? listar() : arg.includes('--reemplazar') ? reemplazar() : arg.includes('--deshacer') ? deshacer() : arg.includes('--importar') ? importar(false) : arg.includes('--comparar') ? importar(true) : arg.includes('--pedir-enlace') ? pedirEnlace() : Promise.resolve(informeSeco())
 accion.catch((e) => { console.error('✗', e.message ?? e); process.exit(1) })
