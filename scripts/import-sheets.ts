@@ -342,6 +342,15 @@ async function cliente() {
 
 async function sesion() {
   const sb = await cliente()
+  const guardada = process.env.SESION_FILE
+  if (guardada && existsSync(guardada) && !process.env.ENLACE) {
+    const t = JSON.parse(readFileSync(guardada, 'utf8'))
+    const { data, error } = await sb.auth.setSession(t)
+    if (error || !data.user) throw new Error('La sesión guardada ya no vale: pide otro enlace')
+    if ((data.user.email ?? '').toLowerCase() !== (process.env.EMAIL ?? '').toLowerCase()) throw new Error('Sesión de otra cuenta')
+    if (data.session) writeFileSync(guardada, JSON.stringify({ access_token: data.session.access_token, refresh_token: data.session.refresh_token }))
+    return { sb, uid: data.user.id }
+  }
   const enlace = process.env.ENLACE ?? ''
   if (!/^https:\/\/[a-z0-9]+\.supabase\.co\/auth\/v1\/verify\?/.test(enlace)) throw new Error('Falta ENLACE (el enlace del correo de acceso, sin abrirlo)')
   // Igual que el navegador al pulsar el enlace: Supabase responde con una
@@ -355,6 +364,7 @@ async function sesion() {
   const email = (process.env.EMAIL ?? '').trim().toLowerCase()
   if (!email || (data.user.email ?? '').toLowerCase() !== email) throw new Error(`La sesión es de otra cuenta (${data.user.email}). No se toca nada.`)
   console.log(`Sesión: ${data.user.email} · user_id ${data.user.id}`)
+  if (process.env.SESION_FILE && data.session) writeFileSync(process.env.SESION_FILE, JSON.stringify({ access_token: data.session.access_token, refresh_token: data.session.refresh_token }))
   return { sb, uid: data.user.id }
 }
 
@@ -428,7 +438,7 @@ async function importar(soloComparar: boolean, dada?: { sb: any; uid: string }) 
   const md = `# Comparación tras importar\n\n> ${new Date().toISOString().slice(0, 16).replace('T', ' ')} · ${enBD.length} movimientos en tu cuenta.\n\n${tablaComparacion(totalesHoja(), totalesPalanca(enBD), 'Palanca')}\n`
   writeFileSync(join(DATOS, 'COMPARACION.md'), md)
   console.log('Comparación: data/import/COMPARACION.md')
-  await sb.auth.signOut()
+  if (!process.env.SESION_FILE) await sb.auth.signOut()
 }
 
 // Deshace una importación: borra SOLO lo creado entre DESDE y HASTA (created_at,
@@ -469,7 +479,7 @@ async function deshacer() {
   const sobran = [...mios.values()].reduce((a, b) => a + b, 0)
   writeFileSync(join(DATOS, 'DIFERENCIAS.md'), `# Hojas vs tu cuenta\n\nEn tus hojas y NO en tu cuenta (misma fecha+importe+nota): ${faltan.length}\nEn tu cuenta y NO en tus hojas: ${sobran}\n\n${faltan.map((m) => `- ${m.fecha} · ${m.tipo} · ${m.categoria} · ${m.nota} · ${euros(m.centimos)}`).join('\n')}\n`)
   console.log(`Hojas que no están en tu cuenta: ${faltan.length} · en tu cuenta y no en las hojas: ${sobran}`)
-  await sb.auth.signOut()
+  if (!process.env.SESION_FILE) await sb.auth.signOut()
 }
 
 // Las hojas mandan: copia de seguridad de TODOS tus movimientos (data/import/,
@@ -499,6 +509,24 @@ async function reemplazar() {
   await importar(false, s)
 }
 
+// Solo lectura: qué más hay en tu cuenta además de los movimientos.
+async function listar() {
+  const { sb, uid } = await sesion()
+  for (const [t, cols] of [['recurrentes', '*'], ['presupuestos', '*'], ['objetivos_ahorro', '*'], ['planificaciones', '*'], ['fuentes', 'id, nombre']] as const) {
+    const { data, error } = await sb.from(t).select(cols).eq('usuario_id', uid)
+    if (error) { console.log(`${t}: (${error.message})`); continue }
+    console.log(`\n${t}: ${data.length}`)
+    for (const r of data) console.log('  ' + JSON.stringify(Object.fromEntries(Object.entries(r).filter(([k]) => !['usuario_id', 'created_at', 'updated_at'].includes(k)))).slice(0, 220))
+  }
+  const { data: cats } = await sb.from('categorias').select('id, tipo, nombre').eq('usuario_id', uid)
+  const sinUso: string[] = []
+  for (const c of cats ?? []) {
+    const { count } = await sb.from('movimientos').select('id', { count: 'exact', head: true }).eq('categoria_id', c.id)
+    if (!count) sinUso.push(`${c.tipo}: ${c.nombre}`)
+  }
+  console.log(`\ncategorías sin ningún movimiento: ${sinUso.length}\n  ${sinUso.join('\n  ')}`)
+}
+
 async function pedirEnlace() {
   const sb = await cliente()
   const email = process.env.EMAIL
@@ -509,5 +537,5 @@ async function pedirEnlace() {
 }
 
 const arg = process.argv.slice(2)
-const accion = arg.includes('--reemplazar') ? reemplazar() : arg.includes('--deshacer') ? deshacer() : arg.includes('--importar') ? importar(false) : arg.includes('--comparar') ? importar(true) : arg.includes('--pedir-enlace') ? pedirEnlace() : Promise.resolve(informeSeco())
+const accion = arg.includes('--listar') ? listar() : arg.includes('--reemplazar') ? reemplazar() : arg.includes('--deshacer') ? deshacer() : arg.includes('--importar') ? importar(false) : arg.includes('--comparar') ? importar(true) : arg.includes('--pedir-enlace') ? pedirEnlace() : Promise.resolve(informeSeco())
 accion.catch((e) => { console.error('✗', e.message ?? e); process.exit(1) })
