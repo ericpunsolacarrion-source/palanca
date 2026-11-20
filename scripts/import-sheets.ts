@@ -343,9 +343,14 @@ async function cliente() {
 async function sesion() {
   const sb = await cliente()
   const enlace = process.env.ENLACE ?? ''
-  const hash = enlace.match(/[?&#]token(?:_hash)?=([^&]+)/)?.[1]
-  if (!hash) throw new Error('Falta ENLACE (el enlace del correo de acceso, sin abrirlo)')
-  const { data, error } = await sb.auth.verifyOtp({ token_hash: decodeURIComponent(hash), type: 'email' })
+  if (!/^https:\/\/[a-z0-9]+\.supabase\.co\/auth\/v1\/verify\?/.test(enlace)) throw new Error('Falta ENLACE (el enlace del correo de acceso, sin abrirlo)')
+  // Igual que el navegador al pulsar el enlace: Supabase responde con una
+  // redirección que lleva la sesión en el fragmento (#access_token=…).
+  const r = await fetch(enlace, { redirect: 'manual' })
+  const destino = new URL(r.headers.get('location') ?? 'about:blank')
+  const p = new URLSearchParams(destino.hash.slice(1))
+  if (p.get('error')) throw new Error('No se pudo iniciar sesión con el enlace: ' + (p.get('error_description') ?? p.get('error')))
+  const { data, error } = await sb.auth.setSession({ access_token: p.get('access_token') ?? '', refresh_token: p.get('refresh_token') ?? '' })
   if (error || !data.user) throw new Error('No se pudo iniciar sesión con el enlace: ' + (error?.message ?? 'sin usuario'))
   const email = (process.env.EMAIL ?? '').trim().toLowerCase()
   if (!email || (data.user.email ?? '').toLowerCase() !== email) throw new Error(`La sesión es de otra cuenta (${data.user.email}). No se toca nada.`)
