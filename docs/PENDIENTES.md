@@ -11,6 +11,21 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 
 
+## Datos reales de Eric en su cuenta (20-11) — importado, faltan sus respuestas
+
+Rama `datos-reales-eric`, sin cambios de estructura. `scripts/import-sheets.ts`
+(sesión del propio usuario por enlace de un solo uso, sin service key; RLS
+comprobada en la práctica antes de escribir). Las hojas mandan: los movimientos
+anteriores se borraron tras guardar copia en `data/import/` (fuera de git).
+Pendiente de Eric:
+- Responder las 8 dudas (filas sin fecha → día 1, ajustes de nómina negativos,
+  «No sumado», previstos, aportaciones netas, categorías). Cambiar una decisión
+  = `--deshacer` de la franja y volver a importar.
+- ¿Borrar la cuenta de prueba `epcericpunsolacarrion@…` (correo inexistente)?
+- ¿Borrar las categorías antiguas que ya no usa ningún movimiento?
+- La copia de los movimientos antiguos solo vive en el contenedor: se pierde
+  cuando se cierre.
+
 ## Legal, privacidad y seguridad (09-11) — auditoría preventiva
 Informe: `docs/legal/AUDITORIA-LEGAL-2026-11.md` · borradores en `docs/legal/borradores/` (no definitivos; ⚖️ abogado).
 - 🟥 **Paso de Eric (ya):** ejecutar `supabase-auditoria-seguridad.sql` (solo lectura) en palanca dev y en producción. Debe salir **sin filas**: si sale «Política abierta», hay tablas legibles por cualquiera.
