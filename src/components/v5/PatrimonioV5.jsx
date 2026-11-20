@@ -78,7 +78,7 @@ export default function PatrimonioV5({ usuarioId, movimientos, cargando, onGuard
         <div className="v5-kpi">
           <span className="v5-etq"><i className="v5-punto" style={{ background: 'var(--inversion)' }} />Invertido</span>
           <b className="num v5-oro">{formatearEuros(b.bolsaInversion)}</b>
-          <small className="v5-tenue">Lo aportado, no su valor de mercado</small>
+          <small className="v5-tenue">A precio de compra, no a su valor de mercado</small>
         </div>
         <div className="v5-kpi">
           <span className="v5-etq">Este mes</span>

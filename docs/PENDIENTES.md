@@ -15,8 +15,7 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 En la rama `claude/capabilities-overview-m3ry1u`, con pruebas en verde.
 - Eric: probarla y dar el OK para publicar en `main` (la usará su amigo).
-- Más adelante: la etiqueta «Invertido (aportado)» de Inicio debería decir solo
-  «Invertido» (con la plantilla, invertido = compras, no aportaciones).
+- Hecho: la etiqueta de Inicio dice «Invertido (a precio de compra)».
 
 ## Legal, privacidad y seguridad (09-11) — auditoría preventiva
 Informe: `docs/legal/AUDITORIA-LEGAL-2026-11.md` · borradores en `docs/legal/borradores/` (no definitivos; ⚖️ abogado).

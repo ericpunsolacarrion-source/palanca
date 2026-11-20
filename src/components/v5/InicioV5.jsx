@@ -106,7 +106,7 @@ function PatrimonioHero({ usuarioId, movimientos, onGuardado, onIrA, soloLectura
           <b className="num">{formatearEuros(bolsaLiquidez)}</b>
         </div>
         <button type="button" className="v5-bolsa v5-bolsa-boton" onClick={() => onIrA('inversiones')}>
-          <span className="v5-etq"><i className="v5-punto" style={{ background: 'var(--inversion)' }} />Invertido <small>(aportado)</small></span>
+          <span className="v5-etq"><i className="v5-punto" style={{ background: 'var(--inversion)' }} />Invertido <small>(a precio de compra)</small></span>
           <b className="num">{formatearEuros(bolsaInversion)}</b>
         </button>
         {!soloLectura && (
