@@ -459,7 +459,16 @@ async function deshacer() {
     }
     console.log(`${t} borradas: ${n}`)
   }
-  console.log(`Quedan ${(await leerTodo(sb, uid)).length} movimientos en tu cuenta.`)
+  const quedan = await leerTodo(sb, uid)
+  console.log(`Quedan ${quedan.length} movimientos en tu cuenta.`)
+  writeFileSync(join(DATOS, 'COMPARACION-ANTES.md'), `# Tu cuenta tras deshacer (lo que ya tenías)\n\n> ${quedan.length} movimientos.\n\n${tablaComparacion(totalesHoja(), totalesPalanca(quedan), 'Palanca')}\n`)
+  const mios = new Map<string, number>()
+  for (const r of quedan) mios.set(clave(r), (mios.get(clave(r)) ?? 0) + 1)
+  const hojas = preparar().movs
+  const faltan = hojas.filter((m) => { const k = clave(m); const n = mios.get(k) ?? 0; if (n > 0) { mios.set(k, n - 1); return false } return true })
+  const sobran = [...mios.values()].reduce((a, b) => a + b, 0)
+  writeFileSync(join(DATOS, 'DIFERENCIAS.md'), `# Hojas vs tu cuenta\n\nEn tus hojas y NO en tu cuenta (misma fecha+importe+nota): ${faltan.length}\nEn tu cuenta y NO en tus hojas: ${sobran}\n\n${faltan.map((m) => `- ${m.fecha} · ${m.tipo} · ${m.categoria} · ${m.nota} · ${euros(m.centimos)}`).join('\n')}\n`)
+  console.log(`Hojas que no están en tu cuenta: ${faltan.length} · en tu cuenta y no en las hojas: ${sobran}`)
   await sb.auth.signOut()
 }
 
