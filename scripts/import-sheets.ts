@@ -369,8 +369,8 @@ async function leerTodo(sb: any, uid: string) {
   return filas.map((r) => ({ tipo: r.tipo, fecha: r.fecha, centimos: r.importe_centimos ?? Math.round(Number(r.importe) * 100), nota: r.nota ?? '', categoria: r.categoria?.nombre ?? '' }))
 }
 
-async function importar(soloComparar: boolean) {
-  const { sb, uid } = await sesion()
+async function importar(soloComparar: boolean, dada?: { sb: any; uid: string }) {
+  const { sb, uid } = dada ?? (await sesion())
   // Comprobación de RLS en la práctica: con tu sesión no debe verse NINGUNA fila
   // de otro usuario, y sin sesión no debe verse nada. Si falla, no se escribe nada.
   const anon = await cliente()
@@ -472,6 +472,33 @@ async function deshacer() {
   await sb.auth.signOut()
 }
 
+// Las hojas mandan: copia de seguridad de TODOS tus movimientos (data/import/,
+// fuera de git), borra los tuyos y carga las hojas. Se para si la copia no
+// tiene ESPERADOS movimientos.
+async function reemplazar() {
+  const s = await sesion()
+  const { sb, uid } = s
+  const todos: any[] = []
+  for (let desde = 0; ; desde += 1000) {
+    const { data, error } = await sb.from('movimientos').select('*').eq('usuario_id', uid).order('id').range(desde, desde + 999)
+    if (error) throw error
+    todos.push(...data)
+    if (data.length < 1000) break
+  }
+  const esperados = Number(process.env.ESPERADOS)
+  if (todos.length !== esperados) throw new Error(`Tu cuenta tiene ${todos.length} movimientos y se esperaban ${esperados}. No se borra nada.`)
+  const ruta = join(DATOS, `copia-movimientos-${new Date().toISOString().replace(/[:.]/g, '-')}.json`)
+  writeFileSync(ruta, JSON.stringify(todos, null, 1))
+  if (JSON.parse(readFileSync(ruta, 'utf8')).length !== esperados) throw new Error('La copia no se ha guardado bien. No se borra nada.')
+  console.log(`Copia guardada: ${todos.length} movimientos → ${ruta.replace(RAIZ + '/', '')}`)
+  for (let i = 0; i < todos.length; i += 200) {
+    const { error } = await sb.from('movimientos').delete().in('id', todos.slice(i, i + 200).map((m) => m.id))
+    if (error) throw new Error(`Error borrando (lote ${i / 200 + 1}): ${error.message}. Lo borrado está en la copia.`)
+  }
+  console.log(`Borrados: ${todos.length}`)
+  await importar(false, s)
+}
+
 async function pedirEnlace() {
   const sb = await cliente()
   const email = process.env.EMAIL
@@ -482,5 +509,5 @@ async function pedirEnlace() {
 }
 
 const arg = process.argv.slice(2)
-const accion = arg.includes('--deshacer') ? deshacer() : arg.includes('--importar') ? importar(false) : arg.includes('--comparar') ? importar(true) : arg.includes('--pedir-enlace') ? pedirEnlace() : Promise.resolve(informeSeco())
+const accion = arg.includes('--reemplazar') ? reemplazar() : arg.includes('--deshacer') ? deshacer() : arg.includes('--importar') ? importar(false) : arg.includes('--comparar') ? importar(true) : arg.includes('--pedir-enlace') ? pedirEnlace() : Promise.resolve(informeSeco())
 accion.catch((e) => { console.error('✗', e.message ?? e); process.exit(1) })
