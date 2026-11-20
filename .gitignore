@@ -36,3 +36,6 @@ backup_*.sql
 *.sw?
 .Rhistory
 tests/e2e/salida/
+
+# Exportaciones de las hojas de Eric (datos financieros reales): NUNCA al repo.
+data/import/
