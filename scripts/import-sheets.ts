@@ -364,6 +364,16 @@ async function leerTodo(sb: any, uid: string) {
 
 async function importar(soloComparar: boolean) {
   const { sb, uid } = await sesion()
+  // Comprobación de RLS en la práctica: con tu sesión no debe verse NINGUNA fila
+  // de otro usuario, y sin sesión no debe verse nada. Si falla, no se escribe nada.
+  const anon = await cliente()
+  for (const t of ['movimientos', 'categorias', 'fuentes']) {
+    const ajenas = await sb.from(t).select('usuario_id', { count: 'exact', head: true }).neq('usuario_id', uid)
+    const sinSesion = await anon.from(t).select('usuario_id', { count: 'exact', head: true })
+    if (ajenas.error) throw new Error(`RLS ${t}: ${ajenas.error.message}`)
+    if ((ajenas.count ?? 0) > 0 || (sinSesion.count ?? 0) > 0) throw new Error(`RLS ${t}: se ven filas ajenas (${ajenas.count}) o sin sesión (${sinSesion.count}). No se importa nada.`)
+    console.log(`RLS ${t}: ✓ solo tus filas · sin sesión 0`)
+  }
   const { movs } = preparar()
   if (!soloComparar) {
     // Categorías: reutiliza las tuyas (sin distinguir tildes/mayúsculas); crea solo las que falten.
