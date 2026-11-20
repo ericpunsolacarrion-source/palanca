@@ -120,3 +120,53 @@ describe('Excel con varias pestañas', () => {
     expect(tablaDesdeFilas(filas).filas).toHaveLength(0)
   })
 })
+
+describe('tipos escritos de otra forma (por una persona o por la IA)', () => {
+  it('«Compra de acciones», «Inversiones», «Intereses», «Aportación broker»…', () => {
+    expect(tipoDePlantilla('Compra de acciones')?.nombre).toBe('Compra inversión')
+    expect(tipoDePlantilla('Compras')?.nombre).toBe('Compra inversión')
+    expect(tipoDePlantilla('Inversiones')?.nombre).toBe('Compra inversión')
+    expect(tipoDePlantilla('Intereses')?.nombre).toBe('Interés')
+    expect(tipoDePlantilla('Interés')?.nombre).toBe('Interés')
+    expect(tipoDePlantilla('Dividendos')?.nombre).toBe('Dividendo')
+    expect(tipoDePlantilla('Aportación broker')?.nombre).toBe('Aportación al bróker')
+    expect(tipoDePlantilla('Venta de acciones')?.nombre).toBe('Venta inversión')
+    expect(tipoDePlantilla('Gastos')?.nombre).toBe('Gasto')
+  })
+
+  it('sin columna Activo y con «Compra» + Plataforma, sigue siendo plantilla: las compras son inversión', () => {
+    const t = tablaDesdeFilas([
+      ['Fecha', 'Tipo', 'Concepto', 'Categoría', 'Importe', 'Plataforma'],
+      ['01/10/2026', 'Gasto', 'Mercadona', 'Comida', '30', ''],
+      ['02/10/2026', 'Compra', 'NVIDIA', '', '200', 'Trade Republic'],
+    ])
+    const r = procesarFilas(t.filas, detectarMapeo(t.cabeceras), new Set())
+    expect(r.plantilla).toBe(true)
+    expect(r.validas[1]).toMatchObject({ esInversion: true, categoria: 'Inversion', tipo: 'gasto' })
+  })
+
+  it('Gasto con categoría «Inversión» = compra de inversión', () => {
+    const r = plantilla([['02/10/2026', 'Gasto', 'ETF', 'Inversión', '150', 'Trade Republic', '']])
+    expect(r.validas[0]).toMatchObject({ esInversion: true, categoria: 'Inversion', tipo: 'gasto' })
+  })
+
+  it('un extracto del banco con tipo «Compra» (tarjeta) NO se toma por plantilla', () => {
+    const t = tablaDesdeFilas([
+      ['Fecha', 'Tipo', 'Concepto', 'Importe'],
+      ['01/10/2026', 'Compra', 'MERCADONA', '-30,00'],
+      ['02/10/2026', 'Ingreso', 'NOMINA', '1.200,00'],
+    ])
+    const r = procesarFilas(t.filas, detectarMapeo(t.cabeceras), new Set())
+    expect(r.plantilla).toBe(false)
+    expect(r.validas.some((v) => v.esInversion)).toBe(false)
+  })
+
+  it('extracto sin tipo: categoría «Inversión» con tilde queda como Inversion', () => {
+    const t = tablaDesdeFilas([
+      ['Fecha', 'Concepto', 'Categoría', 'Importe'],
+      ['01/10/2026', 'TRADE REPUBLIC', 'Inversión', '-100'],
+    ])
+    const r = procesarFilas(t.filas, detectarMapeo(t.cabeceras), new Set())
+    expect(r.validas[0]).toMatchObject({ categoria: 'Inversion' })
+  })
+})

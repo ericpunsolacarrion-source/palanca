@@ -288,7 +288,10 @@ export function validarFila(campos, mapeo, { signoDecideTipo = false, plantilla 
   }
   const plataforma = String(get('plataforma') || '').trim()
   if (esInversion) categoria = 'Inversion'
-  else if (normaliza(categoria) === 'inversion') esInversion = true
+  else if (normaliza(categoria) === 'inversion' || normaliza(categoria) === 'inversiones') {
+    esInversion = true
+    categoria = 'Inversion'
+  }
   // Sin categoría en el fichero: queda vacía y la sugiere el categorizador
   // (lib/categorizar.js) a partir del concepto y del historial del usuario.
 
