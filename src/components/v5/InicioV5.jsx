@@ -245,7 +245,7 @@ function ElMes({ movimientos, onRegistrar, onIrA }) {
         <button type="button" className="v5-boton" onClick={() => onRegistrar('ingreso')}>
           <Icono nombre="mas" tam={16} /> Ingreso
         </button>
-        <button type="button" className="v5-boton" onClick={() => onRegistrar('importar')} aria-label="Importar extracto del banco">
+        <button type="button" className="v5-boton" onClick={() => onRegistrar('importar')} aria-label="Importar extracto del banco o Excel">
           <Icono nombre="importar" tam={16} /> Importar
         </button>
       </div>

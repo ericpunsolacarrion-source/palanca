@@ -17,6 +17,15 @@
 PWA de finanzas personales (React 19 + Vite + Supabase). Estética oscura,
 premium, minimalista. Misión y detalle de negocio: **[ESTADO-PLATAFORMA.md](ESTADO-PLATAFORMA.md)**.
 
+## 📥 Plantilla de Palanca para importar un Excel (2026-11-20, rama `claude/capabilities-overview-m3ry1u`)
+
+Cualquiera puede traer su historial entero (inversión incluida) con un Excel de
+columnas fijas, rellenado a mano o por su asistente de IA con las instrucciones
+que da la app. Compras = invertido; aportaciones al bróker = traspaso neutro;
+al final, «Cuadra tu dinero» crea un ajuste de saldo. Detalle en PANTALLAS.md
+(Importar). Pruebas: `plantillaPalanca.test.js` y e2e `plantilla.mjs`.
+**Pendiente de publicar en `main`** (OK de Eric).
+
 ## ⚖️ Auditoría legal, privacidad y seguridad (2026-11-09)
 - Informe completo en **[legal/AUDITORIA-LEGAL-2026-11.md](legal/AUDITORIA-LEGAL-2026-11.md)**: estado, riesgos, proveedores, borradores, pendientes de Eric, plan y bloqueantes.
 - Urgente:

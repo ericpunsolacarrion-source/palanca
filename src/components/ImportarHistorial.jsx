@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { CATEGORIA_INVERSION, etiquetaCategoria, formatearEuros } from '../lib/categorias'
-import { claveDuplicado, COLUMNAS, detectarMapeo, faltanColumnas, procesarFilas, tablaDesdeFilas } from '../lib/importarCsv'
+import { claveDuplicado, COLUMNAS, detectarMapeo, faltanColumnas, parseImporteConSigno, procesarFilas, tablaDesdeFilas } from '../lib/importarCsv'
 import { ArchivoNoSoportado, leerArchivoMovimientos } from '../lib/leerArchivo'
 import { capturasActivas, leerCapturas } from '../lib/capturas'
 import { crearCategorizador } from '../lib/categorizar'
@@ -16,7 +16,9 @@ import { directorio, formaEtiqueta, nombreParaComercio, normalizarTexto } from '
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import { aCentimos } from '../lib/importe'
-import { formatearFecha } from '../lib/movimientosUtils'
+import { bolsas, formatearFecha } from '../lib/movimientosUtils'
+import { INSTRUCCIONES_ASISTENTE } from '../lib/plantillaPalanca'
+import { crearAjuste } from '../lib/ajustes'
 import { fechaRelativa } from '../lib/inicio'
 import Icono from './Icono'
 import { registrarEvento } from '../lib/analitica'
@@ -38,6 +40,8 @@ const ETIQUETA_COL = {
   cargo: 'Cargo / Debe (salidas)',
   abono: 'Abono / Haber (entradas)',
   plataforma: 'Plataforma',
+  activo: 'Activo (inversión)',
+  estado: 'Estado',
 }
 const CATEGORIAS_GASTO = ['Comida', 'Restaurantes', 'Transporte', 'Vivienda', 'Suministros', 'Suscripciones', 'Seguros', 'Compras', 'Salud', 'Ocio', 'Deporte', 'Viajes', 'Educación', 'Comisiones', 'Impuestos', 'Efectivo', 'Ahorro', 'Inversion', 'Otros']
 const CATEGORIAS_INGRESO = ['Nomina', 'Pensión', 'Prestaciones', 'Transferencias', 'Devoluciones', 'Intereses', 'Desde ahorro', 'Inversion', 'Otros ingresos']
@@ -56,6 +60,100 @@ function GuiaDescarga() {
       </ol>
       <p>Funciona con los extractos de los bancos españoles habituales, aunque traigan líneas del banco antes de la tabla o columnas separadas de cargos y abonos. Si tu banco solo da PDF, usa las capturas.</p>
     </details>
+  )
+}
+
+// ¿Llevas tus cuentas en un Excel? Plantilla con columnas fijas (inversión
+// incluida) + instrucciones para que tu asistente de IA convierta tu Excel.
+function PlantillaPalanca({ onArchivo }) {
+  const ref = useRef(null)
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(INSTRUCCIONES_ASISTENTE)
+      toast('Instrucciones copiadas: pégalas en tu asistente junto a tu Excel')
+    } catch {
+      toast('No se han podido copiar. Ábrelas y cópialas a mano.', 'error')
+    }
+  }
+  return (
+    <div className="ih-opcion" data-testid="ih-plantilla">
+      <h3>¿Llevas tus cuentas en un Excel?</h3>
+      <p>
+        Pásalas a la <strong>plantilla de Palanca</strong> (gastos, ingresos e inversiones) y súbela. Si usas un asistente de IA
+        (Claude, ChatGPT…), dale tu Excel y estas instrucciones: te lo deja listo.
+      </p>
+      <div className="ih-plantilla-acc">
+        <a className="ih-boton secundario" href="/plantilla-palanca.xlsx" download="Plantilla Palanca.xlsx">
+          <Icono nombre="importar" tam={18} /> Descargar plantilla
+        </a>
+        <button type="button" className="ih-boton secundario" onClick={copiar}>Copiar instrucciones para la IA</button>
+      </div>
+      <details className="ih-guia">
+        <summary>Ver las instrucciones</summary>
+        <pre className="ih-instrucciones">{INSTRUCCIONES_ASISTENTE}</pre>
+      </details>
+      <input ref={ref} type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange={(e) => onArchivo(e.target.files?.[0])} hidden />
+      <button type="button" className="ih-boton" onClick={() => ref.current?.click()}>
+        <Icono nombre="importar" tam={18} /> Subir mi plantilla
+      </button>
+    </div>
+  )
+}
+
+// Tras importar la plantilla: «¿cuánto tenías ese día?» → ajuste de saldo
+// visible para que el disponible y el patrimonio coincidan con la realidad
+// aunque falten gastos en el Excel (lib/ajustes.js, mismo ajuste que la app).
+function CuadrarSaldo({ usuarioId, base, fecha, onHecho }) {
+  const [banco, setBanco] = useState('')
+  const [broker, setBroker] = useState('')
+  const [estado, setEstado] = useState(null) // null | 'guardando' | { dif }
+  const num = (t) => parseImporteConSigno(t) ?? NaN
+  const valido = banco.trim() !== '' && Number.isFinite(num(banco)) && (broker.trim() === '' || Number.isFinite(num(broker)))
+  async function cuadrar() {
+    const real = Math.round((num(banco) + (broker.trim() ? num(broker) : 0)) * 100)
+    const calculado = Math.round(bolsas(base, fecha).bolsaLiquidez * 100)
+    const dif = real - calculado
+    setEstado('guardando')
+    const ok = await crearAjuste(usuarioId, {
+      importe: Math.abs(dif) / 100,
+      tipo: dif > 0 ? 'ingreso' : 'gasto',
+      fecha,
+      nota: `Ajuste de saldo al ${formatearFecha(fecha)}: banco ${formatearEuros(num(banco))}${broker.trim() ? ` + efectivo en el bróker ${formatearEuros(num(broker))}` : ''}`,
+    })
+    if (!ok) {
+      setEstado(null)
+      return toast('No se ha podido guardar. Revisa tu conexión.', 'error')
+    }
+    setEstado({ dif })
+    onHecho?.()
+  }
+  if (estado && estado !== 'guardando') {
+    return (
+      <div className="ih-cuadrar hecho" data-testid="ih-cuadrar">
+        <strong>Saldo cuadrado.</strong>{' '}
+        {estado.dif === 0 ? 'Ya coincidía con tus movimientos.' : `Ajuste de ${formatearEuros(Math.abs(estado.dif) / 100)} (lo verás en Movimientos como «Ajuste de saldo»).`}
+      </div>
+    )
+  }
+  return (
+    <div className="ih-cuadrar" data-testid="ih-cuadrar">
+      <strong>Cuadra tu dinero</strong>
+      <p>
+        ¿Cuánto tenías el <strong>{formatearFecha(fecha)}</strong> (tu último movimiento)? Así tu disponible y tu patrimonio coinciden con
+        la realidad aunque falte algún gasto en el Excel.
+      </p>
+      <label>
+        En el banco (€)
+        <input inputMode="decimal" value={banco} onChange={(e) => setBanco(e.target.value)} placeholder="0,00" aria-label="Dinero en el banco" />
+      </label>
+      <label>
+        En efectivo en el bróker (€)
+        <input inputMode="decimal" value={broker} onChange={(e) => setBroker(e.target.value)} placeholder="0,00 (opcional)" aria-label="Efectivo en el bróker" />
+      </label>
+      <button type="button" className="ih-boton" disabled={!valido || estado === 'guardando'} onClick={cuadrar}>
+        {estado === 'guardando' ? 'Guardando…' : 'Cuadrar'}
+      </button>
+    </div>
   )
 }
 
@@ -83,6 +181,8 @@ function Elegir({ activoCapturas, onArchivo, onCapturas, error }) {
         <GuiaDescarga />
       </div>
 
+      <PlantillaPalanca onArchivo={onArchivo} />
+
       <div className={`ih-opcion ${activoCapturas ? '' : 'inactiva'}`}>
         <h3>Capturas de la app del banco</h3>
         <p>
@@ -98,6 +198,27 @@ function Elegir({ activoCapturas, onArchivo, onCapturas, error }) {
         </p>
       </div>
       {error && <p className="error">{error}</p>}
+    </div>
+  )
+}
+
+// Qué trae la plantilla, contado con las reglas de Palanca.
+function DesglosePlantilla({ filas }) {
+  const suma = (pred) => filas.filter(pred).reduce((t, f) => t + Math.round(f.importe * 100), 0) / 100
+  const compras = suma((f) => f.esInversion && f.tipo === 'gasto')
+  const ventas = suma((f) => f.esInversion && f.tipo === 'ingreso')
+  const traspasos = filas.filter((f) => !f.esInversion && (f.categoria === 'Ahorro' || f.categoria === 'Desde ahorro')).length
+  const gastos = suma((f) => !f.esInversion && f.tipo === 'gasto' && f.categoria !== 'Ahorro')
+  const ingresos = suma((f) => !f.esInversion && f.tipo === 'ingreso' && f.categoria !== 'Desde ahorro' && f.categoria !== 'Devoluciones')
+  return (
+    <div className="ih-desglose" data-testid="ih-desglose">
+      <p><strong>Plantilla de Palanca reconocida.</strong> Así lo contará Palanca:</p>
+      <ul>
+        <li>Gastos: <strong>{formatearEuros(gastos)}</strong></li>
+        <li>Ingresos (incluye intereses y dividendos): <strong>{formatearEuros(ingresos)}</strong></li>
+        <li>Invertido (compras − ventas): <strong>{formatearEuros(compras - ventas)}</strong></li>
+        {traspasos > 0 && <li>{traspasos === 1 ? '1 aportación o traspaso entre tus cuentas: no cuenta' : `${traspasos} aportaciones o traspasos entre tus cuentas: no cuentan`} como gasto ni como inversión.</li>}
+      </ul>
     </div>
   )
 }
@@ -351,7 +472,7 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
       const plan = planDeAhorro(
         detectadas.map((d) => ({ id: d.clave, activo: true, tipo: 'gasto', nombre: d.nombre, importe: d.importe, periodoMeses: d.periodoMeses, mesInicio: d.mesInicio, diaMes: d.diaMes, mesesAplicados: [] })),
       )
-      setResultado({ resumen: resumenHistorial(finales), detectadas, anualSuscripciones: costeAnualTotal(detectadas), plan })
+      setResultado({ resumen: resumenHistorial(finales), detectadas, anualSuscripciones: costeAnualTotal(detectadas), plan, plantilla: Boolean(procesado?.plantilla), base: todos })
       setPaso('listo')
       onImportado?.()
     } catch (e) {
@@ -441,6 +562,7 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
                 <span>{resumenPrevio.meses === 1 ? 'mes' : 'meses'} · {fmtMes(resumenPrevio.desde)} – {fmtMes(resumenPrevio.hasta)}</span>
               </div>
             </div>
+            {procesado.plantilla && <DesglosePlantilla filas={finales} />}
             {(procesado.duplicados.length > 0 || parecidos.size > 0 || procesado.errores.length > 0) && (
               <ul className="ih-notas">
                 {procesado.duplicados.length > 0 && <li>{procesado.duplicados.length} ya estaban en Palanca: no se repiten.</li>}
@@ -452,7 +574,17 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
                     </label>
                   </li>
                 )}
-                {procesado.errores.length > 0 && <li>{procesado.errores.length} filas no se entienden y se saltan (p. ej. fila {procesado.errores[0].fila}: {procesado.errores[0].motivo}).</li>}
+                {procesado.errores.length > 0 && (
+                  <li>
+                    {procesado.errores.length} filas no se entienden y se saltan (p. ej. fila {procesado.errores[0].fila}: {procesado.errores[0].motivo}).
+                    {procesado.errores.length > 1 && (
+                      <details className="ih-errores">
+                        <summary>Ver todas</summary>
+                        <ul>{procesado.errores.slice(0, 100).map((e) => <li key={e.fila}>Fila {e.fila}: {e.motivo}</li>)}</ul>
+                      </details>
+                    )}
+                  </li>
+                )}
               </ul>
             )}
             {avisos.length > 0 && (
@@ -573,6 +705,7 @@ export default function ImportarHistorial({ usuarioId, movimientos, recurrentes 
             ))}
           </div>
         )}
+        {resultado.plantilla && <CuadrarSaldo usuarioId={usuarioId} base={resultado.base} fecha={r.hasta} onHecho={onImportado} />}
         {resultado.detectadas.length > 0 && (
           <button type="button" className="ih-hallazgo" onClick={() => onIrA?.('suscripciones')}>
             <span>

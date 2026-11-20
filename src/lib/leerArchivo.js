@@ -11,7 +11,7 @@
 //                           extensión de Excel; se lee la tabla.
 //  · .xls binario antiguo . no se puede leer de forma segura en el navegador:
 //                           se explica cómo convertirlo (o usar capturas).
-import { leerFilasTexto } from './importarCsv'
+import { columnaDeCabecera, leerFilasTexto, tablaDesdeFilas } from './importarCsv'
 
 export class ArchivoNoSoportado extends Error {}
 
@@ -38,14 +38,37 @@ export function filasDeHtml(html) {
   )
 }
 
+// Un Excel con varias pestañas (p. ej. una por año, o la plantilla con su
+// pestaña de ayuda): se juntan las pestañas cuya tabla tiene las MISMAS
+// columnas reconocidas; si hay varios grupos, el de más filas. Las pestañas de
+// texto (instrucciones, listas) no tienen columnas de movimientos y se ignoran.
+export function unirHojas(hojas) {
+  const grupos = new Map()
+  for (const filas of hojas) {
+    const t = tablaDesdeFilas(filas)
+    const cols = t.cabeceras.map(columnaDeCabecera)
+    if (!cols.includes('fecha') || t.filas.length === 0) continue
+    const firma = cols.map((c) => c ?? '').join('|')
+    const g = grupos.get(firma) ?? { cabecera: filas[t.inicio], filas: [], n: 0 }
+    g.filas.push(...t.filas)
+    g.n += 1
+    grupos.set(firma, g)
+  }
+  if (grupos.size === 0) return { filas: hojas[0] ?? [], nHojas: hojas.length ? 1 : 0 }
+  const mejor = [...grupos.values()].sort((a, b) => b.filas.length - a.filas.length)[0]
+  return { filas: [mejor.cabecera, ...mejor.filas], nHojas: mejor.n }
+}
+
 export async function leerArchivoMovimientos(file) {
   const buffer = new Uint8Array(await file.arrayBuffer())
   const nombre = (file.name || '').toLowerCase()
 
   if (empiezaPor(buffer, FIRMA_ZIP)) {
-    const { readSheet } = await import('read-excel-file/universal')
-    const filas = await readSheet(file)
-    return { filas: filas.map((f) => f.map((c) => (c === null || c === undefined ? '' : c))), formato: 'Excel' }
+    const { default: leerHojas } = await import('read-excel-file/universal')
+    const hojas = await leerHojas(file)
+    const limpia = (filas) => filas.map((f) => f.map((c) => (c === null || c === undefined ? '' : c)))
+    const { filas, nHojas } = unirHojas(hojas.map((h) => limpia(h.data ?? [])))
+    return { filas, formato: nHojas > 1 ? `Excel · ${nHojas} pestañas` : 'Excel' }
   }
   if (empiezaPor(buffer, FIRMA_OLE2)) {
     throw new ArchivoNoSoportado(

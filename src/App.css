@@ -8958,6 +8958,84 @@ input[type='number']::-webkit-outer-spin-button {
   opacity: 0.55;
   cursor: default;
 }
+.ih-plantilla-acc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ih-plantilla-acc .ih-boton {
+  flex: 1 1 180px;
+  text-decoration: none;
+  padding: 0 14px;
+}
+.ih-instrucciones {
+  margin: 10px 0 0;
+  max-height: 260px;
+  overflow: auto;
+  padding: 12px;
+  border-radius: var(--radio-m);
+  border: 1px solid var(--border);
+  white-space: pre-wrap;
+  font: inherit;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--text);
+}
+.ih-desglose,
+.ih-cuadrar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: var(--radio-l);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  font-size: var(--fs-s);
+  color: var(--text);
+  text-align: left;
+}
+.ih-desglose p,
+.ih-cuadrar p {
+  margin: 0;
+  line-height: 1.5;
+}
+.ih-desglose ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ih-cuadrar label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.ih-cuadrar input {
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: var(--radio-m);
+  border: 1px solid var(--borde-fuerte);
+  background: none;
+  color: var(--text-h);
+  font: inherit;
+  font-size: var(--fs-base);
+}
+.ih-cuadrar.hecho {
+  border-color: var(--ingreso);
+}
+.ih-errores summary {
+  cursor: pointer;
+  color: var(--accent-2);
+}
+.ih-errores ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  max-height: 200px;
+  overflow: auto;
+}
 .ih-nota {
   font-size: var(--fs-xs) !important;
   color: var(--text-3) !important;

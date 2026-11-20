@@ -1,9 +1,10 @@
 // Lógica pura del importador CSV: parseo, detección de columnas y validación
 // robusta fila a fila. La UI vive en components/ImportadorCsv.jsx.
+import { esPlantilla, tipoDePlantilla, traducirTipoPlantilla } from './plantillaPalanca'
 
 // Columnas que entendemos. 'cargo'/'abono' cubren los extractos que separan
 // salidas y entradas en dos columnas (Debe/Haber) en vez de un importe con signo.
-export const COLUMNAS = ['fecha', 'tipo', 'categoria', 'concepto', 'importe', 'cargo', 'abono', 'plataforma', 'estado']
+export const COLUMNAS = ['fecha', 'tipo', 'categoria', 'concepto', 'importe', 'cargo', 'abono', 'plataforma', 'activo', 'estado']
 // 'tipo' es opcional: en extractos bancarios lo deduce el signo del importe.
 export const COLUMNAS_REQUERIDAS = ['fecha', 'importe']
 
@@ -127,6 +128,7 @@ export function columnaDeCabecera(cabecera) {
   if (/^tipo$|^type$|^tipo de movimiento$/.test(h)) return 'tipo'
   // "cuenta": la columna del CSV de Palanca (Descargar mis datos) con la plataforma.
   if (/plataforma|broker|^fuente$|^platform$|^cuenta$/.test(h)) return 'plataforma'
+  if (/^(activo|asset|ticker)$/.test(h)) return 'activo'
   if (/concepto|descripcion|description|detalle|^movimiento|operacion|comercio|beneficiario|observaciones|^nota|^concept|establecimiento/.test(h)) return 'concepto'
   return null
 }
@@ -226,7 +228,7 @@ export function parseImporte(valor) {
 
 // Valida una fila (array de campos) según el mapeo. Devuelve
 // {ok, mov?, motivo?}. `mov` es canónico: {fecha, tipo, categoria, nota, importe, plataforma, esInversion}.
-export function validarFila(campos, mapeo, { signoDecideTipo = false } = {}) {
+export function validarFila(campos, mapeo, { signoDecideTipo = false, plantilla = false } = {}) {
   const get = (col) => (mapeo[col] >= 0 ? campos[mapeo[col]] : undefined)
 
   const fecha = parseFecha(get('fecha'))
@@ -248,6 +250,18 @@ export function validarFila(campos, mapeo, { signoDecideTipo = false } = {}) {
   }
   if (conSigno === null || conSigno === 0) return { ok: false, motivo: 'importe no válido' }
   const importe = Math.abs(conSigno)
+
+  // PLANTILLA DE PALANCA: el tipo dice qué es (compra de inversión, aportación
+  // al bróker, dividendo…) y la categoría fija la impone el tipo.
+  if (plantilla) {
+    const t = traducirTipoPlantilla(get('tipo'), conSigno, String(get('categoria') || '').trim())
+    if (!t) return { ok: false, motivo: `tipo desconocido ("${get('tipo') ?? ''}")` }
+    const plataforma = String(get('plataforma') || '').trim()
+    const activo = String(get('activo') || '').trim()
+    let nota = String(get('concepto') || '').trim()
+    if (activo && !normaliza(nota).includes(normaliza(activo))) nota = nota ? `${nota} · ${activo}` : activo
+    return { ok: true, mov: { fecha, tipo: t.tipo, categoria: t.categoria, nota, importe, plataforma, esInversion: t.esInversion } }
+  }
 
   let tipoRaw = normaliza(get('tipo'))
   // Extractos bancarios: sin tipo, un importe negativo es un gasto. Uno positivo
@@ -311,14 +325,15 @@ export function procesarFilas(filas, mapeo, clavesExistentes, { inicio = 0 } = {
 
   // Una columna "tipo" que no dice gasto/ingreso (Revolut: CARD_PAYMENT,
   // TOPUP…) no sirve: manda el signo.
+  const plantilla = esPlantilla(mapeo, filas)
   if (mapeo.tipo >= 0) {
     const valores = filas.map((c) => normaliza(c[mapeo.tipo])).filter(Boolean)
-    const entendidos = valores.filter((v) => TIPOS_CONOCIDOS.has(v)).length
+    const entendidos = valores.filter((v) => TIPOS_CONOCIDOS.has(v) || (plantilla && tipoDePlantilla(v))).length
     if (valores.length && entendidos < valores.length / 2) mapeo = { ...mapeo, tipo: -1 }
   }
 
   filas.forEach((campos, i) => {
-    const res = validarFila(campos, mapeo, { signoDecideTipo })
+    const res = validarFila(campos, mapeo, { signoDecideTipo, plantilla: plantilla && mapeo.tipo >= 0 })
     if (!res.ok) {
       errores.push({ fila: inicio + i + 2, motivo: res.motivo, campos })
       return
@@ -332,7 +347,7 @@ export function procesarFilas(filas, mapeo, clavesExistentes, { inicio = 0 } = {
     validas.push(res.mov)
   })
 
-  return { validas, errores, duplicados }
+  return { validas, errores, duplicados, plantilla: plantilla && mapeo.tipo >= 0 }
 }
 
 // Procesa todo el CSV (texto): localiza la cabecera y procesa sus filas.
