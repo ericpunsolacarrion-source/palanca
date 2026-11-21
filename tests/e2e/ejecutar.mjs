@@ -17,6 +17,7 @@ import { cobro } from './cobro.mjs'
 import { saldo } from './saldo.mjs'
 import { acceso } from './acceso.mjs'
 import { plantilla } from './plantilla.mjs'
+import { conector } from './conector.mjs'
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url))
 const salida = path.join(AQUI, 'salida')
@@ -74,6 +75,10 @@ try {
     console.log(`\nPlantilla de Palanca (Excel): ${pl.length ? `${pl.length} fallos` : 'todo bien'}`)
     for (const f of pl) console.log('  ✗ ' + f)
     fallos += pl.length
+    const cn = await conector({ url, navegador, salida })
+    console.log(`\nConector de Claude (permiso): ${cn.length ? `${cn.length} fallos` : 'todo bien'}`)
+    for (const f of cn) console.log('  ✗ ' + f)
+    fallos += cn.length
   }
   const informe = await auditoria({ url, salida, navegador })
   console.log(`\nAuditoría visual: ${informe.length ? `${informe.length} problemas` : 'sin problemas'}`)

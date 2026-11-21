@@ -282,5 +282,14 @@ export const supabase = {
     signInWithPassword: async () => ({ data: {}, error: LS('mock_sin_red') ? { name: 'AuthRetryableFetchError', message: '{}', status: 0 } : { message: LS('mock_sin_confirmar') ? 'Email not confirmed' : 'Invalid login credentials' } }),
     resetPasswordForEmail: async () => ({ error: null }),
     resend: async () => ({ data: {}, error: null }),
+    // Servidor OAuth (conector de Claude): «caducada» simula una solicitud vencida.
+    oauth: {
+      getAuthorizationDetails: async (id) =>
+        id === 'caducada'
+          ? { data: null, error: { message: 'authorization not found' } }
+          : { data: { authorization_id: id, redirect_uri: 'https://claude.ai/api/mcp/auth_callback', client: { id: 'c1', name: 'Claude', uri: 'https://claude.ai', logo_uri: '' }, user: { id: UID, email: 'demo@palanca.app' }, scope: 'email' }, error: null },
+      approveAuthorization: async (id) => { globalThis.__oauth = `ok:${id}`; return { data: { redirect_url: '/?oauth_vuelta=ok' }, error: null } },
+      denyAuthorization: async (id) => { globalThis.__oauth = `no:${id}`; return { data: { redirect_url: '/?oauth_vuelta=no' }, error: null } },
+    },
   },
 }

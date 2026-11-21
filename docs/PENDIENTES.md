@@ -11,7 +11,17 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 
 
-## Plantilla de Palanca (Excel) (20-11) — hecha, falta publicar
+## Conector de Claude (MCP) (20-11) — publicado, falta activarlo
+
+- **Eric (Supabase):** Authentication → OAuth Server → activar, Authorization
+  path `/oauth/consent`, permitir registro dinámico. Ver docs/CONECTOR-CLAUDE.md.
+- Probarlo de punta a punta en claude.ai con la cuenta de Eric.
+- Legal: añadir a la política de privacidad que, si el usuario conecta su
+  asistente de IA, sus datos pasan por él (docs/legal).
+- Más adelante: registrar movimientos sueltos con lenguaje natural, editar
+  categorías, gastos fijos.
+
+## Plantilla de Palanca (Excel) (20-11) — publicada
 
 En la rama `claude/capabilities-overview-m3ry1u`, con pruebas en verde.
 - Eric: probarla y dar el OK para publicar en `main` (la usará su amigo).

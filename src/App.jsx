@@ -1,4 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import ConsentimientoClaude from './components/ConsentimientoClaude'
+import { autorizacionPendiente } from './lib/oauthClaude'
 import { nombrePropio } from './lib/nombrePropio'
 import { supabase } from './lib/supabaseClient'
 import { useAuth } from './lib/useAuth'
@@ -523,8 +525,19 @@ function App() {
     return <PantallaCarga />
   }
 
+  // Conector de Claude: Supabase manda aquí al usuario a dar permiso (OAuth).
+  const oauthPendiente = autorizacionPendiente()
   if (!usuarioId) {
     return <Auth />
+  }
+  if (oauthPendiente) {
+    return (
+      <ConsentimientoClaude
+        authorizationId={oauthPendiente}
+        email={session?.user?.email}
+        onSalir={() => window.location.assign('/')}
+      />
+    )
   }
 
   if (comprobandoPerfil) {
