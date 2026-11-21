@@ -22,7 +22,7 @@ const VENTAJAS = [
 ]
 
 // Botón de mostrar/ocultar contraseña (ojo).
-function BotonOjo({ mostrar, onToggle }) {
+export function BotonOjo({ mostrar, onToggle }) {
   return (
     <button
       type="button"
@@ -49,7 +49,7 @@ function BotonOjo({ mostrar, onToggle }) {
 // Pantalla de acceso: iniciar sesión / crear cuenta / recuperar contraseña.
 // Lo primero que ve la gente, así que cuidada y en la línea oscura de Palanca.
 export default function Auth() {
-  const [modo, setModo] = useState(() => (yaEntroAntes() ? 'login' : 'registro')) // 'login' | 'registro' | 'recuperar'
+  const [modo, setModo] = useState(() => (/[?&]modo=recuperar\b/.test(globalThis.location?.search ?? '') ? 'recuperar' : yaEntroAntes() ? 'login' : 'registro')) // 'login' | 'registro' | 'recuperar'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [cargando, setCargando] = useState(false)

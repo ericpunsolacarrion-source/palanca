@@ -18,6 +18,7 @@ import { saldo } from './saldo.mjs'
 import { acceso } from './acceso.mjs'
 import { plantilla } from './plantilla.mjs'
 import { conector } from './conector.mjs'
+import { recuperar } from './recuperar.mjs'
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url))
 const salida = path.join(AQUI, 'salida')
@@ -79,6 +80,10 @@ try {
     console.log(`\nConector de Claude (permiso): ${cn.length ? `${cn.length} fallos` : 'todo bien'}`)
     for (const f of cn) console.log('  ✗ ' + f)
     fallos += cn.length
+    const rc = await recuperar({ url, navegador, salida })
+    console.log(`\nRecuperar contraseña: ${rc.length ? `${rc.length} fallos` : 'todo bien'}`)
+    for (const f of rc) console.log('  ✗ ' + f)
+    fallos += rc.length
   }
   const informe = await auditoria({ url, salida, navegador })
   console.log(`\nAuditoría visual: ${informe.length ? `${informe.length} problemas` : 'sin problemas'}`)

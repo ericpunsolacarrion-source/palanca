@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import ConsentimientoClaude from './components/ConsentimientoClaude'
+import NuevaContrasena from './components/NuevaContrasena'
 import { autorizacionPendiente } from './lib/oauthClaude'
 import { nombrePropio } from './lib/nombrePropio'
 import { supabase } from './lib/supabaseClient'
@@ -122,7 +123,7 @@ function guardarMarca(clave) {
 function App() {
   // Acceso SOLO con Supabase Auth (el ID antiguo en localStorage se retiró tras
   // la migración; los datos quedan aislados por usuario con RLS).
-  const { session, cargandoAuth, usuarioAuthId } = useAuth()
+  const { session, cargandoAuth, usuarioAuthId, recuperando, terminarRecuperacion } = useAuth()
   const usuarioId = usuarioAuthId
   // Memoria de comercios ("ALIPAM23" es Mercadona). Va lo primero: fija el
   // directorio activo (lib/comercios.js) antes de cualquier cálculo de la app.
@@ -530,6 +531,8 @@ function App() {
   if (!usuarioId) {
     return <Auth />
   }
+  // Enlace «Restablecer contraseña» del correo: primero, la nueva contraseña.
+  if (recuperando) return <NuevaContrasena onHecho={terminarRecuperacion} />
   if (oauthPendiente) {
     return (
       <ConsentimientoClaude

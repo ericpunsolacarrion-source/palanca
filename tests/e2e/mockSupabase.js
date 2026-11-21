@@ -282,6 +282,13 @@ export const supabase = {
     signInWithPassword: async () => ({ data: {}, error: LS('mock_sin_red') ? { name: 'AuthRetryableFetchError', message: '{}', status: 0 } : { message: LS('mock_sin_confirmar') ? 'Email not confirmed' : 'Invalid login credentials' } }),
     resetPasswordForEmail: async () => ({ error: null }),
     resend: async () => ({ data: {}, error: null }),
+    // Nueva contraseña: mock_pass_caducada / mock_pass_misma simulan los errores.
+    updateUser: async () => {
+      if (LS('mock_pass_caducada')) return { data: null, error: { name: 'AuthSessionMissingError', message: 'Auth session missing!', status: 400 } }
+      if (LS('mock_pass_misma')) return { data: null, error: { name: 'AuthApiError', code: 'same_password', message: 'New password should be different from the old password.', status: 422 } }
+      globalThis.__passCambiada = true
+      return { data: { user: { id: UID } }, error: null }
+    },
     // Servidor OAuth (conector de Claude): «caducada» simula una solicitud vencida.
     oauth: {
       getAuthorizationDetails: async (id) =>
@@ -293,3 +300,6 @@ export const supabase = {
     },
   },
 }
+
+// Enlace «Restablecer contraseña» (como en supabaseClient.js).
+export const llegoConRecuperacion = typeof location !== 'undefined' && /(^|[#&])type=recovery(&|$)/.test(location.hash || '')
