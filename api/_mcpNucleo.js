@@ -30,6 +30,10 @@ import {
   TIPOS_PLANTILLA,
 } from './_motor.js'
 
+// Fechas «de hoy» del motor (p. ej. rechazar movimientos futuros) en hora de
+// España: Vercel corre en UTC.
+process.env.TZ = 'Europe/Madrid'
+
 export const VERSIONES = ['2025-06-18', '2025-03-26', '2024-11-05']
 export const INFO = { name: 'palanca', title: 'Palanca', version: '1.0.0' }
 export const INSTRUCCIONES = `Palanca es la app de finanzas personales del usuario. Con estas herramientas lees y cambias SUS datos (nunca los de otra persona).
@@ -41,7 +45,8 @@ Reglas de Palanca (aplícalas al explicar cifras):
 - Importes en euros, en formato español al hablar con el usuario (1.234,56 €).
 Para escribir: llama primero SIN confirmar, enseña al usuario la vista previa y vuelve a llamar con confirmar=true solo si él lo aprueba.`
 
-const HOY = () => new Date().toISOString().slice(0, 10)
+// «Hoy» en España (Vercel corre en UTC: a las 00:30 en Madrid aún es ayer allí).
+const HOY = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Madrid' }).format(new Date())
 const eur = (n) => `${(Math.round(Number(n) * 100) / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' })} €`
 const MAX_FILAS = 5000
 
@@ -283,7 +288,7 @@ async function deshacerImportacion(sb, uid, args) {
   if (!args.confirmar) return { texto: `VISTA PREVIA: se borrarían ${n} movimientos de esa importación. Vuelve a llamar con confirmar=true si el usuario lo aprueba.`, datos: { borraria: n, guardado: false } }
   const ids = data.map((x) => x.id)
   for (let i = 0; i < ids.length; i += 200) {
-    const { error: e } = await sb.from('movimientos').delete().in('id', ids.slice(i, i + 200))
+    const { error: e } = await sb.from('movimientos').delete().eq('usuario_id', uid).in('id', ids.slice(i, i + 200))
     if (e) throw new ErrorDatos('No se ha podido deshacer del todo. Vuelve a intentarlo.')
   }
   return { texto: `Importación deshecha: ${n} movimientos borrados.`, datos: { borrados: n } }
@@ -428,6 +433,97 @@ async function editarMovimiento(sb, uid, args) {
   return { texto: 'Movimiento actualizado.', datos: { antes, despues, guardado: true } }
 }
 
+const PERIODOS = [1, 2, 3, 6, 12]
+
+async function categoriaPorNombre(sb, uid, tipo, nombre) {
+  const { data } = await sb.from('categorias').select('id, tipo, nombre').eq('usuario_id', uid).eq('tipo', tipo)
+  const cat = (data ?? []).find((c) => formaEtiqueta(c.nombre) === formaEtiqueta(nombre))
+  if (cat) return cat
+  const r = await sb.from('categorias').insert({ usuario_id: uid, tipo, nombre }).select('id, nombre').single()
+  if (r.error) throw new ErrorDatos('No se ha podido crear la categoría.')
+  return r.data
+}
+
+function validarFijo(args, parcial) {
+  const f = {}
+  if (args.nombre !== undefined) {
+    f.nombre = String(args.nombre).trim()
+    if (!f.nombre || f.nombre.length > 60) throw new ErrorArgumentos('«nombre» debe tener entre 1 y 60 caracteres.')
+  } else if (!parcial) throw new ErrorArgumentos('Falta «nombre».')
+  if (args.importe !== undefined) {
+    const n = Number(args.importe)
+    if (!(n > 0) || n > 100000) throw new ErrorArgumentos('«importe» debe ser positivo (en euros).')
+    f.importe = Math.round(n * 100) / 100
+    f.importe_centimos = Math.round(n * 100)
+  } else if (!parcial) throw new ErrorArgumentos('Falta «importe».')
+  if (args.dia_del_mes !== undefined) {
+    const d = Number(args.dia_del_mes)
+    if (!Number.isInteger(d) || d < 1 || d > 31) throw new ErrorArgumentos('«dia_del_mes» va de 1 a 31.')
+    f.dia_mes = d
+  }
+  if (args.cada_meses !== undefined || !parcial) {
+    const c = Number(args.cada_meses ?? 1)
+    if (!PERIODOS.includes(c)) throw new ErrorArgumentos('«cada_meses» puede ser 1, 2, 3, 6 o 12.')
+    f.periodo_meses = c
+    const m = Number(args.mes_inicio ?? Number(HOY().slice(5, 7)))
+    if (c > 1 && (!Number.isInteger(m) || m < 1 || m > 12)) throw new ErrorArgumentos('«mes_inicio» va de 1 a 12.')
+    f.mes_inicio = c === 1 ? null : m
+  }
+  if (args.activo !== undefined) f.activo = Boolean(args.activo)
+  return f
+}
+
+const textoFijo = (f) =>
+  `${f.nombre}: ${eur(f.importe)} ${f.periodo_meses > 1 ? `cada ${f.periodo_meses} meses` : 'al mes'}${f.dia_mes ? ` (día ${f.dia_mes})` : ''}${f.activo === false ? ' · dado de baja' : ''}`
+
+async function crearFijo(sb, uid, args) {
+  const tipo = args.tipo === 'ingreso' ? 'ingreso' : 'gasto'
+  const fila = { ...validarFijo(args, false), tipo, activo: true, confirmar: true }
+  const { data: existentes } = await sb.from('recurrentes').select('id, nombre, activo').eq('usuario_id', uid)
+  const repetido = (existentes ?? []).find((r) => r.activo !== false && formaEtiqueta(r.nombre) === formaEtiqueta(fila.nombre))
+  const categoria = args.categoria ? String(args.categoria).trim() : null
+  if (!args.confirmar) {
+    return {
+      texto: `VISTA PREVIA: nuevo ${tipo} fijo «${textoFijo(fila)}»${categoria ? ` en ${categoria}` : ''}.${repetido ? ` OJO: ya tienes un fijo llamado «${repetido.nombre}» (id ${repetido.id}); quizá quieras cambiar ese.` : ''} Vuelve a llamar con confirmar=true si el usuario lo aprueba.`,
+      datos: { fijo: fila, ya_existe: repetido ?? null, guardado: false },
+    }
+  }
+  if (categoria) {
+    const cat = await categoriaPorNombre(sb, uid, tipo, categoria)
+    fila.categoria_id = cat.id
+    fila.categoria_nombre = cat.nombre
+  }
+  const { data, error } = await sb.from('recurrentes').insert({ usuario_id: uid, ...fila }).select('id').single()
+  if (error) throw new ErrorDatos('No se ha podido guardar el gasto fijo.')
+  return { texto: `Guardado: ${textoFijo(fila)}. Aparecerá en Fijos y en la previsión del mes.`, datos: { id: data.id, fijo: fila, guardado: true } }
+}
+
+async function cambiarFijo(sb, uid, args) {
+  if (!esId(args.id)) return { texto: 'No existe ese gasto fijo: usa el id de listar_gastos_fijos.', datos: { guardado: false }, error: true }
+  const { data: actual, error } = await sb.from('recurrentes').select('*').eq('usuario_id', uid).eq('id', String(args.id)).maybeSingle()
+  if (error) throw new ErrorDatos('No se ha podido leer ese gasto fijo.')
+  if (!actual) return { texto: 'No existe ese gasto fijo (o no es tuyo).', datos: { guardado: false }, error: true }
+  const cambios = validarFijo({ ...args, ...(args.cada_meses === undefined && args.mes_inicio !== undefined ? { cada_meses: actual.periodo_meses ?? 1 } : {}) }, true)
+  const categoria = args.categoria ? String(args.categoria).trim() : null
+  if (!Object.keys(cambios).length && !categoria) throw new ErrorArgumentos('No hay nada que cambiar.')
+  const antes = { ...actual, importe: Number(actual.importe) }
+  const despues = { ...antes, ...cambios }
+  if (!args.confirmar) {
+    return {
+      texto: `VISTA PREVIA: «${textoFijo(antes)}» → «${textoFijo(despues)}»${categoria ? ` en ${categoria}` : ''}. Vuelve a llamar con confirmar=true si el usuario lo aprueba.`,
+      datos: { antes: textoFijo(antes), despues: textoFijo(despues), guardado: false },
+    }
+  }
+  if (categoria) {
+    const cat = await categoriaPorNombre(sb, uid, actual.tipo, categoria)
+    cambios.categoria_id = cat.id
+    cambios.categoria_nombre = cat.nombre
+  }
+  const { error: e } = await sb.from('recurrentes').update(cambios).eq('usuario_id', uid).eq('id', actual.id)
+  if (e) throw new ErrorDatos('No se ha podido guardar el cambio.')
+  return { texto: `Actualizado: ${textoFijo(despues)}.`, datos: { despues: textoFijo(despues), guardado: true } }
+}
+
 // ── Catálogo ────────────────────────────────────────────────────────────────
 const FILA = {
   type: 'object',
@@ -486,6 +582,49 @@ export const HERRAMIENTAS = [
     inputSchema: { type: 'object', properties: {} },
     annotations: { readOnlyHint: true },
     ejecutar: listarFijos,
+  },
+  {
+    name: 'crear_gasto_fijo',
+    title: 'Añadir un gasto fijo',
+    description: 'Añade una suscripción, recibo o ingreso fijo a Fijos (p. ej. «Spotify, 10,99 € el día 4 de cada mes» o un seguro anual). Avisa si ya existe uno con ese nombre.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        nombre: { type: 'string' },
+        importe: { type: 'number', description: 'Euros por cobro.' },
+        tipo: { type: 'string', enum: ['gasto', 'ingreso'], description: 'Por defecto, gasto.' },
+        dia_del_mes: { type: 'integer', minimum: 1, maximum: 31 },
+        cada_meses: { type: 'integer', enum: [1, 2, 3, 6, 12], description: '1 = mensual (por defecto), 12 = anual.' },
+        mes_inicio: { type: 'integer', minimum: 1, maximum: 12, description: 'Mes en que se cobra (si no es mensual).' },
+        categoria: { type: 'string', description: 'Ej. Suscripciones, Seguros, Vivienda.' },
+        confirmar: CONFIRMAR,
+      },
+      required: ['nombre', 'importe'],
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false },
+    ejecutar: crearFijo,
+  },
+  {
+    name: 'cambiar_gasto_fijo',
+    title: 'Cambiar o dar de baja un gasto fijo',
+    description: 'Cambia el importe, el día, la periodicidad, el nombre o la categoría de un gasto fijo (id de listar_gastos_fijos), o lo da de baja con activo=false (se conserva su historial).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        nombre: { type: 'string' },
+        importe: { type: 'number' },
+        dia_del_mes: { type: 'integer', minimum: 1, maximum: 31 },
+        cada_meses: { type: 'integer', enum: [1, 2, 3, 6, 12] },
+        mes_inicio: { type: 'integer', minimum: 1, maximum: 12 },
+        categoria: { type: 'string' },
+        activo: { type: 'boolean', description: 'false = dar de baja.' },
+        confirmar: CONFIRMAR,
+      },
+      required: ['id'],
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    ejecutar: cambiarFijo,
   },
   {
     name: 'editar_movimiento',

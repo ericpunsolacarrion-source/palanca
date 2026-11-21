@@ -67,9 +67,9 @@ beforeEach(() => {
     fuentes: [],
     perfiles: [{ usuario_id: YO }],
     recurrentes: [
-      { id: 'r1', usuario_id: YO, tipo: 'gasto', nombre: 'Spotify', importe: 10.99, periodo_meses: 1, dia_mes: 4, categoria_nombre: 'Suscripciones', activo: true },
-      { id: 'r2', usuario_id: YO, tipo: 'gasto', nombre: 'Seguro moto', importe: 240, periodo_meses: 12, dia_mes: 11, activo: true },
-      { id: 'rx', usuario_id: OTRO, tipo: 'gasto', nombre: 'Del otro', importe: 999, periodo_meses: 1, activo: true },
+      { id: '00000000-0000-4000-8000-0000000000a1', usuario_id: YO, tipo: 'gasto', nombre: 'Spotify', importe: 10.99, periodo_meses: 1, dia_mes: 4, categoria_nombre: 'Suscripciones', activo: true },
+      { id: '00000000-0000-4000-8000-0000000000a2', usuario_id: YO, tipo: 'gasto', nombre: 'Seguro moto', importe: 240, periodo_meses: 12, dia_mes: 11, activo: true },
+      { id: '00000000-0000-4000-8000-0000000000af', usuario_id: OTRO, tipo: 'gasto', nombre: 'Del otro', importe: 999, periodo_meses: 1, activo: true },
     ],
     movimientos: [
       { id: '00000000-0000-4000-8000-000000000001', usuario_id: YO, tipo: 'ingreso', importe: 1500, fecha: '2026-10-28', nota: 'Nómina', categoria_id: 'c2' },
@@ -225,4 +225,40 @@ it('ids con formato raro: «no existe», sin error de base de datos', async () =
   expect(r.isError).toBe(true)
   expect(r.content[0].text).toMatch(/No existe ese movimiento/)
   expect((await llamar('borrar_movimientos', { ids: ['basura'] })).content[0].text).toMatch(/entre 1 y 500/)
+})
+
+describe('crear y cambiar gastos fijos', () => {
+  const R1 = '00000000-0000-4000-8000-0000000000a1'
+  const RX = '00000000-0000-4000-8000-0000000000af'
+  it('crear: vista previa avisa si ya existe; confirmando lo guarda con su categoría', async () => {
+    const p = await llamar('crear_gasto_fijo', { nombre: 'spotify', importe: 11.99, dia_del_mes: 4 })
+    expect(p.structuredContent.ya_existe?.id).toBe(R1)
+    expect(tablas.recurrentes).toHaveLength(3)
+    const r = await llamar('crear_gasto_fijo', { nombre: 'Seguro coche', importe: 592.39, cada_meses: 12, mes_inicio: 1, categoria: 'Seguros', confirmar: true })
+    expect(r.structuredContent.guardado).toBe(true)
+    const nuevo = tablas.recurrentes.find((x) => x.nombre === 'Seguro coche')
+    expect(nuevo).toMatchObject({ usuario_id: YO, tipo: 'gasto', periodo_meses: 12, mes_inicio: 1, importe_centimos: 59239, activo: true, categoria_nombre: 'Seguros' })
+  })
+
+  it('validaciones: periodicidad, día e importe', async () => {
+    expect((await llamar('crear_gasto_fijo', { nombre: 'X', importe: 5, cada_meses: 5 })).isError).toBe(true)
+    expect((await llamar('crear_gasto_fijo', { nombre: 'X', importe: -5 })).isError).toBe(true)
+    expect((await llamar('crear_gasto_fijo', { nombre: 'X', importe: 5, dia_del_mes: 40 })).isError).toBe(true)
+  })
+
+  it('cambiar: subir precio y dar de baja; no toca los de otro usuario', async () => {
+    await llamar('cambiar_gasto_fijo', { id: R1, importe: 11.99, confirmar: true })
+    expect(tablas.recurrentes.find((x) => x.id === R1)).toMatchObject({ importe: 11.99, importe_centimos: 1199 })
+    await llamar('cambiar_gasto_fijo', { id: R1, activo: false, confirmar: true })
+    expect(tablas.recurrentes.find((x) => x.id === R1).activo).toBe(false)
+    const ajeno = await llamar('cambiar_gasto_fijo', { id: RX, importe: 1, confirmar: true })
+    expect(ajeno.isError).toBe(true)
+    expect(tablas.recurrentes.find((x) => x.id === RX).importe).toBe(999)
+  })
+})
+
+it('«hoy» es el de España: a las 00:30 de Madrid ya se acepta un movimiento de ese día', async () => {
+  vi.setSystemTime(new Date('2026-11-20T23:30:00Z')) // 21/11 00:30 en Madrid
+  const r = await llamar('importar_movimientos', { filas: [{ fecha: '21/11/2026', tipo: 'Gasto', concepto: 'Churros', categoria: 'Comida', importe: 3 }] })
+  expect(r.structuredContent.nuevos).toBe(1)
 })

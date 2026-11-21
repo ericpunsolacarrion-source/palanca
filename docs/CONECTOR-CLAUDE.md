@@ -15,6 +15,7 @@ lista, cuadrar el saldo, deshacer una importación o borrar movimientos.
 | Motor | `src/servidor/motorServidor.js` → `api/_motor.js` (**generado**: `npm run motor:api`; un test avisa si queda desfasado) | Las mismas reglas que la app (bolsas, totales, importador, plantilla). |
 
 ## Seguridad
+- «Hoy» en hora de España (`process.env.TZ` en el núcleo; Vercel va en UTC).
 - Nunca la service key: cada consulta usa el token del usuario → **RLS** (`usuario_id = auth.uid()`).
 - Toda escritura en dos tiempos: sin `confirmar` devuelve vista previa; con `confirmar: true` la hace.
 - Borrar filtra además por `usuario_id` y solo lo que el usuario ve.
@@ -24,6 +25,7 @@ lista, cuadrar el saldo, deshacer una importación o borrar movimientos.
 ## Herramientas
 `resumen`, `listar_movimientos`, `listar_categorias`, `listar_gastos_fijos` (solo lectura) ·
 `editar_movimiento` (importe, fecha, concepto o categoría; no convierte en inversión/ajuste) ·
+`crear_gasto_fijo` / `cambiar_gasto_fijo` (también dar de baja) ·
 `importar_movimientos` (formato de la plantilla, sin duplicar) · `cuadrar_saldo`
 (ajuste visible) · `deshacer_importacion` · `borrar_movimientos` (destructivas).
 
