@@ -22,7 +22,8 @@ lista, cuadrar el saldo, deshacer una importación o borrar movimientos.
 - El usuario quita el acceso desde los conectores de Claude.
 
 ## Herramientas
-`resumen`, `listar_movimientos`, `listar_categorias` (solo lectura) ·
+`resumen`, `listar_movimientos`, `listar_categorias`, `listar_gastos_fijos` (solo lectura) ·
+`editar_movimiento` (importe, fecha, concepto o categoría; no convierte en inversión/ajuste) ·
 `importar_movimientos` (formato de la plantilla, sin duplicar) · `cuadrar_saldo`
 (ajuste visible) · `deshacer_importacion` · `borrar_movimientos` (destructivas).
 

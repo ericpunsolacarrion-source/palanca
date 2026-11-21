@@ -28,6 +28,7 @@ function supabaseFalso(uid, tablas) {
     single() { this.u = true; return this }
     insert(d) { this.op = 'insert'; this.d = Array.isArray(d) ? d : [d]; return this }
     delete() { this.op = 'delete'; return this }
+    update(d) { this.op = 'update'; this.d = d; return this }
     then(ok, ko) {
       const t = (tablas[this.t] ||= [])
       let filas
@@ -38,6 +39,7 @@ function supabaseFalso(uid, tablas) {
       } else {
         filas = t.filter((r) => this.f.every((f) => f(r)))
         if (this.op === 'delete') tablas[this.t] = t.filter((r) => !filas.includes(r))
+        if (this.op === 'update') filas.forEach((r) => Object.assign(r, this.d))
       }
       if (this.t === 'movimientos') filas = filas.map((x) => ({ ...x, categoria: relacion(x, 'categorias', 'categoria'), fuente: relacion(x, 'fuentes', 'fuente') }))
       if (this.r) filas = filas.slice(this.r[0], this.r[1] + 1)
@@ -64,10 +66,15 @@ beforeEach(() => {
     ],
     fuentes: [],
     perfiles: [{ usuario_id: YO }],
+    recurrentes: [
+      { id: 'r1', usuario_id: YO, tipo: 'gasto', nombre: 'Spotify', importe: 10.99, periodo_meses: 1, dia_mes: 4, categoria_nombre: 'Suscripciones', activo: true },
+      { id: 'r2', usuario_id: YO, tipo: 'gasto', nombre: 'Seguro moto', importe: 240, periodo_meses: 12, dia_mes: 11, activo: true },
+      { id: 'rx', usuario_id: OTRO, tipo: 'gasto', nombre: 'Del otro', importe: 999, periodo_meses: 1, activo: true },
+    ],
     movimientos: [
-      { id: 'm1', usuario_id: YO, tipo: 'ingreso', importe: 1500, fecha: '2026-10-28', nota: 'Nómina', categoria_id: 'c2' },
-      { id: 'm2', usuario_id: YO, tipo: 'gasto', importe: 40, fecha: '2026-11-02', nota: 'Mercadona', categoria_id: 'c1' },
-      { id: 'mx', usuario_id: OTRO, tipo: 'ingreso', importe: 99999, fecha: '2026-11-01', nota: 'Del otro', categoria_id: null },
+      { id: '00000000-0000-4000-8000-000000000001', usuario_id: YO, tipo: 'ingreso', importe: 1500, fecha: '2026-10-28', nota: 'Nómina', categoria_id: 'c2' },
+      { id: '00000000-0000-4000-8000-000000000002', usuario_id: YO, tipo: 'gasto', importe: 40, fecha: '2026-11-02', nota: 'Mercadona', categoria_id: 'c1' },
+      { id: '00000000-0000-4000-8000-0000000000ff', usuario_id: OTRO, tipo: 'ingreso', importe: 99999, fecha: '2026-11-01', nota: 'Del otro', categoria_id: null },
     ],
   }
   ctx = { sb: supabaseFalso(YO, tablas), usuario: { id: YO } }
@@ -107,15 +114,15 @@ describe('solo los datos del usuario', () => {
     expect(r.structuredContent.patrimonio).toBe(1460)
     expect(r.structuredContent.movimientos_totales).toBe(2)
     const l = await llamar('listar_movimientos', { limite: 500 })
-    expect(l.structuredContent.movimientos.map((m) => m.id)).toEqual(['m2', 'm1'])
+    expect(l.structuredContent.movimientos.map((m) => m.id)).toEqual(['00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000001'])
     const c = await llamar('listar_categorias')
     expect(c.structuredContent.categorias.map((x) => x.nombre)).not.toContain('Secreta')
   })
 
   it('no puede borrar un movimiento ajeno aunque conozca su id', async () => {
-    const r = await llamar('borrar_movimientos', { ids: ['mx'], confirmar: true })
+    const r = await llamar('borrar_movimientos', { ids: ['00000000-0000-4000-8000-0000000000ff'], confirmar: true })
     expect(r.structuredContent.borrados).toBe(0)
-    expect(tablas.movimientos.some((m) => m.id === 'mx')).toBe(true)
+    expect(tablas.movimientos.some((m) => m.id === '00000000-0000-4000-8000-0000000000ff')).toBe(true)
   })
 })
 
@@ -183,4 +190,39 @@ describe('cuadrar_saldo', () => {
   it('rechaza fechas futuras', async () => {
     expect((await llamar('cuadrar_saldo', { banco: 1, fecha: '2099-01-01' })).isError).toBe(true)
   })
+})
+
+describe('gastos fijos y corregir movimientos', () => {
+  it('listar_gastos_fijos: solo los míos, con coste anual', async () => {
+    const r = await llamar('listar_gastos_fijos')
+    expect(r.structuredContent.fijos.map((f) => f.nombre)).toEqual(['Spotify', 'Seguro moto'])
+    expect(r.structuredContent.gasto_fijo_anual).toBeCloseTo(10.99 * 12 + 240, 2)
+  })
+
+  it('editar_movimiento: vista previa, cambio de categoría (creándola) e importe', async () => {
+    const p = await llamar('editar_movimiento', { id: '00000000-0000-4000-8000-000000000002', categoria: 'Supermercado', importe: 42.5 })
+    expect(p.structuredContent.guardado).toBe(false)
+    expect(tablas.movimientos.find((m) => m.id === '00000000-0000-4000-8000-000000000002').importe).toBe(40)
+    const r = await llamar('editar_movimiento', { id: '00000000-0000-4000-8000-000000000002', categoria: 'Supermercado', importe: 42.5, confirmar: true })
+    expect(r.structuredContent.despues).toMatchObject({ categoria: 'Supermercado', importe: 42.5 })
+    const m = tablas.movimientos.find((x) => x.id === '00000000-0000-4000-8000-000000000002')
+    expect(m).toMatchObject({ importe: 42.5, importe_centimos: 4250 })
+    expect(tablas.categorias.find((c) => c.id === m.categoria_id).nombre).toBe('Supermercado')
+  })
+
+  it('editar_movimiento: no toca movimientos ajenos ni convierte en inversión', async () => {
+    const r = await llamar('editar_movimiento', { id: '00000000-0000-4000-8000-0000000000ff', importe: 1, confirmar: true })
+    expect(r.isError).toBe(true)
+    expect(tablas.movimientos.find((x) => x.id === '00000000-0000-4000-8000-0000000000ff').importe).toBe(99999)
+    const i = await llamar('editar_movimiento', { id: '00000000-0000-4000-8000-000000000002', categoria: 'Inversión', confirmar: true })
+    expect(i.isError).toBe(true)
+    expect((await llamar('editar_movimiento', { id: '00000000-0000-4000-8000-000000000002', fecha: '2099-01-01' })).isError).toBe(true)
+  })
+})
+
+it('ids con formato raro: «no existe», sin error de base de datos', async () => {
+  const r = await llamar('editar_movimiento', { id: 'no-existe', importe: 1 })
+  expect(r.isError).toBe(true)
+  expect(r.content[0].text).toMatch(/No existe ese movimiento/)
+  expect((await llamar('borrar_movimientos', { ids: ['basura'] })).content[0].text).toMatch(/entre 1 y 500/)
 })

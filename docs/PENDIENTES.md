@@ -19,8 +19,8 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 - Hecho: política de privacidad («Si conectas tu asistente de IA») y apartado
   «Conecta tu asistente de IA» en Tu cuenta (sale «muy pronto» hasta que
   Supabase publica el servidor OAuth; /api/conector-estado).
-- Más adelante: registrar movimientos sueltos con lenguaje natural, editar
-  categorías, gastos fijos.
+- Hecho: corregir movimientos y ver gastos fijos. Más adelante: crear o
+  cambiar gastos fijos desde Claude.
 
 ## Plantilla de Palanca (Excel) (20-11) — publicada
 

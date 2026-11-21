@@ -72,6 +72,8 @@ async function prepararPeriodo(sb, uid) {
   }
 }
 
+const esId = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v))
+
 class ErrorDatos extends Error {}
 class ErrorArgumentos extends Error {}
 
@@ -288,7 +290,7 @@ async function deshacerImportacion(sb, uid, args) {
 }
 
 async function borrarMovimientos(sb, uid, args) {
-  const ids = Array.isArray(args.ids) ? [...new Set(args.ids.map(String))] : []
+  const ids = Array.isArray(args.ids) ? [...new Set(args.ids.map(String))].filter(esId) : []
   if (!ids.length || ids.length > 500) throw new ErrorArgumentos('«ids» debe tener entre 1 y 500 identificadores (los de listar_movimientos).')
   const { data, error } = await sb
     .from('movimientos')
@@ -334,6 +336,96 @@ async function cuadrarSaldo(sb, uid, args) {
   const { error } = await sb.from('movimientos').insert({ usuario_id: uid, tipo, categoria_id: cat.id, fuente_id: null, importe: Math.abs(dif) / 100, importe_centimos: Math.abs(dif), fecha, es_fijo: false, nota })
   if (error) throw new ErrorDatos('No se ha podido guardar el ajuste.')
   return { texto: `Saldo cuadrado: ajuste de ${dif > 0 ? '+' : '−'}${eur(Math.abs(dif) / 100)} a ${fecha}.`, datos: { ...base, guardado: true } }
+}
+
+async function listarFijos(sb, uid) {
+  const { data, error } = await sb.from('recurrentes').select('*').eq('usuario_id', uid)
+  if (error) throw new ErrorDatos('No se han podido leer tus gastos fijos.')
+  const fijos = (data ?? []).map((r) => {
+    const cada = Number(r.periodo_meses) || 1
+    const importe = Number(r.importe)
+    return {
+      id: r.id,
+      nombre: r.nombre,
+      tipo: r.tipo,
+      importe,
+      cada_meses: cada,
+      dia_del_mes: r.dia_mes ?? null,
+      categoria: r.categoria_nombre ?? null,
+      activo: r.activo !== false,
+      coste_anual: Math.round((importe * 12) / cada * 100) / 100,
+    }
+  })
+  const activos = fijos.filter((f) => f.activo && f.tipo === 'gasto')
+  const anual = Math.round(activos.reduce((t, f) => t + f.coste_anual, 0) * 100) / 100
+  return {
+    texto: `${activos.length} gastos fijos activos: ${eur(anual)} al año (${eur(anual / 12)} al mes de media).`,
+    datos: { fijos, gasto_fijo_anual: anual },
+  }
+}
+
+async function editarMovimiento(sb, uid, args) {
+  if (!args.id) throw new ErrorArgumentos('Falta «id» (el de listar_movimientos).')
+  if (!esId(args.id)) return { texto: 'No existe ese movimiento (o no es tuyo): usa el id de listar_movimientos.', datos: { guardado: false }, error: true }
+  const { data: actual, error } = await sb
+    .from('movimientos')
+    .select('id, tipo, importe, importe_centimos, fecha, nota, categoria_id, categoria:categorias(id, nombre), fuente:fuentes(id, nombre)')
+    .eq('usuario_id', uid)
+    .eq('id', String(args.id))
+    .maybeSingle()
+  if (error) throw new ErrorDatos('No se ha podido leer ese movimiento.')
+  if (!actual) return { texto: 'No existe ese movimiento (o no es tuyo).', datos: { guardado: false }, error: true }
+  const cambios = {}
+  const antes = vistaMovimiento(actual)
+  const despues = { ...antes }
+  if (args.importe !== undefined) {
+    const n = Number(args.importe)
+    if (!(n > 0)) throw new ErrorArgumentos('«importe» debe ser un número positivo en euros.')
+    cambios.importe = Math.round(n * 100) / 100
+    cambios.importe_centimos = Math.round(n * 100)
+    despues.importe = cambios.importe
+  }
+  if (args.fecha !== undefined) {
+    const f = parseFecha(args.fecha)
+    if (!f || f > HOY()) throw new ErrorArgumentos('«fecha» no es válida (hoy o antes).')
+    cambios.fecha = f
+    despues.fecha = f
+  }
+  if (args.concepto !== undefined) {
+    cambios.nota = String(args.concepto).trim() || null
+    despues.concepto = cambios.nota ?? ''
+  }
+  let categoriaNueva = null
+  if (args.categoria !== undefined) {
+    const nombre = String(args.categoria).trim()
+    if (!nombre) throw new ErrorArgumentos('«categoria» no puede estar vacía.')
+    if (esInversion(actual) || esRetiradaInversion(actual) || esAjuste(actual)) {
+      throw new ErrorArgumentos('A las inversiones y a los ajustes de saldo no se les cambia la categoría: bórralo e impórtalo con el tipo correcto.')
+    }
+    if ([CATEGORIA_INVERSION, CATEGORIA_AJUSTE].some((c) => formaEtiqueta(c) === formaEtiqueta(nombre))) {
+      throw new ErrorArgumentos('Para convertir algo en inversión o ajuste, bórralo e impórtalo con el tipo correcto.')
+    }
+    categoriaNueva = nombre
+    despues.categoria = nombre
+  }
+  if (!Object.keys(cambios).length && !categoriaNueva) throw new ErrorArgumentos('No hay nada que cambiar: indica importe, fecha, concepto o categoría.')
+  if (!args.confirmar) {
+    return { texto: `VISTA PREVIA: ${JSON.stringify(antes)} → ${JSON.stringify(despues)}. Vuelve a llamar con confirmar=true si el usuario lo aprueba.`, datos: { antes, despues, guardado: false } }
+  }
+  if (categoriaNueva) {
+    const { data: cats } = await sb.from('categorias').select('id, tipo, nombre').eq('usuario_id', uid).eq('tipo', actual.tipo)
+    let cat = (cats ?? []).find((c) => formaEtiqueta(c.nombre) === formaEtiqueta(categoriaNueva))
+    if (!cat) {
+      const r = await sb.from('categorias').insert({ usuario_id: uid, tipo: actual.tipo, nombre: categoriaNueva }).select('id, nombre').single()
+      if (r.error) throw new ErrorDatos('No se ha podido crear la categoría.')
+      cat = r.data
+    }
+    cambios.categoria_id = cat.id
+    despues.categoria = cat.nombre
+  }
+  const { error: e } = await sb.from('movimientos').update(cambios).eq('usuario_id', uid).eq('id', actual.id)
+  if (e) throw new ErrorDatos('No se ha podido guardar el cambio.')
+  return { texto: 'Movimiento actualizado.', datos: { antes, despues, guardado: true } }
 }
 
 // ── Catálogo ────────────────────────────────────────────────────────────────
@@ -386,6 +478,33 @@ export const HERRAMIENTAS = [
     inputSchema: { type: 'object', properties: {} },
     annotations: { readOnlyHint: true },
     ejecutar: listarCategorias,
+  },
+  {
+    name: 'listar_gastos_fijos',
+    title: 'Ver mis gastos fijos',
+    description: 'Suscripciones, recibos e ingresos fijos que el usuario tiene en Palanca (Fijos), con su periodicidad y su coste anual.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true },
+    ejecutar: listarFijos,
+  },
+  {
+    name: 'editar_movimiento',
+    title: 'Corregir un movimiento',
+    description: 'Cambia el importe, la fecha, el concepto o la categoría de un movimiento (id de listar_movimientos). Sin confirmar enseña el antes y el después.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        importe: { type: 'number', description: 'Nuevo importe en euros (positivo).' },
+        fecha: { type: 'string', description: 'AAAA-MM-DD o dd/mm/aaaa.' },
+        concepto: { type: 'string' },
+        categoria: { type: 'string', description: 'Nombre de la categoría (se crea si no existe).' },
+        confirmar: CONFIRMAR,
+      },
+      required: ['id'],
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    ejecutar: editarMovimiento,
   },
   {
     name: 'importar_movimientos',
