@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { formatearEuros } from '../lib/categorias'
 import { cobrosProximos, costeAnual } from '../lib/periodicidad'
+import { sumaImportes } from '../lib/movimientosUtils'
 
 const DIAS_VENTANA = 30
 const FMT_DIA = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' })
@@ -33,7 +34,7 @@ export default function CalendarioCobros({ items, onAbrir }) {
     () => cobrosProximos(items.filter((r) => r.tipo === 'gasto'), DIAS_VENTANA),
     [items],
   )
-  const total = cobros.reduce((s, c) => s + Math.round(c.importe * 100), 0) / 100
+  const total = sumaImportes(cobros)
   const maxImporte = Math.max(1, ...cobros.map((c) => c.importe))
   const burbujas = conCarriles(cobros)
   const carriles = Math.max(1, ...burbujas.map((b) => b.carril + 1))

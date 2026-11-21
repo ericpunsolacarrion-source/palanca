@@ -16,7 +16,7 @@ import { directorio, formaEtiqueta, nombreParaComercio, normalizarTexto } from '
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import { aCentimos } from '../lib/importe'
-import { bolsas, formatearFecha } from '../lib/movimientosUtils'
+import { bolsas, formatearFecha, sumaImportes } from '../lib/movimientosUtils'
 import { INSTRUCCIONES_ASISTENTE } from '../lib/plantillaPalanca'
 import { crearAjuste } from '../lib/ajustes'
 import { fechaRelativa } from '../lib/inicio'
@@ -204,7 +204,7 @@ function Elegir({ activoCapturas, onArchivo, onCapturas, error }) {
 
 // Qué trae la plantilla, contado con las reglas de Palanca.
 function DesglosePlantilla({ filas }) {
-  const suma = (pred) => filas.filter(pred).reduce((t, f) => t + Math.round(f.importe * 100), 0) / 100
+  const suma = (pred) => sumaImportes(filas.filter(pred))
   const compras = suma((f) => f.esInversion && f.tipo === 'gasto')
   const ventas = suma((f) => f.esInversion && f.tipo === 'ingreso')
   const traspasos = filas.filter((f) => !f.esInversion && (f.categoria === 'Ahorro' || f.categoria === 'Desde ahorro')).length

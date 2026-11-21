@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { etiquetaCategoria, formatearEuros } from '../../lib/categorias'
-import { bolsas, etiquetaMes, formatearPorcentaje, hoyIso, limiteGastoPresupuesto, ultimaReconciliacion } from '../../lib/movimientosUtils'
+import { bolsas, etiquetaMes, formatearPorcentaje, hoyIso, limiteGastoPresupuesto, sumaImportes, ultimaReconciliacion } from '../../lib/movimientosUtils'
 import { balanceInicio, cambioPatrimonioMes, conceptoDe, evolucionPatrimonio, fechaRelativa, resumenDelMes } from '../../lib/inicio'
 import { cobrosProximos } from '../../lib/periodicidad'
 import { usePresupuestoCompartido } from '../../lib/DatosCompartidos'
@@ -322,7 +322,7 @@ const escritorio = () => typeof window !== 'undefined' && window.matchMedia?.('(
 // ── Próximos cobros (Base) ──────────────────────────────────────────────────
 function ProximosCobros({ recurrentes, onIrA }) {
   const cobros = useMemo(() => cobrosProximos((recurrentes ?? []).filter((r) => r.tipo === 'gasto'), 30), [recurrentes])
-  const total = cobros.reduce((s, c) => s + Math.round(c.importe * 100), 0) / 100
+  const total = sumaImportes(cobros)
   return (
     <Tarjeta
       className="v5-ini-cobros"

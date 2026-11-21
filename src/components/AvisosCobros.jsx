@@ -9,6 +9,7 @@ import { esV5 } from '../lib/diseno'
 import { formatearEuros } from '../lib/categorias'
 import { mesNaturalActual } from '../lib/periodo'
 import { guardarSilencio, iosSinInstalar, leerSilencio, permisoActual, puedeNotificar } from '../lib/notificaciones'
+import { sumaImportes } from '../lib/movimientosUtils'
 
 // Tarjeta del dashboard: lo que está a punto de salir de tu cuenta (cobros de
 // los próximos días, renovaciones y subidas de precio). Además, si el usuario
@@ -155,7 +156,7 @@ export default function AvisosCobros({ cargando, usuarioId, recurrentes, movimie
   // Fijos de gasto ya cobrados este mes (lo «realizado»).
   const mesActual = mesNaturalActual() // calendario (los fijos van por mes natural), hora local (no UTC: el día 1 a las 00:30 ya es el mes nuevo)
   const cobrados = recurrentes.filter((r) => r.tipo === 'gasto' && r.activo !== false && r.aplicadoEn === mesActual)
-  const totalCobrado = cobrados.reduce((s, r) => s + Math.round(Number(r.importe) * 100), 0) / 100
+  const totalCobrado = sumaImportes(cobrados)
 
   function cerrar(id) {
     const nuevo = new Set(cerrados).add(id)

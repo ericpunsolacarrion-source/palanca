@@ -344,6 +344,15 @@ export function bolsasConsolidadas(movimientos) {
   return bolsas(consolidados)
 }
 
+// Suma EXACTA (en céntimos) de importes en euros de cualquier lista (cobros,
+// fijos…), con un selector del importe. Fuente única para totales que antes se
+// sumaban en cada componente.
+export function sumaImportes(lista, importeDe = (x) => x.importe) {
+  let c = 0
+  for (const x of lista ?? []) c += Math.round((Number(importeDe(x)) || 0) * 100)
+  return aEuros(c)
+}
+
 // Agrega por mes los últimos N meses terminando en `claveFin` (por defecto el
 // mes actual). Meses sin datos quedan a cero.
 export function agregarPorMes(movimientos, n, claveFin) {

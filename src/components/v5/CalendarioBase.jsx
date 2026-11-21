@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { formatearEuros } from '../../lib/categorias'
 import { costeAnual, fechaCobroEnMes, tocaEnMes } from '../../lib/periodicidad'
 import { TEXTO_ESTADO, estadoEnMes } from '../../lib/calendarioBase'
-import { etiquetaMes } from '../../lib/movimientosUtils'
+import { etiquetaMes, sumaImportes } from '../../lib/movimientosUtils'
 import Icono from '../Icono'
 import Avatar from './Avatar'
 import GraficoSaldo from './GraficoSaldo'
@@ -84,14 +84,13 @@ export default function CalendarioBase({ items, movimientos = [], onAbrir }) {
 
   const sinDia = items.filter((r) => r.activo && tocaEnMes(r, clave) && !fechaCobroEnMes(r, clave))
 
-  const cent = (v) => Math.round(v * 100)
   // Totales con TODO lo que toca este mes, tenga día o no (igual que las
   // cifras de arriba de Base): lo que no tiene día se avisa debajo.
   const gastos = items
     .filter((r) => r.activo && r.tipo === 'gasto' && tocaEnMes(r, clave))
     .map((rec) => ({ rec, importe: Number(rec.importe) || 0, estado: estadoEnMes(rec, clave, claveHoy, hoy) }))
-  const total = gastos.reduce((s, c) => s + cent(c.importe), 0) / 100
-  const pagado = gastos.filter((c) => c.estado === 'pagado').reduce((s, c) => s + cent(c.importe), 0) / 100
+  const total = sumaImportes(gastos)
+  const pagado = sumaImportes(gastos.filter((c) => c.estado === 'pagado'))
   const diasMes = new Date(y, m, 0).getDate()
   const hueco = (new Date(y, m - 1, 1).getDay() + 6) % 7 // lunes = 0
   const celdas = [...Array(hueco).fill(null), ...Array.from({ length: diasMes }, (_, i) => i + 1)]

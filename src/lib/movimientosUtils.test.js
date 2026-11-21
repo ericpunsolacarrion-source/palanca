@@ -140,3 +140,13 @@ describe('traspaso a tu ahorro (categoría Ahorro, contrato E4)', () => {
     expect(totalesDe([m('ingreso', 10, 'Ahorro', '2026-01-05')]).ingresos).toBe(10)
   })
 })
+
+describe('sumaImportes (totales de cobros y fijos)', () => {
+  it('suma exacta en céntimos: sin errores de coma flotante', async () => {
+    const { sumaImportes } = await import('./movimientosUtils')
+    expect(sumaImportes([{ importe: 0.1 }, { importe: 0.2 }])).toBe(0.3)
+    expect(sumaImportes(Array.from({ length: 1000 }, () => ({ importe: 24.7659 })))).toBe(24770)
+    expect(sumaImportes([{ x: '10,5' }, { x: 2 }], (o) => Number(String(o.x).replace(',', '.')))).toBe(12.5)
+    expect(sumaImportes(null)).toBe(0)
+  })
+})
