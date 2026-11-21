@@ -125,6 +125,17 @@ export function registrarErrorAuth(contexto, err, envio = globalThis.navigator) 
   return datos
 }
 
+export const MIN_PASSWORD = 8
+
+// Nueva contraseña (pantalla de recuperación): validación local antes de llamar
+// a Supabase, que tiene sus propias reglas.
+export function validarNuevaPassword(nueva, repetida) {
+  if (nueva.length < MIN_PASSWORD) return `La contraseña debe tener al menos ${MIN_PASSWORD} caracteres.`
+  if (!/[a-zA-Z]/.test(nueva) || !/\d/.test(nueva)) return 'Mezcla letras y números para que sea más segura.'
+  if (nueva !== repetida) return 'Las dos contraseñas no coinciden.'
+  return null
+}
+
 export async function cambiarPassword(password) {
   return supabase.auth.updateUser({ password })
 }

@@ -1,18 +1,8 @@
 import { useState } from 'react'
-import { cambiarPassword, cerrarSesionAuth, MSG_ENLACE_CADUCADO, mensajeErrorAuth } from '../lib/auth'
+import { cambiarPassword, cerrarSesionAuth, MIN_PASSWORD as MIN, MSG_ENLACE_CADUCADO, mensajeErrorAuth, validarNuevaPassword } from '../lib/auth'
 import { BotonOjo } from './Auth'
 import { Marca } from './Icono'
 import { toast } from '../lib/toast'
-
-const MIN = 8
-
-// Validación local antes de llamar a Supabase (que tiene sus propias reglas).
-export function validarNuevaPassword(nueva, repetida) {
-  if (nueva.length < MIN) return `La contraseña debe tener al menos ${MIN} caracteres.`
-  if (!/[a-zA-Z]/.test(nueva) || !/\d/.test(nueva)) return 'Mezcla letras y números para que sea más segura.'
-  if (nueva !== repetida) return 'Las dos contraseñas no coinciden.'
-  return null
-}
 
 // Pantalla a la que llega el enlace «Restablecer contraseña» del correo: la
 // sesión de recuperación ya está abierta; aquí se elige la nueva.

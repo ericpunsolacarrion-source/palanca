@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-vi.mock('../lib/supabaseClient', () => ({ supabase: {} }))
-const { validarNuevaPassword } = await import('./NuevaContrasena.jsx')
+vi.mock('./supabaseClient', () => ({ supabase: {} }))
+const { validarNuevaPassword } = await import('./auth')
 
 describe('nueva contraseña', () => {
   it('mínimo 8, letras y números, y las dos iguales', () => {
