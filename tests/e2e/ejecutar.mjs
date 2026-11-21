@@ -19,6 +19,7 @@ import { acceso } from './acceso.mjs'
 import { plantilla } from './plantilla.mjs'
 import { conector } from './conector.mjs'
 import { recuperar } from './recuperar.mjs'
+import { funnel } from './funnel.mjs'
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url))
 const salida = path.join(AQUI, 'salida')
@@ -84,6 +85,10 @@ try {
     console.log(`\nRecuperar contraseña: ${rc.length ? `${rc.length} fallos` : 'todo bien'}`)
     for (const f of rc) console.log('  ✗ ' + f)
     fallos += rc.length
+    const fu = await funnel({ url, navegador, salida })
+    console.log(`\nPanel de fundador (funnel): ${fu.length ? `${fu.length} fallos` : 'todo bien'}`)
+    for (const f of fu) console.log('  ✗ ' + f)
+    fallos += fu.length
   }
   const informe = await auditoria({ url, salida, navegador })
   console.log(`\nAuditoría visual: ${informe.length ? `${informe.length} problemas` : 'sin problemas'}`)

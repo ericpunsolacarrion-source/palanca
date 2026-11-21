@@ -260,6 +260,19 @@ export const supabase = {
   from: (t) => new Q(t),
   rpc: async (fn, args) => {
     if (fn === 'soy_admin') return { data: !LS('mock_no_admin'), error: null }
+    // Funnel (mismos números que la prueba del SQL en PostgreSQL).
+    if (fn === 'palanca_funnel') return LS('mock_sin_funnel') ? { data: null, error: { message: 'function palanca_funnel does not exist' } } : { data: {
+      generado: new Date().toISOString(), hoy: '2026-11-21',
+      embudo: { registro: 3, confirmado: 2, primer_mov: 2, activacion: 1, activacion_elegibles: 2, d3: 2, d3_elegibles: 3, d7: 1, d7_elegibles: 2, d14: 1, d14_elegibles: 2, d30: 1, d30_elegibles: 1 },
+      cohortes: [
+        { semana: '2026-11-16', n: 1, d3: 0, d3_elegibles: 1, d7: 0, d7_elegibles: 0, d14: 0, d14_elegibles: 0, d30: 0, d30_elegibles: 0 },
+        { semana: '2026-10-12', n: 1, d3: 1, d3_elegibles: 1, d7: 1, d7_elegibles: 1, d14: 1, d14_elegibles: 1, d30: 1, d30_elegibles: 1 },
+      ],
+      usuarios: [
+        { email: 'cris@x.com', alta: '2026-11-16', movimientos: 0, ultimo_movimiento: null, dias_sin_actividad: 5 },
+        { email: 'bob@x.com', alta: '2026-11-01', movimientos: 2, ultimo_movimiento: '2026-11-05', dias_sin_actividad: 16 },
+      ],
+    }, error: null }
     if (fn === 'palanca_metricas') return LS('mock_sin_sql') ? { data: null, error: { message: 'function palanca_metricas does not exist' } } : { data: metricas, error: null }
     if (fn === 'admin_cambiar_plan') {
       const u = metricas.lista.find((x) => x.uid === args.p_usuario_id)

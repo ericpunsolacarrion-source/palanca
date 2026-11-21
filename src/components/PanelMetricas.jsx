@@ -564,12 +564,108 @@ function ListaUsuarios({ lista, hoy, onGestionar }) {
   )
 }
 
+// ── Funnel de retención (supabase-schema-funnel.sql → palanca_funnel) ───────
+// Solo recuentos y fechas, medidos por cuándo REGISTRA movimientos cada usuario.
+const fraccion = (n, de) => (de > 0 ? `${n}/${de} · ${pct(n, de)} %` : '—')
+
+function SeccionFunnel({ f }) {
+  const e = f.embudo
+  const pasos = [
+    ['Registro', e.registro, null, 'Cuentas creadas'],
+    ['Correo confirmado', e.confirmado, e.registro, 'Si la confirmación está desactivada, todos'],
+    ['Primer movimiento', e.primer_mov, e.confirmado, 'Ha registrado al menos uno'],
+    ['Activación', e.activacion, e.activacion_elegibles, '≥ 5 movimientos en sus 7 primeros días (entre los que ya llevan 7 días)'],
+    ['Sigue el día 3', e.d3, e.d3_elegibles, 'Registra algo el día 3 o después'],
+    ['Sigue el día 7', e.d7, e.d7_elegibles, ''],
+    ['Sigue el día 14', e.d14, e.d14_elegibles, ''],
+    ['Sigue el día 30', e.d30, e.d30_elegibles, ''],
+  ]
+  const celda = (n, de) => (de > 0 ? <td>{pct(n, de)} %<small> {n}/{de}</small></td> : <td className="pm-nd">—</td>)
+  return (
+    <>
+      <section className="pm-bloque" data-testid="pm-funnel">
+        <header className="pm-bloque-cab">
+          <h3>Funnel de retención</h3>
+          <span className="pm-lectura">Por cuándo registran, no por la fecha del gasto</span>
+        </header>
+        <ul className="pm-embudo">
+          {pasos.map(([t, n, de, ayuda]) => (
+            <li key={t} title={ayuda}>
+              <span className="pm-embudo-txt">{t}</span>
+              <span className="pm-embudo-barra" aria-hidden="true">
+                <span style={{ width: `${Math.max(n > 0 ? 2 : 0, pct(n, e.registro))}%` }} />
+              </span>
+              <span className="pm-embudo-num">
+                {n} <small>{de == null ? '' : fraccion(n, de)}</small>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="ayuda-mini">La activación y los días 3, 7, 14 y 30 solo cuentan a quien ya lleva esos días de alta (n/de = cumplen/pueden cumplir).</p>
+      </section>
+
+      <section className="pm-bloque">
+        <header className="pm-bloque-cab">
+          <h3>Cohortes por semana de alta</h3>
+          <span className="pm-lectura">% que sigue registrando el día 3, 7, 14 y 30</span>
+        </header>
+        {f.cohortes.length === 0 ? (
+          <p className="ayuda-mini">Aún no hay altas en las últimas 12 semanas.</p>
+        ) : (
+          <div className="pm-tabla-scroll">
+            <table className="pm-tabla">
+              <thead><tr><th>Semana</th><th>Altas</th><th>D3</th><th>D7</th><th>D14</th><th>D30</th></tr></thead>
+              <tbody>
+                {f.cohortes.map((c) => (
+                  <tr key={c.semana}>
+                    <td>{formatearFecha(c.semana)}</td>
+                    <td>{c.n}</td>
+                    {celda(c.d3, c.d3_elegibles)}
+                    {celda(c.d7, c.d7_elegibles)}
+                    {celda(c.d14, c.d14_elegibles)}
+                    {celda(c.d30, c.d30_elegibles)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="pm-bloque">
+        <header className="pm-bloque-cab">
+          <h3>Tus testers</h3>
+          <span className="pm-lectura">Alta, movimientos registrados y última actividad</span>
+        </header>
+        <div className="pm-tabla-scroll">
+          <table className="pm-tabla">
+            <thead><tr><th>Correo</th><th>Alta</th><th>Movs</th><th>Último</th><th>Sin actividad</th></tr></thead>
+            <tbody>
+              {f.usuarios.map((u) => (
+                <tr key={u.email}>
+                  <td className="pm-email">{u.email}</td>
+                  <td>{formatearFecha(u.alta)}</td>
+                  <td>{u.movimientos}</td>
+                  <td>{u.ultimo_movimiento ? formatearFecha(u.ultimo_movimiento) : '—'}</td>
+                  <td className={u.dias_sin_actividad >= 7 ? 'gasto' : ''}>{u.dias_sin_actividad} d</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </>
+  )
+}
+
 export default function PanelMetricas({ onCerrar }) {
   const [datos, setDatos] = useState(null)
   const [error, setError] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [incluirme, setIncluirme] = useState(false)
   const [gestionando, setGestionando] = useState(null)
+  const [funnel, setFunnel] = useState(null)
+  const [errorFunnel, setErrorFunnel] = useState(null)
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -583,6 +679,12 @@ export default function PanelMetricas({ onCerrar }) {
     }
     setError(null)
     setDatos(data)
+    const f = await supabase.rpc('palanca_funnel', { p_incluir_admin: incluirme })
+    if (f.error || !f.data) setErrorFunnel(f.error?.message ?? 'Sin datos')
+    else {
+      setErrorFunnel(null)
+      setFunnel(f.data)
+    }
   }, [incluirme])
 
   useEffect(() => {
@@ -677,6 +779,14 @@ export default function PanelMetricas({ onCerrar }) {
                 </div>
               ))}
             </div>
+
+            {funnel && <SeccionFunnel f={funnel} />}
+            {errorFunnel && (
+              <div className="pm-error">
+                <strong>Falta el funnel de retención.</strong>
+                <p className="ayuda-mini">Ejecuta <code>supabase-schema-funnel.sql</code> en Supabase. Detalle: {errorFunnel}</p>
+              </div>
+            )}
 
             {d.serie?.length > 0 && <GraficoActivos serie={d.serie} />}
             <Embudo e={d.embudo} />
