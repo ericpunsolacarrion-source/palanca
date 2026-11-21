@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom'
+import { EMAIL_CONTACTO } from '../lib/contacto'
 
 // Política de privacidad básica. Versión inicial pensada para una beta cerrada;
 // conviene que un profesional la revise antes de abrir al público.
@@ -24,7 +25,7 @@ export default function PoliticaPrivacidad({ onCerrar }) {
           <h3>Responsable del tratamiento</h3>
           <p>
             Eric Punsola Carrión. Contacto para cualquier cuestión sobre tus datos o para ejercer
-            tus derechos: <strong>ericpunsolacarrion@gmail.com</strong>.
+            tus derechos: <a href={`mailto:${EMAIL_CONTACTO}`}><strong>{EMAIL_CONTACTO}</strong></a>.
           </p>
 
           <h3>Qué datos recogemos</h3>

@@ -5,6 +5,7 @@ import { borrarCuenta } from '../lib/auth'
 import { actualizarPerfil } from '../lib/perfil'
 import AjustePeriodo from './AjustePeriodo'
 import ConectaAsistente from './ConectaAsistente'
+import { EMAIL_CONTACTO } from '../lib/contacto'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import { supabase } from '../lib/supabaseClient'
@@ -254,6 +255,10 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
         </div>
 
         <ConectaAsistente />
+
+        <p className="ayuda-mini cuenta-ayuda">
+          ¿Algo no va bien o tienes una idea? Escríbenos a <a href={`mailto:${EMAIL_CONTACTO}`}>{EMAIL_CONTACTO}</a>.
+        </p>
 
         {esAdmin && (
           <button type="button" className="cuenta-boton cuenta-admin" onClick={() => setVerMetricas(true)}>
