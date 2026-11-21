@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { borrarCuenta } from '../lib/auth'
 import { actualizarPerfil } from '../lib/perfil'
 import AjustePeriodo from './AjustePeriodo'
+import ConectaAsistente from './ConectaAsistente'
 import { toast } from '../lib/toast'
 import { confirmar } from '../lib/confirmar'
 import { supabase } from '../lib/supabaseClient'
@@ -251,6 +252,8 @@ export default function CuentaPanel({ email, perfil, usuarioId, onPerfilActualiz
             </label>
           )}
         </div>
+
+        <ConectaAsistente />
 
         {esAdmin && (
           <button type="button" className="cuenta-boton cuenta-admin" onClick={() => setVerMetricas(true)}>

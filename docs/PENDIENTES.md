@@ -16,8 +16,9 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 - **Eric (Supabase):** Authentication → OAuth Server → activar, Authorization
   path `/oauth/consent`, permitir registro dinámico. Ver docs/CONECTOR-CLAUDE.md.
 - Probarlo de punta a punta en claude.ai con la cuenta de Eric.
-- Legal: añadir a la política de privacidad que, si el usuario conecta su
-  asistente de IA, sus datos pasan por él (docs/legal).
+- Hecho: política de privacidad («Si conectas tu asistente de IA») y apartado
+  «Conecta tu asistente de IA» en Tu cuenta (sale «muy pronto» hasta que
+  Supabase publica el servidor OAuth; /api/conector-estado).
 - Más adelante: registrar movimientos sueltos con lenguaje natural, editar
   categorías, gastos fijos.
 

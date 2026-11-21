@@ -79,3 +79,19 @@ describe('motor empaquetado para el servidor', () => {
     expect(readFileSync('api/_motor.js', 'utf8')).toBe(readFileSync(salida, 'utf8'))
   })
 })
+
+describe('/api/conector-estado', () => {
+  it('disponible solo si Supabase publica el servidor OAuth con registro dinámico', async () => {
+    const { default: estado } = await import('./conector-estado.js')
+    process.env.VITE_SUPABASE_URL = 'https://ejemplo.supabase.co'
+    const prueba = async (respuesta) => {
+      globalThis.fetch = vi.fn(async () => respuesta)
+      const r = resFalsa()
+      await estado(req({ method: 'GET' }), r)
+      return r.cuerpo.disponible
+    }
+    expect(await prueba({ ok: false })).toBe(false)
+    expect(await prueba({ ok: true, json: async () => ({ authorization_endpoint: 'a' }) })).toBe(false)
+    expect(await prueba({ ok: true, json: async () => ({ authorization_endpoint: 'a', registration_endpoint: 'r' }) })).toBe(true)
+  })
+})

@@ -31,6 +31,21 @@ export async function conector({ url, navegador = {}, salida = null }) {
         ok(err.length === 0, 'Sin errores en consola ' + err.join(' | '))
         await p.close()
       }
+      {
+        const p = await b.newPage({ viewport: { width: ancho, height: 900 } })
+        await p.goto(url, { waitUntil: 'networkidle' })
+        await p.waitForTimeout(700)
+        for (let i = 0; i < 20; i++) {
+          const x = p.getByRole('button', { name: /^(Seguir|Entendido)$/ })
+          if (await x.count()) { await x.first().click(); await p.waitForTimeout(120) } else break
+        }
+        await p.getByRole('button', { name: /^Tu cuenta/ }).first().click()
+        const tarjeta = p.getByTestId('conecta-asistente')
+        await tarjeta.waitFor({ timeout: 5000 })
+        await p.waitForTimeout(500)
+        ok(/Muy pronto/.test(await tarjeta.innerText()), 'Tu cuenta: «Conecta tu asistente de IA» sale como «muy pronto» mientras no está activado')
+        await p.close()
+      }
       const p = await b.newPage({ viewport: { width: ancho, height: 900 } })
       await p.goto(ruta('authorization_id=caducada'), { waitUntil: 'networkidle' })
       const t = await p.getByTestId('consentimiento-claude').innerText()

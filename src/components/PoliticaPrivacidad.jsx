@@ -19,7 +19,7 @@ export default function PoliticaPrivacidad({ onCerrar }) {
         </header>
 
         <div className="privacidad-cuerpo">
-          <p className="ayuda-mini">Última actualización: octubre de 2026.</p>
+          <p className="ayuda-mini">Última actualización: noviembre de 2026.</p>
 
           <h3>Responsable del tratamiento</h3>
           <p>
@@ -65,6 +65,17 @@ export default function PoliticaPrivacidad({ onCerrar }) {
             bruto. Si eliges <strong>importar con capturas de pantalla</strong>, esas imágenes se envían a{' '}
             <strong>Anthropic</strong> (proveedor de la IA, con sede en EE. UU. y garantías contractuales
             para transferencias internacionales) solo para leer los movimientos; no las guardamos.
+          </p>
+
+          <h3>Si conectas tu asistente de IA (por ejemplo, Claude)</h3>
+          <p>
+            Es opcional y lo decides tú. Si conectas tu asistente con Palanca y le das permiso, Palanca le
+            entregará <strong>tus</strong> datos (movimientos, categorías y resúmenes) cuando tú se lo pidas en
+            su chat, y hará los cambios que tú confirmes (por ejemplo, importar movimientos o cuadrar tu saldo).
+            El asistente nunca recibe tu contraseña y solo accede a tu cuenta. Lo que compartas con él lo trata
+            su proveedor (por ejemplo, Anthropic) según sus propias condiciones: es un servicio que eliges tú,
+            no un encargado de Palanca. Puedes retirar el acceso cuando quieras desde la configuración de
+            conectores de tu asistente.
           </p>
 
           <h3>Recordatorios por email</h3>

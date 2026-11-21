@@ -32,6 +32,9 @@ Authentication → **OAuth Server**: activarlo, **Authorization path** = `/oauth
 dinámico de clientes** (dynamic client registration).
 
 ## Para el usuario
+En la app: *Tu cuenta → Conecta tu asistente de IA* (pasos y dirección para copiar;
+«muy pronto» mientras `/api/conector-estado` diga que no está activado).
+
 Claude → Configuración → Conectores → *Añadir conector personalizado* →
 URL `https://palanca-zeta.vercel.app/api/mcp` → Conectar → entrar en Palanca →
 Permitir.
