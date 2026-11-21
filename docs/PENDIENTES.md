@@ -11,6 +11,31 @@ Leyenda: 🟥 bloquea el lanzamiento o el cobro · 🟧 importante · 🟩 mejor
 
 
 
+## Auditoría financiera y arquitectura Fase 2 (21-11) — PENDIENTE DE APROBAR
+
+No implementar nada del diseño hasta que Eric lo apruebe (detalle en la
+conversación del 21-11; las cifras personales, solo fuera del repositorio).
+- **Crítico: no hay copias de seguridad** (plan Free de Supabase, confirmado).
+  Bloquea cualquier migración. Copia manual mientras tanto:
+  1. Supabase → Project Settings → Database → contraseña (reset si hace falta;
+     guardarla en un gestor de contraseñas).
+  2. Supabase → Connect → Session pooler → copiar la dirección de conexión.
+  3. Mac: `brew install libpq`.
+  4. `/opt/homebrew/opt/libpq/bin/pg_dump "DIRECCION" -Fc -f ~/Desktop/palanca-copia-$(date +%Y%m%d).dump`
+  5. Guardar el `.dump` en un sitio privado (nunca en GitHub).
+  6. Comprobar: `pg_restore --list` sobre el archivo.
+  Cambiar la contraseña de la BD no afecta a la app ni al conector de Claude.
+- Arquitectura: implementar la Fase 2 de `docs/MOTOR.md` (versionado H1,
+  coste FIFO F2a, atestaciones con residuo N5, cuentas y `tipo_evento`,
+  valor ≠ coste F2b), en fases con foto de números antes/después.
+- Decisiones de Eric: D1 qué patrimonio se enseña (enmienda §10) · D2 FIFO ·
+  D3 comisiones · D4 ahorro frente a resultado patrimonial · D5 apuntes
+  derivados (enmienda) · D6 quitar `borrar_movimientos` y `borrar_sobrantes`
+  del conector · las 8 decisiones de su Excel · D15 extracto con saldo ·
+  D16 plan Pro de Supabase.
+- P0 antes de nada: copias, vistas previas con «palanca dev», Excel de solo
+  lectura (cuenta de Google como «Lector»), D6.
+
 ## Conector de Claude (MCP) (20-11) — publicado, falta activarlo
 
 - **Eric (Supabase):** Authentication → OAuth Server → activar, Authorization
