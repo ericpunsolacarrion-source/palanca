@@ -31,3 +31,32 @@ describe('vuelta de un enlace del correo con error', () => {
     expect(traducirErrorAuth('Email not confirmed')).toMatch(/Confirma tu email/)
   })
 })
+
+describe('blindaje del acceso: errores distinguibles sin revelar si el correo existe', () => {
+  it('servicio caído (5xx) → «no podemos conectar», no «revisa los datos»', () => {
+    expect(mensajeErrorAuth({ status: 503, message: 'upstream connect error' })).toMatch(/No podemos conectar/)
+    expect(mensajeErrorAuth({ status: 500, message: 'Error sending recovery email' })).toMatch(/No podemos conectar/)
+    expect(traducirErrorAuth('Error sending confirmation email')).toMatch(/enviar el correo/)
+    expect(traducirErrorAuth('Email address "x@y.com" not authorized')).toMatch(/enviar el correo/)
+  })
+  it('contraseñas: débil, igual a la anterior y enlace caducado', () => {
+    expect(mensajeErrorAuth({ status: 422, code: 'weak_password', message: 'Password is known to be weak' })).toMatch(/más segura/)
+    expect(mensajeErrorAuth({ status: 422, code: 'same_password', message: 'x' })).toMatch(/distinta de la anterior/)
+    expect(mensajeErrorAuth({ name: 'AuthSessionMissingError', message: 'Auth session missing!' })).toMatch(/caducado/)
+  })
+  it('anti-enumeración intacta: «ya registrado» no lo dice', () => {
+    expect(mensajeErrorAuth({ status: 422, code: 'user_already_exists', message: 'User already registered' })).toBe('No se ha podido completar. Revisa los datos e inténtalo de nuevo.')
+    expect(mensajeErrorAuth({ status: 400, message: 'Invalid login credentials' })).toBe('Email o contraseña incorrectos.')
+  })
+  it('enlace de recuperación caducado → explica que pida otro', () => {
+    expect(errorDeEnlaceAuth({ hash: '#error=access_denied&error_code=otp_expired', search: '?recuperar=1' })).toMatch(/cambiar la contraseña ha caducado/)
+  })
+})
+
+describe('registro interno del error técnico', () => {
+  it('sin email ni contraseña: solo tipo, estado, código y mensaje recortado', async () => {
+    const { registrarErrorAuth } = await import('./auth')
+    const d = registrarErrorAuth('login', { name: 'AuthApiError', status: 400, code: 'x', message: 'fallo para ana@correo.com' }, null)
+    expect(d).toEqual({ contexto: 'login', nombre: 'AuthApiError', estado: 400, codigo: 'x', mensaje: 'fallo para [email]' })
+  })
+})
