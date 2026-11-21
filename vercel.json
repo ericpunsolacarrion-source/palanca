@@ -3,6 +3,10 @@
     {
       "path": "/api/recordatorios",
       "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/salud",
+      "schedule": "0 6 * * *"
     }
   ],
   "rewrites": [
