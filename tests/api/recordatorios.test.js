@@ -21,9 +21,9 @@ vi.mock('@supabase/supabase-js', () => ({
   }),
 }))
 
-import handler from './recordatorios.js'
-import baja from './baja.js'
-import { enlaceBaja, firmaValida, firmar } from './_firma.js'
+import handler from '../../api/recordatorios.js'
+import baja from '../../api/baja.js'
+import { enlaceBaja, firmaValida, firmar } from '../../api/_firma.js'
 
 const ENV = {
   RECORDATORIOS_ACTIVOS: 'true',

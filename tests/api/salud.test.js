@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import salud from './salud.js'
-import registro from './registro-error.js'
+import salud from '../../api/salud.js'
+import registro from '../../api/registro-error.js'
 
 const res = () => {
   const r = { h: {} }

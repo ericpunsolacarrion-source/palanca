@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
-import { manejarMensaje, HERRAMIENTAS, idImportacion } from './_mcpNucleo.js'
+import { manejarMensaje, HERRAMIENTAS, idImportacion } from '../../api/_mcpNucleo.js'
 
 // Supabase simulado con RLS: cada consulta solo ve las filas de `uid` (como
 // las políticas usuario_id = auth.uid()), aunque la consulta no filtre.

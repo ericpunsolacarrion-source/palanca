@@ -6,12 +6,12 @@ import path from 'node:path'
 
 const usuario = { id: 'u1' }
 let conSesion = false
-vi.mock('./_auth.js', () => ({
+vi.mock('../../api/_auth.js', () => ({
   usuarioDeLaPeticion: async () => (conSesion ? usuario : null),
   clienteDelUsuario: () => ({ from: () => ({}) }),
 }))
-const { default: mcp } = await import('./mcp.js')
-const { default: recurso } = await import('./oauth-recurso.js')
+const { default: mcp } = await import('../../api/mcp.js')
+const { default: recurso } = await import('../../api/oauth-recurso.js')
 
 function resFalsa() {
   const r = { cabeceras: {}, codigo: null, cuerpo: undefined }
@@ -82,7 +82,7 @@ describe('motor empaquetado para el servidor', () => {
 
 describe('/api/conector-estado', () => {
   it('disponible solo si Supabase publica el servidor OAuth con registro dinámico', async () => {
-    const { default: estado } = await import('./conector-estado.js')
+    const { default: estado } = await import('../../api/conector-estado.js')
     process.env.VITE_SUPABASE_URL = 'https://ejemplo.supabase.co'
     const prueba = async (respuesta) => {
       globalThis.fetch = vi.fn(async () => respuesta)
