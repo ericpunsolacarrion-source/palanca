@@ -61,7 +61,7 @@ export const HITOS = [
   { id: 'dias_30', categoria: 'Constancia', icono: '✦', meta: 30, metric: 'diasActivos',
     titulo: '30 días registrando', mensaje: '30 días registrando. Ya es un hábito, no un esfuerzo.' },
   { id: 'ahorro_20', categoria: 'Constancia', icono: '◇', meta: 20, metric: 'ratioAhorroMes',
-    titulo: '20% de ahorro', mensaje: 'Has ahorrado más del 20% de tus ingresos este mes. Un ritmo excelente.' },
+    titulo: '20% de ahorro', mensaje: 'Has cerrado un mes ahorrando más del 20% de tus ingresos. Un ritmo excelente.' },
   { id: 'meses_3_ahorro', categoria: 'Constancia', icono: '◇', meta: 3, metric: 'mesesSeguidosAhorrando',
     titulo: '3 meses ahorrando', mensaje: 'Tres meses seguidos cerrando en positivo. Eso construye patrimonio.' },
   { id: 'objetivo_inversion', categoria: 'Constancia', icono: '◎', meta: 1, metric: 'objetivoInversionCumplido',
@@ -94,9 +94,11 @@ function diasActivos(movimientos) {
   return dias.size
 }
 
-// Racha de meses consecutivos (terminando en el actual) cerrando en positivo.
-function mesesSeguidosAhorrando(movimientos) {
-  const meses = agregarPorMes(movimientos, 24)
+// Racha de meses consecutivos CERRADOS (terminando en el anterior al actual)
+// en positivo. El mes en curso no cuenta: justo después de cobrar la nómina
+// siempre «ahorra» y adelantaría el logro.
+export function mesesSeguidosAhorrando(movimientos) {
+  const meses = agregarPorMes(movimientos, 25).slice(0, -1)
   let racha = 0
   for (let i = meses.length - 1; i >= 0; i -= 1) {
     const m = meses[i]
@@ -105,6 +107,11 @@ function mesesSeguidosAhorrando(movimientos) {
     else break
   }
   return racha
+}
+
+export function ratioUltimoMesCerrado(movimientos) {
+  const [anterior] = agregarPorMes(movimientos, 2)
+  return anterior && anterior.ingresos > 0 ? anterior.ratioAhorro : 0
 }
 
 export function calcularMetricas({ movimientos, movimientosMes, objetivoInversion = 0, objetivos = [] }) {
@@ -133,7 +140,9 @@ export function calcularMetricas({ movimientos, movimientosMes, objetivoInversio
     patrimonio: Math.max(0, patrimonio),
     // Constancia (flujo).
     diasActivos: diasActivos(movimientos),
-    ratioAhorroMes: totalMes.ingresos > 0 ? totalMes.ratioAhorro : 0,
+    // Sobre el último mes CERRADO: en el mes en curso, recién cobrada la nómina,
+    // el ahorro es casi del 100 % y el logro saltaba antes de tiempo.
+    ratioAhorroMes: ratioUltimoMesCerrado(movimientos),
     mesesSeguidosAhorrando: mesesSeguidosAhorrando(movimientos),
     objetivoInversionCumplido: objetivoInversion > 0 && totalMes.invertido >= objetivoInversion ? 1 : 0,
     objetivosCompletados,
