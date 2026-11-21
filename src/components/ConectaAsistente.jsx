@@ -53,6 +53,7 @@ export default function ConectaAsistente() {
           <ol className="conecta-ia-pasos" start={3}>
             <li>Pulsa <em>Conectar</em>, entra con tu cuenta de Palanca y pulsa <em>Permitir</em>.</li>
             <li>Prueba: «¿Cuál es mi patrimonio y cuánto he invertido este mes?»</li>
+            <li>¿Llevas tus cuentas en un Excel? Conecta también tu Excel a Claude y pídele: «Cuadra Palanca con mi Excel». Te enseñará lo nuevo, lo cambiado y lo que sobra antes de tocar nada.</li>
           </ol>
           <p className="ayuda-mini">Puedes quitar el acceso cuando quieras desde los conectores de Claude.</p>
         </>

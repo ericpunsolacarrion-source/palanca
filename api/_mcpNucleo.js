@@ -43,6 +43,7 @@ Reglas de Palanca (aplícalas al explicar cifras):
 - Intereses y dividendos son ingresos. Las devoluciones restan gasto.
 - Patrimonio = disponible + invertido (a precio de compra, no a valor de mercado).
 - Importes en euros, en formato español al hablar con el usuario (1.234,56 €).
+Si el usuario lleva sus cuentas en un Excel, para que todo cuadre usa cuadrar_con_excel (no importar_movimientos) con TODAS las filas del periodo.
 Para escribir: llama primero SIN confirmar, enseña al usuario la vista previa y vuelve a llamar con confirmar=true solo si él lo aprueba.`
 
 // «Hoy» en España (Vercel corre en UTC: a las 00:30 en Madrid aún es ayer allí).
@@ -524,6 +525,177 @@ async function cambiarFijo(sb, uid, args) {
   return { texto: `Actualizado: ${textoFijo(despues)}.`, datos: { despues: textoFijo(despues), guardado: true } }
 }
 
+// ── Cuadrar con el Excel (sincronización con una fuente de verdad) ──────────
+// Claude manda TODAS las filas del Excel de un periodo; Palanca compara con lo
+// que tiene en ese periodo (sin ajustes de saldo) y detecta nuevos, modificados
+// (mismo concepto con otro importe, fecha o categoría) y sobrantes. Vista previa
+// con totales por mes antes/después; con confirmar lo aplica (y solo borra los
+// sobrantes si borrar_sobrantes=true).
+const normConcepto = (s) =>
+  String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
+
+const centimos = (m) => (m.importe_centimos != null ? Number(m.importe_centimos) : Math.round(Number(m.importe) * 100))
+
+// Forma común para comparar una fila del Excel y un movimiento de Palanca.
+const comparable = (x) => ({
+  ...x,
+  _c: centimos(x),
+  _n: normConcepto(x.nota),
+  _inv: Boolean(x.esInversion ?? (x.categoria?.nombre === CATEGORIA_INVERSION)),
+  _cat: typeof x.categoria === 'string' ? x.categoria : x.categoria?.nombre ?? '',
+})
+const claveExacta = (x) => `${x.fecha}|${x.tipo}|${x._inv ? 'inv' : ''}|${x._c}|${x._n}`
+const diasEntre = (a, b) => Math.abs((Date.parse(a) - Date.parse(b)) / 86400000)
+
+export function emparejar(hoja, palanca) {
+  const libres = new Map()
+  for (const p of palanca) {
+    const k = claveExacta(p)
+    if (!libres.has(k)) libres.set(k, [])
+    libres.get(k).push(p)
+  }
+  const iguales = []
+  const restoHoja = []
+  for (const h of hoja) {
+    const lista = libres.get(claveExacta(h))
+    if (lista?.length) iguales.push({ hoja: h, palanca: lista.shift() })
+    else restoHoja.push(h)
+  }
+  let restoPal = [...libres.values()].flat()
+  const modificados = []
+  const nuevos = []
+  for (const h of restoHoja) {
+    const mismo = (p) => p.tipo === h.tipo && p._inv === h._inv && p._n === h._n
+    // 1) Mismo concepto y día, otro importe.  2) Mismo concepto e importe, fecha cercana (≤ 7 días).
+    let i = restoPal.findIndex((p) => mismo(p) && p.fecha === h.fecha)
+    if (i < 0) i = restoPal.findIndex((p) => mismo(p) && p._c === h._c && diasEntre(p.fecha, h.fecha) <= 7)
+    if (i < 0) {
+      nuevos.push(h)
+      continue
+    }
+    modificados.push({ hoja: h, palanca: restoPal[i] })
+    restoPal = restoPal.filter((_, j) => j !== i)
+  }
+  // Iguales pero con otra categoría (no aplica a inversión: su categoría es fija).
+  for (const par of iguales) {
+    if (!par.hoja._inv && par.hoja._cat && formaEtiqueta(par.hoja._cat) !== formaEtiqueta(par.palanca._cat)) modificados.push(par)
+  }
+  return { iguales: iguales.length - modificados.filter((m) => iguales.includes(m)).length, modificados, nuevos, sobrantes: restoPal }
+}
+
+function totalesPorMes(lista) {
+  const porMes = new Map()
+  for (const m of lista) {
+    const k = m.fecha.slice(0, 7)
+    if (!porMes.has(k)) porMes.set(k, [])
+    porMes.get(k).push({ ...m, categoria: { nombre: m.esInversion || m._inv ? CATEGORIA_INVERSION : typeof m.categoria === 'string' ? m.categoria : m.categoria?.nombre } })
+  }
+  return Object.fromEntries([...porMes.entries()].sort().map(([k, v]) => {
+    const t = totalesDe(v)
+    return [k, { ingresos: t.ingresos, gastos: t.gastos, invertido: t.invertido }]
+  }))
+}
+
+const vistaFila = (x) => ({ fecha: x.fecha, tipo: x._inv ? (x.tipo === 'gasto' ? 'compra inversión' : 'venta inversión') : x.tipo, concepto: x.nota ?? '', importe: x._c / 100, categoria: x._cat || null })
+
+async function cuadrarConExcel(sb, uid, args) {
+  const filasPlantilla = aFilasPlantilla(args.filas)
+  const t = tablaDesdeFilas([COLUMNAS_PLANTILLA, ...filasPlantilla])
+  const r = procesarFilas(t.filas, detectarMapeo(t.cabeceras), new Set(), { inicio: t.inicio })
+  const errores = r.errores.map((e) => ({ fila: e.fila - 1, motivo: e.motivo }))
+  // procesarFilas descarta repetidos exactos dentro del lote: aquí cuentan todos.
+  const hojaValidas = [...r.validas, ...r.duplicados]
+  const fechas = hojaValidas.map((f) => f.fecha).sort()
+  const desde = args.desde ? parseFecha(args.desde) : fechas[0]
+  const hasta = args.hasta ? parseFecha(args.hasta) : fechas.at(-1)
+  if (!desde || !hasta || desde > hasta) throw new ErrorArgumentos('Indica «desde» y «hasta» (AAAA-MM-DD) o manda filas con fecha.')
+  const fuera = hojaValidas.filter((f) => f.fecha < desde || f.fecha > hasta)
+  if (fuera.length) throw new ErrorArgumentos(`${fuera.length} filas están fuera del periodo ${desde} – ${hasta}: ajusta el periodo o quítalas.`)
+
+  const todos = await leerMovimientos(sb, uid)
+  const enPeriodo = todos.filter((m) => m.fecha >= desde && m.fecha <= hasta && !esAjuste(m))
+  const hoja = categorizarFilas(hojaValidas, crearCategorizador(todos)).map((f) => comparable({ ...f, esInversion: f.esInversion || f.categoria === CATEGORIA_INVERSION }))
+  const pal = enPeriodo.map(comparable)
+  const e = emparejar(hoja, pal)
+  const borrar = Boolean(args.borrar_sobrantes)
+
+  const antes = totalesPorMes(pal)
+  const objetivo = totalesPorMes(hoja)
+  const despuesLista = [
+    ...pal.filter((p) => !e.modificados.some((m) => m.palanca === p) && (!borrar || !e.sobrantes.includes(p))),
+    ...e.modificados.map((m) => m.hoja),
+    ...e.nuevos,
+  ]
+  const despues = totalesPorMes(despuesLista)
+  const meses = [...new Set([...Object.keys(antes), ...Object.keys(objetivo)])].sort()
+  const cero = { ingresos: 0, gastos: 0, invertido: 0 }
+  const comparacion = meses.map((k) => {
+    const o = objetivo[k] ?? cero
+    const d = despues[k] ?? cero
+    return { mes: k, excel: o, palanca_ahora: antes[k] ?? cero, palanca_despues: d, cuadra: o.ingresos === d.ingresos && o.gastos === d.gastos && o.invertido === d.invertido }
+  })
+  const cuadraTodo = comparacion.every((c) => c.cuadra)
+  const previa = {
+    periodo: { desde, hasta },
+    filas_excel: hoja.length,
+    iguales: e.iguales,
+    nuevos: e.nuevos.length,
+    modificados: e.modificados.length,
+    sobrantes: e.sobrantes.length,
+    borrar_sobrantes: borrar,
+    con_errores: errores.length,
+    errores: errores.slice(0, 50),
+    lista_nuevos: e.nuevos.slice(0, 50).map(vistaFila),
+    lista_modificados: e.modificados.slice(0, 50).map((m) => ({ antes: vistaFila(m.palanca), despues: vistaFila(m.hoja) })),
+    lista_sobrantes: e.sobrantes.slice(0, 50).map((p) => ({ id: p.id, ...vistaFila(p) })),
+    totales_por_mes: comparacion,
+    cuadrara_todo: cuadraTodo,
+  }
+  const resumenTxt =
+    `${hoja.length} filas del Excel (${desde} – ${hasta}): ${e.iguales} iguales, ${e.nuevos.length} nuevas, ${e.modificados.length} modificadas, ${e.sobrantes.length} sobran en Palanca` +
+    `${errores.length ? `, ${errores.length} filas con errores` : ''}.`
+  const nadaQueHacer = !e.nuevos.length && !e.modificados.length && !(borrar && e.sobrantes.length)
+  if (!args.confirmar || nadaQueHacer) {
+    const aviso = e.sobrantes.length && !borrar ? ` Los ${e.sobrantes.length} sobrantes NO se borrarán salvo que el usuario lo pida (borrar_sobrantes=true): mientras sigan, ese periodo no cuadrará.` : ''
+    return {
+      texto: `${nadaQueHacer ? (e.sobrantes.length ? 'Nada que añadir ni corregir.' : 'Ya cuadra: Palanca y el Excel coinciden en este periodo.') : 'VISTA PREVIA (no se ha cambiado nada):'} ${resumenTxt}${aviso} ${cuadraTodo ? 'Tras aplicarlo, los totales de cada mes coincidirán con el Excel.' : 'Ojo: algún mes no cuadrará (mira totales_por_mes).'}${nadaQueHacer ? '' : ' Para aplicarlo, vuelve a llamar con confirmar=true si el usuario lo aprueba.'}`,
+      datos: { ...previa, guardado: false },
+    }
+  }
+
+  // Aplicar: nuevos (con categorías y plataformas), modificados (update) y sobrantes (si se pidió).
+  const aCrear = e.nuevos
+  const modif = e.modificados
+  const cats = await idsCategorias(sb, uid, [...aCrear, ...modif.map((m) => m.hoja)])
+  const fuenteDe = await idsFuentes(sb, uid, aCrear)
+  for (let i = 0; i < aCrear.length; i += 200) {
+    const lote = aCrear.slice(i, i + 200).map((f) => ({
+      usuario_id: uid, tipo: f.tipo, categoria_id: cats.de(f), fuente_id: fuenteDe(f),
+      importe: f._c / 100, importe_centimos: f._c, fecha: f.fecha, es_fijo: false, nota: f.nota || null,
+    }))
+    const { error } = await sb.from('movimientos').insert(lote)
+    if (error) throw new ErrorDatos('Error al añadir los nuevos. Vuelve a lanzar el cuadre: lo ya hecho no se repite.')
+  }
+  for (const m of modif) {
+    const cambios = { importe: m.hoja._c / 100, importe_centimos: m.hoja._c, fecha: m.hoja.fecha, nota: m.hoja.nota || null }
+    const cat = cats.de(m.hoja)
+    if (cat && !m.hoja._inv) cambios.categoria_id = cat
+    const { error } = await sb.from('movimientos').update(cambios).eq('usuario_id', uid).eq('id', m.palanca.id)
+    if (error) throw new ErrorDatos('Error al corregir un movimiento. Vuelve a lanzar el cuadre: lo ya hecho no se repite.')
+  }
+  if (borrar && e.sobrantes.length) {
+    const ids = e.sobrantes.map((p) => p.id)
+    for (let i = 0; i < ids.length; i += 200) {
+      const { error } = await sb.from('movimientos').delete().eq('usuario_id', uid).in('id', ids.slice(i, i + 200))
+      if (error) throw new ErrorDatos('Error al borrar los sobrantes. Vuelve a lanzar el cuadre.')
+    }
+  }
+  return {
+    texto: `Cuadrado: ${aCrear.length} añadidos, ${modif.length} corregidos${borrar ? `, ${e.sobrantes.length} borrados` : ''}. ${cuadraTodo ? 'Los totales de cada mes ya coinciden con el Excel.' : 'Algún mes aún no cuadra: mira totales_por_mes.'} Si el disponible no coincide con el banco, usa cuadrar_saldo.`,
+    datos: { ...previa, guardado: true, categorias_creadas: cats.creadas },
+  }
+}
+
 // ── Catálogo ────────────────────────────────────────────────────────────────
 const FILA = {
   type: 'object',
@@ -644,6 +816,28 @@ export const HERRAMIENTAS = [
     },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     ejecutar: editarMovimiento,
+  },
+  {
+    name: 'cuadrar_con_excel',
+    title: 'Cuadrar Palanca con mi Excel',
+    description:
+      'Hace que Palanca coincida con el Excel (u otra lista) del usuario en un periodo: manda TODAS las filas del Excel de ese periodo (mismo formato que importar_movimientos) ' +
+      'y Palanca detecta las nuevas, las modificadas (mismo concepto con otro importe, fecha o categoría) y las que sobran en Palanca, y compara los totales de cada mes. ' +
+      'Úsala cuando el usuario lleve sus cuentas en un Excel y quiera que todo cuadre (mejor por meses o por años). Sin confirmar es solo vista previa; ' +
+      'los sobrantes solo se borran con borrar_sobrantes=true y el OK explícito del usuario. Los ajustes de saldo no se tocan.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        filas: { type: 'array', items: FILA, minItems: 1, maxItems: MAX_FILAS, description: 'TODAS las filas del Excel en el periodo, no solo las nuevas.' },
+        desde: { type: 'string', description: 'AAAA-MM-DD (por defecto, la primera fecha de las filas).' },
+        hasta: { type: 'string', description: 'AAAA-MM-DD (por defecto, la última fecha de las filas).' },
+        borrar_sobrantes: { type: 'boolean', description: 'true = borrar de Palanca lo que no está en el Excel en ese periodo (solo si el usuario lo pide).' },
+        confirmar: CONFIRMAR,
+      },
+      required: ['filas'],
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+    ejecutar: cuadrarConExcel,
   },
   {
     name: 'importar_movimientos',

@@ -262,3 +262,71 @@ it('«hoy» es el de España: a las 00:30 de Madrid ya se acepta un movimiento d
   const r = await llamar('importar_movimientos', { filas: [{ fecha: '21/11/2026', tipo: 'Gasto', concepto: 'Churros', categoria: 'Comida', importe: 3 }] })
   expect(r.structuredContent.nuevos).toBe(1)
 })
+
+describe('cuadrar_con_excel: que Palanca y el Excel coincidan', () => {
+  const M1 = '00000000-0000-4000-8000-000000000001' // nómina 1500 el 28/10
+  const M2 = '00000000-0000-4000-8000-000000000002' // Mercadona 40 el 02/11
+  beforeEach(() => {
+    tablas.categorias.push({ id: 'cj', usuario_id: YO, tipo: 'ingreso', nombre: 'Ajuste' })
+    tablas.movimientos.push(
+      { id: '00000000-0000-4000-8000-000000000003', usuario_id: YO, tipo: 'gasto', importe: 9.5, fecha: '2026-11-05', nota: 'Cine', categoria_id: 'c1' },
+      { id: '00000000-0000-4000-8000-000000000004', usuario_id: YO, tipo: 'gasto', importe: 3, fecha: '2026-11-06', nota: 'Café', categoria_id: 'c1' },
+      { id: '00000000-0000-4000-8000-000000000005', usuario_id: YO, tipo: 'ingreso', importe: 500, fecha: '2026-11-01', nota: 'Ajuste de saldo', categoria_id: 'cj' },
+    )
+  })
+  // El Excel: la nómina igual; Mercadona ahora 42 (importe cambiado); Cine el 07/11 (fecha cambiada);
+  // el Café ya no está (borrado en el Excel); dos cafés iguales nuevos el 10/11; una compra de inversión nueva.
+  const excel = [
+    { fecha: '28/10/2026', tipo: 'Ingreso', concepto: 'Nómina', categoria: 'Nomina', importe: 1500 },
+    { fecha: '02/11/2026', tipo: 'Gasto', concepto: 'Mercadona', categoria: 'Comida', importe: 42 },
+    { fecha: '07/11/2026', tipo: 'Gasto', concepto: 'Cine', categoria: 'Ocio', importe: 9.5 },
+    { fecha: '10/11/2026', tipo: 'Gasto', concepto: 'Cafe bar', categoria: 'Comida', importe: 2 },
+    { fecha: '10/11/2026', tipo: 'Gasto', concepto: 'Cafe bar', categoria: 'Comida', importe: 2 },
+    { fecha: '12/11/2026', tipo: 'Compra inversión', concepto: 'Compra', importe: 100, plataforma: 'Trade Republic', activo: 'ETF' },
+  ]
+
+  it('vista previa: detecta iguales, nuevos, modificados (importe, fecha, categoría) y sobrantes; no cambia nada', async () => {
+    const antes = JSON.stringify(tablas.movimientos)
+    const r = (await llamar('cuadrar_con_excel', { filas: excel })).structuredContent
+    expect(r.guardado).toBe(false)
+    expect(r).toMatchObject({ filas_excel: 6, iguales: 1, nuevos: 3, modificados: 2, sobrantes: 1 })
+    expect(r.lista_sobrantes.map((x) => x.concepto)).toEqual(['Café'])
+    expect(r.lista_modificados.map((m) => [m.antes.importe, m.despues.importe, m.antes.fecha, m.despues.fecha])).toEqual([[40, 42, '2026-11-02', '2026-11-02'], [9.5, 9.5, '2026-11-05', '2026-11-07']])
+    // Sin borrar los sobrantes, noviembre no cuadra (el café de 3 € sigue).
+    expect(r.cuadrara_todo).toBe(false)
+    expect(JSON.stringify(tablas.movimientos)).toBe(antes)
+  })
+
+  it('con confirmar y borrar_sobrantes: todo cuadra mes a mes; el ajuste de saldo no se toca; repetir no cambia nada', async () => {
+    const r = (await llamar('cuadrar_con_excel', { filas: excel, confirmar: true, borrar_sobrantes: true })).structuredContent
+    expect(r.guardado).toBe(true)
+    expect(r.cuadrara_todo).toBe(true)
+    const mios = tablas.movimientos.filter((m) => m.usuario_id === YO)
+    expect(mios.find((m) => m.id === M2)).toMatchObject({ importe: 42, importe_centimos: 4200 })
+    expect(mios.find((m) => m.nota === 'Cine')).toMatchObject({ fecha: '2026-11-07' })
+    expect(mios.some((m) => m.nota === 'Café')).toBe(false)
+    expect(mios.filter((m) => m.nota === 'Cafe bar')).toHaveLength(2)
+    expect(mios.some((m) => m.nota === 'Ajuste de saldo')).toBe(true)
+    expect(mios.find((m) => m.id === M1)).toBeTruthy()
+    // Otra vez: ya cuadra, nada que hacer.
+    const otra = await llamar('cuadrar_con_excel', { filas: excel, confirmar: true, borrar_sobrantes: true })
+    expect(otra.structuredContent).toMatchObject({ nuevos: 0, modificados: 0, sobrantes: 0, cuadrara_todo: true })
+    expect(otra.content[0].text).toMatch(/Ya cuadra/)
+  })
+
+  it('sin borrar_sobrantes no borra nada aunque confirme', async () => {
+    await llamar('cuadrar_con_excel', { filas: excel, confirmar: true })
+    expect(tablas.movimientos.some((m) => m.nota === 'Café')).toBe(true)
+  })
+
+  it('solo compara el periodo pedido: lo de fuera no es «sobrante»', async () => {
+    const r = (await llamar('cuadrar_con_excel', { filas: excel.slice(1), desde: '2026-11-01', hasta: '2026-11-30' })).structuredContent
+    expect(r.lista_sobrantes.map((x) => x.concepto)).toEqual(['Café']) // la nómina de octubre no cuenta
+    expect((await llamar('cuadrar_con_excel', { filas: excel, desde: '2026-11-01', hasta: '2026-11-30' })).isError).toBe(true)
+  })
+
+  it('no toca movimientos de otro usuario', async () => {
+    await llamar('cuadrar_con_excel', { filas: excel, confirmar: true, borrar_sobrantes: true })
+    expect(tablas.movimientos.find((m) => m.usuario_id === OTRO)).toBeTruthy()
+  })
+})

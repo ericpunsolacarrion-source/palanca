@@ -23,6 +23,13 @@ lista, cuadrar el saldo, deshacer una importación o borrar movimientos.
 - El usuario quita el acceso desde los conectores de Claude.
 
 ## Herramientas
+**`cuadrar_con_excel`** (la clave si el usuario lleva un Excel): Claude manda TODAS
+las filas de un periodo; Palanca empareja con lo suyo (sin ajustes de saldo) y
+detecta nuevos, modificados (mismo concepto con otro importe, fecha ≤ 7 días o
+categoría) y sobrantes, con totales por mes Excel / Palanca antes / después.
+Confirmando, añade y corrige; los sobrantes solo se borran con
+`borrar_sobrantes=true`. Probado con las 1.209 filas reales de Eric: «Ya cuadra».
+
 `resumen`, `listar_movimientos`, `listar_categorias`, `listar_gastos_fijos` (solo lectura) ·
 `editar_movimiento` (importe, fecha, concepto o categoría; no convierte en inversión/ajuste) ·
 `crear_gasto_fijo` / `cambiar_gasto_fijo` (también dar de baja) ·
